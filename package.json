@@ -9,7 +9,8 @@
     "dev": "vite dev --port 3000",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "netlify": "netlify"
   },
   "dependencies": {
     "@tanstack/react-devtools": "^0.7.0",
@@ -23,6 +24,7 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "netlify-cli": "^24.0.1",
     "@tanstack/devtools-vite": "^0.3.11",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.2.0",
