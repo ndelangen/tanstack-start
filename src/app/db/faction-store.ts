@@ -1,10 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { db } from '@app/db/connect'
-import type { FactionData, FactionRow } from '@app/db/faction-types'
-import { factionDataSchema } from 'src/data/faction'
-
-// Use typed FactionRow instead of generic Tables type
-export type Faction = FactionRow
+import type { Faction, FactionEntry } from '@app/db/faction-types'
+import { schema } from '../../data/factions'
 
 /* Query Keys */
 
@@ -17,7 +14,7 @@ export const factionKeys = {
 
 /* Queries */
 
-export function useFaction(id: NonNullable<Faction['id']>) {
+export function useFaction(id: NonNullable<FactionEntry['id']>) {
   const qc = useQueryClient()
 
   return useQuery({
@@ -40,10 +37,10 @@ export function useFaction(id: NonNullable<Faction['id']>) {
       // Validate data field after reading from DB
       return {
         ...entries,
-        data: factionDataSchema.parse(entries.data),
-      } as Faction
+        data: schema.parse(entries.data),
+      } as FactionEntry
     },
-    initialData: () => qc.getQueryData<Faction[]>(factionKeys.list({ type: 'all' }))?.find((d) => d.id === id),
+    initialData: () => qc.getQueryData<FactionEntry[]>(factionKeys.list({ type: 'all' }))?.find((d) => d.id === id),
   })
 }
 
@@ -64,13 +61,13 @@ export function useFactionsAll() {
       // Validate data field for each faction after reading from DB
       return entries.map((entry) => ({
         ...entry,
-        data: factionDataSchema.parse(entry.data),
-      })) as Faction[]
+        data: schema.parse(entry.data),
+      })) as FactionEntry[]
     },
   })
 }
 
-export function useFactionsByOwner(ownerId: NonNullable<Faction['owner_id']>) {
+export function useFactionsByOwner(ownerId: NonNullable<FactionEntry['owner_id']>) {
   const qc = useQueryClient()
 
   return useQuery({
@@ -89,14 +86,14 @@ export function useFactionsByOwner(ownerId: NonNullable<Faction['owner_id']>) {
       // Validate data field for each faction after reading from DB
       return entries.map((entry) => ({
         ...entry,
-        data: factionDataSchema.parse(entry.data),
-      })) as Faction[]
+        data: schema.parse(entry.data),
+      })) as FactionEntry[]
     },
-    initialData: () => qc.getQueryData<Faction[]>(factionKeys.list({ type: 'all' }))?.filter((d) => d.owner_id === ownerId),
+    initialData: () => qc.getQueryData<FactionEntry[]>(factionKeys.list({ type: 'all' }))?.filter((d) => d.owner_id === ownerId),
   })
 }
 
-export function useFactionsByGroup(groupId: NonNullable<Faction['group_id']>) {
+export function useFactionsByGroup(groupId: NonNullable<FactionEntry['group_id']>) {
   const qc = useQueryClient()
 
   return useQuery({
@@ -115,10 +112,10 @@ export function useFactionsByGroup(groupId: NonNullable<Faction['group_id']>) {
       // Validate data field for each faction after reading from DB
       return entries.map((entry) => ({
         ...entry,
-        data: factionDataSchema.parse(entry.data),
-      })) as Faction[]
+        data: schema.parse(entry.data),
+      })) as FactionEntry[]
     },
-    initialData: () => qc.getQueryData<Faction[]>(factionKeys.list({ type: 'all' }))?.filter((d) => d.group_id === groupId),
+    initialData: () => qc.getQueryData<FactionEntry[]>(factionKeys.list({ type: 'all' }))?.filter((d) => d.group_id === groupId),
   })
 }
 
@@ -128,12 +125,12 @@ export function useCreateFaction() {
   const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ data, groupId }: { data: FactionData; groupId?: string | null }) => {
+    mutationFn: async ({ data, groupId }: { data: Faction; groupId?: string | null }) => {
       const user = await db.auth.getUser()
       if (!user.data.user?.id) throw new Error('Not authenticated')
 
       // Validate data before sending to DB (better error handling)
-      const validatedData = factionDataSchema.parse(data)
+      const validatedData = schema.parse(data)
 
       const { data: entry, error } = await db
         .from('factions')
@@ -150,8 +147,8 @@ export function useCreateFaction() {
 
       return {
         ...entry,
-        data: factionDataSchema.parse(entry.data),
-      } as Faction
+        data: schema.parse(entry.data),
+      } as FactionEntry
     },
 
     onSuccess: (faction) => {
@@ -165,9 +162,9 @@ export function useUpdateFaction() {
   const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: FactionData }) => {
+    mutationFn: async ({ id, data }: { id: string; data: Faction }) => {
       // Validate data before sending to DB (better error handling)
-      const validatedData = factionDataSchema.parse(data)
+      const validatedData = schema.parse(data)
 
       const { data: entry, error } = await db
         .from('factions')
@@ -182,8 +179,8 @@ export function useUpdateFaction() {
       // Also validate response (defensive)
       return {
         ...entry,
-        data: factionDataSchema.parse(entry.data),
-      } as Faction
+        data: schema.parse(entry.data),
+      } as FactionEntry
     },
 
     onSuccess: (entry) => {

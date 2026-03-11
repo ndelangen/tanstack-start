@@ -1,6 +1,6 @@
 import { db } from './connect';
-import type { FactionData, FactionRow } from './faction-types';
-import { factionDataSchema } from 'src/data/faction';
+import type { Faction, FactionEntry } from './faction-types';
+import { schema } from 'src/data/factions';
 
 export async function list() {
   const base = () => db.from('factions').select('*').filter('is_deleted', 'eq', false)
@@ -12,8 +12,8 @@ export async function list() {
       // Validate data field for each faction
       return data.map((faction) => ({
         ...faction,
-        data: factionDataSchema.parse(faction.data),
-      })) as FactionRow[]
+        data: schema.parse(faction.data),
+      })) as FactionEntry[]
     },
     byOwner: async (ownerId: string) => {
       const { data, error } = await base().filter('owner_id', 'eq', ownerId)
@@ -21,8 +21,8 @@ export async function list() {
       if (!data) return []
       return data.map((faction) => ({
         ...faction,
-        data: factionDataSchema.parse(faction.data),
-      })) as FactionRow[]
+        data: schema.parse(faction.data),
+      })) as FactionEntry[]
     },
     byGroup: async (groupId: string) => {
       const { data, error } = await base().filter('group_id', 'eq', groupId)
@@ -30,8 +30,8 @@ export async function list() {
       if (!data) return []
       return data.map((faction) => ({
         ...faction,
-        data: factionDataSchema.parse(faction.data),
-      })) as FactionRow[]
+        data: schema.parse(faction.data),
+      })) as FactionEntry[]
     },
   }
 }
@@ -44,18 +44,18 @@ export async function get(id: string) {
   // Validate data field
   return {
     ...data,
-    data: factionDataSchema.parse(data.data),
-  } as FactionRow
+    data: schema.parse(data.data),
+  } as FactionEntry
 }
 
-export async function create(factionData: FactionData, groupId: string | null = null) {
+export async function create(factionData: Faction, groupId: string | null = null) {
   const user = await db.auth.getUser();
   if (!user.data.user?.id) {
     throw new Error('User not authenticated');
   }
 
   // Validate data before sending to DB
-  const validatedData = factionDataSchema.parse(factionData)
+  const validatedData = schema.parse(factionData)
 
   return db.from('factions').insert({
     owner_id: user.data.user?.id,
@@ -64,7 +64,7 @@ export async function create(factionData: FactionData, groupId: string | null = 
   })
 }
 
-export async function update(id: string, factionData: FactionData, groupId: string | null = null) {
+export async function update(id: string, factionData: Faction, groupId: string | null = null) {
   const user = await db.auth.getUser()
 
   if (!user.data.user?.id) {
@@ -72,7 +72,7 @@ export async function update(id: string, factionData: FactionData, groupId: stri
   }
   
   // Validate data before sending to DB
-  const validatedData = factionDataSchema.parse(factionData)
+  const validatedData = schema.parse(factionData)
 
   return db.from('factions').update({
     data: validatedData,

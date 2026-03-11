@@ -1,28 +1,51 @@
-import { writeFile, readdir, readFile } from "node:fs/promises"
-import { join } from "node:path"
-import { factionDataSchema } from "../src/data/faction"
-import z from "zod"
+import { writeFile, readdir, readFile } from "node:fs/promises";
+import { join, parse } from "node:path";
+import z from "zod";
+import { Glob } from "bun";
 
-// Schema configuration - extensible for future schemas
-type SchemaConfig = {
-  name: string
-  tableName: string
-  columnName: string
-  constraintName: string
-  zodSchema: z.ZodObject<any>
+
+
+const schemaConfigSchema = z.strictObject({
+  name: z.string(),
+  schema: z.custom<z.ZodObject<any>>(),
+});
+
+const glob = new Glob("src/data/*.ts");
+
+
+type SchemaConfig = z.infer<typeof schemaConfigSchema>;
+
+const mySchemas: SchemaConfig[] = [];
+
+// Scan from current working directory (project root when script is run)
+// Pattern is relative to cwd - no "../" needed, just change the root if needed
+// Use absolute paths for easier imports
+for await (const file of glob.scan({
+  onlyFiles: true,
+})) {
+  const {name} = parse(file);
+  const module = await import(file);
+  
+  // Use standardized 'schema' export
+  if (!module.schema || !(module.schema instanceof z.ZodObject)) {
+    console.warn(`⚠ No 'schema' export found in ${file} or it's not a ZodObject, skipping`);
+    continue;
+  }
+  
+  const parsed = schemaConfigSchema.parse({
+    name,
+    schema: module.schema,
+  });
+  mySchemas.push(parsed);
 }
 
-const schemaConfig: SchemaConfig[] = [
-  {
-    name: 'faction',
-    tableName: 'factions',
-    columnName: 'data',
-    constraintName: 'factions_data_schema_check',
-    zodSchema: factionDataSchema,
-  },
-  // Future schemas can be added here:
-  // { name: 'character', tableName: 'characters', columnName: 'data', constraintName: 'characters_data_schema_check', zodSchema: characterDataSchema },
-]
+
+// Helper function: Derive constraint name from table name
+// Column name is always 'data'
+function deriveConstraintName(name: string): string {
+  return `${name}_data_schema_check`
+}
+
 
 
 // Helper function: Extract timestamp from migration filename
@@ -130,6 +153,8 @@ function generateMigrationSQL(
   const schemaJsonString = JSON.stringify(jsonSchema, null, 2)
   // Escape single quotes for SQL ('' -> '')
   const escapedSchema = schemaJsonString.replace(/'/g, "''")
+  const constraintName = deriveConstraintName(config.name)
+  const columnName = 'data'
   
   const lines: string[] = []
   
@@ -140,15 +165,15 @@ function generateMigrationSQL(
   }
   
   lines.push(`-- Drop existing constraint if it exists (safe for first migration)`)
-  lines.push(`ALTER TABLE ${config.tableName}`)
-  lines.push(`  DROP CONSTRAINT IF EXISTS ${config.constraintName};`)
+  lines.push(`ALTER TABLE ${config.name}`)
+  lines.push(`  DROP CONSTRAINT IF EXISTS ${constraintName};`)
   lines.push('')
   lines.push(`-- Add CHECK constraint with new schema`)
-  lines.push(`ALTER TABLE ${config.tableName}`)
-  lines.push(`  ADD CONSTRAINT ${config.constraintName}`)
+  lines.push(`ALTER TABLE ${config.name}`)
+  lines.push(`  ADD CONSTRAINT ${constraintName}`)
   lines.push(`  CHECK (extensions.jsonb_matches_schema(`)
   lines.push(`    '${escapedSchema}'::json,`)
-  lines.push(`    ${config.columnName}`)
+  lines.push(`    ${columnName}`)
   lines.push(`  ));`)
   
   return lines.join('\n')
@@ -173,13 +198,16 @@ const migrationsDir = './supabase/migrations'
   let extensionIncluded = false
   
   // Process each schema
-  for (const config of schemaConfig) {
+  for (const config of mySchemas) {
+    const constraintName = deriveConstraintName(config.name)
+    const columnName = 'data'
+    
     // Step 1: Generate JSON schema in memory
-    const newSchema = z.toJSONSchema(config.zodSchema, { unrepresentable: 'any' })
+    const newSchema = z.toJSONSchema(config.schema, { unrepresentable: 'any' })
     
     // Step 2: Find latest validation migration for this schema
     const latestMigration = await findLatestValidationMigration(
-      config.constraintName,
+      constraintName,
       migrationsDir
     )
     
@@ -187,8 +215,8 @@ const migrationsDir = './supabase/migrations'
     if (latestMigration) {
       const extractedSchema = extractSchemaFromMigration(
         latestMigration.content,
-        config.constraintName,
-        config.columnName
+        constraintName,
+        columnName
       )
       
       if (extractedSchema && compareSchemas(extractedSchema, newSchema)) {
