@@ -52,7 +52,7 @@ export type Database = {
           approved_by: string | null;
           group_id: string;
           requested_at: string;
-          status: string;
+          status: Database['public']['Enums']['group_member_status'];
           user_id: string;
         };
         Insert: {
@@ -60,7 +60,7 @@ export type Database = {
           approved_by?: string | null;
           group_id: string;
           requested_at?: string;
-          status: string;
+          status: Database['public']['Enums']['group_member_status'];
           user_id: string;
         };
         Update: {
@@ -68,7 +68,7 @@ export type Database = {
           approved_by?: string | null;
           group_id?: string;
           requested_at?: string;
-          status?: string;
+          status?: Database['public']['Enums']['group_member_status'];
           user_id?: string;
         };
         Relationships: [
@@ -134,7 +134,7 @@ export type Database = {
       [_ in never]: never;
     };
     Enums: {
-      [_ in never]: never;
+      group_member_status: 'pending' | 'active' | 'removed';
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -259,6 +259,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      group_member_status: ['pending', 'active', 'removed'],
+    },
   },
 } as const;

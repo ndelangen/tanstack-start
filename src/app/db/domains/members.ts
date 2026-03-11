@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { auth, db, type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
+import { auth, db, type Enums, type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
 
 /* Types */
 
@@ -10,7 +10,7 @@ export type GroupMemberInsert = TablesInsert<'group_members'>;
 
 export type GroupMemberUpdate = TablesUpdate<'group_members'>;
 
-export type GroupMemberStatus = 'pending' | 'approved' | 'rejected';
+export type GroupMemberStatus = Enums<'group_member_status'>;
 
 /* Query Keys */
 
@@ -124,7 +124,6 @@ export function useRequestGroupMembership() {
           group_id: groupId,
           user_id: user.data.user.id,
           status: 'pending',
-          requested_at: new Date().toISOString(),
         })
         .select()
         .single();
@@ -157,9 +156,7 @@ export function useApproveGroupMember() {
       const { data: entry, error } = await db
         .from('group_members')
         .update({
-          status: 'approved',
-          approved_at: new Date().toISOString(),
-          approved_by: user.data.user.id,
+          status: 'active',
         })
         .eq('group_id', groupId)
         .eq('user_id', userId)
@@ -190,7 +187,9 @@ export function useRejectGroupMember() {
       const { data: entry, error } = await db
         .from('group_members')
         .update({
-          status: 'rejected',
+          status: 'removed',
+          approved_by: null,
+          approved_at: null,
         })
         .eq('group_id', groupId)
         .eq('user_id', userId)
@@ -215,13 +214,20 @@ export function useRemoveGroupMember() {
 
   return useMutation({
     mutationFn: async ({ groupId, userId }: { groupId: string; userId: string }) => {
-      const { error } = await db
+      const { data: entry, error } = await db
         .from('group_members')
-        .delete()
+        .update({
+          status: 'removed',
+          approved_by: null,
+          approved_at: null,
+        })
         .eq('group_id', groupId)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .select()
+        .single();
 
       if (error) throw error;
+      if (!entry) throw new Error('Failed to remove group member');
       return { groupId, userId };
     },
 
@@ -245,9 +251,7 @@ export function useAddGroupMember() {
         .insert({
           group_id: groupId,
           user_id: userId,
-          status: 'approved',
-          approved_at: new Date().toISOString(),
-          approved_by: user.data.user.id,
+          status: 'active',
         })
         .select()
         .single();

@@ -14,7 +14,7 @@
     "format": "biome format --write .",
     "check": "biome check . --write",
     "db": "supabase",
-    "db:types": "supabase gen types typescript --project-id dgisrcsauchycqegqwty > src/app/db/types.ts",
+    "db:types": "supabase gen types typescript --project-id dgisrcsauchycqegqwty > src/app/db/core/types.ts",
     "db:migration": "supabase migration new",
     "db:pull": "supabase db pull",
     "db:push": "supabase db push",
