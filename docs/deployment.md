@@ -6,9 +6,9 @@ Application deploys to Netlify as a Single Page Application (SPA).
 
 ## Build Process
 
-**Build command**: `npm run build`
-
-**Output directory**: `dist` (Vite default)
+**Config**: [`netlify.toml`](../netlify.toml)
+- **Build command**: `npm run app:build`
+- **Publish directory**: `dist`
 
 **Build configuration**: [`vite.config.ts`](../vite.config.ts)
 - SPA mode enabled: `spa: { enabled: true }`
@@ -42,7 +42,7 @@ Set in Netlify dashboard or via CLI:
 flowchart LR
     Git[Git Push] --> Netlify[Netlify Build]
     Netlify --> Install[Install Dependencies]
-    Install --> Build[npm run build]
+    Install --> Build[npm run app:build]
     Build --> Deploy[Deploy dist/]
     Deploy --> Live[Live Site]
 ```

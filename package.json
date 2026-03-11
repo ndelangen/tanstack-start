@@ -2,24 +2,21 @@
   "name": "tanstack-cli",
   "private": true,
   "type": "module",
-  "imports": {
-    "#/*": "./src/*"
-  },
   "scripts": {
-    "dev": "vite dev --port 3000",
-    "build": "vite build",
-    "preview": "vite preview",
-    "test": "vitest run",
-    "lint": "biome lint . --fix",
-    "format": "biome format --write .",
-    "check": "biome check . --write",
+    "app:build": "vite build",
+    "app:dev": "vite dev --port 3000",
+    "app:preview": "vite preview",
+    "biome:check": "biome check . --write",
+    "biome:format": "biome format --write .",
+    "biome:lint": "biome lint . --fix",
     "db": "supabase",
-    "db:types": "supabase gen types typescript --project-id dgisrcsauchycqegqwty > src/app/db/core/types.ts",
     "db:migration": "supabase migration new",
     "db:pull": "supabase db pull",
     "db:push": "supabase db push",
     "db:schemas": "bun run scripts/db-sync-data-schema.ts",
-    "netlify": "netlify"
+    "db:types": "supabase gen types typescript --project-id dgisrcsauchycqegqwty > src/app/db/core/types.ts",
+    "netlify": "netlify",
+    "test": "vitest run"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.8",

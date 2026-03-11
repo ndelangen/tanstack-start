@@ -18,7 +18,9 @@ Quick reference for understanding and working with the codebase.
 
 ```bash
 # Development
-npm run dev              # Start dev server (port 3000)
+npm run app:dev           # Start dev server (port 3000)
+npm run app:build         # Build for production
+npm run app:preview       # Preview production build locally
 
 # Database
 npm run db:types         # Generate TypeScript types from Supabase schema
@@ -27,7 +29,7 @@ npm run db:migration     # Create new migration
 npm run db:push          # Push migrations to Supabase
 
 # Code quality
-npm run check            # Lint and format
+npm run biome:check      # Lint and format
 npm run test             # Run tests
 ```
 
