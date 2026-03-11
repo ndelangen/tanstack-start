@@ -75,27 +75,6 @@ npm run test             # Run tests
 
 3. Route tree auto-generates from file structure.
 
-## Where Things Live
-
-```
-src/
-├── app/
-│   ├── routes/          # File-based routes (TanStack Router)
-│   ├── db/
-│   │   ├── core/        # DB client, types (@db/core)
-│   │   └── domains/     # Domain hooks (@db/*)
-│   ├── components/      # UI components
-│   └── lib/             # Utilities (@app/*)
-└── data/                # Zod schemas (@data/*)
-```
-
-## Path Aliases (tsconfig.json)
-
-- `@db/core` → `src/app/db/core/index.ts`
-- `@db/*` → `src/app/db/domains/*`
-- `@app/*` → `src/app/*`
-- `@data/*` → `src/data/*`
-
 ## Detailed Documentation
 
 - [Architecture](./architecture.md) - Request flow, structure, tsconfig paths

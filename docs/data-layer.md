@@ -41,13 +41,9 @@ npm run db:types      # Regenerate TypeScript types
 
 ## Basic DB Structure
 
-**Tables**:
-- `factions` - JSONB `data` column, soft delete (`is_deleted`)
-- `groups` - Simple table, hard delete
-- `group_members` - Status enum (pending/active/removed)
-- `profiles` - User profiles linked to auth.users
+**Tables**: factions, groups, group_members, profiles
 
-**Pattern**: Domain data stored in JSONB `data` column, validated with Zod schemas.
+**Pattern**: Domain data in JSONB `data` column, validated with Zod. Factions use soft delete; groups use hard delete.
 
 **Type generation**: `npm run db:types` generates [`src/app/db/core/types.ts`](../src/app/db/core/types.ts) from Supabase schema.
 
@@ -76,47 +72,7 @@ export const domainKeys = {
 };
 ```
 
-**Example**: [`src/app/db/domains/factions.ts`](../src/app/db/domains/factions.ts#L25-L30)
-
-### 3. Queries
-
-Custom hooks with `initialData` optimization:
-
-```typescript
-export function useDomainDetail(id: string) {
-  const qc = useQueryClient();
-  return useQuery({
-    queryKey: domainKeys.detail(id),
-    queryFn: async () => { ... },
-    initialData: () => 
-      qc.getQueryData(domainKeys.list({}))?.find(d => d.id === id),
-  });
-}
-```
-
-**Example**: [`src/app/db/domains/factions.ts`](../src/app/db/domains/factions.ts#L34-L58)
-
-### 4. Mutations
-
-Cache updates on success:
-
-```typescript
-export function useCreateDomain() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input) => {
-      const validatedData = schema.parse(input);
-      // Insert to DB
-    },
-    onSuccess: (data) => {
-      qc.setQueryData(domainKeys.detail(data.id), data);
-      qc.invalidateQueries({ queryKey: domainKeys.lists() });
-    },
-  });
-}
-```
-
-**Example**: [`src/app/db/domains/factions.ts`](../src/app/db/domains/factions.ts#L151-L189)
+**Example**: [`src/app/db/domains/factions.ts`](../src/app/db/domains/factions.ts)
 
 ## Data Validation
 
@@ -135,17 +91,6 @@ Factions use `is_deleted` flag instead of hard deletes:
 - Queries filter: `.eq('is_deleted', false)`
 - Delete mutation sets flag: `.update({ is_deleted: true })`
 
-**Example**: [`src/app/db/domains/factions.ts`](../src/app/db/domains/factions.ts#L223-L238)
+**Example**: [`src/app/db/domains/factions.ts`](../src/app/db/domains/factions.ts)
 
 Groups use hard delete (actual row removal).
-
-## Authentication in Mutations
-
-Check auth before mutations:
-
-```typescript
-const user = await auth.getUser();
-if (!user.data.user?.id) throw new Error('Not authenticated');
-```
-
-**Example**: [`src/app/db/domains/factions.ts`](../src/app/db/domains/factions.ts#L156-L157)
