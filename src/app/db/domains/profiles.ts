@@ -94,7 +94,7 @@ export function useCurrentProfile() {
 
 /* Mutations */
 
-export function useUpdateProfile() {
+export function useUpdateCurrentProfile() {
   const qc = useQueryClient();
 
   return useMutation({
