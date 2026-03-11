@@ -1,7 +1,7 @@
-import { db } from '@app/db/connect';
-
 import { createFileRoute } from '@tanstack/react-router';
 import { Route as RouteIcon, Server, Shield, Sparkles, Waves, Zap } from 'lucide-react';
+
+import { db } from '@app/db/connect';
 
 export const Route = createFileRoute('/')({
   component: App,

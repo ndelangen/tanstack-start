@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { schema } from '@data/factions';
 
 import type { Tables, TablesInsert, TablesUpdate } from './types';

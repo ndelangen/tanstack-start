@@ -1,7 +1,8 @@
-import { writeFile, readdir, readFile } from 'node:fs/promises';
+import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { join, parse } from 'node:path';
-import z from 'zod';
+
 import { Glob } from 'bun';
+import z from 'zod';
 
 const schemaConfigSchema = z.strictObject({
   name: z.string(),

@@ -12,7 +12,7 @@
     "test": "vitest run",
     "lint": "biome lint . --fix",
     "format": "biome format --write .",
-    "check": "biome check .",
+    "check": "biome check . --write",
     "db": "supabase",
     "db:types": "supabase gen types typescript --project-id dgisrcsauchycqegqwty > src/app/db/types.ts",
     "db:migration": "supabase migration new",

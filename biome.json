@@ -31,7 +31,9 @@
           "level": "on",
           "options": {
             "groups": [
-              ":PACKAGE:",
+              ":NODE:",
+              ":BLANK_LINE:",
+              [":PACKAGE:", "!@app/**", "!@data/**"],
               ":BLANK_LINE:",
               ["@app", "@app/**", "@data", "@data/**"],
               ":BLANK_LINE:",
