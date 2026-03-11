@@ -44,7 +44,7 @@ export function useGroupMembers(groupId: string) {
         return [];
       }
 
-      return entries as GroupMemberEntry[];
+      return entries;
     },
   });
 }
@@ -69,7 +69,7 @@ export function useGroupMembersByStatus(groupId: string, status: GroupMemberStat
         return [];
       }
 
-      return entries as GroupMemberEntry[];
+      return entries;
     },
     initialData: () =>
       qc
@@ -99,7 +99,7 @@ export function useGroupMember(groupId: string, userId: string) {
         throw new Error(`Group member not found`);
       }
 
-      return entry as GroupMemberEntry;
+      return entry;
     },
     initialData: () =>
       qc
@@ -135,7 +135,7 @@ export function useRequestGroupMembership() {
         throw new Error('Failed to request group membership');
       }
 
-      return entry as GroupMemberEntry;
+      return entry;
     },
 
     onSuccess: (entry) => {
@@ -166,7 +166,7 @@ export function useApproveGroupMember() {
       if (error) throw error;
       if (!entry) throw new Error('Failed to approve group member');
 
-      return entry as GroupMemberEntry;
+      return entry;
     },
 
     onSuccess: (entry) => {
@@ -199,7 +199,7 @@ export function useRejectGroupMember() {
       if (error) throw error;
       if (!entry) throw new Error('Failed to reject group member');
 
-      return entry as GroupMemberEntry;
+      return entry;
     },
 
     onSuccess: (entry) => {
@@ -263,7 +263,7 @@ export function useAddGroupMember() {
         throw new Error('Failed to add group member');
       }
 
-      return entry as GroupMemberEntry;
+      return entry;
     },
 
     onSuccess: (entry) => {

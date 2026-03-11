@@ -38,7 +38,7 @@ export function useProfile(id: NonNullable<ProfileEntry['id']>) {
         throw new Error(`Profile with id ${id} not found`);
       }
 
-      return entry as ProfileEntry;
+      return entry;
     },
     initialData: () =>
       qc.getQueryData<ProfileEntry[]>(profileKeys.list({ type: 'all' }))?.find((d) => d.id === id),
@@ -59,7 +59,7 @@ export function useProfilesAll() {
         return [];
       }
 
-      return entries as ProfileEntry[];
+      return entries;
     },
   });
 }
@@ -87,7 +87,7 @@ export function useCurrentProfile() {
         throw new Error('Profile not found');
       }
 
-      return entry as ProfileEntry;
+      return entry;
     },
   });
 }
@@ -98,13 +98,13 @@ export function useUpdateProfile() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async (update: ProfileUpdate) => {
+    mutationFn: async ({ input }: { input: ProfileUpdate }) => {
       const user = await auth.getUser();
       if (!user.data.user?.id) throw new Error('Not authenticated');
 
       const { data: entry, error } = await db
         .from('profiles')
-        .update(update)
+        .update(input)
         .eq('id', user.data.user.id)
         .select()
         .single();
@@ -112,7 +112,7 @@ export function useUpdateProfile() {
       if (error) throw error;
       if (!entry) throw new Error('Failed to update profile');
 
-      return entry as ProfileEntry;
+      return entry;
     },
 
     onSuccess: (entry) => {

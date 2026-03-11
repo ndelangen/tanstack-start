@@ -37,7 +37,7 @@ export function useGroup(id: NonNullable<GroupEntry['id']>) {
         throw new Error(`Group with id ${id} not found`);
       }
 
-      return entry as GroupEntry;
+      return entry;
     },
     initialData: () =>
       qc.getQueryData<GroupEntry[]>(groupKeys.list({ type: 'all' }))?.find((d) => d.id === id),
@@ -58,7 +58,7 @@ export function useGroupsAll() {
         return [];
       }
 
-      return entries as GroupEntry[];
+      return entries;
     },
   });
 }
@@ -82,7 +82,7 @@ export function useGroupsByCreator(createdBy: NonNullable<GroupEntry['created_by
         return [];
       }
 
-      return entries as GroupEntry[];
+      return entries;
     },
     initialData: () =>
       qc
@@ -97,7 +97,7 @@ export function useCreateGroup() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ name }: { name: string }) => {
+    mutationFn: async ({ input }: { input: { name: string } }) => {
       const user = await auth.getUser();
       if (!user.data.user?.id) throw new Error('Not authenticated');
 
@@ -105,7 +105,7 @@ export function useCreateGroup() {
         .from('groups')
         .insert({
           created_by: user.data.user.id,
-          name,
+          name: input.name,
         })
         .select()
         .single();
@@ -117,7 +117,7 @@ export function useCreateGroup() {
         throw new Error('Failed to create group');
       }
 
-      return entry as GroupEntry;
+      return entry;
     },
 
     onSuccess: (group) => {
@@ -131,10 +131,10 @@ export function useUpdateGroup() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+    mutationFn: async ({ input, id }: { input: { name: string }; id: string }) => {
       const { data: entry, error } = await db
         .from('groups')
-        .update({ name })
+        .update({ name: input.name })
         .eq('id', id)
         .select()
         .single();
@@ -142,7 +142,7 @@ export function useUpdateGroup() {
       if (error) throw error;
       if (!entry) throw new Error(`Group with id ${id} not found`);
 
-      return entry as GroupEntry;
+      return entry;
     },
 
     onSuccess: (entry) => {

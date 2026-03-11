@@ -47,11 +47,10 @@ export function useFaction(id: NonNullable<FactionEntry['id']>) {
         throw new Error(`Faction with id ${id} not found`);
       }
 
-      // Validate data field after reading from DB
       return {
         ...entries,
         data: schema.parse(entries.data),
-      } as FactionEntry;
+      };
     },
     initialData: () =>
       qc.getQueryData<FactionEntry[]>(factionKeys.list({ type: 'all' }))?.find((d) => d.id === id),
@@ -75,11 +74,10 @@ export function useFactionsAll() {
         return [];
       }
 
-      // Validate data field for each faction after reading from DB
       return entries.map((entry) => ({
         ...entry,
         data: schema.parse(entry.data),
-      })) as FactionEntry[];
+      }));
     },
   });
 }
@@ -104,11 +102,10 @@ export function useFactionsByOwner(ownerId: NonNullable<FactionEntry['owner_id']
         return [];
       }
 
-      // Validate data field for each faction after reading from DB
       return entries.map((entry) => ({
         ...entry,
         data: schema.parse(entry.data),
-      })) as FactionEntry[];
+      }));
     },
     initialData: () =>
       qc
@@ -137,11 +134,10 @@ export function useFactionsByGroup(groupId: NonNullable<FactionEntry['group_id']
         return [];
       }
 
-      // Validate data field for each faction after reading from DB
       return entries.map((entry) => ({
         ...entry,
         data: schema.parse(entry.data),
-      })) as FactionEntry[];
+      }));
     },
     initialData: () =>
       qc
@@ -156,12 +152,11 @@ export function useCreateFaction() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ data, groupId }: { data: Faction; groupId?: string | null }) => {
+    mutationFn: async ({ input, groupId }: { input: Faction; groupId?: string | null }) => {
       const user = await auth.getUser();
       if (!user.data.user?.id) throw new Error('Not authenticated');
 
-      // Validate data before sending to DB (better error handling)
-      const validatedData = schema.parse(data);
+      const validatedData = schema.parse(input);
 
       const { data: entry, error } = await db
         .from('factions')
@@ -183,7 +178,7 @@ export function useCreateFaction() {
       return {
         ...entry,
         data: schema.parse(entry.data),
-      } as FactionEntry;
+      };
     },
 
     onSuccess: (faction) => {
@@ -197,9 +192,9 @@ export function useUpdateFaction() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Faction }) => {
+    mutationFn: async ({ input, id }: { input: Faction; id: string }) => {
       // Validate data before sending to DB (better error handling)
-      const validatedData = schema.parse(data);
+      const validatedData = schema.parse(input);
 
       const { data: entry, error } = await db
         .from('factions')
@@ -215,7 +210,7 @@ export function useUpdateFaction() {
       return {
         ...entry,
         data: schema.parse(entry.data),
-      } as FactionEntry;
+      };
     },
 
     onSuccess: (entry) => {
