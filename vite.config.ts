@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import { devtools } from '@tanstack/devtools-vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
+import tailwindcss from '@tailwindcss/vite'
 
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 
@@ -13,6 +14,8 @@ const config = defineConfig({
   publicDir: 'public',
   plugins: [
     devtools(),
+        tailwindcss(),
+
     tsconfigPaths({ projects: ['./tsconfig.json'] }),
     tanstackStart({
       
