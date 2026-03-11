@@ -2,8 +2,7 @@ import { db } from './connect';
 import type { TablesInsert } from './types';
 
 export async function list() {
-   return db.from('profiles').select('*')
-  
+  return db.from('profiles').select('*');
 }
 
 export async function get() {
@@ -12,7 +11,7 @@ export async function get() {
     throw new Error('User not authenticated');
   }
 
-  return db.from('profiles').select('*').eq('id', user.data.user?.id).single()
+  return db.from('profiles').select('*').eq('id', user.data.user?.id).single();
 }
 
 export async function update(update: TablesInsert<'profiles'>) {
@@ -21,5 +20,5 @@ export async function update(update: TablesInsert<'profiles'>) {
     throw new Error('User not authenticated');
   }
 
-  return db.from('profiles').update(update).eq('id', user.data.user?.id)
+  return db.from('profiles').update(update).eq('id', user.data.user?.id);
 }

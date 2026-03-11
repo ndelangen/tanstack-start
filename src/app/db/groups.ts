@@ -1,14 +1,14 @@
 import { db } from './connect';
 
 export async function list() {
-  const base = () => db.from('groups').select('*').filter('is_deleted', 'eq', false)
+  const base = () => db.from('groups').select('*').filter('is_deleted', 'eq', false);
   return {
     all: async () => base(),
-  }
+  };
 }
 
 export async function get(id: string) {
-  return db.from('groups').select('*').eq('id', id).single()
+  return db.from('groups').select('*').eq('id', id).single();
 }
 
 export async function create(name: string) {
@@ -20,22 +20,24 @@ export async function create(name: string) {
   return db.from('groups').insert({
     created_by: user.data.user?.id,
     name,
-  })
+  });
 }
 
 export async function update(id: string, name: string) {
-  const user = await db.auth.getUser()
+  const user = await db.auth.getUser();
 
   if (!user.data.user?.id) {
     throw new Error('User not authenticated');
   }
-  
 
-  return db.from('groups').update({
-    name: name,
-  }).eq('id', id)
+  return db
+    .from('groups')
+    .update({
+      name: name,
+    })
+    .eq('id', id);
 }
 
-export async function remove(id: string) {
+export async function remove(_id: string) {
   throw new Error('Not implemented');
 }

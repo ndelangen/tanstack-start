@@ -1,6 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/auth/')({ component: App })
+export const Route = createFileRoute('/auth/')({ component: App });
 
 function App() {
   return (
@@ -20,9 +20,8 @@ function App() {
             The framework for next generation AI applications
           </p>
           <p className="text-lg text-gray-400 max-w-3xl mx-auto mb-8">
-            Full-stack framework powered by TanStack Router for React and Solid.
-            Build modern applications with server functions, streaming, and type
-            safety.
+            Full-stack framework powered by TanStack Router for React and Solid. Build modern
+            applications with server functions, streaming, and type safety.
           </p>
           <div className="flex flex-col items-center gap-4">
             <a
@@ -42,8 +41,6 @@ function App() {
           </div>
         </div>
       </section>
-
     </div>
-  )
+  );
 }
-

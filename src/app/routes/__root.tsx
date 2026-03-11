@@ -1,8 +1,8 @@
-import { HeadContent, Scripts, createRootRoute, Link } from '@tanstack/react-router'
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { TanStackDevtools } from '@tanstack/react-devtools'
+import { HeadContent, Scripts, createRootRoute, Link } from '@tanstack/react-router';
+import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
+import { TanStackDevtools } from '@tanstack/react-devtools';
 
-import appCss from '../styles.css?url'
+import appCss from '../styles.css?url';
 
 export const Route = createRootRoute({
   head: () => ({
@@ -27,23 +27,18 @@ export const Route = createRootRoute({
   }),
   shellComponent: RootDocument,
   notFoundComponent: NotFound,
-})
+});
 
 function NotFound() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-8">
       <h1 className="text-4xl font-bold mb-4">404 - Page Not Found</h1>
-      <p className="text-muted-foreground mb-8">
-        The page you're looking for doesn't exist.
-      </p>
-      <Link
-        to="/"
-        className="text-primary hover:underline"
-      >
+      <p className="text-muted-foreground mb-8">The page you're looking for doesn't exist.</p>
+      <Link to="/" className="text-primary hover:underline">
         Go back home
       </Link>
     </div>
-  )
+  );
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
@@ -68,5 +63,5 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
-  )
+  );
 }
