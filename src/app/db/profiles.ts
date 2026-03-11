@@ -1,4 +1,5 @@
-import { db } from './connect';
+import { auth, db } from '@db/core';
+
 import type { TablesInsert } from './types';
 
 export async function list() {
@@ -6,7 +7,7 @@ export async function list() {
 }
 
 export async function get() {
-  const user = await db.auth.getUser();
+  const user = await auth.getUser();
   if (!user.data.user?.id) {
     throw new Error('User not authenticated');
   }
@@ -15,7 +16,7 @@ export async function get() {
 }
 
 export async function update(update: TablesInsert<'profiles'>) {
-  const user = await db.auth.getUser();
+  const user = await auth.getUser();
   if (!user.data.user?.id) {
     throw new Error('User not authenticated');
   }

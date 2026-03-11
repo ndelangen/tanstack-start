@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 
-import { db } from '@app/db/connect';
+import { db } from '@db/core';
 
 const confirmFn = createServerFn({ method: 'GET' })
   .inputValidator((searchParams: unknown) => {

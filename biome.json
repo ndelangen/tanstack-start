@@ -33,8 +33,9 @@
             "groups": [
               ":NODE:",
               ":BLANK_LINE:",
-              [":PACKAGE:", "!@app/**", "!@data/**"],
+              [":PACKAGE:", "!@app/**", "!@data/**", "!@db/**"],
               ":BLANK_LINE:",
+              ["@db", "@db/**"],
               ["@app", "@app/**", "@data", "@data/**"],
               ":BLANK_LINE:",
               ":PATH:"

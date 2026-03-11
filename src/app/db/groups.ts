@@ -1,4 +1,4 @@
-import { db } from './connect';
+import { auth, db } from '@db/core';
 
 export async function list() {
   const base = () => db.from('groups').select('*').filter('is_deleted', 'eq', false);
@@ -12,7 +12,7 @@ export async function get(id: string) {
 }
 
 export async function create(name: string) {
-  const user = await db.auth.getUser();
+  const user = await auth.getUser();
   if (!user.data.user?.id) {
     throw new Error('User not authenticated');
   }
@@ -24,7 +24,7 @@ export async function create(name: string) {
 }
 
 export async function update(id: string, name: string) {
-  const user = await db.auth.getUser();
+  const user = await auth.getUser();
 
   if (!user.data.user?.id) {
     throw new Error('User not authenticated');

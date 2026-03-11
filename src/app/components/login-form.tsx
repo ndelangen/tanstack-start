@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
+import { auth } from '@db/core';
 import { Button } from '@app/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@app/components/ui/card';
-import { db } from '@app/db/connect';
 import { cn } from '@app/lib/utils';
 
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
@@ -15,7 +15,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
     setError(null);
 
     try {
-      const { error, data } = await db.auth.signInWithOAuth({
+      const { error, data } = await auth.signInWithOAuth({
         provider: 'discord',
       });
 

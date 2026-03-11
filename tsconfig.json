@@ -6,6 +6,8 @@
     "module": "ESNext",
     "baseUrl": ".",
     "paths": {
+      "@db/core": ["./src/app/db/core/index.ts"],
+      "@db/*": ["./src/app/db/domains/*"],
       "@app/*": ["./src/app/*"],
       "@data/*": ["./src/data/*"]
     },

@@ -1,10 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 
-import { auth, db } from '@db/core';
+import { auth, db, type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
 import { schema } from '@data/factions';
-
-import type { Tables, TablesInsert, TablesUpdate } from './types';
 
 /* Types */
 
