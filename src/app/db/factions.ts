@@ -1,8 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { z } from 'zod';
 
 import { db } from '@app/db/connect';
-import type { Faction, FactionEntry } from '@app/db/faction-types';
 import { schema } from '@data/factions';
+
+import type { Tables, TablesInsert, TablesUpdate } from './types';
+
+/* Types */
+
+export type Faction = z.infer<typeof schema>;
+
+export type FactionEntry = Omit<Tables<'factions'>, 'data'> & {
+  data: Faction;
+};
+
+export type FactionInsert = Omit<TablesInsert<'factions'>, 'data'> & {
+  data: Faction;
+};
+
+export type FactionUpdate = Omit<TablesUpdate<'factions'>, 'data'> & {
+  data?: Faction;
+};
 
 /* Query Keys */
 
