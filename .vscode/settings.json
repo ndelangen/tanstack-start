@@ -32,5 +32,8 @@
   },
   "[jsonc]": {
     "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[svg]": {
+    "editor.defaultFormatter": "jock.svg"
   }
 }
