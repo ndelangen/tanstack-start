@@ -12,9 +12,7 @@ function Login() {
 
   return (
     <div>
-      <div>
-        {profile.data ? <div>Logged in as {profile.data.username}</div> : <LoginForm />}
-      </div>
+      <div>{profile.data ? <div>Logged in as {profile.data.username}</div> : <LoginForm />}</div>
     </div>
   );
 }

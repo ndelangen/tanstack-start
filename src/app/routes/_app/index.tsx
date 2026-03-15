@@ -13,70 +13,69 @@ export const Route = createFileRoute('/_app/')({
   },
 });
 
-
 function IndexPage() {
   return (
     <>
       <div className={styles.horizontalPanels}>
-          <div className={styles.block}>
-            <div className={styles.panel}>
-              <p>Create a new faction</p>
-            </div>
-            <p>See what others have created</p>
+        <div className={styles.block}>
+          <div className={styles.panel}>
+            <p>Create a new faction</p>
           </div>
-          <div className={styles.block}>
-            <div className={styles.panel}>
-              <p>Create a game asset</p>
-            </div>
-            <p>See what others have created</p>
-          </div>
-          <div className={styles.block}>
-            <div className={styles.panel}>
-              <p>Welcome to the game</p>
-            </div>
-            <p>See what others have created</p>
-          </div>
+          <p>See what others have created</p>
         </div>
-        <div className={styles.horizontalPanels}>
-          <div className={styles.block}>
-            <div className={styles.panel}>
-              <p>Create a new faction</p>
-            </div>
-            <p>See what others have created</p>
+        <div className={styles.block}>
+          <div className={styles.panel}>
+            <p>Create a game asset</p>
           </div>
-          <div className={styles.block}>
-            <div className={styles.panel}>
-              <p>Create a game asset</p>
-            </div>
-            <p>See what others have created</p>
-          </div>
-          <div className={styles.block}>
-            <div className={styles.panel}>
-              <p>Welcome to the game</p>
-            </div>
-            <p>See what others have created</p>
-          </div>
+          <p>See what others have created</p>
         </div>
-        <div className={styles.horizontalPanels}>
-          <div className={styles.block}>
-            <div className={styles.panel}>
-              <p>Create a new faction</p>
-            </div>
-            <p>See what others have created</p>
+        <div className={styles.block}>
+          <div className={styles.panel}>
+            <p>Welcome to the game</p>
           </div>
-          <div className={styles.block}>
-            <div className={styles.panel}>
-              <p>Create a game asset</p>
-            </div>
-            <p>See what others have created</p>
-          </div>
-          <div className={styles.block}>
-            <div className={styles.panel}>
-              <p>Welcome to the game</p>
-            </div>
-            <p>See what others have created</p>
-          </div>
+          <p>See what others have created</p>
         </div>
+      </div>
+      <div className={styles.horizontalPanels}>
+        <div className={styles.block}>
+          <div className={styles.panel}>
+            <p>Create a new faction</p>
+          </div>
+          <p>See what others have created</p>
+        </div>
+        <div className={styles.block}>
+          <div className={styles.panel}>
+            <p>Create a game asset</p>
+          </div>
+          <p>See what others have created</p>
+        </div>
+        <div className={styles.block}>
+          <div className={styles.panel}>
+            <p>Welcome to the game</p>
+          </div>
+          <p>See what others have created</p>
+        </div>
+      </div>
+      <div className={styles.horizontalPanels}>
+        <div className={styles.block}>
+          <div className={styles.panel}>
+            <p>Create a new faction</p>
+          </div>
+          <p>See what others have created</p>
+        </div>
+        <div className={styles.block}>
+          <div className={styles.panel}>
+            <p>Create a game asset</p>
+          </div>
+          <p>See what others have created</p>
+        </div>
+        <div className={styles.block}>
+          <div className={styles.panel}>
+            <p>Welcome to the game</p>
+          </div>
+          <p>See what others have created</p>
+        </div>
+      </div>
     </>
   );
 }

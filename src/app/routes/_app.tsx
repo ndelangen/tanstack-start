@@ -1,5 +1,5 @@
-import React from 'react';
 import { createFileRoute, Outlet, useMatches } from '@tanstack/react-router';
+import React from 'react';
 
 import { Page } from '@app/components/page/Page';
 

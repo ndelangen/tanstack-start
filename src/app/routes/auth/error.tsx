@@ -17,11 +17,7 @@ function AuthError() {
     <div>
       <div>
         <h2>Sorry, something went wrong.</h2>
-        {params?.error ? (
-          <p>Code error: {params.error}</p>
-        ) : (
-          <p>An unspecified error occurred.</p>
-        )}
+        {params?.error ? <p>Code error: {params.error}</p> : <p>An unspecified error occurred.</p>}
       </div>
     </div>
   );
