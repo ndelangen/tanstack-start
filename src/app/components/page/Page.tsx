@@ -55,18 +55,16 @@ export function Page({ head, content }: PageProps) {
           className={`${styles.header} ${imageLoaded ? styles.loaded : ''} ${tiny ? styles.tiny : ''}`}
         >
           <nav className={styles.nav}>
-            <div className={styles.navLinks}>
-              <Link
-                to="/"
-                activeProps={{ className: styles.navLinkActive }}
-                activeOptions={{ exact: true }}
-              >
-                Home
-              </Link>
-              <Link to="/settings" activeProps={{ className: styles.navLinkActive }}>
-                Settings
-              </Link>
-            </div>
+            <Link
+              to="/"
+              activeProps={{ className: styles.navLinkActive }}
+              activeOptions={{ exact: true }}
+            >
+              Home
+            </Link>
+            <Link to="/settings" activeProps={{ className: styles.navLinkActive }}>
+              Settings
+            </Link>
           </nav>
           {head && <div className={styles.headerContent}>{head}</div>}
         </div>

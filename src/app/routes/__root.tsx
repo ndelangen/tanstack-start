@@ -1,7 +1,8 @@
-import { TanStackDevtools } from '@tanstack/react-devtools';
+// import { TanStackDevtools } from '@tanstack/react-devtools';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRootRoute, HeadContent, Link, Scripts } from '@tanstack/react-router';
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
+
+// import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 
 const queryClient = new QueryClient();
 
