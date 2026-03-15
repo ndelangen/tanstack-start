@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { Link } from '@tanstack/react-router';
+import React, { useEffect, useState } from 'react';
 
 import './Page.css';
 
@@ -6,7 +7,14 @@ import styles from './Page.module.css';
 
 const SCROLL_VAR = '--scroll-pct';
 
-export function Page({ children }: { children: React.ReactNode }) {
+export interface PageProps {
+  head?: React.ReactNode;
+  content: React.ReactNode;
+}
+
+export function Page({ head, content }: PageProps) {
+  const tiny = !head;
+
   useEffect(() => {
     const el = document.documentElement;
     const update = () => {
@@ -32,9 +40,39 @@ export function Page({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => setImageLoaded(true);
+    img.src = '/web/head.jpg';
+  }, []);
+
   return (
     <div className={styles.container}>
-      <div className={styles.main}>{children}</div>
+      <div className={styles.main}>
+        <div
+          className={`${styles.header} ${imageLoaded ? styles.loaded : ''} ${tiny ? styles.tiny : ''}`}
+        >
+          <nav className={styles.nav}>
+            <div className={styles.navLinks}>
+              <Link
+                to="/"
+                activeProps={{ className: styles.navLinkActive }}
+                activeOptions={{ exact: true }}
+              >
+                Home
+              </Link>
+              <Link to="/settings" activeProps={{ className: styles.navLinkActive }}>
+                Settings
+              </Link>
+            </div>
+          </nav>
+          {head && <div className={styles.headerContent}>{head}</div>}
+        </div>
+
+        {content}
+      </div>
       <div className={styles.footer}>
         <p>Footer</p>
       </div>
