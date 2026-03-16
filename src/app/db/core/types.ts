@@ -52,6 +52,83 @@ export type Database = {
           },
         ]
       }
+      faq_answers: {
+        Row: {
+          answer: string
+          answered_by: string
+          created_at: string
+          faq_item_id: number
+          id: number
+        }
+        Insert: {
+          answer: string
+          answered_by: string
+          created_at?: string
+          faq_item_id: number
+          id?: number
+        }
+        Update: {
+          answer?: string
+          answered_by?: string
+          created_at?: string
+          faq_item_id?: number
+          id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faq_answers_faq_item_id_fkey"
+            columns: ["faq_item_id"]
+            isOneToOne: false
+            referencedRelation: "faq_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      faq_items: {
+        Row: {
+          accepted_answer_id: number | null
+          asked_by: string
+          created_at: string
+          id: number
+          question: string
+          ruleset_id: number
+          updated_at: string
+        }
+        Insert: {
+          accepted_answer_id?: number | null
+          asked_by: string
+          created_at?: string
+          id?: number
+          question: string
+          ruleset_id: number
+          updated_at?: string
+        }
+        Update: {
+          accepted_answer_id?: number | null
+          asked_by?: string
+          created_at?: string
+          id?: number
+          question?: string
+          ruleset_id?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faq_items_accepted_answer_id_fkey"
+            columns: ["accepted_answer_id"]
+            isOneToOne: false
+            referencedRelation: "faq_answers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "faq_items_ruleset_id_fkey"
+            columns: ["ruleset_id"]
+            isOneToOne: false
+            referencedRelation: "rulesets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_members: {
         Row: {
           approved_at: string | null
@@ -129,6 +206,57 @@ export type Database = {
           id?: string
           updated_at?: string | null
           username?: string | null
+        }
+        Relationships: []
+      }
+      ruleset_factions: {
+        Row: {
+          faction_id: string
+          ruleset_id: number
+        }
+        Insert: {
+          faction_id: string
+          ruleset_id: number
+        }
+        Update: {
+          faction_id?: string
+          ruleset_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ruleset_factions_faction_id_fkey"
+            columns: ["faction_id"]
+            isOneToOne: false
+            referencedRelation: "factions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ruleset_factions_ruleset_id_fkey"
+            columns: ["ruleset_id"]
+            isOneToOne: false
+            referencedRelation: "rulesets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rulesets: {
+        Row: {
+          created_at: string
+          id: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }

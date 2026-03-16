@@ -132,6 +132,9 @@ export function Page({ head, content }: PageProps) {
               <Link to="/factions" activeProps={{ className: styles.navLinkActive }}>
                 Factions
               </Link>
+              <Link to="/rulesets" activeProps={{ className: styles.navLinkActive }}>
+                Rulesets
+              </Link>
               <Link to="/profiles" activeProps={{ className: styles.navLinkActive }}>
                 Profiles
               </Link>

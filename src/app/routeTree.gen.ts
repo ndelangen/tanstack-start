@@ -15,14 +15,17 @@ import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AuthOauthRouteImport } from './routes/auth/oauth'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthErrorRouteImport } from './routes/auth/error'
+import { Route as AppRulesetsIndexRouteImport } from './routes/_app/rulesets/index'
 import { Route as AppProfilesIndexRouteImport } from './routes/_app/profiles/index'
 import { Route as AppFactionsIndexRouteImport } from './routes/_app/factions/index'
 import { Route as AppAssetsIndexRouteImport } from './routes/_app/assets/index'
+import { Route as AppRulesetsNameRouteImport } from './routes/_app/rulesets/$name'
 import { Route as AppProfilesIdRouteImport } from './routes/_app/profiles/$id'
 import { Route as AppFactionsMineRouteImport } from './routes/_app/factions/mine'
 import { Route as AppFactionsCreateRouteImport } from './routes/_app/factions/create'
 import { Route as AppFactionsIdRouteImport } from './routes/_app/factions/$id'
 import { Route as AppAssetsCreateRouteImport } from './routes/_app/assets/create'
+import { Route as AppRulesetsNameFaqIdRouteImport } from './routes/_app/rulesets/$name/faq/$id'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -53,6 +56,11 @@ const AuthErrorRoute = AuthErrorRouteImport.update({
   path: '/auth/error',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRulesetsIndexRoute = AppRulesetsIndexRouteImport.update({
+  id: '/rulesets/',
+  path: '/rulesets/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProfilesIndexRoute = AppProfilesIndexRouteImport.update({
   id: '/profiles/',
   path: '/profiles/',
@@ -66,6 +74,11 @@ const AppFactionsIndexRoute = AppFactionsIndexRouteImport.update({
 const AppAssetsIndexRoute = AppAssetsIndexRouteImport.update({
   id: '/assets/',
   path: '/assets/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRulesetsNameRoute = AppRulesetsNameRouteImport.update({
+  id: '/rulesets/$name',
+  path: '/rulesets/$name',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProfilesIdRoute = AppProfilesIdRouteImport.update({
@@ -93,6 +106,11 @@ const AppAssetsCreateRoute = AppAssetsCreateRouteImport.update({
   path: '/assets/create',
   getParentRoute: () => AppRoute,
 } as any)
+const AppRulesetsNameFaqIdRoute = AppRulesetsNameFaqIdRouteImport.update({
+  id: '/faq/$id',
+  path: '/faq/$id',
+  getParentRoute: () => AppRulesetsNameRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -105,9 +123,12 @@ export interface FileRoutesByFullPath {
   '/factions/create': typeof AppFactionsCreateRoute
   '/factions/mine': typeof AppFactionsMineRoute
   '/profiles/$id': typeof AppProfilesIdRoute
+  '/rulesets/$name': typeof AppRulesetsNameRouteWithChildren
   '/assets/': typeof AppAssetsIndexRoute
   '/factions/': typeof AppFactionsIndexRoute
   '/profiles/': typeof AppProfilesIndexRoute
+  '/rulesets/': typeof AppRulesetsIndexRoute
+  '/rulesets/$name/faq/$id': typeof AppRulesetsNameFaqIdRoute
 }
 export interface FileRoutesByTo {
   '/auth/error': typeof AuthErrorRoute
@@ -120,9 +141,12 @@ export interface FileRoutesByTo {
   '/factions/create': typeof AppFactionsCreateRoute
   '/factions/mine': typeof AppFactionsMineRoute
   '/profiles/$id': typeof AppProfilesIdRoute
+  '/rulesets/$name': typeof AppRulesetsNameRouteWithChildren
   '/assets': typeof AppAssetsIndexRoute
   '/factions': typeof AppFactionsIndexRoute
   '/profiles': typeof AppProfilesIndexRoute
+  '/rulesets': typeof AppRulesetsIndexRoute
+  '/rulesets/$name/faq/$id': typeof AppRulesetsNameFaqIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -137,9 +161,12 @@ export interface FileRoutesById {
   '/_app/factions/create': typeof AppFactionsCreateRoute
   '/_app/factions/mine': typeof AppFactionsMineRoute
   '/_app/profiles/$id': typeof AppProfilesIdRoute
+  '/_app/rulesets/$name': typeof AppRulesetsNameRouteWithChildren
   '/_app/assets/': typeof AppAssetsIndexRoute
   '/_app/factions/': typeof AppFactionsIndexRoute
   '/_app/profiles/': typeof AppProfilesIndexRoute
+  '/_app/rulesets/': typeof AppRulesetsIndexRoute
+  '/_app/rulesets/$name/faq/$id': typeof AppRulesetsNameFaqIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -154,9 +181,12 @@ export interface FileRouteTypes {
     | '/factions/create'
     | '/factions/mine'
     | '/profiles/$id'
+    | '/rulesets/$name'
     | '/assets/'
     | '/factions/'
     | '/profiles/'
+    | '/rulesets/'
+    | '/rulesets/$name/faq/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth/error'
@@ -169,9 +199,12 @@ export interface FileRouteTypes {
     | '/factions/create'
     | '/factions/mine'
     | '/profiles/$id'
+    | '/rulesets/$name'
     | '/assets'
     | '/factions'
     | '/profiles'
+    | '/rulesets'
+    | '/rulesets/$name/faq/$id'
   id:
     | '__root__'
     | '/_app'
@@ -185,9 +218,12 @@ export interface FileRouteTypes {
     | '/_app/factions/create'
     | '/_app/factions/mine'
     | '/_app/profiles/$id'
+    | '/_app/rulesets/$name'
     | '/_app/assets/'
     | '/_app/factions/'
     | '/_app/profiles/'
+    | '/_app/rulesets/'
+    | '/_app/rulesets/$name/faq/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -242,6 +278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthErrorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/rulesets/': {
+      id: '/_app/rulesets/'
+      path: '/rulesets'
+      fullPath: '/rulesets/'
+      preLoaderRoute: typeof AppRulesetsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/profiles/': {
       id: '/_app/profiles/'
       path: '/profiles'
@@ -261,6 +304,13 @@ declare module '@tanstack/react-router' {
       path: '/assets'
       fullPath: '/assets/'
       preLoaderRoute: typeof AppAssetsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/rulesets/$name': {
+      id: '/_app/rulesets/$name'
+      path: '/rulesets/$name'
+      fullPath: '/rulesets/$name'
+      preLoaderRoute: typeof AppRulesetsNameRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/profiles/$id': {
@@ -298,8 +348,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAssetsCreateRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/rulesets/$name/faq/$id': {
+      id: '/_app/rulesets/$name/faq/$id'
+      path: '/faq/$id'
+      fullPath: '/rulesets/$name/faq/$id'
+      preLoaderRoute: typeof AppRulesetsNameFaqIdRouteImport
+      parentRoute: typeof AppRulesetsNameRoute
+    }
   }
 }
+
+interface AppRulesetsNameRouteChildren {
+  AppRulesetsNameFaqIdRoute: typeof AppRulesetsNameFaqIdRoute
+}
+
+const AppRulesetsNameRouteChildren: AppRulesetsNameRouteChildren = {
+  AppRulesetsNameFaqIdRoute: AppRulesetsNameFaqIdRoute,
+}
+
+const AppRulesetsNameRouteWithChildren = AppRulesetsNameRoute._addFileChildren(
+  AppRulesetsNameRouteChildren,
+)
 
 interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
@@ -308,9 +377,11 @@ interface AppRouteChildren {
   AppFactionsCreateRoute: typeof AppFactionsCreateRoute
   AppFactionsMineRoute: typeof AppFactionsMineRoute
   AppProfilesIdRoute: typeof AppProfilesIdRoute
+  AppRulesetsNameRoute: typeof AppRulesetsNameRouteWithChildren
   AppAssetsIndexRoute: typeof AppAssetsIndexRoute
   AppFactionsIndexRoute: typeof AppFactionsIndexRoute
   AppProfilesIndexRoute: typeof AppProfilesIndexRoute
+  AppRulesetsIndexRoute: typeof AppRulesetsIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -320,9 +391,11 @@ const AppRouteChildren: AppRouteChildren = {
   AppFactionsCreateRoute: AppFactionsCreateRoute,
   AppFactionsMineRoute: AppFactionsMineRoute,
   AppProfilesIdRoute: AppProfilesIdRoute,
+  AppRulesetsNameRoute: AppRulesetsNameRouteWithChildren,
   AppAssetsIndexRoute: AppAssetsIndexRoute,
   AppFactionsIndexRoute: AppFactionsIndexRoute,
   AppProfilesIndexRoute: AppProfilesIndexRoute,
+  AppRulesetsIndexRoute: AppRulesetsIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
