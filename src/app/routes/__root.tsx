@@ -4,6 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { createRootRouteWithContext, HeadContent, Link, Scripts } from '@tanstack/react-router';
 
 import { queryClient } from '@app/queryClient';
+import { currentProfileQueryOptions } from '@db/profiles';
 
 // import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 
@@ -12,6 +13,8 @@ interface RouterContext {
 }
 
 export const Route = createRootRouteWithContext<RouterContext>()({
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData(currentProfileQueryOptions()),
   head: () => ({
     meta: [
       {

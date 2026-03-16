@@ -1,11 +1,50 @@
 import { Link, useLocation } from '@tanstack/react-router';
 import React, { useEffect, useRef, useState } from 'react';
 
+import { useCurrentProfile } from '@db/profiles';
+
 import './Page.css';
 
 import styles from './Page.module.css';
 
 const SCROLL_VAR = '--scroll-pct';
+
+function AuthNav() {
+  const profile = useCurrentProfile();
+
+  if (profile.data) {
+    const initials =
+      profile.data.username
+        ?.slice(0, 2)
+        .toUpperCase()
+        .replace(/[^A-Z]/g, '') || '?';
+
+    return (
+      <Link
+        to="/profiles/$id"
+        params={{ id: profile.data.id }}
+        className={styles.avatarLink}
+        title={profile.data.username ?? 'Profile'}
+      >
+        {profile.data.avatar_url ? (
+          <img
+            src={profile.data.avatar_url}
+            alt={profile.data.username ?? 'Avatar'}
+            className={styles.avatar}
+          />
+        ) : (
+          <span className={styles.avatarPlaceholder}>{initials}</span>
+        )}
+      </Link>
+    );
+  }
+
+  return (
+    <Link to="/auth/login" activeProps={{ className: styles.navLinkActive }}>
+      Login
+    </Link>
+  );
+}
 
 export interface PageProps {
   head?: React.ReactNode;
@@ -80,7 +119,7 @@ export function Page({ head, content }: PageProps) {
             <div className={styles.links}>
               <div className={styles.logo}>
                 <Link to="/">
-                  <img src="/web/logo.svg" alt="Dune" />
+                  <img className={styles.logoImg} src="/web/logo.svg" alt="Dune" />
                 </Link>
               </div>
               <Link
@@ -93,14 +132,15 @@ export function Page({ head, content }: PageProps) {
               <Link to="/factions" activeProps={{ className: styles.navLinkActive }}>
                 Factions
               </Link>
+              <Link to="/profiles" activeProps={{ className: styles.navLinkActive }}>
+                Profiles
+              </Link>
               <Link to="/assets" activeProps={{ className: styles.navLinkActive }}>
                 Assets
               </Link>
             </div>
             <div className={styles.auth}>
-              <Link to="/auth/login" activeProps={{ className: styles.navLinkActive }}>
-                Login
-              </Link>
+              <AuthNav />
             </div>
           </nav>
           {head && <div className={styles.content}>{head}</div>}

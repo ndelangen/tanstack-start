@@ -22,6 +22,44 @@ export const profileKeys = {
 
 /* Queries */
 
+export function profileDetailQueryOptions(id: NonNullable<ProfileEntry['id']>) {
+  return queryOptions({
+    queryKey: profileKeys.detail(id),
+    queryFn: async () => {
+      const { data: entry, error } = await db.from('profiles').select('*').eq('id', id).single();
+
+      if (error) {
+        throw error;
+      }
+
+      if (!entry) {
+        throw new Error(`Profile with id ${id} not found`);
+      }
+
+      return entry;
+    },
+  });
+}
+
+export function profilesListQueryOptions() {
+  return queryOptions({
+    queryKey: profileKeys.list({ type: 'all' }),
+    queryFn: async () => {
+      const { data: entries, error } = await db.from('profiles').select('*');
+
+      if (error) {
+        throw error;
+      }
+
+      if (!entries) {
+        return [];
+      }
+
+      return entries;
+    },
+  });
+}
+
 export function currentProfileQueryOptions() {
   return queryOptions({
     queryKey: profileKeys.current(),
@@ -54,42 +92,14 @@ export function useProfile(id: NonNullable<ProfileEntry['id']>) {
   const qc = useQueryClient();
 
   return useQuery({
-    queryKey: profileKeys.detail(id),
-    queryFn: async () => {
-      const { data: entry, error } = await db.from('profiles').select('*').eq('id', id).single();
-
-      if (error) {
-        throw error;
-      }
-
-      if (!entry) {
-        throw new Error(`Profile with id ${id} not found`);
-      }
-
-      return entry;
-    },
+    ...profileDetailQueryOptions(id),
     initialData: () =>
       qc.getQueryData<ProfileEntry[]>(profileKeys.list({ type: 'all' }))?.find((d) => d.id === id),
   });
 }
 
 export function useProfilesAll() {
-  return useQuery({
-    queryKey: profileKeys.list({ type: 'all' }),
-    queryFn: async () => {
-      const { data: entries, error } = await db.from('profiles').select('*');
-
-      if (error) {
-        throw error;
-      }
-
-      if (!entries) {
-        return [];
-      }
-
-      return entries;
-    },
-  });
+  return useQuery(profilesListQueryOptions());
 }
 
 export function useCurrentProfile() {
