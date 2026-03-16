@@ -242,29 +242,47 @@ export type Database = {
       rulesets: {
         Row: {
           created_at: string
+          group_id: string | null
           id: number
           name: string
+          owner_id: string
           updated_at: string
         }
         Insert: {
           created_at?: string
+          group_id?: string | null
           id?: number
           name: string
+          owner_id: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          group_id?: string | null
           id?: number
           name?: string
+          owner_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rulesets_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      current_user_can_access_ruleset: {
+        Args: { rid: number }
+        Returns: boolean
+      }
       current_user_is_active_member_of_group: {
         Args: { gid: string }
         Returns: boolean

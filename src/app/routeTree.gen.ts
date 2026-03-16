@@ -19,6 +19,7 @@ import { Route as AppRulesetsIndexRouteImport } from './routes/_app/rulesets/ind
 import { Route as AppProfilesIndexRouteImport } from './routes/_app/profiles/index'
 import { Route as AppFactionsIndexRouteImport } from './routes/_app/factions/index'
 import { Route as AppAssetsIndexRouteImport } from './routes/_app/assets/index'
+import { Route as AppRulesetsCreateRouteImport } from './routes/_app/rulesets/create'
 import { Route as AppRulesetsNameRouteImport } from './routes/_app/rulesets/$name'
 import { Route as AppProfilesIdRouteImport } from './routes/_app/profiles/$id'
 import { Route as AppFactionsMineRouteImport } from './routes/_app/factions/mine'
@@ -76,6 +77,11 @@ const AppAssetsIndexRoute = AppAssetsIndexRouteImport.update({
   path: '/assets/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppRulesetsCreateRoute = AppRulesetsCreateRouteImport.update({
+  id: '/rulesets/create',
+  path: '/rulesets/create',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRulesetsNameRoute = AppRulesetsNameRouteImport.update({
   id: '/rulesets/$name',
   path: '/rulesets/$name',
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/factions/mine': typeof AppFactionsMineRoute
   '/profiles/$id': typeof AppProfilesIdRoute
   '/rulesets/$name': typeof AppRulesetsNameRouteWithChildren
+  '/rulesets/create': typeof AppRulesetsCreateRoute
   '/assets/': typeof AppAssetsIndexRoute
   '/factions/': typeof AppFactionsIndexRoute
   '/profiles/': typeof AppProfilesIndexRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByTo {
   '/factions/mine': typeof AppFactionsMineRoute
   '/profiles/$id': typeof AppProfilesIdRoute
   '/rulesets/$name': typeof AppRulesetsNameRouteWithChildren
+  '/rulesets/create': typeof AppRulesetsCreateRoute
   '/assets': typeof AppAssetsIndexRoute
   '/factions': typeof AppFactionsIndexRoute
   '/profiles': typeof AppProfilesIndexRoute
@@ -162,6 +170,7 @@ export interface FileRoutesById {
   '/_app/factions/mine': typeof AppFactionsMineRoute
   '/_app/profiles/$id': typeof AppProfilesIdRoute
   '/_app/rulesets/$name': typeof AppRulesetsNameRouteWithChildren
+  '/_app/rulesets/create': typeof AppRulesetsCreateRoute
   '/_app/assets/': typeof AppAssetsIndexRoute
   '/_app/factions/': typeof AppFactionsIndexRoute
   '/_app/profiles/': typeof AppProfilesIndexRoute
@@ -182,6 +191,7 @@ export interface FileRouteTypes {
     | '/factions/mine'
     | '/profiles/$id'
     | '/rulesets/$name'
+    | '/rulesets/create'
     | '/assets/'
     | '/factions/'
     | '/profiles/'
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/factions/mine'
     | '/profiles/$id'
     | '/rulesets/$name'
+    | '/rulesets/create'
     | '/assets'
     | '/factions'
     | '/profiles'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/_app/factions/mine'
     | '/_app/profiles/$id'
     | '/_app/rulesets/$name'
+    | '/_app/rulesets/create'
     | '/_app/assets/'
     | '/_app/factions/'
     | '/_app/profiles/'
@@ -306,6 +318,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAssetsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/rulesets/create': {
+      id: '/_app/rulesets/create'
+      path: '/rulesets/create'
+      fullPath: '/rulesets/create'
+      preLoaderRoute: typeof AppRulesetsCreateRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/rulesets/$name': {
       id: '/_app/rulesets/$name'
       path: '/rulesets/$name'
@@ -378,6 +397,7 @@ interface AppRouteChildren {
   AppFactionsMineRoute: typeof AppFactionsMineRoute
   AppProfilesIdRoute: typeof AppProfilesIdRoute
   AppRulesetsNameRoute: typeof AppRulesetsNameRouteWithChildren
+  AppRulesetsCreateRoute: typeof AppRulesetsCreateRoute
   AppAssetsIndexRoute: typeof AppAssetsIndexRoute
   AppFactionsIndexRoute: typeof AppFactionsIndexRoute
   AppProfilesIndexRoute: typeof AppProfilesIndexRoute
@@ -392,6 +412,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppFactionsMineRoute: AppFactionsMineRoute,
   AppProfilesIdRoute: AppProfilesIdRoute,
   AppRulesetsNameRoute: AppRulesetsNameRouteWithChildren,
+  AppRulesetsCreateRoute: AppRulesetsCreateRoute,
   AppAssetsIndexRoute: AppAssetsIndexRoute,
   AppFactionsIndexRoute: AppFactionsIndexRoute,
   AppProfilesIndexRoute: AppProfilesIndexRoute,

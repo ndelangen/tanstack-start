@@ -1,8 +1,12 @@
 import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 
-import { db, type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
-import { schema } from '@data/rulesets';
+import { auth, db, type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
+
+/* Schema (rulesets uses normal columns, not data JSONB – kept here to avoid db:schemas) */
+const schema = z.object({
+  name: z.string().min(1),
+});
 
 /* Types */
 
@@ -174,7 +178,7 @@ export function useRulesetFactionsWithDetails(rulesetId: number) {
   return useQuery(rulesetFactionsWithDetailsQueryOptions(rulesetId));
 }
 
-export function useRulesetsByFaction(factionId: string) {
+export function useRulxesetsByFaction(factionId: string) {
   return useQuery(rulesetsByFactionQueryOptions(factionId));
 }
 
@@ -184,11 +188,21 @@ export function useCreateRuleset() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: Ruleset) => {
+    mutationFn: async ({
+      input,
+      groupId,
+    }: { input: Ruleset; groupId?: string | null }) => {
+      const user = await auth.getUser();
+      if (!user.data.user?.id) throw new Error('Not authenticated');
+
       const validated = schema.parse(input);
       const { data: entry, error } = await db
         .from('rulesets')
-        .insert({ name: validated.name })
+        .insert({
+          name: validated.name,
+          group_id: groupId ?? null,
+          owner_id: user.data.user.id,
+        })
         .select()
         .single();
 
@@ -208,11 +222,21 @@ export function useUpdateRuleset() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ input, id }: { input: Ruleset; id: number }) => {
+    mutationFn: async ({
+      input,
+      id,
+      groupId,
+    }: { input: Ruleset; id: number; groupId?: string | null }) => {
       const validated = schema.parse(input);
+      const update: { name?: string; group_id?: string | null } = {
+        name: validated.name,
+      };
+      if (groupId !== undefined) {
+        update.group_id = groupId;
+      }
       const { data: entry, error } = await db
         .from('rulesets')
-        .update({ name: validated.name })
+        .update(update)
         .eq('id', id)
         .select()
         .single();

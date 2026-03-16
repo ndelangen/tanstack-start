@@ -9,6 +9,11 @@ export const Route = createFileRoute('/_app/rulesets/')({
     PageHead: () => (
       <div>
         <h1>Rulesets</h1>
+        <p>
+          <Link to="/rulesets/create" activeProps={{ style: { fontWeight: 'bold' } }}>
+            Create a new ruleset
+          </Link>
+        </p>
       </div>
     ),
   },

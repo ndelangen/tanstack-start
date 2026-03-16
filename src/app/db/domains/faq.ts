@@ -1,7 +1,15 @@
 import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { z } from 'zod';
 
 import { auth, db, type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
-import { faqAnswerSchema, faqItemSchema } from '@data/faq';
+
+/* Schemas (faq_items/faq_answers use normal columns, not data JSONB – kept here to avoid db:schemas) */
+const faqItemSchema = z.object({
+  question: z.string().min(1),
+});
+const faqAnswerSchema = z.object({
+  answer: z.string().min(1),
+});
 
 /* Types */
 
@@ -28,17 +36,33 @@ export function faqItemsByRulesetQueryOptions(rulesetId: number) {
     queryFn: async () => {
       const { data: items, error } = await db
         .from('faq_items')
-        .select(
-          `
-          *,
-          faq_answers (*)
-        `
-        )
+        .select('*')
         .eq('ruleset_id', rulesetId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return items ?? [];
+      const list = items ?? [];
+      if (list.length === 0) return [];
+
+      const itemIds = list.map((i) => i.id);
+      const { data: answers, error: answersError } = await db
+        .from('faq_answers')
+        .select('*')
+        .in('faq_item_id', itemIds);
+
+      if (answersError) throw answersError;
+
+      const byItemId = new Map<number, FaqAnswerEntry[]>();
+      for (const a of answers ?? []) {
+        const arr = byItemId.get(a.faq_item_id) ?? [];
+        arr.push(a);
+        byItemId.set(a.faq_item_id, arr);
+      }
+
+      return list.map((item) => ({
+        ...item,
+        faq_answers: byItemId.get(item.id) ?? [],
+      }));
     },
   });
 }
@@ -49,18 +73,21 @@ export function faqItemDetailQueryOptions(id: number) {
     queryFn: async () => {
       const { data: item, error } = await db
         .from('faq_items')
-        .select(
-          `
-          *,
-          faq_answers (*)
-        `
-        )
+        .select('*')
         .eq('id', id)
         .single();
 
       if (error) throw error;
       if (!item) throw new Error(`FAQ item ${id} not found`);
-      return item;
+
+      const { data: answers, error: answersError } = await db
+        .from('faq_answers')
+        .select('*')
+        .eq('faq_item_id', id);
+
+      if (answersError) throw answersError;
+
+      return { ...item, faq_answers: answers ?? [] };
     },
   });
 }
