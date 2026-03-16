@@ -1,9 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 
-import { useCurrentProfile } from '@db/profiles';
+import { currentProfileQueryOptions, useCurrentProfile } from '@db/profiles';
 import { LoginForm } from '@app/components/login-form';
 
 export const Route = createFileRoute('/auth/login')({
+  loader: ({ context }) => context.queryClient.ensureQueryData(currentProfileQueryOptions()),
   component: Login,
 });
 

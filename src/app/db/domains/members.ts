@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { auth, db, type Enums, type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
 
@@ -23,9 +23,41 @@ export const memberKeys = {
   byGroup: (groupId: string) => [...memberKeys.all, 'group', groupId] as const,
   byGroupAndStatus: (groupId: string, status: GroupMemberStatus) =>
     [...memberKeys.byGroup(groupId), status] as const,
+  byUser: (userId: string) => [...memberKeys.all, 'user', userId] as const,
+};
+
+export type UserGroupMembershipWithGroup = GroupMemberEntry & {
+  groups: { id: string; name: string } | null;
 };
 
 /* Queries */
+
+export function userGroupMembershipsQueryOptions(userId: string) {
+  return queryOptions({
+    queryKey: memberKeys.byUser(userId),
+    queryFn: async () => {
+      const { data: entries, error } = await db
+        .from('group_members')
+        .select('*, groups(id, name)')
+        .eq('user_id', userId)
+        .eq('status', 'active');
+
+      if (error) {
+        throw error;
+      }
+
+      if (!entries) {
+        return [];
+      }
+
+      return entries as UserGroupMembershipWithGroup[];
+    },
+  });
+}
+
+export function useUserGroupMemberships(userId: string) {
+  return useQuery(userGroupMembershipsQueryOptions(userId));
+}
 
 export function useGroupMembers(groupId: string) {
   return useQuery({

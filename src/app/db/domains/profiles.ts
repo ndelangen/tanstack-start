@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { auth, db, type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
 
@@ -21,6 +21,34 @@ export const profileKeys = {
 };
 
 /* Queries */
+
+export function currentProfileQueryOptions() {
+  return queryOptions({
+    queryKey: profileKeys.current(),
+    queryFn: async () => {
+      const user = await auth.getUser();
+      if (!user.data.user?.id) {
+        return null;
+      }
+
+      const { data: entry, error } = await db
+        .from('profiles')
+        .select('*')
+        .eq('id', user.data.user.id)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      if (!entry) {
+        throw new Error('Profile not found');
+      }
+
+      return entry;
+    },
+  });
+}
 
 export function useProfile(id: NonNullable<ProfileEntry['id']>) {
   const qc = useQueryClient();
@@ -65,31 +93,7 @@ export function useProfilesAll() {
 }
 
 export function useCurrentProfile() {
-  return useQuery({
-    queryKey: profileKeys.current(),
-    queryFn: async () => {
-      const user = await auth.getUser();
-      if (!user.data.user?.id) {
-        return null;
-      }
-
-      const { data: entry, error } = await db
-        .from('profiles')
-        .select('*')
-        .eq('id', user.data.user.id)
-        .single();
-
-      if (error) {
-        throw error;
-      }
-
-      if (!entry) {
-        throw new Error('Profile not found');
-      }
-
-      return entry;
-    },
-  });
+  return useQuery(currentProfileQueryOptions());
 }
 
 /* Mutations */
