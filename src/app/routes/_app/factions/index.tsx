@@ -1,7 +1,17 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_app/factions/')({
   component: FactionsPage,
+  staticData: {
+    PageHead: () => (
+      <div>
+        <h1>Factions</h1>
+        <p>
+          <Link to="/factions/create">Create a new faction</Link>
+        </p>
+      </div>
+    ),
+  },
 });
 
 function FactionsPage() {
