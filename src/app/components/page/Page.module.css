@@ -21,7 +21,11 @@
 }
 
 .footer {
-  height: 164px;
+  height: 11.5vw;
+
+  @media (max-width: 900px) {
+    height: 93px;
+  }
 }
 
 .header {
