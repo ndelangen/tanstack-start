@@ -50,7 +50,7 @@
     filter: blur(0);
   }
 
-  .headerContent {
+  .content {
     position: absolute;
     bottom: 0;
     left: 0;
@@ -73,13 +73,30 @@
     aspect-ratio: 3064 / 180;
     display: flex;
     flex-direction: row;
-    justify-content: flex-start;
+    justify-content: space-between;
     align-items: center;
-    padding: 1rem 1.5rem;
     box-sizing: border-box;
-    gap: 1rem;
+    gap: 20px;
     color: #fff;
     z-index: 2;
+
+    .links {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      padding: 1rem 1.5rem;
+      box-sizing: border-box;
+      gap: 1rem;
+    }
+
+    .auth {
+      display: flex;
+      justify-content: flex-end;
+      align-items: flex-end;
+      padding: 1rem 1.5rem;
+      box-sizing: border-box;
+      gap: 1rem;
+    }
 
     a {
       color: inherit;
@@ -89,12 +106,18 @@
         text-decoration: underline;
       }
     }
+
+    img {
+      display: block;
+      height: 20px;
+      width: auto;
+    }
   }
 
   &.tiny {
     aspect-ratio: 3064 / 178;
 
-    .headerContent {
+    .content {
       display: none;
     }
 
@@ -116,7 +139,7 @@
       background-position: left top;
     }
 
-    .headerContent {
+    .content {
       aspect-ratio: auto;
       top: 51px;
       bottom: 0;

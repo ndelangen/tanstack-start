@@ -15,7 +15,10 @@ import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AuthOauthRouteImport } from './routes/auth/oauth'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthErrorRouteImport } from './routes/auth/error'
-import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppFactionsIndexRouteImport } from './routes/_app/factions/index'
+import { Route as AppAssetsIndexRouteImport } from './routes/_app/assets/index'
+import { Route as AppFactionsCreateRouteImport } from './routes/_app/factions/create'
+import { Route as AppAssetsCreateRouteImport } from './routes/_app/assets/create'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -46,64 +49,97 @@ const AuthErrorRoute = AuthErrorRouteImport.update({
   path: '/auth/error',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppSettingsRoute = AppSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+const AppFactionsIndexRoute = AppFactionsIndexRouteImport.update({
+  id: '/factions/',
+  path: '/factions/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAssetsIndexRoute = AppAssetsIndexRouteImport.update({
+  id: '/assets/',
+  path: '/assets/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFactionsCreateRoute = AppFactionsCreateRouteImport.update({
+  id: '/factions/create',
+  path: '/factions/create',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAssetsCreateRoute = AppAssetsCreateRouteImport.update({
+  id: '/assets/create',
+  path: '/assets/create',
   getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
-  '/settings': typeof AppSettingsRoute
   '/auth/error': typeof AuthErrorRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/oauth': typeof AuthOauthRoute
   '/auth/': typeof AuthIndexRoute
+  '/assets/create': typeof AppAssetsCreateRoute
+  '/factions/create': typeof AppFactionsCreateRoute
+  '/assets/': typeof AppAssetsIndexRoute
+  '/factions/': typeof AppFactionsIndexRoute
 }
 export interface FileRoutesByTo {
-  '/settings': typeof AppSettingsRoute
   '/auth/error': typeof AuthErrorRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/oauth': typeof AuthOauthRoute
   '/': typeof AppIndexRoute
   '/auth': typeof AuthIndexRoute
+  '/assets/create': typeof AppAssetsCreateRoute
+  '/factions/create': typeof AppFactionsCreateRoute
+  '/assets': typeof AppAssetsIndexRoute
+  '/factions': typeof AppFactionsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
-  '/_app/settings': typeof AppSettingsRoute
   '/auth/error': typeof AuthErrorRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/oauth': typeof AuthOauthRoute
   '/_app/': typeof AppIndexRoute
   '/auth/': typeof AuthIndexRoute
+  '/_app/assets/create': typeof AppAssetsCreateRoute
+  '/_app/factions/create': typeof AppFactionsCreateRoute
+  '/_app/assets/': typeof AppAssetsIndexRoute
+  '/_app/factions/': typeof AppFactionsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/settings'
     | '/auth/error'
     | '/auth/login'
     | '/auth/oauth'
     | '/auth/'
+    | '/assets/create'
+    | '/factions/create'
+    | '/assets/'
+    | '/factions/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/settings'
     | '/auth/error'
     | '/auth/login'
     | '/auth/oauth'
     | '/'
     | '/auth'
+    | '/assets/create'
+    | '/factions/create'
+    | '/assets'
+    | '/factions'
   id:
     | '__root__'
     | '/_app'
-    | '/_app/settings'
     | '/auth/error'
     | '/auth/login'
     | '/auth/oauth'
     | '/_app/'
     | '/auth/'
+    | '/_app/assets/create'
+    | '/_app/factions/create'
+    | '/_app/assets/'
+    | '/_app/factions/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,24 +194,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthErrorRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/settings': {
-      id: '/_app/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AppSettingsRouteImport
+    '/_app/factions/': {
+      id: '/_app/factions/'
+      path: '/factions'
+      fullPath: '/factions/'
+      preLoaderRoute: typeof AppFactionsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/assets/': {
+      id: '/_app/assets/'
+      path: '/assets'
+      fullPath: '/assets/'
+      preLoaderRoute: typeof AppAssetsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/factions/create': {
+      id: '/_app/factions/create'
+      path: '/factions/create'
+      fullPath: '/factions/create'
+      preLoaderRoute: typeof AppFactionsCreateRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/assets/create': {
+      id: '/_app/assets/create'
+      path: '/assets/create'
+      fullPath: '/assets/create'
+      preLoaderRoute: typeof AppAssetsCreateRouteImport
       parentRoute: typeof AppRoute
     }
   }
 }
 
 interface AppRouteChildren {
-  AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppAssetsCreateRoute: typeof AppAssetsCreateRoute
+  AppFactionsCreateRoute: typeof AppFactionsCreateRoute
+  AppAssetsIndexRoute: typeof AppAssetsIndexRoute
+  AppFactionsIndexRoute: typeof AppFactionsIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
+  AppAssetsCreateRoute: AppAssetsCreateRoute,
+  AppFactionsCreateRoute: AppFactionsCreateRoute,
+  AppAssetsIndexRoute: AppAssetsIndexRoute,
+  AppFactionsIndexRoute: AppFactionsIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
