@@ -31,7 +31,6 @@ export const rulesetKeys = {
   lists: () => [...rulesetKeys.all, 'list'] as const,
   list: (filters: object) => [...rulesetKeys.lists(), filters] as const,
   detail: (id: number) => [...rulesetKeys.all, 'detail', id] as const,
-  byName: (name: string) => [...rulesetKeys.all, 'byName', name] as const,
   factions: (rulesetId: number) => [...rulesetKeys.detail(rulesetId), 'factions'] as const,
   byFaction: (factionId: string) => [...rulesetKeys.all, 'byFaction', factionId] as const,
 };
@@ -42,7 +41,11 @@ export function rulesetsListQueryOptions() {
   return queryOptions({
     queryKey: rulesetKeys.list({ type: 'all' }),
     queryFn: async () => {
-      const { data: entries, error } = await db.from('rulesets').select('*').order('name');
+      const { data: entries, error } = await db
+        .from('rulesets')
+        .select('*')
+        .eq('is_deleted', false)
+        .order('name');
 
       if (error) throw error;
       if (!entries) return [];
@@ -59,31 +62,15 @@ export function rulesetDetailQueryOptions(id: number) {
   return queryOptions({
     queryKey: rulesetKeys.detail(id),
     queryFn: async () => {
-      const { data: entry, error } = await db.from('rulesets').select('*').eq('id', id).single();
-
-      if (error) throw error;
-      if (!entry) throw new Error(`Ruleset with id ${id} not found`);
-
-      return {
-        ...entry,
-        name: schema.parse({ name: entry.name }).name,
-      };
-    },
-  });
-}
-
-export function rulesetByNameQueryOptions(name: string) {
-  return queryOptions({
-    queryKey: rulesetKeys.byName(name),
-    queryFn: async () => {
       const { data: entry, error } = await db
         .from('rulesets')
         .select('*')
-        .eq('name', name)
+        .eq('id', id)
+        .eq('is_deleted', false)
         .single();
 
       if (error) throw error;
-      if (!entry) throw new Error(`Ruleset "${name}" not found`);
+      if (!entry) throw new Error(`Ruleset with id ${id} not found`);
 
       return {
         ...entry,
@@ -148,6 +135,7 @@ export function rulesetsByFactionQueryOptions(factionId: string) {
         .from('rulesets')
         .select('*')
         .in('id', ids)
+        .eq('is_deleted', false)
         .order('name');
 
       if (error) throw error;
@@ -166,10 +154,6 @@ export function useRuleset(id: number) {
   return useQuery(rulesetDetailQueryOptions(id));
 }
 
-export function useRulesetByName(name: string) {
-  return useQuery(rulesetByNameQueryOptions(name));
-}
-
 export function useRulesetFactions(rulesetId: number) {
   return useQuery(rulesetFactionsQueryOptions(rulesetId));
 }
@@ -178,7 +162,7 @@ export function useRulesetFactionsWithDetails(rulesetId: number) {
   return useQuery(rulesetFactionsWithDetailsQueryOptions(rulesetId));
 }
 
-export function useRulxesetsByFaction(factionId: string) {
+export function useRulesetsByFaction(factionId: string) {
   return useQuery(rulesetsByFactionQueryOptions(factionId));
 }
 
@@ -258,7 +242,10 @@ export function useDeleteRuleset() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      const { error } = await db.from('rulesets').delete().eq('id', id);
+      const { error } = await db
+        .from('rulesets')
+        .update({ is_deleted: true })
+        .eq('id', id);
       if (error) throw error;
       return id;
     },

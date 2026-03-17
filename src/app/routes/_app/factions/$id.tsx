@@ -40,7 +40,7 @@ function FactionDetailPage() {
           <ul>
             {rulesets.data.map((r) => (
               <li key={r.id}>
-                <Link to="/rulesets/$name" params={{ name: r.name }}>
+                <Link to="/rulesets/$id" params={{ id: String(r.id) }}>
                   {r.name}
                 </Link>
               </li>

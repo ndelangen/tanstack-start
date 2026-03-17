@@ -2,10 +2,10 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 
 import { faqItemDetailQueryOptions, useFaqItem } from '@db/faq';
 
-export const Route = createFileRoute('/_app/rulesets/$name/faq/$id')({
+export const Route = createFileRoute('/_app/rulesets/$id/faq/$faqId')({
   loader: ({ context, params }) =>
     context.queryClient.ensureQueryData(
-      faqItemDetailQueryOptions(Number.parseInt(params.id, 10))
+      faqItemDetailQueryOptions(Number.parseInt(params.faqId, 10))
     ),
   component: FaqDetailPage,
   staticData: {
@@ -21,8 +21,8 @@ export const Route = createFileRoute('/_app/rulesets/$name/faq/$id')({
 });
 
 function FaqDetailPage() {
-  const { name, id } = Route.useParams();
-  const faqItem = useFaqItem(Number.parseInt(id, 10));
+  const { id, faqId } = Route.useParams();
+  const faqItem = useFaqItem(Number.parseInt(faqId, 10));
 
   if (!faqItem.data) {
     return null;
@@ -34,7 +34,7 @@ function FaqDetailPage() {
   return (
     <>
       <p>
-        <Link to="/rulesets/$name" params={{ name }}>Back to {name}</Link>
+        <Link to="/rulesets/$id" params={{ id }}>Back to ruleset</Link>
       </p>
       <h2>{item.question}</h2>
       {answers.length > 0 ? (

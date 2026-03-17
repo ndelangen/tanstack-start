@@ -33,7 +33,7 @@ function CreateRulesetPage() {
             { input: { name } },
             {
               onSuccess: (entry) => {
-                navigate({ to: '/rulesets/$name', params: { name: entry.name } });
+                navigate({ to: '/rulesets/$id', params: { id: String(entry.id) } });
               },
             }
           );
