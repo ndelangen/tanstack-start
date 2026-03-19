@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { ChevronDown } from 'lucide-react';
 import {
   type KeyboardEvent,
   useCallback,
@@ -25,6 +26,22 @@ interface AssetAutocompleteProps {
 }
 
 type ListGeom = { top: number; left: number; width: number };
+
+const PREVIEW_SIZE = 100;
+const PREVIEW_GAP = 8;
+const VIEWPORT_PAD = 6;
+
+const PREVIEWABLE_EXT = /\.(svg|png|jpg|jpeg)$/i;
+
+function isPreviewableAssetPath(path: string): boolean {
+  return PREVIEWABLE_EXT.test(path.trim());
+}
+
+/** Paths in enums are relative to site root (`public/`). */
+function assetPathToPublicUrl(path: string): string {
+  const p = path.trim().replace(/^\/+/, '');
+  return `/${p}`;
+}
 
 type Partition = {
   /** Substring matches, best matches first */
@@ -91,16 +108,23 @@ export function AssetAutocomplete({
   const [text, setText] = useState(value);
   const [highlight, setHighlight] = useState(0);
   const [listGeom, setListGeom] = useState<ListGeom | null>(null);
+  const [previewGeom, setPreviewGeom] = useState<{ left: number; top: number } | null>(null);
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const portalRef = useRef<HTMLDivElement>(null);
+  const highlightRef = useRef(0);
+  const flatRef = useRef<string[]>([]);
+  const openRef = useRef(open);
 
   useEffect(() => {
     setText(value);
   }, [value]);
 
   const partition = useMemo(() => partitionOptions(options, text), [options, text]);
+
+  highlightRef.current = highlight;
+  flatRef.current = partition.flat;
 
   useEffect(() => {
     if (highlight >= partition.flat.length) {
@@ -137,6 +161,16 @@ export function AssetAutocomplete({
   }, [open, options.length, updateListPosition]);
 
   const showList = open && options.length > 0 && listGeom != null;
+  const showListRef = useRef(showList);
+  openRef.current = open;
+  showListRef.current = showList;
+
+  /* Opening the suggest should always start on the first row (hover + keyboard + preview). */
+  useLayoutEffect(() => {
+    if (showList) {
+      setHighlight(0);
+    }
+  }, [showList]);
 
   useLayoutEffect(() => {
     if (!showList) return;
@@ -146,6 +180,82 @@ export function AssetAutocomplete({
     p.addEventListener('mousedown', preventBlur);
     return () => p.removeEventListener('mousedown', preventBlur);
   }, [showList]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-run when highlight, list layout, or options change so preview tracks keyboard + filtered list
+  useLayoutEffect(() => {
+    if (!open || !showList) {
+      setPreviewGeom(null);
+      return;
+    }
+
+    const sync = () => {
+      if (!openRef.current || !showListRef.current) {
+        setPreviewGeom(null);
+        return;
+      }
+      const h = highlightRef.current;
+      const flat = flatRef.current;
+      const path = flat[h];
+      if (!path || !isPreviewableAssetPath(path)) {
+        setPreviewGeom(null);
+        return;
+      }
+      const inputEl = inputRef.current;
+      if (!inputEl) {
+        setPreviewGeom(null);
+        return;
+      }
+      const ir = inputEl.getBoundingClientRect();
+      const optId = `${id}-opt-${h}`;
+      const optEl = portalRef.current?.querySelector<HTMLElement>(`#${CSS.escape(optId)}`) ?? null;
+
+      let left = ir.left - PREVIEW_SIZE - PREVIEW_GAP;
+      if (left < VIEWPORT_PAD) {
+        left = ir.right + PREVIEW_GAP;
+      }
+
+      const or = optEl?.getBoundingClientRect();
+      const anchorTop = or ? or.top + or.height / 2 : ir.top + ir.height / 2;
+      const top = Math.min(
+        Math.max(VIEWPORT_PAD, anchorTop - PREVIEW_SIZE / 2),
+        window.innerHeight - PREVIEW_SIZE - VIEWPORT_PAD
+      );
+      setPreviewGeom({ left, top });
+    };
+
+    sync();
+
+    let raf0 = 0;
+    let raf1 = 0;
+    raf0 = requestAnimationFrame(() => {
+      raf1 = requestAnimationFrame(() => {
+        sync();
+      });
+    });
+
+    const portal = portalRef.current;
+    const inputEl = inputRef.current;
+    const roPortal =
+      typeof ResizeObserver !== 'undefined' && portal ? new ResizeObserver(sync) : null;
+    roPortal?.observe(portal as Element);
+    const roInput =
+      typeof ResizeObserver !== 'undefined' && inputEl ? new ResizeObserver(sync) : null;
+    roInput?.observe(inputEl as Element);
+    portal?.addEventListener('scroll', sync);
+    window.addEventListener('resize', sync);
+    window.addEventListener('scroll', sync, true);
+
+    return () => {
+      cancelAnimationFrame(raf0);
+      cancelAnimationFrame(raf1);
+      roPortal?.disconnect();
+      roInput?.disconnect();
+      portal?.removeEventListener('scroll', sync);
+      window.removeEventListener('resize', sync);
+      window.removeEventListener('scroll', sync, true);
+      setPreviewGeom(null);
+    };
+  }, [open, showList, highlight, id, listGeom, partition.flat]);
 
   useEffect(() => {
     const close = (e: MouseEvent) => {
@@ -209,6 +319,10 @@ export function AssetAutocomplete({
   const excludedLabel = 'Other paths';
   const noMatchesOnly =
     hasFilter && partition.included.length === 0 && partition.excluded.length > 0;
+
+  const selectedPath = showList ? partition.flat[highlight] : undefined;
+  const previewActivePath =
+    selectedPath && isPreviewableAssetPath(selectedPath) ? selectedPath : null;
 
   const portal =
     typeof document !== 'undefined' &&
@@ -295,6 +409,26 @@ export function AssetAutocomplete({
       document.body
     );
 
+  const previewPortal =
+    typeof document !== 'undefined' &&
+    previewActivePath &&
+    previewGeom &&
+    createPortal(
+      <div
+        className={styles.comboboxPreviewPopout}
+        style={{ left: previewGeom.left, top: previewGeom.top }}
+        aria-hidden
+      >
+        <img
+          src={assetPathToPublicUrl(previewActivePath)}
+          alt=""
+          decoding="async"
+          draggable={false}
+        />
+      </div>,
+      document.body
+    );
+
   return (
     <FormField label={label} htmlFor={id}>
       <div ref={wrapRef} className={clsx(styles.comboboxWrap, open && styles.comboboxWrapOpen)}>
@@ -328,8 +462,29 @@ export function AssetAutocomplete({
           }}
           onKeyDown={onKeyDown}
         />
+        <button
+          type="button"
+          id={`${id}-caret`}
+          className={clsx(styles.comboboxCaret, open && styles.comboboxCaretOpen)}
+          tabIndex={-1}
+          disabled={options.length === 0}
+          aria-label={open ? 'Close suggestions' : 'Open suggestions'}
+          aria-expanded={open}
+          aria-controls={listId}
+          onMouseDown={(e) => {
+            e.preventDefault();
+          }}
+          onClick={() => {
+            if (options.length === 0) return;
+            setOpen((prev) => !prev);
+            inputRef.current?.focus();
+          }}
+        >
+          <ChevronDown size={18} strokeWidth={2} aria-hidden />
+        </button>
       </div>
       {portal}
+      {previewPortal}
     </FormField>
   );
 }

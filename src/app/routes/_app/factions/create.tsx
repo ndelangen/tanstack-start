@@ -7,30 +7,6 @@ import { defaultFaction } from '@data/defaultFaction';
 
 export const Route = createFileRoute('/_app/factions/create')({
   component: CreateFactionPage,
-  staticData: {
-    PageHead: () => (
-      <div>
-        <h1>Create faction</h1>
-        <p>
-          <Link
-            to="/factions"
-            activeProps={{ style: { fontWeight: 'bold' } }}
-            activeOptions={{ exact: true }}
-          >
-            All factions
-          </Link>
-          {' · '}
-          <Link to="/factions/mine" activeProps={{ style: { fontWeight: 'bold' } }}>
-            My factions
-          </Link>
-          {' · '}
-          <Link to="/factions/create" activeProps={{ style: { fontWeight: 'bold' } }}>
-            Create a new faction
-          </Link>
-        </p>
-      </div>
-    ),
-  },
 });
 
 function CreateFactionPage() {

@@ -122,6 +122,9 @@ export function FactionEditor({
 
       <div className={styles.body}>
         <aside className={styles.preview}>
+          <p className={styles.previewHint}>
+            No need to make a screenshot: you can click &quot;Save&quot; and share the URL!
+          </p>
           <p className={styles.previewTitle}>Preview (JSON)</p>
           <form.Subscribe selector={(s) => s.values}>
             {(values) => <pre className={styles.pre}>{JSON.stringify(values, null, 2)}</pre>}
