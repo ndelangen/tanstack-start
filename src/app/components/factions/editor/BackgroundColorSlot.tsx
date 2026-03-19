@@ -2,6 +2,7 @@ import type { Faction } from '@db/factions';
 import { FormButton } from '@app/components/form';
 
 import styles from './FactionEditor.module.css';
+import { HexColorRow } from './HexColorRow';
 
 type BgColor = Faction['background']['colors'][number];
 
@@ -27,11 +28,6 @@ const defaultRadial = (): RadialGradient => ({
 
 function isHex(v: BgColor): v is string {
   return typeof v === 'string';
-}
-
-function normalizePickerHex(hex: string): string {
-  if (/^#[0-9a-f]{6}$/i.test(hex)) return hex.toLowerCase();
-  return '#000000';
 }
 
 interface BackgroundColorSlotProps {
@@ -93,46 +89,20 @@ export function BackgroundColorSlot({
       </div>
 
       {mode === 'hex' && isHex(value) && (
-        <HexRow idPrefix={idPrefix} hex={value} onChange={(h) => onChange(h)} />
+        <HexColorRow
+          pickerId={`${idPrefix}-picker`}
+          textId={`${idPrefix}-hex`}
+          value={value}
+          onChange={(h) => onChange(h)}
+          pickerAriaLabel="Pick background color"
+          constrainedWidth
+        />
       )}
 
       {mode === 'gradient' && !isHex(value) && (
         <GradientEditor idPrefix={idPrefix} value={value} onChange={onChange} />
       )}
     </fieldset>
-  );
-}
-
-function HexRow({
-  hex,
-  onChange,
-  idPrefix,
-}: {
-  hex: string;
-  onChange: (next: string) => void;
-  idPrefix: string;
-}) {
-  const picker = normalizePickerHex(hex);
-  return (
-    <div className={styles.hexRow}>
-      <input
-        id={`${idPrefix}-picker`}
-        className={styles.colorPicker}
-        type="color"
-        value={picker}
-        onChange={(e) => onChange(normalizePickerHex(e.target.value))}
-        aria-label="Pick color"
-      />
-      <input
-        id={`${idPrefix}-hex`}
-        className={styles.hexText}
-        type="text"
-        value={hex}
-        placeholder="#rrggbb"
-        spellCheck={false}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    </div>
   );
 }
 
@@ -274,27 +244,16 @@ function GradientEditor({
       {value.stops.map((stop, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: stop rows tracked by array index in form state
         <div key={`${idPrefix}-stop-${i}`} className={styles.stopRow}>
-          <input
-            type="color"
-            className={styles.colorPicker}
-            value={normalizePickerHex(stop[0])}
-            onChange={(e) => {
-              const next = [...value.stops] as [string, number][];
-              next[i] = [normalizePickerHex(e.target.value), stop[1]];
-              updateStops(next);
-            }}
-            aria-label={`Stop ${i + 1} color`}
-          />
-          <input
-            type="text"
-            className={styles.hexText}
+          <HexColorRow
+            pickerId={`${idPrefix}-stop-${i}-picker`}
+            textId={`${idPrefix}-stop-${i}-hex`}
             value={stop[0]}
-            spellCheck={false}
-            onChange={(e) => {
+            onChange={(h) => {
               const next = [...value.stops] as [string, number][];
-              next[i] = [e.target.value, stop[1]];
+              next[i] = [h, stop[1]];
               updateStops(next);
             }}
+            pickerAriaLabel={`Stop ${i + 1} color`}
           />
           <label className={styles.sliderLabel}>
             <span className={styles.sliderValue}>{stop[1].toFixed(2)}</span>

@@ -11,6 +11,7 @@ import { TTSColor } from '@game/schema/faction';
 import { AssetAutocomplete } from './AssetAutocomplete';
 import { BackgroundColorSlot } from './BackgroundColorSlot';
 import styles from './FactionEditor.module.css';
+import { HexColorRow } from './HexColorRow';
 import { type FactionEditorSectionId, useEditorAccordionHash } from './useEditorAccordionHash';
 
 type VoidVal = undefined;
@@ -54,11 +55,6 @@ const defaultTroopBack = (): NonNullable<Faction['troops'][number]['back']> => (
 const defaultAdvantage = (): Faction['rules']['advantages'][number] => ({
   text: '',
 });
-
-function normalizePickerHex(hex: string): string {
-  if (/^#[0-9a-f]{6}$/i.test(hex)) return hex.toLowerCase();
-  return '#444444';
-}
 
 function AccordionSection({
   id,
@@ -290,23 +286,15 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
         <form.Field name="themeColor">
           {(field) => (
             <FormField label="Theme color (#rrggbb)" htmlFor="faction-theme-text">
-              <div className={styles.hexRow}>
-                <input
-                  id="faction-theme-picker"
-                  className={styles.colorPicker}
-                  type="color"
-                  value={normalizePickerHex(field.state.value)}
-                  onChange={(e) => field.handleChange(normalizePickerHex(e.target.value))}
-                  aria-label="Pick theme color"
-                />
-                <FormInput
-                  id="faction-theme-text"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  spellCheck={false}
-                />
-              </div>
+              <HexColorRow
+                pickerId="faction-theme-picker"
+                textId="faction-theme-text"
+                value={field.state.value}
+                onChange={(v) => field.handleChange(v)}
+                onBlur={field.handleBlur}
+                pickerAriaLabel="Pick theme color"
+                constrainedWidth
+              />
             </FormField>
           )}
         </form.Field>
