@@ -1,0 +1,475 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--input-border, rgba(0, 0, 0, 0.15));
+}
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.preview {
+  position: sticky;
+  top: 1rem;
+}
+
+.previewTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+
+.pre {
+  margin: 0;
+  padding: 1rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  overflow: auto;
+  max-height: min(70vh, 800px);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--input-border, rgba(0, 0, 0, 0.2));
+  border-radius: 6px;
+  color: inherit;
+}
+
+.formColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--input-border, rgba(0, 0, 0, 0.12));
+}
+
+.arrayCard {
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--input-border, rgba(0, 0, 0, 0.15));
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.arrayCard:last-child {
+  margin-bottom: 0;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.errorBanner {
+  padding: 0.75rem;
+  border-radius: 6px;
+  background: rgba(195, 51, 51, 0.15);
+  border: 1px solid var(--color-error, #c33);
+  color: inherit;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+}
+
+.filterInput {
+  composes: input from "../../form/Form.module.css";
+  margin-bottom: 0.5rem;
+}
+
+.select {
+  composes: input from "../../form/Form.module.css";
+  min-width: 12rem;
+}
+
+.checkbox {
+  width: auto;
+  max-width: none;
+  margin: 0;
+  accent-color: var(--panel-border, #735c47);
+}
+
+.troopFlipSide {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0.75rem 0 0;
+  padding: 0.75rem 0 0;
+  border-top: 1px dashed var(--input-border, rgba(0, 0, 0, 0.15));
+}
+
+/* Accordion — overflow must stay visible so combobox dropdowns are not clipped */
+.accordionItem {
+  position: relative;
+  z-index: 0;
+  border: 1px solid var(--input-border, rgba(0, 0, 0, 0.15));
+  border-radius: 8px;
+  overflow: visible;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/*
+ * Later siblings paint on top when z-index ties. While a combobox is open, lift the whole
+ * section so the absolute dropdown sits above following accordion headers.
+ * .comboboxWrapOpen is set from JS whenever the menu is expanded (see AssetAutocomplete).
+ */
+.accordionItem:has(.comboboxWrapOpen) {
+  z-index: 500;
+}
+
+.accordionHeader {
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1rem;
+  margin: 0;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  transition: background-color 0.15s;
+}
+
+.accordionItem:has(.accordionPanel) .accordionHeader {
+  border-radius: 8px 8px 0 0;
+}
+
+.accordionHeader:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.accordionHeader::after {
+  content: "▾";
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.accordionPanel {
+  padding: 1rem;
+  padding-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border-top: 1px solid var(--input-border, rgba(0, 0, 0, 0.12));
+  border-radius: 0 0 8px 8px;
+  overflow: visible;
+}
+
+/* Sliders */
+.sliderLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.sliderValue {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.rangeInput {
+  width: 100%;
+  max-width: 28rem;
+  accent-color: var(--panel-border, #735c47);
+}
+
+/* Combobox */
+.comboboxWrap {
+  position: relative;
+  z-index: 0;
+  width: 100%;
+}
+
+/* Marker class — parent accordion uses :has() for z-index; keeps local stacking for the list */
+.comboboxWrapOpen {
+  z-index: 1;
+}
+
+.comboboxInput {
+  composes: input from "../../form/Form.module.css";
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Portaled list (see AssetAutocomplete) — fixed layer, fully opaque so nothing shows through */
+.comboboxListPortal {
+  position: fixed;
+  z-index: 10000;
+  box-sizing: border-box;
+  margin: 0;
+  /* No vertical padding: rows can scroll into the padding box and show as a “text sliver” above
+     sticky section headers. Inset is handled on sections / options instead. */
+  padding: 0;
+  max-height: min(22rem, 55dvh);
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  background-color: rgb(255 253 248);
+  border: 1px solid var(--input-border, rgba(0, 0, 0, 0.25));
+  border-radius: 6px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.22);
+}
+
+/* One scrollport (portal) + multiple `top:0` stickies overlap; wrap label+rows per section so each
+   header sticks only while scrolling that section’s rows. */
+.comboboxSection {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.comboboxListPortal > .comboboxSection:first-child {
+  padding-top: 0.2rem;
+}
+
+.comboboxListPortal > .comboboxSection:last-child {
+  padding-bottom: 0.2rem;
+}
+
+.comboboxSectionLabel {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0.35rem 0.65rem 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.55);
+  background-color: rgb(255 253 248);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.comboboxSectionDivider {
+  height: 1px;
+  margin: 0.35rem 0.5rem;
+  background: rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.comboboxOption,
+.comboboxOptionActive {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0.4rem 0.65rem;
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+  word-break: break-all;
+  border: none;
+  background: transparent;
+  color: inherit;
+}
+
+.comboboxOption:hover,
+.comboboxOptionActive {
+  background: rgba(244, 207, 139, 0.25);
+}
+
+/* Background color slot */
+.colorSlotFieldset {
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--input-border, rgba(0, 0, 0, 0.12));
+  border-radius: 6px;
+}
+
+.colorSlotLegend {
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0 0.35rem;
+}
+
+.colorModeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.65rem;
+}
+
+.radioLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.hexRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.colorPicker {
+  width: 2.5rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--input-border, rgba(0, 0, 0, 0.2));
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.hexText {
+  composes: input from "../../form/Form.module.css";
+  flex: 1;
+  min-width: 8rem;
+  max-width: 12rem;
+}
+
+.gradientWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.radialGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  gap: 0.5rem;
+}
+
+.stopsHint {
+  margin: 0;
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.stopRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+/* TTS ordered colors */
+.ttsHint {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  opacity: 0.9;
+}
+
+.ttsList {
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.ttsRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding: 0.35rem 0.25rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    opacity 0.12s ease;
+}
+
+.ttsRowDragging {
+  opacity: 0.55;
+}
+
+.ttsRowDropTarget {
+  border-color: var(--panel-border, #735c47);
+  background: rgba(115 92 71 / 0.12);
+}
+
+.ttsDragHandle {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  min-height: 2.25rem;
+  margin: 0;
+  padding: 0;
+  color: rgba(0, 0, 0, 0.45);
+  cursor: grab;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--input-border, rgba(0, 0, 0, 0.12));
+  border-radius: 4px;
+}
+
+.ttsDragHandle:hover {
+  color: rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.07);
+}
+
+.ttsDragHandle:active {
+  cursor: grabbing;
+}
+
+.ttsIndex {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 2rem;
+}
+
+.ttsSelect {
+  composes: input from "../../form/Form.module.css";
+  flex: 1;
+  min-width: 10rem;
+}
+
+.ttsRowActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
