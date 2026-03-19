@@ -68,7 +68,10 @@ export function faqItemsByRulesetQueryOptions(rulesetId: number) {
       }
 
       const profilesById = new Map(
-        (profilesResult.data ?? []).map((p) => [p.id, { id: p.id, username: p.username, avatar_url: p.avatar_url }])
+        (profilesResult.data ?? []).map((p) => [
+          p.id,
+          { id: p.id, username: p.username, avatar_url: p.avatar_url },
+        ])
       );
 
       return list.map((item) => ({
@@ -84,11 +87,7 @@ export function faqItemDetailQueryOptions(id: number) {
   return queryOptions({
     queryKey: faqKeys.detail(id),
     queryFn: async () => {
-      const { data: item, error } = await db
-        .from('faq_items')
-        .select('*')
-        .eq('id', id)
-        .single();
+      const { data: item, error } = await db.from('faq_items').select('*').eq('id', id).single();
 
       if (error) throw error;
       if (!item) throw new Error(`FAQ item ${id} not found`);
@@ -169,13 +168,7 @@ export function useUpdateFaqItem() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      id,
-      input,
-    }: {
-      id: number;
-      input: Partial<FaqItemUpdate>;
-    }) => {
+    mutationFn: async ({ id, input }: { id: number; input: Partial<FaqItemUpdate> }) => {
       const { data: entry, error } = await db
         .from('faq_items')
         .update(input)
@@ -250,13 +243,7 @@ export function useCreateFaqAnswer() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      faqItemId,
-      answer,
-    }: {
-      faqItemId: number;
-      answer: string;
-    }) => {
+    mutationFn: async ({ faqItemId, answer }: { faqItemId: number; answer: string }) => {
       const user = await auth.getUser();
       if (!user.data.user?.id) throw new Error('Not authenticated');
 
@@ -286,13 +273,7 @@ export function useUpdateFaqAnswer() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      id,
-      answer,
-    }: {
-      id: number;
-      answer: string;
-    }) => {
+    mutationFn: async ({ id, answer }: { id: number; answer: string }) => {
       const validated = faqAnswerSchema.parse({ answer });
       const { data: entry, error } = await db
         .from('faq_answers')

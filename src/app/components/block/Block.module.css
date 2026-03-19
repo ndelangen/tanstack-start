@@ -14,7 +14,9 @@
   text-decoration: none;
   color: inherit;
   overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .blockLink:hover {

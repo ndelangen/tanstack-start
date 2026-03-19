@@ -1,14 +1,7 @@
-import { useState } from 'react';
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
 
-import { Card } from '@app/components/card/Card';
-import {
-  FormActions,
-  FormButton,
-  FormField,
-  FormTextarea,
-} from '@app/components/form';
 import {
   faqItemDetailQueryOptions,
   useCreateFaqAnswer,
@@ -18,10 +11,9 @@ import {
   useUpdateFaqAnswer,
   useUpdateFaqItem,
 } from '@db/faq';
-import {
-  profileDetailQueryOptions,
-  useCurrentProfile,
-} from '@db/profiles';
+import { profileDetailQueryOptions, useCurrentProfile } from '@db/profiles';
+import { Card } from '@app/components/card/Card';
+import { FormActions, FormButton, FormField, FormTextarea } from '@app/components/form';
 
 import styles from './FaqDetail.module.css';
 
@@ -31,9 +23,7 @@ export const Route = createFileRoute('/_app/rulesets/$id/faq/$faqId')({
       faqItemDetailQueryOptions(Number.parseInt(params.faqId, 10))
     );
     if (item) {
-      await context.queryClient.ensureQueryData(
-        profileDetailQueryOptions(item.asked_by)
-      );
+      await context.queryClient.ensureQueryData(profileDetailQueryOptions(item.asked_by));
     }
   },
   component: FaqDetailPage,
@@ -86,12 +76,7 @@ function FaqDetailPage() {
     a.answered_by === profile?.data?.id || isQuestionOwner;
 
   const handleDeleteQuestion = () => {
-    if (
-      !window.confirm(
-        'Delete this question and all its answers? This cannot be undone.'
-      )
-    )
-      return;
+    if (!window.confirm('Delete this question and all its answers? This cannot be undone.')) return;
     deleteFaqItem.mutate(faqItemId, {
       onSuccess: () => navigate({ to: '/rulesets/$id', params: { id } }),
     });
@@ -141,11 +126,7 @@ function FaqDetailPage() {
 
   return (
     <>
-      <Link
-        to="/rulesets/$id"
-        params={{ id }}
-        className={styles.backLink}
-      >
+      <Link to="/rulesets/$id" params={{ id }} className={styles.backLink}>
         Back to ruleset
       </Link>
 
@@ -176,9 +157,7 @@ function FaqDetailPage() {
                   Cancel
                 </FormButton>
                 {updateFaqItem.isError && (
-                  <span className={styles.error}>
-                    {updateFaqItem.error.message}
-                  </span>
+                  <span className={styles.error}>{updateFaqItem.error.message}</span>
                 )}
               </FormActions>
             </div>
@@ -186,11 +165,7 @@ function FaqDetailPage() {
             <>
               <div className={styles.questionHeader}>
                 {askerProfile.data && (
-                  <Link
-                    to="/profiles/$id"
-                    params={{ id: item.asked_by }}
-                    style={{ flexShrink: 0 }}
-                  >
+                  <Link to="/profiles/$id" params={{ id: item.asked_by }} style={{ flexShrink: 0 }}>
                     {askerProfile.data.avatar_url ? (
                       <img
                         src={askerProfile.data.avatar_url}
@@ -199,10 +174,10 @@ function FaqDetailPage() {
                       />
                     ) : (
                       <span className={styles.avatarPlaceholder}>
-                        {(askerProfile.data.username
+                        {askerProfile.data.username
                           ?.slice(0, 2)
                           .toUpperCase()
-                          .replace(/[^A-Z]/g, '') ?? '?')}
+                          .replace(/[^A-Z]/g, '') ?? '?'}
                       </span>
                     )}
                   </Link>
@@ -233,9 +208,7 @@ function FaqDetailPage() {
                     {deleteFaqItem.isPending ? 'Deleting…' : 'Delete question'}
                   </FormButton>
                   {deleteFaqItem.isError && (
-                    <span className={styles.error}>
-                      {deleteFaqItem.error.message}
-                    </span>
+                    <span className={styles.error}>{deleteFaqItem.error.message}</span>
                   )}
                 </FormActions>
               )}
@@ -253,10 +226,7 @@ function FaqDetailPage() {
                 form.elements.namedItem('answer') as HTMLTextAreaElement
               ).value.trim();
               if (!answer) return;
-              createFaqAnswer.mutate(
-                { faqItemId, answer },
-                { onSuccess: () => form.reset() }
-              );
+              createFaqAnswer.mutate({ faqItemId, answer }, { onSuccess: () => form.reset() });
             }}
           >
             <FormField
@@ -280,9 +250,7 @@ function FaqDetailPage() {
         )}
 
         {hasUserAnswered && !showAddAnswerForm && (
-          <p className={styles.hintBlock}>
-            You&apos;ve answered. You can edit your answer below.
-          </p>
+          <p className={styles.hintBlock}>You&apos;ve answered. You can edit your answer below.</p>
         )}
 
         {answers.length > 0 ? (
@@ -317,9 +285,7 @@ function FaqDetailPage() {
                           Cancel
                         </FormButton>
                         {updateFaqAnswer.isError && (
-                          <span className={styles.error}>
-                            {updateFaqAnswer.error.message}
-                          </span>
+                          <span className={styles.error}>{updateFaqAnswer.error.message}</span>
                         )}
                       </FormActions>
                     </div>
@@ -336,10 +302,7 @@ function FaqDetailPage() {
                       </div>
                       <div className={styles.answerActions}>
                         {canEditAnswer(a) && (
-                          <FormButton
-                            type="button"
-                            onClick={() => startEditAnswer(a)}
-                          >
+                          <FormButton type="button" onClick={() => startEditAnswer(a)}>
                             Edit your answer
                           </FormButton>
                         )}

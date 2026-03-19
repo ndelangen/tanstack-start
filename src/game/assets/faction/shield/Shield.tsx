@@ -1,0 +1,167 @@
+import type { FC } from 'react';
+import type { z } from 'zod';
+
+import { shield as size } from '../../../data/sizes';
+import type { FactionAssets, FactionPreview } from '../../../schema/faction';
+import { useCountId } from '../../utils/useCountId';
+import { LeaderToken } from '../leader/Leader';
+import { Token } from '../token/Token';
+import styles from './Shield.module.css';
+
+type AssetShield = z.infer<typeof FactionAssets.shield>;
+type PreviewShield = z.infer<typeof FactionPreview.shield>;
+type ShieldProps = AssetShield | PreviewShield;
+
+// Type guard to check if props are Asset type
+function isAssetShield(props: ShieldProps): props is AssetShield {
+  return typeof props.leader === 'string';
+}
+
+export const Shield: FC<ShieldProps> = (props) => {
+  const prefix = useCountId();
+
+  const textMask = `_${prefix}text-mask`;
+  const textShadeMask = `_${prefix}text-shade-mask`;
+  const gradient = `_${prefix}gradient`;
+
+  const { name } = props;
+
+  const svgContent = (
+    <svg {...size} className={styles.svg} aria-label={name}>
+      <defs>
+        <linearGradient id={gradient} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="#faf8eb" />
+          <stop offset="100%" stopColor="#cfaf45" />
+        </linearGradient>
+        <mask id={textMask} maskUnits="userSpaceOnUse">
+          <rect fill="black" {...size} />
+          <text
+            dominantBaseline="middle"
+            fill="white"
+            fontFamily="C_Desdemona"
+            fontSize="65"
+            letterSpacing="-0.7"
+            style={{ textTransform: 'uppercase' }}
+            textAnchor="middle"
+            x="50%"
+            y={size.height - 50 - 125}
+          >
+            {name}
+          </text>
+        </mask>
+        <mask id={textShadeMask} maskUnits="userSpaceOnUse">
+          <rect fill="black" {...size} />
+          <text
+            dominantBaseline="middle"
+            fill="white"
+            fontFamily="C_Desdemona"
+            fontSize="65"
+            letterSpacing="-0.7"
+            style={{ textTransform: 'uppercase' }}
+            textAnchor="middle"
+            x="50%"
+            y={size.height - 50 - 125}
+          >
+            {name}
+          </text>
+          <text
+            dominantBaseline="middle"
+            fill="black"
+            fontFamily="C_Desdemona"
+            fontSize="65"
+            letterSpacing="-0.7"
+            style={{ textTransform: 'uppercase' }}
+            textAnchor="middle"
+            x="50%"
+            y={size.height - 50 - 254 / 2}
+          >
+            {name}
+          </text>
+        </mask>
+
+        <filter height="300%" id="dropshadow" width="300%" x="-100%" y="-100%">
+          <feDropShadow dx="0" dy="0" floodColor="#000000" floodOpacity="1" stdDeviation="8" />
+          <feDropShadow dx="0" dy="0" floodColor="#000000" floodOpacity="1" stdDeviation="4" />
+          <feDropShadow dx="0" dy="0" floodColor="#000000" floodOpacity="1" stdDeviation="2" />
+        </filter>
+      </defs>
+      <g filter={`url(#dropshadow)`}>
+        <text
+          dominantBaseline="middle"
+          fill="black"
+          fontFamily="C_Desdemona"
+          fontSize="75"
+          letterSpacing="-0.7"
+          style={{ textTransform: 'uppercase' }}
+          textAnchor="middle"
+          x="50%"
+          y={size.height - 50 - 125}
+        >
+          {name}
+        </text>
+      </g>
+      <rect
+        fill={`url(#${gradient})`}
+        y={size.height - 55 - 150}
+        {...size}
+        height={70}
+        mask={`url(#${textMask})`}
+      />
+      <g style={{ mixBlendMode: 'overlay' }}>
+        <rect
+          fill="black"
+          y={size.height - 55 - 150}
+          {...size}
+          height={70}
+          mask={`url(#${textShadeMask})`}
+        />
+      </g>
+      <g
+        style={{
+          mixBlendMode: 'color-burn',
+          filter: 'saturate(16.2) contrast(2) grayscale(1)',
+        }}
+      >
+        <image
+          {...size}
+          mask={`url(#${textMask})`}
+          x={0}
+          xlinkHref="'/image/shield/shield-base.png"
+          y={-40}
+        />
+      </g>
+    </svg>
+  );
+
+  return (
+    <div className={styles.shield} style={{ ...size }}>
+      <div className={[styles.logo, styles.left].join(' ')}>
+        {isAssetShield(props) ? (
+          <img src={props.logo} alt={props.name} />
+        ) : (
+          <Token background={props.background} logo={props.logo} />
+        )}
+      </div>
+      <div className={[styles.logo, styles.right].join(' ')}>
+        {isAssetShield(props) ? (
+          <img src={props.logo} alt={props.name} />
+        ) : (
+          <Token background={props.background} logo={props.logo} />
+        )}
+      </div>
+      {isAssetShield(props) ? (
+        <img src={props.leader} className={styles.leader} alt={props.name} />
+      ) : (
+        <div className={styles.leader}>
+          <LeaderToken {...props.leader} background={props.background} logo={props.logo} />
+        </div>
+      )}
+      <div className={styles.overlay} />
+      {svgContent}
+    </div>
+  );
+};
+
+// Export aliases for backward compatibility
+export const ShieldAsset = Shield;
+export const ShieldPreview = Shield;

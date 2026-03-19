@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 
-import { BlockCover, BlockLink } from '@app/components/block';
 import { rulesetsListQueryOptions, useRulesetsAll } from '@db/rulesets';
+import { BlockCover, BlockLink } from '@app/components/block';
 
 import styles from './RulesetsIndex.module.css';
 

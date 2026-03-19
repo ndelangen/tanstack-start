@@ -1,13 +1,6 @@
 import { createFileRoute, Link, Outlet, useMatches, useNavigate } from '@tanstack/react-router';
 
-import { BlockCover } from '@app/components/block';
-import { Card } from '@app/components/card/Card';
-import { FormActions, FormButton } from '@app/components/form';
-import { FaqList } from '@app/components/faq/FaqList';
-import {
-  faqItemsByRulesetQueryOptions,
-  useFaqItemsByRuleset,
-} from '@db/faq';
+import { faqItemsByRulesetQueryOptions, useFaqItemsByRuleset } from '@db/faq';
 import { useCurrentProfile } from '@db/profiles';
 import {
   rulesetDetailQueryOptions,
@@ -16,6 +9,10 @@ import {
   useRuleset,
   useRulesetFactionsWithDetails,
 } from '@db/rulesets';
+import { BlockCover } from '@app/components/block';
+import { Card } from '@app/components/card/Card';
+import { FaqList } from '@app/components/faq/FaqList';
+import { FormActions, FormButton } from '@app/components/form';
 
 import styles from './RulesetDetail.module.css';
 
@@ -32,12 +29,8 @@ export const Route = createFileRoute('/_app/rulesets/$id')({
       );
       if (ruleset) {
         await Promise.all([
-          context.queryClient.ensureQueryData(
-            faqItemsByRulesetQueryOptions(ruleset.id)
-          ),
-          context.queryClient.ensureQueryData(
-            rulesetFactionsWithDetailsQueryOptions(ruleset.id)
-          ),
+          context.queryClient.ensureQueryData(faqItemsByRulesetQueryOptions(ruleset.id)),
+          context.queryClient.ensureQueryData(rulesetFactionsWithDetailsQueryOptions(ruleset.id)),
         ]);
       }
       return { notFound: false };
@@ -131,9 +124,7 @@ function RulesetDetailPage() {
               {deleteRuleset.isPending ? 'Deleting…' : 'Delete ruleset'}
             </FormButton>
             {deleteRuleset.isError && (
-              <span className={styles.error}>
-                {deleteRuleset.error.message}
-              </span>
+              <span className={styles.error}>{deleteRuleset.error.message}</span>
             )}
           </FormActions>
         )}
@@ -159,10 +150,7 @@ function RulesetDetailPage() {
         <Card>
           {showAskForm && (
             <p style={{ marginBottom: '1rem' }}>
-              <Link
-                to="/rulesets/$id/faq/create"
-                params={{ id }}
-              >
+              <Link to="/rulesets/$id/faq/create" params={{ id }}>
                 Ask a question
               </Link>
             </p>

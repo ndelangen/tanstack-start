@@ -31,6 +31,10 @@ npm run db:push          # Push migrations to Supabase
 # Code quality
 npm run biome:check      # Lint and format
 npm run test             # Run tests
+npm run storybook        # Storybook dev (port 6006)
+npm run build-storybook  # Static Storybook → storybook-static
+npm run generate         # Regenerate src/game/data/generated.ts + generated/index.json
+npm run capture          # Screenshots/PDFs (requires storybook-static from build-storybook)
 ```
 
 ## Common Workflows
@@ -76,6 +80,10 @@ npm run test             # Run tests
    ```
 
 3. Route tree auto-generates from file structure.
+
+## Game assets (`src/game`, `public/`, `generated/`)
+
+Dune card/faction rendering, Storybook, and static art live here. `generated/` holds JPEGs from `scripts/capture.ts` and `index.json` from `scripts/generate.ts`; it is large—consider [Git LFS](https://git-lfs.com/) if clones get slow.
 
 ## Detailed Documentation
 

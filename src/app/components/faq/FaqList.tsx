@@ -1,10 +1,9 @@
-import { useMemo } from 'react';
 import { Link } from '@tanstack/react-router';
 import Fuse from 'fuse.js';
+import { Search } from 'lucide-react';
+import { useMemo } from 'react';
 
 import type { FaqItemWithDetails } from '@db/faq';
-
-import { Search } from 'lucide-react';
 
 import styles from './FaqList.module.css';
 
@@ -99,9 +98,7 @@ export function FaqList({
                   </Link>
                   <div className={styles.meta}>
                     <span className={styles.badges}>
-                      <span
-                        className={hasAnswers ? styles.badgeAnswered : styles.badgeUnanswered}
-                      >
+                      <span className={hasAnswers ? styles.badgeAnswered : styles.badgeUnanswered}>
                         {hasAnswers ? 'Answered' : 'Unanswered'}
                       </span>
                       <span className={styles.badge}>
@@ -124,10 +121,10 @@ export function FaqList({
                             />
                           ) : (
                             <span className={styles.avatarPlaceholder}>
-                              {(item.asker_profile.username
+                              {item.asker_profile.username
                                 ?.slice(0, 2)
                                 .toUpperCase()
-                                .replace(/[^A-Z]/g, '') ?? '?')}
+                                .replace(/[^A-Z]/g, '') ?? '?'}
                             </span>
                           )}
                           <span>{item.asker_profile.username ?? 'Unknown'}</span>

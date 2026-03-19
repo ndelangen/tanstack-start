@@ -1,15 +1,25 @@
 {
   "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "dist", "**/*.stories.ts", "**/*.stories.tsx"],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",
     "module": "ESNext",
+    "plugins": [
+      {
+        "name": "typescript-plugin-css-modules",
+        "options": {
+          "customMatcher": "\\.module\\.css$"
+        }
+      }
+    ],
     "baseUrl": ".",
     "paths": {
       "@db/core": ["./src/app/db/core/index.ts"],
       "@db/*": ["./src/app/db/domains/*"],
       "@app/*": ["./src/app/*"],
-      "@data/*": ["./src/data/*"]
+      "@data/*": ["./src/data/*"],
+      "@game/*": ["./src/game/*"]
     },
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["vite/client"],

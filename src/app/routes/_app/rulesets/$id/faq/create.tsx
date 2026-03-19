@@ -1,19 +1,10 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 
-import { Card } from '@app/components/card/Card';
-import {
-  FormActions,
-  FormButton,
-  FormField,
-  FormInput,
-  FormTextarea,
-} from '@app/components/form';
-import {
-  faqItemsByRulesetQueryOptions,
-  useCreateFaqItem,
-} from '@db/faq';
-import { rulesetDetailQueryOptions, useRuleset } from '@db/rulesets';
+import { faqItemsByRulesetQueryOptions, useCreateFaqItem } from '@db/faq';
 import { useCurrentProfile } from '@db/profiles';
+import { rulesetDetailQueryOptions, useRuleset } from '@db/rulesets';
+import { Card } from '@app/components/card/Card';
+import { FormActions, FormButton, FormField, FormInput, FormTextarea } from '@app/components/form';
 
 import styles from '../../RulesetDetail.module.css';
 
@@ -73,12 +64,8 @@ function FaqCreatePage() {
           onSubmit={(e) => {
             e.preventDefault();
             const form = e.target as HTMLFormElement;
-            const question = (
-              form.elements.namedItem('question') as HTMLInputElement
-            ).value.trim();
-            const answer = (
-              form.elements.namedItem('answer') as HTMLTextAreaElement
-            ).value.trim();
+            const question = (form.elements.namedItem('question') as HTMLInputElement).value.trim();
+            const answer = (form.elements.namedItem('answer') as HTMLTextAreaElement).value.trim();
             if (!question) return;
             createFaqItem.mutate(
               { rulesetId, question, answer: answer || undefined },
@@ -103,23 +90,15 @@ function FaqCreatePage() {
               placeholder="Your question…"
             />
           </FormField>
-          <FormField
-            label="Your answer (optional—you can add or edit it later)"
-          >
-            <FormTextarea
-              name="answer"
-              rows={3}
-              placeholder="Optional answer…"
-            />
+          <FormField label="Your answer (optional—you can add or edit it later)">
+            <FormTextarea name="answer" rows={3} placeholder="Optional answer…" />
           </FormField>
           <FormActions>
             <FormButton type="submit" disabled={createFaqItem.isPending}>
               {createFaqItem.isPending ? 'Asking…' : 'Ask'}
             </FormButton>
             {createFaqItem.isError && (
-              <span className={styles.error}>
-                {createFaqItem.error.message}
-              </span>
+              <span className={styles.error}>{createFaqItem.error.message}</span>
             )}
           </FormActions>
         </form>

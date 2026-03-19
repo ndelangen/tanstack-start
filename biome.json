@@ -33,10 +33,11 @@
             "groups": [
               ":NODE:",
               ":BLANK_LINE:",
-              [":PACKAGE:", "!@app/**", "!@data/**", "!@db/**"],
+              [":PACKAGE:", "!@app/**", "!@data/**", "!@db/**", "!@game/**"],
               ":BLANK_LINE:",
               ["@db", "@db/**"],
               ["@app", "@app/**", "@data", "@data/**"],
+              ["@game", "@game/**"],
               ":BLANK_LINE:",
               ":PATH:"
             ]

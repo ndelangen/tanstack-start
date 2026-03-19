@@ -1,0 +1,33 @@
+.disc {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 24px;
+  text-align: center;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.content {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.h1 {
+  font-family: "C_Copperplate_Gothic", sans-serif;
+  font-size: 28px;
+  fill: white;
+  text-transform: uppercase;
+}
+.h2 {
+  font-family: "C_Copperplate_Gothic_Heavy", sans-serif;
+  font-size: 12px;
+  fill: white;
+  text-transform: uppercase;
+}

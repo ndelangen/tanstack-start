@@ -1,0 +1,103 @@
+import { type FC, useMemo } from 'react';
+import type { z } from 'zod';
+
+import { StrokedUse } from '../../../components/block/StrokedUse';
+import type { FactionAssets, FactionPreview } from '../../../schema/faction';
+import { BackgroundRenderer } from '../../utils/BackgroundRenderer';
+import { tint0 } from '../../utils/colors';
+import { useCountId } from '../../utils/useCountId';
+import styles from './Leader.module.css';
+
+const iconSize = { width: 41, height: 41 };
+const iconLocation = { x: 150 - iconSize.width / 2, y: 220 };
+
+type LeaderTokenProps =
+  | z.infer<typeof FactionAssets.leaders>[0]
+  | z.infer<typeof FactionPreview.leaders>[0];
+
+export const LeaderToken: FC<LeaderTokenProps> = ({ background, image, logo, name, strength }) => {
+  const cid = useCountId();
+  const prefix = useMemo(() => `${cid}_`, [cid]);
+
+  const curvedTextPath = `${prefix}curvedTextPath`;
+  const discMask = `${prefix}mask-disc`;
+
+  const svgContent = (
+    <svg viewBox="0 0 300 300" aria-label={name}>
+      <defs>
+        <path id={curvedTextPath} d="M 10 135 m 0 0 a 140 140 0 0 0 280 0" />
+
+        <mask id={discMask} maskUnits="userSpaceOnUse">
+          <rect width="300" height="300" fill="black" />
+          <circle cx="150" cy="131" fill={'white'} r="115"></circle>
+          <StrokedUse
+            xlinkHref={`${logo}#root`}
+            {...iconLocation}
+            {...iconSize}
+            fill="black"
+            stroke="black"
+            strokeWidth="20%"
+          />
+          <text
+            className={styles.strength}
+            fill="black"
+            stroke="black"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="16.6px"
+            textAnchor="end"
+            x="276"
+            y="186"
+          >
+            {strength}
+          </text>
+        </mask>
+      </defs>
+
+      <image
+        height={230}
+        mask={`url(#${discMask})`}
+        width={230}
+        x={35}
+        xlinkHref={image}
+        y={16.6}
+      />
+      <circle
+        cx="150"
+        cy="131"
+        fill="transparent"
+        id="mainCircle"
+        mask={`url(#${discMask})`}
+        r="115"
+        stroke={tint0}
+        strokeWidth={6.6}
+      />
+
+      <text className={styles.strength} textAnchor="end" fill={tint0} x="276" y="186">
+        {strength}
+      </text>
+
+      <text>
+        <textPath
+          className={styles.name}
+          fill={tint0}
+          filter={'drop-shadow(0 0 1.75rem rgba(0,0,0,0.6))'}
+          startOffset="50%"
+          dominantBaseline="middle"
+          textAnchor="middle"
+          xlinkHref={`#${curvedTextPath}`}
+        >
+          {name}
+        </textPath>
+      </text>
+
+      <StrokedUse xlinkHref={`${logo}#root`} {...iconLocation} {...iconSize} fill={tint0} />
+    </svg>
+  );
+
+  return (
+    <BackgroundRenderer background={background} className={styles.disc}>
+      {svgContent}
+    </BackgroundRenderer>
+  );
+};

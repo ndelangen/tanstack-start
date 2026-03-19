@@ -1,0 +1,41 @@
+import preview from '../../../../../.storybook/preview';
+import { TroopToken } from './Troop';
+
+const meta = preview.meta({
+  component: TroopToken,
+  globals: {
+    viewport: {
+      value: 'disc',
+    },
+  },
+  argTypes: {
+    image: {
+      control: {
+        type: 'select',
+      },
+    },
+  },
+});
+
+export const Asset = meta.story({
+  args: {
+    background: '/generated/utils/background/moritani.jpg',
+    image: 'vector/troop/atreides.svg',
+    star: 'vector/troop_modifier/star-left-red.svg',
+    striped: false,
+  },
+});
+
+export const Preview = meta.story({
+  args: {
+    background: {
+      image: 'image/texture/021.jpg',
+      colors: ['red', 'blue'],
+      opacity: 0,
+      strength: 0,
+    },
+    star: 'vector/troop_modifier/star-left-red.svg',
+    striped: false,
+    image: 'vector/troop/atreides.svg',
+  },
+});

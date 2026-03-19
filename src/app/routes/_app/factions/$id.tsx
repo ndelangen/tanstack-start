@@ -1,18 +1,16 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 
 import { factionDetailQueryOptions, useFaction } from '@db/factions';
-import {
-  rulesetsByFactionQueryOptions,
-  useRulesetsByFaction,
-} from '@db/rulesets';
+import { rulesetsByFactionQueryOptions, useRulesetsByFaction } from '@db/rulesets';
+import { isFullFactionData } from '@data/factions';
+import { FactionSheet } from '@game/assets/faction/sheet/Sheet';
+import { FactionPreview } from '@game/schema/faction';
 
 export const Route = createFileRoute('/_app/factions/$id')({
   loader: async ({ context, params }) => {
     await Promise.all([
       context.queryClient.ensureQueryData(factionDetailQueryOptions(params.id)),
-      context.queryClient.ensureQueryData(
-        rulesetsByFactionQueryOptions(params.id)
-      ),
+      context.queryClient.ensureQueryData(rulesetsByFactionQueryOptions(params.id)),
     ]);
   },
   component: FactionDetailPage,
@@ -31,8 +29,14 @@ function FactionDetailPage() {
 
   return (
     <>
-      <h2>{data.name}</h2>
-      <p>{data.description}</p>
+      {isFullFactionData(data) ? (
+        <FactionSheet {...FactionPreview.sheet.parse(data)} />
+      ) : (
+        <>
+          <h2>{data.name}</h2>
+          <p>{data.description}</p>
+        </>
+      )}
 
       {rulesets.data && rulesets.data.length > 0 && (
         <section>

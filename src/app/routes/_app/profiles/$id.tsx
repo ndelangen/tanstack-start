@@ -2,11 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 
 import { factionsByOwnerQueryOptions, useFactionsByOwner } from '@db/factions';
 import { userGroupMembershipsQueryOptions, useUserGroupMemberships } from '@db/members';
-import {
-  profileDetailQueryOptions,
-  useCurrentProfile,
-  useProfile,
-} from '@db/profiles';
+import { profileDetailQueryOptions, useCurrentProfile, useProfile } from '@db/profiles';
 
 export const Route = createFileRoute('/_app/profiles/$id')({
   loader: async ({ context, params }) => {
@@ -47,7 +43,10 @@ function ProfileDetailPage() {
 
   const isSelf = currentProfile.data?.id === profile.data.id;
   const initials =
-    profile.data.username?.slice(0, 2).toUpperCase().replace(/[^A-Z]/g, '') || '?';
+    profile.data.username
+      ?.slice(0, 2)
+      .toUpperCase()
+      .replace(/[^A-Z]/g, '') || '?';
 
   return (
     <>

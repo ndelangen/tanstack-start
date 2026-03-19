@@ -8,7 +8,12 @@ interface FormButtonProps extends ComponentPropsWithoutRef<'button'> {
   variant?: Variant;
 }
 
-export function FormButton({ variant = 'primary', className, type = 'button', ...props }: FormButtonProps) {
+export function FormButton({
+  variant = 'primary',
+  className,
+  type = 'button',
+  ...props
+}: FormButtonProps) {
   const variantClass =
     variant === 'danger'
       ? styles.buttonDanger

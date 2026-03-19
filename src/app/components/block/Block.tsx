@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
 import { Link, type LinkProps } from '@tanstack/react-router';
+import type { ReactNode } from 'react';
 
 import styles from './Block.module.css';
 
@@ -10,9 +10,7 @@ interface BlockProps {
 
 export function Block({ children, className }: BlockProps) {
   return (
-    <div className={className ? `${styles.block} ${className}` : styles.block}>
-      {children}
-    </div>
+    <div className={className ? `${styles.block} ${className}` : styles.block}>{children}</div>
   );
 }
 

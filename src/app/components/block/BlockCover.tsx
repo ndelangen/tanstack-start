@@ -6,11 +6,7 @@ interface BlockCoverProps {
   placeholder?: string;
 }
 
-export function BlockCover({
-  src,
-  alt = '',
-  placeholder = 'No cover',
-}: BlockCoverProps) {
+export function BlockCover({ src, alt = '', placeholder = 'No cover' }: BlockCoverProps) {
   return (
     <div className={styles.wrapper}>
       {src ? (

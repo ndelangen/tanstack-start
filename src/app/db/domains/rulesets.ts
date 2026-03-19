@@ -112,8 +112,7 @@ export function rulesetFactionsWithDetailsQueryOptions(rulesetId: number) {
 
       return entries.map((e) => ({
         factionId: e.faction_id,
-        name:
-          (e.factions as { data?: { name?: string } } | null)?.data?.name ?? e.faction_id,
+        name: (e.factions as { data?: { name?: string } } | null)?.data?.name ?? e.faction_id,
       }));
     },
   });
@@ -194,12 +193,21 @@ export function useCreateRuleset() {
       input,
       groupId,
       imageCover,
-    }: { input: Ruleset; groupId?: string | null; imageCover?: string | null }) => {
+    }: {
+      input: Ruleset;
+      groupId?: string | null;
+      imageCover?: string | null;
+    }) => {
       const user = await auth.getUser();
       if (!user.data.user?.id) throw new Error('Not authenticated');
 
       const validated = schema.parse(input);
-      const insert: { name: string; group_id: string | null; owner_id: string; image_cover?: string | null } = {
+      const insert: {
+        name: string;
+        group_id: string | null;
+        owner_id: string;
+        image_cover?: string | null;
+      } = {
         name: validated.name,
         group_id: groupId ?? null,
         owner_id: user.data.user.id,
@@ -207,11 +215,7 @@ export function useCreateRuleset() {
       if (imageCover !== undefined) {
         insert.image_cover = imageCover;
       }
-      const { data: entry, error } = await db
-        .from('rulesets')
-        .insert(insert)
-        .select()
-        .single();
+      const { data: entry, error } = await db.from('rulesets').insert(insert).select().single();
 
       if (error) throw error;
       if (!entry) throw new Error('Failed to create ruleset');
@@ -234,7 +238,12 @@ export function useUpdateRuleset() {
       id,
       groupId,
       imageCover,
-    }: { input: Ruleset; id: number; groupId?: string | null; imageCover?: string | null }) => {
+    }: {
+      input: Ruleset;
+      id: number;
+      groupId?: string | null;
+      imageCover?: string | null;
+    }) => {
       const validated = schema.parse(input);
       const update: { name?: string; group_id?: string | null; image_cover?: string | null } = {
         name: validated.name,
@@ -269,10 +278,7 @@ export function useDeleteRuleset() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      const { error } = await db
-        .from('rulesets')
-        .update({ is_deleted: true })
-        .eq('id', id);
+      const { error } = await db.from('rulesets').update({ is_deleted: true }).eq('id', id);
       if (error) throw error;
       return id;
     },
@@ -287,13 +293,7 @@ export function useAddFactionToRuleset() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      rulesetId,
-      factionId,
-    }: {
-      rulesetId: number;
-      factionId: string;
-    }) => {
+    mutationFn: async ({ rulesetId, factionId }: { rulesetId: number; factionId: string }) => {
       const { error } = await db.from('ruleset_factions').insert({
         ruleset_id: rulesetId,
         faction_id: factionId,
@@ -313,13 +313,7 @@ export function useRemoveFactionFromRuleset() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      rulesetId,
-      factionId,
-    }: {
-      rulesetId: number;
-      factionId: string;
-    }) => {
+    mutationFn: async ({ rulesetId, factionId }: { rulesetId: number; factionId: string }) => {
       const { error } = await db
         .from('ruleset_factions')
         .delete()

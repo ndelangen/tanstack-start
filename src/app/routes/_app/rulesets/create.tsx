@@ -45,9 +45,7 @@ function CreateRulesetPage() {
         <button type="submit" disabled={createRuleset.isPending}>
           {createRuleset.isPending ? 'Creating…' : 'Create'}
         </button>
-        {createRuleset.isError && (
-          <p style={{ color: 'red' }}>{createRuleset.error.message}</p>
-        )}
+        {createRuleset.isError && <p style={{ color: 'red' }}>{createRuleset.error.message}</p>}
       </form>
     </>
   );
