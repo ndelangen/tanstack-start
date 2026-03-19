@@ -23,12 +23,12 @@
 
 .panel {
   flex: 1;
-  background-color: rgba(255, 255, 255, 0.12);
-  border-radius: 6px;
+  background-color: var(--panel-bg);
+  border-radius: var(--panel-radius);
   padding: 20px;
-  box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.166);
+  box-shadow: var(--panel-shadow);
   backdrop-filter: blur(8px);
-  border: 2px solid #f4cf8b;
+  border: 2px solid var(--panel-border);
   box-sizing: border-box;
   text-transform: uppercase;
 }

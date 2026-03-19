@@ -1,0 +1,17 @@
+.section {
+  margin-bottom: 1.5rem;
+}
+
+.coverWrapper {
+  max-width: 200px;
+  margin-bottom: 1rem;
+}
+
+.sectionTitle {
+  margin: 0 0 1rem 0;
+}
+
+.error {
+  font-size: 0.9rem;
+  color: var(--color-error, #c33);
+}

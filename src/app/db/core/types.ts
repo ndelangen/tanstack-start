@@ -244,6 +244,7 @@ export type Database = {
           created_at: string
           group_id: string | null
           id: number
+          image_cover: string | null
           is_deleted: boolean
           name: string
           owner_id: string
@@ -253,6 +254,7 @@ export type Database = {
           created_at?: string
           group_id?: string | null
           id?: number
+          image_cover?: string | null
           is_deleted?: boolean
           name: string
           owner_id: string
@@ -262,6 +264,7 @@ export type Database = {
           created_at?: string
           group_id?: string | null
           id?: number
+          image_cover?: string | null
           is_deleted?: boolean
           name?: string
           owner_id?: string

@@ -106,7 +106,7 @@ export function Page({ head, content }: PageProps) {
   useEffect(() => {
     const img = new Image();
     img.onload = () => setImageLoaded(true);
-    img.src = '/web/head.jpg';
+    img.src = '/web/head.png';
   }, []);
 
   return (

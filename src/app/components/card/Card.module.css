@@ -1,0 +1,17 @@
+.card {
+  background-color: var(--panel-bg);
+  border-radius: var(--panel-radius);
+  padding: 20px;
+  box-shadow: var(--panel-shadow);
+  backdrop-filter: blur(8px);
+  border: 2px solid var(--panel-border);
+  box-sizing: border-box;
+}
+
+.cardHeader {
+  margin-bottom: 1rem;
+}
+
+.cardBody {
+  /* Content inherits padding from .card */
+}

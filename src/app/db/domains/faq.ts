@@ -30,6 +30,11 @@ export const faqKeys = {
 
 /* Queries */
 
+export type FaqItemWithDetails = FaqItemEntry & {
+  faq_answers: FaqAnswerEntry[];
+  asker_profile: { id: string; username: string | null; avatar_url: string | null } | null;
+};
+
 export function faqItemsByRulesetQueryOptions(rulesetId: number) {
   return queryOptions({
     queryKey: faqKeys.byRuleset(rulesetId),
@@ -45,24 +50,32 @@ export function faqItemsByRulesetQueryOptions(rulesetId: number) {
       if (list.length === 0) return [];
 
       const itemIds = list.map((i) => i.id);
-      const { data: answers, error: answersError } = await db
-        .from('faq_answers')
-        .select('*')
-        .in('faq_item_id', itemIds);
+      const askerIds = [...new Set(list.map((i) => i.asked_by))];
 
-      if (answersError) throw answersError;
+      const [answersResult, profilesResult] = await Promise.all([
+        db.from('faq_answers').select('*').in('faq_item_id', itemIds),
+        db.from('profiles').select('id, username, avatar_url').in('id', askerIds),
+      ]);
+
+      if (answersResult.error) throw answersResult.error;
+      if (profilesResult.error) throw profilesResult.error;
 
       const byItemId = new Map<number, FaqAnswerEntry[]>();
-      for (const a of answers ?? []) {
+      for (const a of answersResult.data ?? []) {
         const arr = byItemId.get(a.faq_item_id) ?? [];
         arr.push(a);
         byItemId.set(a.faq_item_id, arr);
       }
 
+      const profilesById = new Map(
+        (profilesResult.data ?? []).map((p) => [p.id, { id: p.id, username: p.username, avatar_url: p.avatar_url }])
+      );
+
       return list.map((item) => ({
         ...item,
         faq_answers: byItemId.get(item.id) ?? [],
-      }));
+        asker_profile: profilesById.get(item.asked_by) ?? null,
+      })) as FaqItemWithDetails[];
     },
   });
 }
@@ -109,9 +122,11 @@ export function useCreateFaqItem() {
     mutationFn: async ({
       rulesetId,
       question,
+      answer,
     }: {
       rulesetId: number;
       question: string;
+      answer?: string;
     }) => {
       const user = await auth.getUser();
       if (!user.data.user?.id) throw new Error('Not authenticated');
@@ -129,10 +144,23 @@ export function useCreateFaqItem() {
 
       if (error) throw error;
       if (!entry) throw new Error('Failed to create FAQ item');
+
+      if (answer?.trim()) {
+        const answerValidated = faqAnswerSchema.parse({ answer: answer.trim() });
+        const { error: answerError } = await db.from('faq_answers').insert({
+          faq_item_id: entry.id,
+          answer: answerValidated.answer,
+          answered_by: user.data.user.id,
+        });
+        if (answerError) throw answerError;
+      }
+
       return entry;
     },
     onSuccess: (entry) => {
       qc.invalidateQueries({ queryKey: faqKeys.byRuleset(entry.ruleset_id) });
+      qc.invalidateQueries({ queryKey: faqKeys.detail(entry.id) });
+      qc.invalidateQueries({ queryKey: faqKeys.all });
     },
   });
 }
@@ -279,6 +307,7 @@ export function useUpdateFaqAnswer() {
     },
     onSuccess: (entry) => {
       qc.invalidateQueries({ queryKey: faqKeys.detail(entry.faq_item_id) });
+      qc.invalidateQueries({ queryKey: faqKeys.all });
     },
   });
 }
@@ -301,6 +330,7 @@ export function useDeleteFaqAnswer() {
     onSuccess: ({ faqItemId }) => {
       if (faqItemId != null) {
         qc.invalidateQueries({ queryKey: faqKeys.detail(faqItemId) });
+        qc.invalidateQueries({ queryKey: faqKeys.all });
       }
     },
   });

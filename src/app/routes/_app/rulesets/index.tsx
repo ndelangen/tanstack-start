@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 
+import { BlockCover, BlockLink } from '@app/components/block';
 import { rulesetsListQueryOptions, useRulesetsAll } from '@db/rulesets';
+
+import styles from './RulesetsIndex.module.css';
 
 export const Route = createFileRoute('/_app/rulesets/')({
   loader: ({ context }) => context.queryClient.ensureQueryData(rulesetsListQueryOptions()),
@@ -25,15 +28,21 @@ function RulesetsPage() {
   return (
     <>
       {rulesets.data && rulesets.data.length > 0 ? (
-        <ul>
+        <div className={styles.grid}>
           {rulesets.data.map((r) => (
-            <li key={r.id}>
-              <Link to="/rulesets/$id" params={{ id: String(r.id) }}>
-                {r.name}
-              </Link>
-            </li>
+            <BlockLink
+              key={r.id}
+              to="/rulesets/$id"
+              params={{ id: String(r.id) }}
+              className={styles.card}
+            >
+              <div className={styles.coverSlot}>
+                <BlockCover src={r.image_cover} />
+              </div>
+              <span className={styles.name}>{r.name}</span>
+            </BlockLink>
           ))}
-        </ul>
+        </div>
       ) : (
         <p>No rulesets yet.</p>
       )}

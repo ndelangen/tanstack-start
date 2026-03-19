@@ -33,6 +33,7 @@ export const rulesetKeys = {
   detail: (id: number) => [...rulesetKeys.all, 'detail', id] as const,
   factions: (rulesetId: number) => [...rulesetKeys.detail(rulesetId), 'factions'] as const,
   byFaction: (factionId: string) => [...rulesetKeys.all, 'byFaction', factionId] as const,
+  canAccess: (rulesetId: number) => [...rulesetKeys.all, 'canAccess', rulesetId] as const,
 };
 
 /* Queries */
@@ -118,6 +119,23 @@ export function rulesetFactionsWithDetailsQueryOptions(rulesetId: number) {
   });
 }
 
+export function canAccessRulesetQueryOptions(rulesetId: number) {
+  return queryOptions({
+    queryKey: rulesetKeys.canAccess(rulesetId),
+    queryFn: async () => {
+      const { data, error } = await db.rpc('current_user_can_access_ruleset', {
+        rid: rulesetId,
+      });
+      if (error) throw error;
+      return data === true;
+    },
+  });
+}
+
+export function useCanAccessRuleset(rulesetId: number) {
+  return useQuery(canAccessRulesetQueryOptions(rulesetId));
+}
+
 export function rulesetsByFactionQueryOptions(factionId: string) {
   return queryOptions({
     queryKey: rulesetKeys.byFaction(factionId),
@@ -175,18 +193,23 @@ export function useCreateRuleset() {
     mutationFn: async ({
       input,
       groupId,
-    }: { input: Ruleset; groupId?: string | null }) => {
+      imageCover,
+    }: { input: Ruleset; groupId?: string | null; imageCover?: string | null }) => {
       const user = await auth.getUser();
       if (!user.data.user?.id) throw new Error('Not authenticated');
 
       const validated = schema.parse(input);
+      const insert: { name: string; group_id: string | null; owner_id: string; image_cover?: string | null } = {
+        name: validated.name,
+        group_id: groupId ?? null,
+        owner_id: user.data.user.id,
+      };
+      if (imageCover !== undefined) {
+        insert.image_cover = imageCover;
+      }
       const { data: entry, error } = await db
         .from('rulesets')
-        .insert({
-          name: validated.name,
-          group_id: groupId ?? null,
-          owner_id: user.data.user.id,
-        })
+        .insert(insert)
         .select()
         .single();
 
@@ -210,13 +233,17 @@ export function useUpdateRuleset() {
       input,
       id,
       groupId,
-    }: { input: Ruleset; id: number; groupId?: string | null }) => {
+      imageCover,
+    }: { input: Ruleset; id: number; groupId?: string | null; imageCover?: string | null }) => {
       const validated = schema.parse(input);
-      const update: { name?: string; group_id?: string | null } = {
+      const update: { name?: string; group_id?: string | null; image_cover?: string | null } = {
         name: validated.name,
       };
       if (groupId !== undefined) {
         update.group_id = groupId;
+      }
+      if (imageCover !== undefined) {
+        update.image_cover = imageCover;
       }
       const { data: entry, error } = await db
         .from('rulesets')
