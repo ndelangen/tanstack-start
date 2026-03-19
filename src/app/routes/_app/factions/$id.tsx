@@ -2,7 +2,6 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 
 import { factionDetailQueryOptions, useFaction } from '@db/factions';
 import { rulesetsByFactionQueryOptions, useRulesetsByFaction } from '@db/rulesets';
-import { isFullFactionData } from '@data/factions';
 import { FactionSheet } from '@game/assets/faction/sheet/Sheet';
 import { FactionPreview } from '@game/schema/faction';
 
@@ -29,14 +28,7 @@ function FactionDetailPage() {
 
   return (
     <>
-      {isFullFactionData(data) ? (
-        <FactionSheet {...FactionPreview.sheet.parse(data)} />
-      ) : (
-        <>
-          <h2>{data.name}</h2>
-          <p>{data.description}</p>
-        </>
-      )}
+      <FactionSheet {...FactionPreview.sheet.parse(data)} />
 
       {rulesets.data && rulesets.data.length > 0 && (
         <section>

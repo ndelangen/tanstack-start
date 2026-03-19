@@ -1,4 +1,4 @@
--- Full faction documents are validated in the app (Zod: FactionSchema or legacy row shape).
+-- Full faction documents are validated in the app (Zod: FactionSchema).
 -- Keeping jsonb_matches_schema in sync with generated asset enums is impractical.
 
 ALTER TABLE public.factions

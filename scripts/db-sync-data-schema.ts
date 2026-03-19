@@ -12,6 +12,9 @@ const schemaConfigSchema = z.strictObject({
 
 const glob = new Glob('src/data/*.ts');
 
+/** Tables whose JSON Schema CHECK should use `type: string` instead of huge string `enum` lists (Zod stays strict). */
+const RELAX_STRING_ENUMS = new Set(['factions']);
+
 type SchemaConfig = z.infer<typeof schemaConfigSchema>;
 
 const mySchemas: SchemaConfig[] = [];
@@ -36,6 +39,176 @@ for await (const file of glob.scan({
     schema: module.schema,
   });
   mySchemas.push(parsed);
+}
+
+/** Replace string-only `enum` branches with `{ type: 'string' }` (+ pattern / length if present). */
+function relaxStringEnumsInJsonSchema(node: unknown): unknown {
+  if (node === null || typeof node !== 'object') {
+    return node;
+  }
+
+  if (Array.isArray(node)) {
+    return node.map(relaxStringEnumsInJsonSchema);
+  }
+
+  const obj = node as Record<string, unknown>;
+  const enumVal = obj.enum;
+
+  if (Array.isArray(enumVal) && enumVal.length > 0 && enumVal.every((e) => typeof e === 'string')) {
+    const next: Record<string, unknown> = { type: 'string' };
+    if (typeof obj.pattern === 'string') {
+      next.pattern = obj.pattern;
+    }
+    if (typeof obj.minLength === 'number') {
+      next.minLength = obj.minLength;
+    }
+    if (typeof obj.maxLength === 'number') {
+      next.maxLength = obj.maxLength;
+    }
+    if (typeof obj.description === 'string') {
+      next.description = obj.description;
+    }
+    return next;
+  }
+
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    out[k] = relaxStringEnumsInJsonSchema(v);
+  }
+  return out;
+}
+
+const STRING_RESTRICTION_KEYS = new Set([
+  'pattern',
+  'minLength',
+  'maxLength',
+  'format',
+  'const',
+  'enum',
+]);
+
+function sortKeysDeep(value: unknown): unknown {
+  if (value === null || typeof value !== 'object') {
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.map(sortKeysDeep);
+  }
+  const sorted: Record<string, unknown> = {};
+  for (const key of Object.keys(value as Record<string, unknown>).sort()) {
+    sorted[key] = sortKeysDeep((value as Record<string, unknown>)[key]);
+  }
+  return sorted;
+}
+
+function schemaDedupeKey(node: unknown): string {
+  return JSON.stringify(sortKeysDeep(node));
+}
+
+/** Plain `type: string` with no format/pattern/length — matches any JSON string. */
+function isUnrestrictedStringSchema(node: unknown): boolean {
+  if (node === null || typeof node !== 'object' || Array.isArray(node)) {
+    return false;
+  }
+  const o = node as Record<string, unknown>;
+  if (o.type !== 'string') {
+    return false;
+  }
+  for (const key of Object.keys(o)) {
+    if (key === 'type' || key === 'description') {
+      continue;
+    }
+    if (STRING_RESTRICTION_KEYS.has(key)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function dedupeSchemaBranches(branches: unknown[]): unknown[] {
+  const seen = new Set<string>();
+  const out: unknown[] = [];
+  for (const b of branches) {
+    const k = schemaDedupeKey(b);
+    if (!seen.has(k)) {
+      seen.add(k);
+      out.push(b);
+    }
+  }
+  return out;
+}
+
+function simplifyCombinatorBranches(branches: unknown[], combinator: 'anyOf' | 'oneOf'): unknown {
+  const processed = branches.map(simplifyRedundantCombinators);
+  const unique = dedupeSchemaBranches(processed);
+  if (unique.length === 1) {
+    return unique[0];
+  }
+  if (unique.some(isUnrestrictedStringSchema)) {
+    return { type: 'string' };
+  }
+  return { [combinator]: unique };
+}
+
+/** Collapse duplicate `anyOf` / `oneOf` arms and `string | string+format` unions to plain `string`. */
+function simplifyRedundantCombinators(node: unknown): unknown {
+  if (node === null || typeof node !== 'object') {
+    return node;
+  }
+  if (Array.isArray(node)) {
+    return node.map(simplifyRedundantCombinators);
+  }
+
+  const obj = node as Record<string, unknown>;
+  const keys = Object.keys(obj);
+
+  if (Array.isArray(obj.anyOf)) {
+    const otherKeys = keys.filter((k) => k !== 'anyOf');
+    const other: Record<string, unknown> = {};
+    for (const k of otherKeys) {
+      other[k] = simplifyRedundantCombinators(obj[k]);
+    }
+    const simplified = simplifyCombinatorBranches(obj.anyOf, 'anyOf');
+    if (otherKeys.length === 0) {
+      return simplified;
+    }
+    if (
+      simplified !== null &&
+      typeof simplified === 'object' &&
+      !Array.isArray(simplified) &&
+      'anyOf' in simplified
+    ) {
+      return { ...other, anyOf: (simplified as { anyOf: unknown[] }).anyOf };
+    }
+    return { ...other, ...(simplified as Record<string, unknown>) };
+  }
+
+  if (Array.isArray(obj.oneOf)) {
+    const otherKeys = keys.filter((k) => k !== 'oneOf');
+    const other: Record<string, unknown> = {};
+    for (const k of otherKeys) {
+      other[k] = simplifyRedundantCombinators(obj[k]);
+    }
+    const simplified = simplifyCombinatorBranches(obj.oneOf, 'oneOf');
+    if (otherKeys.length === 0) {
+      return simplified;
+    }
+    if (
+      simplified !== null &&
+      typeof simplified === 'object' &&
+      !Array.isArray(simplified) &&
+      'oneOf' in simplified
+    ) {
+      return { ...other, oneOf: (simplified as { oneOf: unknown[] }).oneOf };
+    }
+    return { ...other, ...(simplified as Record<string, unknown>) };
+  }
+
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    out[k] = simplifyRedundantCombinators(v);
+  }
+  return out;
 }
 
 // Helper function: Derive constraint name from table name
@@ -163,6 +336,10 @@ function generateMigrationSQL(
   lines.push(`-- Drop existing constraint if it exists (safe for first migration)`);
   lines.push(`ALTER TABLE ${config.name}`);
   lines.push(`  DROP CONSTRAINT IF EXISTS ${constraintName};`);
+  if (config.name === 'factions') {
+    lines.push(`ALTER TABLE ${config.name}`);
+    lines.push(`  DROP CONSTRAINT IF EXISTS factions_data_is_object_check;`);
+  }
   lines.push('');
   lines.push(`-- Add CHECK constraint with new schema`);
   lines.push(`ALTER TABLE ${config.name}`);
@@ -199,7 +376,11 @@ for (const config of mySchemas) {
   const columnName = 'data';
 
   // Step 1: Generate JSON schema in memory
-  const newSchema = z.toJSONSchema(config.schema, { unrepresentable: 'any' });
+  let newSchema = z.toJSONSchema(config.schema, { unrepresentable: 'any' }) as object;
+  if (RELAX_STRING_ENUMS.has(config.name)) {
+    newSchema = relaxStringEnumsInJsonSchema(newSchema) as object;
+  }
+  newSchema = simplifyRedundantCombinators(newSchema) as object;
 
   // Step 2: Find latest validation migration for this schema
   const latestMigration = await findLatestValidationMigration(constraintName, migrationsDir);

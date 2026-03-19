@@ -29,6 +29,8 @@ Zod schemas in `src/data/` sync to database migrations.
 4. Generates new migration if schema changed: `supabase/migrations/TIMESTAMP_domain_data_validation.sql`
 5. Creates CHECK constraint using `pg_jsonschema` extension
 
+For some tables (see `RELAX_STRING_ENUMS` in the script), string `enum` lists from Zod are written as plain `type: string` in the CHECK so migrations stay small; Zod in the app still enforces exact asset paths. After that, redundant `anyOf` / `oneOf` branches (e.g. duplicate `string` arms or `string` ∪ `string`+`format`) are collapsed so the CHECK stays readable.
+
 **Script**: [`scripts/db-sync-data-schema.ts`](../scripts/db-sync-data-schema.ts)
 
 **Workflow**:
