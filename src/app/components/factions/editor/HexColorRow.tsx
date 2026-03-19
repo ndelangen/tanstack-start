@@ -44,14 +44,21 @@ export function HexColorRow({
         className
       )}
     >
-      <input
-        id={pickerId}
-        className={styles.hexColorPicker}
-        type="color"
-        value={pickerValue}
-        onChange={(e) => onChange(normalizePickerHex(e.target.value))}
-        aria-label={pickerAriaLabel}
-      />
+      <span className={styles.hexColorPickerWrap}>
+        <span
+          className={styles.hexColorSwatch}
+          style={{ backgroundColor: pickerValue }}
+          aria-hidden
+        />
+        <input
+          id={pickerId}
+          className={styles.hexColorPicker}
+          type="color"
+          value={pickerValue}
+          onChange={(e) => onChange(normalizePickerHex(e.target.value))}
+          aria-label={pickerAriaLabel}
+        />
+      </span>
       <input
         id={textId}
         className={styles.hexColorHexInput}

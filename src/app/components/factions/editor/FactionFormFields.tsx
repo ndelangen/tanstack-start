@@ -1,12 +1,12 @@
 import type { ReactFormExtendedApi } from '@tanstack/react-form';
 import clsx from 'clsx';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, X } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 
 import type { Faction } from '@db/factions';
 import { FormButton, FormField, FormInput, FormTextarea } from '@app/components/form';
 import { GENERIC, LEADERS, LOGO, TROOP, TROOP_MODIFIER } from '@game/data/generated';
-import { TTSColor } from '@game/schema/faction';
+import { factionSlugBaseFromName, TTSColor } from '@game/schema/faction';
 
 import { AssetAutocomplete } from './AssetAutocomplete';
 import { BackgroundColorSlot } from './BackgroundColorSlot';
@@ -207,13 +207,14 @@ function TtsColorsEditor({
               ))}
             </select>
             <div className={styles.ttsRowActions}>
-              <FormButton
+              <button
                 type="button"
-                variant="secondary"
+                className={styles.ttsRemove}
+                aria-label={`Remove TTS color slot ${i + 1}`}
                 onClick={() => onChange(value.filter((_, j) => j !== i))}
               >
-                Remove
-              </FormButton>
+                <X size={18} strokeWidth={2} aria-hidden />
+              </button>
             </div>
           </li>
         ))}
@@ -244,22 +245,6 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
         isOpen={openId === 'identity'}
         onOpen={openSection}
       >
-        <form.Field name="id">
-          {(field) => (
-            <FormField
-              label="Faction id (slug)"
-              hint="Lowercase letters and digits only."
-              htmlFor="faction-id"
-            >
-              <FormInput
-                id="faction-id"
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-              />
-            </FormField>
-          )}
-        </form.Field>
         <form.Field name="name">
           {(field) => (
             <FormField label="Display name" htmlFor="faction-name">
@@ -267,8 +252,24 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
                 id="faction-name"
                 value={field.state.value}
                 onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  field.handleChange(v);
+                  form.setFieldValue('id', factionSlugBaseFromName(v));
+                }}
               />
+            </FormField>
+          )}
+        </form.Field>
+        <form.Field name="id">
+          {(field) => (
+            <FormField
+              label="Faction id (auto)"
+              hint="Set from display name when you save. A number is appended if this id is already in use."
+            >
+              <p className={styles.readOnlySlug} aria-live="polite">
+                {field.state.value}
+              </p>
             </FormField>
           )}
         </form.Field>

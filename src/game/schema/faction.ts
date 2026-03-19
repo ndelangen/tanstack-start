@@ -139,6 +139,15 @@ function toSimple(input: string) {
   return input.replace(/ /g, '-').toLowerCase();
 }
 
+/** Lowercase [a-z0-9] only; matches DB slugify base (no numeric uniqueness suffix). */
+export function factionSlugBaseFromName(name: string): string {
+  const raw = name
+    .trim()
+    .replace(/[^a-zA-Z0-9]+/g, '')
+    .toLowerCase();
+  return raw || 'faction';
+}
+
 export const FactionAssets = {
   shield: FactionSchema.transform((input) => ({
     name: input.name,

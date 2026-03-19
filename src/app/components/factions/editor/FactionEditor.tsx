@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 
 import { type Faction, useCreateFaction, useDeleteFaction, useUpdateFaction } from '@db/factions';
 import { FormActions, FormButton } from '@app/components/form';
+import { schema } from '@data/factions';
 import { FactionSchema } from '@game/schema/faction';
 
 import styles from './FactionEditor.module.css';
@@ -54,8 +55,9 @@ export function FactionEditor({
           { input: parsed.data },
           {
             onSuccess: (entry) => {
-              baselineRef.current = structuredClone(parsed.data);
-              form.reset(structuredClone(parsed.data));
+              const saved = schema.parse(entry.data);
+              baselineRef.current = structuredClone(saved);
+              form.reset(structuredClone(saved));
               onSaved?.(entry.id);
             },
           }
@@ -64,9 +66,10 @@ export function FactionEditor({
         updateFaction.mutate(
           { id: factionRowId, input: parsed.data },
           {
-            onSuccess: () => {
-              baselineRef.current = structuredClone(parsed.data);
-              form.reset(structuredClone(parsed.data));
+            onSuccess: (entry) => {
+              const saved = schema.parse(entry.data);
+              baselineRef.current = structuredClone(saved);
+              form.reset(structuredClone(saved));
               onSaved?.(factionRowId);
             },
           }

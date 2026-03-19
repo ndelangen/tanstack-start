@@ -1,9 +1,9 @@
 import { LEADERS, LOGO, TROOP } from '@game/data/generated';
-import { FactionSchema } from '@game/schema/faction';
+import { FactionSchema, factionSlugBaseFromName } from '@game/schema/faction';
 
 /** Valid starter document for the faction editor (create + reset). */
 export const defaultFaction = FactionSchema.parse({
-  id: 'myfaction',
+  id: factionSlugBaseFromName('New faction'),
   name: 'New faction',
   logo: LOGO.options[0],
   colors: ['Green', 'Teal'],
