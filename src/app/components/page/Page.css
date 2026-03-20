@@ -75,4 +75,10 @@ html::after {
 
 body {
   margin: 0;
+  -webkit-font-smoothing: antialiased;
+  font-optical-sizing: auto;
+  font-stretch: normal;
+  text-rendering: geometricPrecision;
+  letter-spacing: 0;
+  font-kerning: normal;
 }

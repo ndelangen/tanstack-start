@@ -1,6 +1,13 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
+import Fuse from 'fuse.js';
+import { Search } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
-import { factionsListQueryOptions, useFactionsAll } from '@db/factions';
+import { type FactionEntry, factionsListQueryOptions, useFactionsAll } from '@db/factions';
+import { BlockLink } from '@app/components/block';
+import { Token as FactionToken } from '@game/assets/faction/token/Token';
+
+import styles from './FactionsIndex.module.css';
 
 export const Route = createFileRoute('/_app/factions/')({
   loader: ({ context }) => context.queryClient.ensureQueryData(factionsListQueryOptions()),
@@ -33,22 +40,77 @@ export const Route = createFileRoute('/_app/factions/')({
 
 function FactionsPage() {
   const factions = useFactionsAll();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const list = factions.data ?? [];
+
+  const fuse = useMemo(
+    () =>
+      new Fuse(list, {
+        keys: ['data.name', 'data.id'],
+        threshold: 0.35,
+      }),
+    [list]
+  );
+
+  const filtered = useMemo(() => {
+    if (!searchQuery.trim()) return list;
+    return fuse.search(searchQuery.trim()).map((r) => r.item);
+  }, [list, searchQuery, fuse]);
+
+  if (factions.isPending) {
+    return <p className={styles.empty}>Loading factions…</p>;
+  }
+
+  if (list.length === 0) {
+    return <p className={styles.empty}>No factions yet.</p>;
+  }
 
   return (
     <>
-      {factions.data && factions.data.length > 0 ? (
-        <ul>
-          {factions.data.map((faction) => (
-            <li key={faction.id}>
-              <Link to="/factions/$id" params={{ id: faction.id }}>
-                {faction.data.name}
-              </Link>
-            </li>
+      <div className={styles.topBar}>
+        <div className={styles.searchRow}>
+          <div className={styles.searchWrapper}>
+            <Search className={styles.searchIcon} size={18} aria-hidden />
+            <input
+              type="search"
+              className={styles.searchInput}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by name or id…"
+              aria-label="Search factions"
+            />
+          </div>
+          <span className={styles.meta}>
+            {filtered.length === list.length
+              ? `${list.length} faction${list.length === 1 ? '' : 's'}`
+              : `${filtered.length} of ${list.length} shown`}
+          </span>
+        </div>
+      </div>
+
+      {filtered.length > 0 ? (
+        <div className={styles.grid}>
+          {filtered.map((faction) => (
+            <FactionCard key={faction.id} faction={faction} />
           ))}
-        </ul>
+        </div>
       ) : (
-        <p>No factions yet.</p>
+        <p className={styles.noResults}>No factions match your search.</p>
       )}
     </>
+  );
+}
+
+function FactionCard({ faction }: { faction: FactionEntry }) {
+  const { name, logo, background } = faction.data;
+
+  return (
+    <BlockLink to="/factions/$id" params={{ id: faction.id }} className={styles.card}>
+      <div className={styles.coverSlot}>
+        <FactionToken logo={logo} background={background} />
+      </div>
+      <span className={styles.name}>{name}</span>
+    </BlockLink>
   );
 }

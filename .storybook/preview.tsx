@@ -1,6 +1,8 @@
 import addonDocs from '@storybook/addon-docs';
 import { definePreview } from '@storybook/react-vite';
 
+import '../src/app/styles/fonts.css';
+
 import * as sizes from '../src/game/data/sizes';
 
 export default definePreview({

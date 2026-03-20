@@ -6,6 +6,8 @@ import { createRootRouteWithContext, HeadContent, Link, Scripts } from '@tanstac
 import { currentProfileQueryOptions } from '@db/profiles';
 import { queryClient } from '@app/queryClient';
 
+import '../styles/fonts.css';
+
 // import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 
 interface RouterContext {
@@ -27,7 +29,22 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         title: 'TanStack Start Starter',
       },
     ],
-    links: [],
+    links: [
+      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+      {
+        rel: 'preconnect',
+        href: 'https://fonts.gstatic.com',
+        crossOrigin: 'anonymous',
+      },
+      {
+        rel: 'stylesheet',
+        href: 'https://fonts.googleapis.com/css2?family=Caladea:ital,wght@0,400;0,700;1,400;1,700&display=swap',
+      },
+      {
+        rel: 'stylesheet',
+        href: 'https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap',
+      },
+    ],
   }),
   shellComponent: RootDocument,
   notFoundComponent: NotFound,
