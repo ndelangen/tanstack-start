@@ -1,11 +1,11 @@
 import type { ReactFormExtendedApi } from '@tanstack/react-form';
 import clsx from 'clsx';
 import { GripVertical, X } from 'lucide-react';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useLayoutEffect, useState } from 'react';
 
 import type { Faction } from '@db/factions';
 import { FormButton, FormField, FormInput, FormTextarea } from '@app/components/form';
-import { GENERIC, LEADERS, LOGO, TROOP, TROOP_MODIFIER } from '@game/data/generated';
+import { DECAL, GENERIC, ICON, LEADERS, LOGO, TROOP, TROOP_MODIFIER } from '@game/data/generated';
 import { factionSlugBaseFromName, TTSColor } from '@game/schema/faction';
 
 import { AssetAutocomplete } from './AssetAutocomplete';
@@ -31,12 +31,69 @@ export type FactionFormApi = ReactFormExtendedApi<
   never
 >;
 
+const DECAL_OFFSET_MIN = -500;
+const DECAL_OFFSET_MAX = 500;
+
+function clampDecalOffset(n: number): number {
+  return Math.min(DECAL_OFFSET_MAX, Math.max(DECAL_OFFSET_MIN, n));
+}
+
+function DecalOffsetAxisSlider({
+  id,
+  label,
+  value,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: number;
+  onChange: (n: number) => void;
+}) {
+  const raw = Number(value);
+  const rounded = Number.isFinite(raw) ? Math.round(raw) : 0;
+  const clamped = clampDecalOffset(rounded);
+
+  useLayoutEffect(() => {
+    if (rounded !== clamped) onChange(clamped);
+  }, [rounded, clamped, onChange]);
+
+  return (
+    <label className={styles.sliderLabel} htmlFor={id}>
+      {label}
+      <span className={styles.sliderValue}>{clamped}</span>
+      <input
+        id={id}
+        className={styles.rangeInput}
+        type="range"
+        min={DECAL_OFFSET_MIN}
+        max={DECAL_OFFSET_MAX}
+        step={1}
+        value={clamped}
+        onChange={(e) => onChange(Number.parseInt(e.target.value, 10) || 0)}
+      />
+    </label>
+  );
+}
+
 const logoOptions = [...LOGO.options, ...GENERIC.options] as readonly string[];
+
+/** Decal `id` is `ALL` in schema; picker focuses on paths used on alliance cards. */
+const decalAssetOptions = [
+  ...new Set([...DECAL.options, ...ICON.options, ...LOGO.options, ...GENERIC.options]),
+].sort((a, b) => a.localeCompare(b)) as readonly string[];
 
 const defaultLeader = (): Faction['leaders'][number] => ({
   name: '',
   strength: '1',
   image: LEADERS.options[0],
+});
+
+const defaultDecal = (): Faction['decals'][number] => ({
+  id: DECAL.options[0],
+  muted: false,
+  outline: false,
+  scale: 0.5,
+  offset: [0, 0],
 });
 
 const defaultTroop = (): Faction['troops'][number] => ({
@@ -503,6 +560,122 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
       </AccordionSection>
 
       <AccordionSection
+        id="decals"
+        title="Alliance decals"
+        isOpen={openId === 'decals'}
+        onOpen={openSection}
+      >
+        <p className={styles.sectionIntro}>
+          Decorative artwork on the alliance card (placement, scale, and whether the art is muted or
+          outlined).
+        </p>
+        <form.Field name="decals" mode="array">
+          {(df) => (
+            <>
+              {df.state.value.map((_, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: row identity follows form array index
+                <div key={i} className={styles.arrayCard}>
+                  <form.Field name={`decals[${i}].id`}>
+                    {(field) => (
+                      <AssetAutocomplete
+                        id={`decal-${i}-id`}
+                        label="Decal asset"
+                        value={field.state.value}
+                        onChange={(v) => field.handleChange(v)}
+                        options={decalAssetOptions}
+                      />
+                    )}
+                  </form.Field>
+                  <div className={styles.row}>
+                    <form.Field name={`decals[${i}].muted`}>
+                      {(field) => (
+                        <FormField label="Muted" htmlFor={`decal-${i}-muted`}>
+                          <input
+                            id={`decal-${i}-muted`}
+                            type="checkbox"
+                            className={styles.checkbox}
+                            checked={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(e.target.checked)}
+                          />
+                        </FormField>
+                      )}
+                    </form.Field>
+                    <form.Field name={`decals[${i}].outline`}>
+                      {(field) => (
+                        <FormField label="Outline" htmlFor={`decal-${i}-outline`}>
+                          <input
+                            id={`decal-${i}-outline`}
+                            type="checkbox"
+                            className={styles.checkbox}
+                            checked={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(e.target.checked)}
+                          />
+                        </FormField>
+                      )}
+                    </form.Field>
+                  </div>
+                  <form.Field name={`decals[${i}].scale`}>
+                    {(field) => (
+                      <label className={styles.sliderLabel} htmlFor={`decal-${i}-scale`}>
+                        Scale (0–1)
+                        <span className={styles.sliderValue}>{field.state.value.toFixed(2)}</span>
+                        <input
+                          id={`decal-${i}-scale`}
+                          className={styles.rangeInput}
+                          type="range"
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          value={field.state.value}
+                          onChange={(e) =>
+                            field.handleChange(Number.parseFloat(e.target.value) || 0)
+                          }
+                        />
+                      </label>
+                    )}
+                  </form.Field>
+                  <div className={styles.row}>
+                    <form.Field name={`decals[${i}].offset[0]`}>
+                      {(field) => (
+                        <DecalOffsetAxisSlider
+                          id={`decal-${i}-ox`}
+                          label="Offset X (−500–500)"
+                          value={field.state.value}
+                          onChange={(n) => field.handleChange(n)}
+                        />
+                      )}
+                    </form.Field>
+                    <form.Field name={`decals[${i}].offset[1]`}>
+                      {(field) => (
+                        <DecalOffsetAxisSlider
+                          id={`decal-${i}-oy`}
+                          label="Offset Y (−500–500)"
+                          value={field.state.value}
+                          onChange={(n) => field.handleChange(n)}
+                        />
+                      )}
+                    </form.Field>
+                  </div>
+                  <FormButton type="button" variant="secondary" onClick={() => df.removeValue(i)}>
+                    Remove decal
+                  </FormButton>
+                </div>
+              ))}
+              <FormButton
+                type="button"
+                variant="secondary"
+                onClick={() => df.pushValue(defaultDecal())}
+              >
+                Add decal
+              </FormButton>
+            </>
+          )}
+        </form.Field>
+      </AccordionSection>
+
+      <AccordionSection
         id="troops"
         title="Troops"
         isOpen={openId === 'troops'}
@@ -819,8 +992,14 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
             </FormField>
           )}
         </form.Field>
+      </AccordionSection>
 
-        <h4 className={styles.sectionTitle}>Advantages</h4>
+      <AccordionSection
+        id="advantages"
+        title="Advantages"
+        isOpen={openId === 'advantages'}
+        onOpen={openSection}
+      >
         <form.Field name="rules.advantages" mode="array">
           {(af) => (
             <>

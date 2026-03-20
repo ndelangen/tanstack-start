@@ -1,4 +1,4 @@
-import { readdir, readFile, writeFile } from 'node:fs/promises';
+import { readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { join, parse } from 'node:path';
 
 import { Glob } from 'bun';
@@ -232,7 +232,12 @@ async function findLatestValidationMigration(
   const files = await readdir(migrationsDir);
   const sqlFiles = files.filter((f) => f.endsWith('.sql'));
 
-  const matchingMigrations: Array<{ filename: string; timestamp: number; content: string }> = [];
+  const matchingMigrations: Array<{
+    filename: string;
+    timestamp: number;
+    content: string;
+    mtimeMs: number;
+  }> = [];
 
   for (const file of sqlFiles) {
     const filePath = join(migrationsDir, file);
@@ -242,7 +247,13 @@ async function findLatestValidationMigration(
     if (content.includes(constraintName)) {
       const timestamp = extractTimestamp(file);
       if (timestamp !== null) {
-        matchingMigrations.push({ filename: file, timestamp, content });
+        const st = await stat(filePath);
+        matchingMigrations.push({
+          filename: file,
+          timestamp,
+          content,
+          mtimeMs: st.mtimeMs,
+        });
       }
     }
   }
@@ -251,8 +262,15 @@ async function findLatestValidationMigration(
     return null;
   }
 
-  // Sort by timestamp descending and return the most recent
-  matchingMigrations.sort((a, b) => b.timestamp - a.timestamp);
+  // Prefer newest on disk (so a just-written migration wins over an older file with a
+  // higher numeric prefix, e.g. 20260321133000 vs 20260320012157 on the next run).
+  // Tie-break: higher filename timestamp (stable clones where mtimes are identical).
+  matchingMigrations.sort((a, b) => {
+    if (b.mtimeMs !== a.mtimeMs) {
+      return b.mtimeMs - a.mtimeMs;
+    }
+    return b.timestamp - a.timestamp;
+  });
   return {
     filename: matchingMigrations[0].filename,
     content: matchingMigrations[0].content,
@@ -287,30 +305,41 @@ function extractSchemaFromMigration(
   }
 }
 
-// Helper function: Compare two JSON schemas (deep equality)
+/**
+ * Deep canonical form for schema equality: object keys sorted; array elements
+ * sorted by their own canonical JSON string so `anyOf` / `oneOf` branch order
+ * does not matter (the old `array.map(normalize).sort()` compared `[object Object]`
+ * and never reordered, so every run looked like a schema change).
+ */
+function canonicalizeSchemaForComparison(node: unknown): unknown {
+  if (node === null || typeof node !== 'object') {
+    return node;
+  }
+
+  if (Array.isArray(node)) {
+    const mapped = node.map(canonicalizeSchemaForComparison);
+    return mapped
+      .map((item) => ({
+        sortKey: JSON.stringify(sortKeysDeep(item)),
+        item,
+      }))
+      .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+      .map((x) => x.item);
+  }
+
+  const sorted: Record<string, unknown> = {};
+  const keys = Object.keys(node as Record<string, unknown>).sort();
+  for (const key of keys) {
+    sorted[key] = canonicalizeSchemaForComparison((node as Record<string, unknown>)[key]);
+  }
+  return sorted;
+}
+
+// Helper function: Compare two JSON schemas (deep equality, order-insensitive combinator arrays)
 function compareSchemas(schema1: object, schema2: object): boolean {
-  // Normalize both schemas by sorting keys recursively
-  const normalize = (obj: unknown): unknown => {
-    if (obj === null || typeof obj !== 'object') {
-      return obj;
-    }
-
-    if (Array.isArray(obj)) {
-      return obj.map(normalize).sort();
-    }
-
-    const sorted: Record<string, unknown> = {};
-    const keys = Object.keys(obj).sort();
-    for (const key of keys) {
-      sorted[key as string] = normalize(obj[key as keyof typeof obj]);
-    }
-    return sorted;
-  };
-
-  const normalized1 = normalize(schema1);
-  const normalized2 = normalize(schema2);
-
-  return JSON.stringify(normalized1) === JSON.stringify(normalized2);
+  const a = canonicalizeSchemaForComparison(schema1);
+  const b = canonicalizeSchemaForComparison(schema2);
+  return JSON.stringify(a) === JSON.stringify(b);
 }
 
 // Helper function: Generate migration SQL
@@ -375,7 +404,7 @@ for (const config of mySchemas) {
   const constraintName = deriveConstraintName(config.name);
   const columnName = 'data';
 
-  // Step 1: Generate JSON schema in memory
+  // Step 1: Generate JSON schema in memory (same steps as written migrations)
   let newSchema = z.toJSONSchema(config.schema, { unrepresentable: 'any' }) as object;
   if (RELAX_STRING_ENUMS.has(config.name)) {
     newSchema = relaxStringEnumsInJsonSchema(newSchema) as object;
@@ -387,15 +416,24 @@ for (const config of mySchemas) {
 
   // Step 3: Compare schemas if migration exists
   if (latestMigration) {
-    const extractedSchema = extractSchemaFromMigration(
+    const extractedRaw = extractSchemaFromMigration(
       latestMigration.content,
       constraintName,
       columnName
     );
 
-    if (extractedSchema && compareSchemas(extractedSchema, newSchema)) {
-      console.log(`✓ Schema for ${config.name} unchanged, skipping migration`);
-      continue;
+    if (extractedRaw) {
+      let extractedComparable = relaxStringEnumsInJsonSchema(extractedRaw) as object;
+      extractedComparable = simplifyRedundantCombinators(extractedComparable) as object;
+
+      if (compareSchemas(extractedComparable, newSchema)) {
+        console.log(`✓ Schema for ${config.name} unchanged, skipping migration`);
+        continue;
+      }
+    } else {
+      console.warn(
+        `⚠ Could not parse JSON schema from ${latestMigration.filename} (${constraintName}); generating new migration`
+      );
     }
   }
 

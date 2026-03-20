@@ -8,7 +8,7 @@ export const defaultFaction = FactionSchema.parse({
   logo: LOGO.options[0],
   colors: ['Green', 'Teal'],
   background: {
-    image: 'image/texture/021.jpg',
+    image: '/image/texture/021.jpg',
     colors: ['#444444', '#222222'],
     opacity: 1,
     strength: 0.5,

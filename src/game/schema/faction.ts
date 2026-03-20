@@ -37,14 +37,16 @@ export const TroopSide = z.strictObject({
   striped: z.boolean().optional(),
 });
 
-export const Troop = z.intersection(
-  TroopSide,
-  z.strictObject({
-    back: TroopSide.optional(),
-    count: z.number().int().positive(),
-    planet: z.string().optional(),
-  })
-);
+export const Troop = z.strictObject({
+  image: TROOP,
+  name: z.string(),
+  description: z.string(),
+  star: TROOP_MODIFIER.optional(),
+  striped: z.boolean().optional(),
+  back: TroopSide.optional(),
+  count: z.number().int().positive(),
+  planet: z.string().optional(),
+});
 
 export const GRADIENT = z.discriminatedUnion('type', [
   z.strictObject({

@@ -293,6 +293,7 @@ export type Database = {
         Args: { gid: string }
         Returns: boolean
       }
+      faction_data_prefix_asset_paths: { Args: { j: Json }; Returns: Json }
     }
     Enums: {
       group_member_status: "pending" | "active" | "removed"

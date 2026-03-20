@@ -63,7 +63,7 @@ ${Object.entries(enums)
 export const ${name.toUpperCase()} = z.enum([
   ${files
     .sort()
-    .map((file) => `'${file}'`)
+    .map((file) => `'/${file}'`)
     .join(',\n  ')}
 ]);`
   )

@@ -5,8 +5,10 @@ export const FACTION_EDITOR_SECTIONS = [
   'background',
   'hero',
   'leaders',
+  'decals',
   'troops',
   'rules',
+  'advantages',
 ] as const;
 
 export type FactionEditorSectionId = (typeof FACTION_EDITOR_SECTIONS)[number];
