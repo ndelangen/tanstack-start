@@ -588,10 +588,15 @@ function TtsColorsEditor({
         collisionDetection={closestCenter}
         onDragEnd={({ active, over }: DragEndEvent) => {
           if (!over) return;
-          const from = indexFromSortableId(active.id, sortablePrefix);
-          const to = indexFromSortableId(over.id, sortablePrefix);
+          const activeId = typeof active.id === 'string' ? active.id : String(active.id);
+          const overId = typeof over.id === 'string' ? over.id : String(over.id);
+          const fromIndex = itemIds.indexOf(activeId);
+          const toIndex = itemIds.indexOf(overId);
+          const from = fromIndex >= 0 ? fromIndex : null;
+          const to = toIndex >= 0 ? toIndex : null;
           if (from == null || to == null || from === to) return;
-          onChange(arrayMove(value, from, to));
+          const next = arrayMove(value, from, to);
+          onChange(next);
         }}
       >
         <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
@@ -747,7 +752,9 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
           )}
         </form.Field>
         <form.Field name="colors">
-          {(field) => <TtsColorsEditor value={field.state.value} onChange={field.handleChange} />}
+          {(field) => (
+            <TtsColorsEditor value={field.state.value} onChange={field.handleChange} />
+          )}
         </form.Field>
       </AccordionSection>
 
