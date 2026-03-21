@@ -1,8 +1,8 @@
+import type { Faction } from '@db/factions';
 import { LEADERS, LOGO, TROOP } from '@game/data/generated';
 import { FactionSchema, factionSlugBaseFromName } from '@game/schema/faction';
 
-/** Valid starter document for the faction editor (create + reset). */
-export const defaultFaction = FactionSchema.parse({
+const defaultFactionInput = {
   id: factionSlugBaseFromName('New faction'),
   name: 'New faction',
   logo: LOGO.options[0],
@@ -48,4 +48,7 @@ export const defaultFaction = FactionSchema.parse({
       text: 'Fate rules text.',
     },
   },
-});
+} satisfies Faction;
+
+/** Valid starter document for the faction editor (create + reset). */
+export const defaultFaction: Faction = FactionSchema.parse(defaultFactionInput);

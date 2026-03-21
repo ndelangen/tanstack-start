@@ -7,6 +7,7 @@ import { currentProfileQueryOptions } from '@db/profiles';
 import { queryClient } from '@app/queryClient';
 
 import '../styles/fonts.css';
+import '../styles/tokens.css';
 
 // import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 

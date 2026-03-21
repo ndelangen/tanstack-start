@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { Check, MessageSquarePlus, Pencil, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 
 import {
@@ -13,7 +14,13 @@ import {
 } from '@db/faq';
 import { profileDetailQueryOptions, useCurrentProfile } from '@db/profiles';
 import { Card } from '@app/components/card/Card';
-import { FormActions, FormButton, FormField, FormTextarea } from '@app/components/form';
+import {
+  FormActions,
+  FormButton,
+  FormField,
+  FormTextarea,
+  FormTooltip,
+} from '@app/components/form';
 
 import styles from './FaqDetail.module.css';
 
@@ -142,20 +149,28 @@ function FaqDetailPage() {
                 />
               </FormField>
               <FormActions>
-                <FormButton
-                  type="button"
-                  onClick={() => saveQuestion()}
-                  disabled={updateFaqItem.isPending}
-                >
-                  {updateFaqItem.isPending ? 'Saving…' : 'Save'}
-                </FormButton>
-                <FormButton
-                  variant="secondary"
-                  type="button"
-                  onClick={() => setEditingQuestion(false)}
-                >
-                  Cancel
-                </FormButton>
+                <FormTooltip content="Save question">
+                  <FormButton
+                    type="button"
+                    iconOnly
+                    aria-label="Save question"
+                    onClick={() => saveQuestion()}
+                    disabled={updateFaqItem.isPending}
+                  >
+                    <Check size={16} aria-hidden />
+                  </FormButton>
+                </FormTooltip>
+                <FormTooltip content="Cancel editing question">
+                  <FormButton
+                    variant="secondary"
+                    type="button"
+                    iconOnly
+                    aria-label="Cancel editing question"
+                    onClick={() => setEditingQuestion(false)}
+                  >
+                    <X size={16} aria-hidden />
+                  </FormButton>
+                </FormTooltip>
                 {updateFaqItem.isError && (
                   <span className={styles.error}>{updateFaqItem.error.message}</span>
                 )}
@@ -196,17 +211,28 @@ function FaqDetailPage() {
               </div>
               {isQuestionOwner && (
                 <FormActions>
-                  <FormButton type="button" onClick={startEditQuestion}>
-                    Edit
-                  </FormButton>
-                  <FormButton
-                    variant="danger"
-                    type="button"
-                    onClick={handleDeleteQuestion}
-                    disabled={deleteFaqItem.isPending}
-                  >
-                    {deleteFaqItem.isPending ? 'Deleting…' : 'Delete question'}
-                  </FormButton>
+                  <FormTooltip content="Edit question">
+                    <FormButton
+                      type="button"
+                      iconOnly
+                      aria-label="Edit question"
+                      onClick={startEditQuestion}
+                    >
+                      <Pencil size={16} aria-hidden />
+                    </FormButton>
+                  </FormTooltip>
+                  <FormTooltip content="Delete question">
+                    <FormButton
+                      variant="danger"
+                      type="button"
+                      iconOnly
+                      aria-label="Delete question"
+                      onClick={handleDeleteQuestion}
+                      disabled={deleteFaqItem.isPending}
+                    >
+                      <Trash2 size={16} aria-hidden />
+                    </FormButton>
+                  </FormTooltip>
                   {deleteFaqItem.isError && (
                     <span className={styles.error}>{deleteFaqItem.error.message}</span>
                   )}
@@ -242,9 +268,16 @@ function FaqDetailPage() {
               />
             </FormField>
             <FormActions>
-              <FormButton type="submit" disabled={createFaqAnswer.isPending}>
-                {createFaqAnswer.isPending ? 'Adding…' : 'Add answer'}
-              </FormButton>
+              <FormTooltip content="Add answer">
+                <FormButton
+                  type="submit"
+                  iconOnly
+                  aria-label="Add answer"
+                  disabled={createFaqAnswer.isPending}
+                >
+                  <MessageSquarePlus size={16} aria-hidden />
+                </FormButton>
+              </FormTooltip>
             </FormActions>
           </form>
         )}
@@ -270,20 +303,28 @@ function FaqDetailPage() {
                         />
                       </FormField>
                       <FormActions>
-                        <FormButton
-                          type="button"
-                          onClick={() => saveAnswer(a.id)}
-                          disabled={updateFaqAnswer.isPending}
-                        >
-                          {updateFaqAnswer.isPending ? 'Saving…' : 'Save'}
-                        </FormButton>
-                        <FormButton
-                          variant="secondary"
-                          type="button"
-                          onClick={() => setEditingAnswerId(null)}
-                        >
-                          Cancel
-                        </FormButton>
+                        <FormTooltip content="Save answer">
+                          <FormButton
+                            type="button"
+                            iconOnly
+                            aria-label="Save answer"
+                            onClick={() => saveAnswer(a.id)}
+                            disabled={updateFaqAnswer.isPending}
+                          >
+                            <Check size={16} aria-hidden />
+                          </FormButton>
+                        </FormTooltip>
+                        <FormTooltip content="Cancel editing answer">
+                          <FormButton
+                            variant="secondary"
+                            type="button"
+                            iconOnly
+                            aria-label="Cancel editing answer"
+                            onClick={() => setEditingAnswerId(null)}
+                          >
+                            <X size={16} aria-hidden />
+                          </FormButton>
+                        </FormTooltip>
                         {updateFaqAnswer.isError && (
                           <span className={styles.error}>{updateFaqAnswer.error.message}</span>
                         )}
@@ -302,19 +343,30 @@ function FaqDetailPage() {
                       </div>
                       <div className={styles.answerActions}>
                         {canEditAnswer(a) && (
-                          <FormButton type="button" onClick={() => startEditAnswer(a)}>
-                            Edit your answer
-                          </FormButton>
+                          <FormTooltip content="Edit your answer">
+                            <FormButton
+                              type="button"
+                              iconOnly
+                              aria-label="Edit your answer"
+                              onClick={() => startEditAnswer(a)}
+                            >
+                              <Pencil size={16} aria-hidden />
+                            </FormButton>
+                          </FormTooltip>
                         )}
                         {canDeleteAnswer(a) && (
-                          <FormButton
-                            variant="danger"
-                            type="button"
-                            onClick={() => handleDeleteAnswer(a.id)}
-                            disabled={deleteFaqAnswer.isPending}
-                          >
-                            Delete
-                          </FormButton>
+                          <FormTooltip content="Delete answer">
+                            <FormButton
+                              variant="danger"
+                              type="button"
+                              iconOnly
+                              aria-label="Delete answer"
+                              onClick={() => handleDeleteAnswer(a.id)}
+                              disabled={deleteFaqAnswer.isPending}
+                            >
+                              <Trash2 size={16} aria-hidden />
+                            </FormButton>
+                          </FormTooltip>
                         )}
                       </div>
                     </>

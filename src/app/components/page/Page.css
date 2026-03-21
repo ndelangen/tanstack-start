@@ -1,15 +1,3 @@
-:root {
-  --color-muted: #735c47;
-  --color-error: #d34409;
-  --color-link: #84220c;
-  --panel-bg: rgba(255, 255, 255, 0.12);
-  --panel-border: #fee7c0;
-  --panel-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.166);
-  --panel-radius: 6px;
-  --input-bg: rgba(255, 255, 255, 0.65);
-  --input-border: rgba(0, 0, 0, 0.15);
-}
-
 /* 
 #c78346
 #f9d095

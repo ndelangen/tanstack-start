@@ -1,5 +1,7 @@
+import { Plus, Trash2 } from 'lucide-react';
+
 import type { Faction } from '@db/factions';
-import { FormButton } from '@app/components/form';
+import { FormButton, FormTooltip } from '@app/components/form';
 
 import styles from './FactionEditor.module.css';
 import { HexColorRow } from './HexColorRow';
@@ -270,19 +272,31 @@ function GradientEditor({
               }}
             />
           </label>
-          <FormButton
-            type="button"
-            variant="secondary"
-            disabled={value.stops.length <= 2}
-            onClick={() => removeStop(i)}
-          >
-            Remove
-          </FormButton>
+          <FormTooltip content={`Remove stop ${i + 1}`}>
+            <FormButton
+              type="button"
+              variant="danger"
+              iconOnly
+              aria-label={`Remove stop ${i + 1}`}
+              disabled={value.stops.length <= 2}
+              onClick={() => removeStop(i)}
+            >
+              <Trash2 size={16} aria-hidden />
+            </FormButton>
+          </FormTooltip>
         </div>
       ))}
-      <FormButton type="button" variant="secondary" onClick={addStop}>
-        Add stop
-      </FormButton>
+      <FormTooltip content="Add gradient stop">
+        <FormButton
+          type="button"
+          variant="secondary"
+          iconOnly
+          aria-label="Add gradient stop"
+          onClick={addStop}
+        >
+          <Plus size={16} aria-hidden />
+        </FormButton>
+      </FormTooltip>
     </div>
   );
 }

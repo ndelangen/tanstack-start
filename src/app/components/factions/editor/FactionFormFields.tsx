@@ -1,10 +1,52 @@
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useDndContext,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import type { ReactFormExtendedApi } from '@tanstack/react-form';
 import clsx from 'clsx';
-import { GripVertical, X } from 'lucide-react';
-import { type ReactNode, useLayoutEffect, useState } from 'react';
+import {
+  CircleOff,
+  Eye,
+  GripVertical,
+  Image as ImageIcon,
+  Plus,
+  Rotate3d,
+  Trash2,
+} from 'lucide-react';
+import {
+  type ComponentPropsWithoutRef,
+  type ReactNode,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import type { Faction } from '@db/factions';
-import { FormButton, FormField, FormInput, FormTextarea } from '@app/components/form';
+import {
+  FormButton,
+  FormField,
+  FormInput,
+  FormPopover,
+  FormSelect,
+  FormTabs,
+  FormTextarea,
+  FormTooltip,
+  FormUnitToolbar,
+} from '@app/components/form';
 import { DECAL, GENERIC, ICON, LEADERS, LOGO, TROOP, TROOP_MODIFIER } from '@game/data/generated';
 import { factionSlugBaseFromName, TTSColor } from '@game/schema/faction';
 
@@ -14,25 +56,46 @@ import styles from './FactionEditor.module.css';
 import { HexColorRow } from './HexColorRow';
 import { type FactionEditorSectionId, useEditorAccordionHash } from './useEditorAccordionHash';
 
-type VoidVal = undefined;
-export type FactionFormApi = ReactFormExtendedApi<
-  Faction,
-  VoidVal,
-  VoidVal,
-  VoidVal,
-  VoidVal,
-  VoidVal,
-  VoidVal,
-  VoidVal,
-  VoidVal,
-  VoidVal,
-  VoidVal,
-  VoidVal,
-  never
+const NONE_SELECT_VALUE = '__none__';
+/** `useForm` with no custom form-level validators — matches default `ReactFormExtendedApi` slots. */
+type DefaultReactFormApi<TFormData> = ReactFormExtendedApi<
+  TFormData,
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  undefined
 >;
+
+export type FactionFormApi = DefaultReactFormApi<Faction>;
 
 const DECAL_OFFSET_MIN = -500;
 const DECAL_OFFSET_MAX = 500;
+const PREVIEWABLE_EXT = /\.(svg|png|jpg|jpeg)$/i;
+const ACCORDION_SECTION_ICON_SRC: Partial<Record<FactionEditorSectionId, string>> = {
+  identity: '/vector/icon/eye.svg',
+  hero: '/vector/generic/ceasar.svg',
+  leaders: '/vector/icon/traitor.svg',
+  decals: '/vector/icon/alliance.svg',
+  troops: '/vector/troop/atreides.svg',
+  rules: '/vector/icon/balance.svg',
+  advantages: '/vector/icon/kwisatz.svg',
+};
+
+function isPreviewableAssetPath(path: string): boolean {
+  return PREVIEWABLE_EXT.test(path.trim());
+}
+
+function assetPathToPublicUrl(path: string): string {
+  const p = path.trim().replace(/^\/+/, '');
+  return `/${p}`;
+}
 
 function clampDecalOffset(n: number): number {
   return Math.min(DECAL_OFFSET_MAX, Math.max(DECAL_OFFSET_MIN, n));
@@ -75,12 +138,199 @@ function DecalOffsetAxisSlider({
   );
 }
 
+function IconActionButton({
+  label,
+  variant = 'secondary',
+  children,
+  ...props
+}: ComponentPropsWithoutRef<typeof FormButton> & { label: string }) {
+  return (
+    <FormTooltip content={label}>
+      <FormButton {...props} variant={variant} iconOnly aria-label={label}>
+        {children}
+      </FormButton>
+    </FormTooltip>
+  );
+}
+
+type SortableHandleProps = Pick<
+  ReturnType<typeof useSortable>,
+  'setActivatorNodeRef' | 'attributes' | 'listeners'
+>;
+
+function ReorderHandleButton({
+  label,
+  className,
+  setActivatorNodeRef,
+  attributes,
+  listeners,
+}: {
+  label: string;
+  className?: string;
+  setActivatorNodeRef?: SortableHandleProps['setActivatorNodeRef'];
+  attributes?: SortableHandleProps['attributes'];
+  listeners?: SortableHandleProps['listeners'];
+}) {
+  return (
+    <FormTooltip content={label}>
+      <button
+        type="button"
+        className={clsx(styles.reorderHandleButton, className)}
+        aria-label={label}
+        ref={setActivatorNodeRef}
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical size={16} aria-hidden />
+      </button>
+    </FormTooltip>
+  );
+}
+
+function getSortableIds(prefix: string, count: number): string[] {
+  return Array.from({ length: count }, (_, index) => `${prefix}${index}`);
+}
+
+function indexFromSortableId(id: string | number, prefix: string): number | null {
+  if (typeof id !== 'string' || !id.startsWith(prefix)) return null;
+  const parsed = Number.parseInt(id.slice(prefix.length), 10);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function SortableCard({
+  id,
+  className,
+  children,
+}: {
+  id: string;
+  className?: string;
+  children: (args: SortableHandleProps) => ReactNode;
+}) {
+  const {
+    attributes,
+    listeners,
+    setActivatorNodeRef,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+    isOver,
+  } = useSortable({ id });
+  const { active } = useDndContext();
+  const shouldApplyMotion = active != null || isDragging;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: shouldApplyMotion ? CSS.Transform.toString(transform) : undefined,
+        transition: shouldApplyMotion ? transition : undefined,
+      }}
+      className={clsx(
+        className,
+        isDragging && styles.sortableItemDragging,
+        isOver && !isDragging && styles.sortableItemDropTarget
+      )}
+    >
+      {children({ setActivatorNodeRef, attributes, listeners })}
+    </div>
+  );
+}
+
+function SortableTtsRow({
+  id,
+  className,
+  children,
+}: {
+  id: string;
+  className?: string;
+  children: (args: SortableHandleProps) => ReactNode;
+}) {
+  const {
+    attributes,
+    listeners,
+    setActivatorNodeRef,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+    isOver,
+  } = useSortable({ id });
+  const { active } = useDndContext();
+  const shouldApplyMotion = active != null || isDragging;
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={{
+        transform: shouldApplyMotion ? CSS.Transform.toString(transform) : undefined,
+        transition: shouldApplyMotion ? transition : undefined,
+      }}
+      className={clsx(
+        className,
+        isDragging && styles.sortableItemDragging,
+        isOver && !isDragging && styles.sortableItemDropTarget
+      )}
+    >
+      {children({ setActivatorNodeRef, attributes, listeners })}
+    </li>
+  );
+}
+
 const logoOptions = [...LOGO.options, ...GENERIC.options] as readonly string[];
 
 /** Decal `id` is `ALL` in schema; picker focuses on paths used on alliance cards. */
 const decalAssetOptions = [
   ...new Set([...DECAL.options, ...ICON.options, ...LOGO.options, ...GENERIC.options]),
 ].sort((a, b) => a.localeCompare(b)) as readonly string[];
+
+function toTitleCaseWord(word: string): string {
+  if (word.length === 0) return '';
+  return `${word[0].toUpperCase()}${word.slice(1).toLowerCase()}`;
+}
+
+function longestCommonPrefix(values: readonly string[]): string {
+  if (values.length === 0) return '';
+  let prefix = values[0] ?? '';
+  for (let i = 1; i < values.length; i += 1) {
+    const value = values[i] ?? '';
+    let j = 0;
+    const max = Math.min(prefix.length, value.length);
+    while (j < max && prefix[j] === value[j]) j += 1;
+    prefix = prefix.slice(0, j);
+    if (prefix.length === 0) break;
+  }
+  const lastSlash = prefix.lastIndexOf('/');
+  return lastSlash >= 0 ? prefix.slice(0, lastSlash + 1) : '';
+}
+
+function formatPathDisplay(rawValue: string, commonPrefix: string): string {
+  const raw = rawValue.trim();
+  if (raw.length === 0) return rawValue;
+  const withoutPrefix = raw.startsWith(commonPrefix) ? raw.slice(commonPrefix.length) : raw;
+  const withoutExt = withoutPrefix.replace(/\.[^./]+$/u, '');
+  const parts = withoutExt
+    .split('/')
+    .map((segment) =>
+      segment
+        .split(/[-_]+/u)
+        .map((word) => toTitleCaseWord(word))
+        .join(' ')
+    )
+    .filter((part) => part.length > 0);
+  return parts.length > 0 ? parts.join(' - ') : rawValue;
+}
+
+function createPathOptionLabeler(options: readonly string[]): (raw: string) => string {
+  const commonPrefix = longestCommonPrefix(options);
+  return (raw) => formatPathDisplay(raw, commonPrefix);
+}
+
+const logoOptionToLabel = createPathOptionLabeler(logoOptions);
+const decalAssetOptionToLabel = createPathOptionLabeler(decalAssetOptions);
+const leaderOptionToLabel = createPathOptionLabeler(LEADERS.options);
+const troopOptionToLabel = createPathOptionLabeler(TROOP.options);
+const troopStarOptionToLabel = createPathOptionLabeler(TROOP_MODIFIER.options);
 
 const defaultLeader = (): Faction['leaders'][number] => ({
   name: '',
@@ -103,11 +353,131 @@ const defaultTroop = (): Faction['troops'][number] => ({
   count: 20,
 });
 
-const defaultTroopBack = (): NonNullable<Faction['troops'][number]['back']> => ({
-  name: '',
-  image: TROOP.options[0],
-  description: '',
-});
+const troopStarOptions = [
+  { value: NONE_SELECT_VALUE, label: 'None' },
+  ...TROOP_MODIFIER.options.map((opt) => ({
+    value: opt,
+    label: troopStarOptionToLabel(opt),
+  })),
+] as const;
+
+function createTroopBackFromFront(
+  front: Faction['troops'][number]
+): NonNullable<Faction['troops'][number]['back']> {
+  return {
+    name: front.name,
+    image: front.image,
+    description: front.description,
+    star: front.star,
+    striped: front.striped === true ? undefined : true,
+  };
+}
+
+function TroopSideFields({
+  form,
+  troopIndex,
+  side,
+}: {
+  form: FactionFormApi;
+  troopIndex: number;
+  side: 'front' | 'back';
+}) {
+  const isBack = side === 'back';
+  const idBase = isBack ? `troop-${troopIndex}-back` : `troop-${troopIndex}`;
+  const imageLabel = isBack ? 'Back image' : 'Troop image';
+  const descriptionLabel = isBack ? 'Back description' : 'Description';
+  const starLabel = isBack ? 'Back star modifier' : 'Star modifier';
+  const stripedLabel = isBack ? 'Back striped pattern' : 'Striped pattern';
+
+  const i = troopIndex;
+  const nameField = isBack ? (`troops[${i}].back.name` as const) : (`troops[${i}].name` as const);
+  const imageField = isBack
+    ? (`troops[${i}].back.image` as const)
+    : (`troops[${i}].image` as const);
+  const descField = isBack
+    ? (`troops[${i}].back.description` as const)
+    : (`troops[${i}].description` as const);
+  const starField = isBack ? (`troops[${i}].back.star` as const) : (`troops[${i}].star` as const);
+  const stripedField = isBack
+    ? (`troops[${i}].back.striped` as const)
+    : (`troops[${i}].striped` as const);
+
+  return (
+    <div className={styles.troopSideFields}>
+      <div className={styles.arrayCardGrid}>
+        <form.Field name={nameField}>
+          {(field) => (
+            <FormField label={isBack ? 'Back name' : 'Name'} htmlFor={`${idBase}-name`}>
+              <FormInput
+                id={`${idBase}-name`}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+              />
+            </FormField>
+          )}
+        </form.Field>
+        <form.Field name={imageField}>
+          {(field) => (
+            <AssetAutocomplete
+              id={`${idBase}-img`}
+              label={imageLabel}
+              value={field.state.value ?? ''}
+              onChange={(v) => field.handleChange(v as Faction['troops'][number]['image'])}
+              options={TROOP.options}
+              optionToLabel={troopOptionToLabel}
+            />
+          )}
+        </form.Field>
+        <form.Field name={descField}>
+          {(field) => (
+            <FormField label={descriptionLabel} htmlFor={`${idBase}-desc`}>
+              <FormTextarea
+                id={`${idBase}-desc`}
+                rows={2}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+              />
+            </FormField>
+          )}
+        </form.Field>
+        <form.Field name={starField}>
+          {(field) => (
+            <FormField label={starLabel}>
+              <FormSelect
+                ariaLabel={`${starLabel} for troop ${troopIndex + 1}`}
+                value={field.state.value ?? NONE_SELECT_VALUE}
+                onValueChange={(next) =>
+                  field.handleChange(
+                    next === NONE_SELECT_VALUE
+                      ? undefined
+                      : (next as NonNullable<Faction['troops'][number]['star']>)
+                  )
+                }
+                options={troopStarOptions}
+              />
+            </FormField>
+          )}
+        </form.Field>
+        <form.Field name={stripedField}>
+          {(field) => (
+            <FormField label={stripedLabel} htmlFor={`${idBase}-striped`}>
+              <input
+                id={`${idBase}-striped`}
+                type="checkbox"
+                className={styles.checkbox}
+                checked={field.state.value === true}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.checked ? true : undefined)}
+              />
+            </FormField>
+          )}
+        </form.Field>
+      </div>
+    </div>
+  );
+}
 
 const defaultAdvantage = (): Faction['rules']['advantages'][number] => ({
   text: '',
@@ -116,12 +486,14 @@ const defaultAdvantage = (): Faction['rules']['advantages'][number] => ({
 function AccordionSection({
   id,
   title,
+  icon,
   isOpen,
   onOpen,
   children,
 }: {
   id: FactionEditorSectionId;
   title: string;
+  icon?: ReactNode;
   isOpen: boolean;
   onOpen: (section: FactionEditorSectionId) => void;
   children: ReactNode;
@@ -136,7 +508,13 @@ function AccordionSection({
         id={`faction-header-${id}`}
         onClick={() => onOpen(id)}
       >
-        {title}
+        <span className={styles.accordionHeaderMain}>
+          {icon != null && <span className={styles.accordionHeaderIcon}>{icon}</span>}
+          <span className={styles.accordionHeaderTitle}>{title}</span>
+        </span>
+        <span className={styles.accordionHeaderChevron} aria-hidden>
+          ▾
+        </span>
       </button>
       {isOpen && (
         <section
@@ -148,6 +526,23 @@ function AccordionSection({
         </section>
       )}
     </div>
+  );
+}
+
+function renderAccordionIcon(sectionId: FactionEditorSectionId): ReactNode {
+  const src = ACCORDION_SECTION_ICON_SRC[sectionId];
+  if (src == null) {
+    if (sectionId === 'background') return <ImageIcon size={15} aria-hidden />;
+    return null;
+  }
+  return (
+    <img
+      className={styles.accordionHeaderIconImage}
+      src={src}
+      alt=""
+      aria-hidden
+      draggable={false}
+    />
   );
 }
 
@@ -171,21 +566,15 @@ function TtsColorsEditor({
   value: Faction['colors'];
   onChange: (next: Faction['colors']) => void;
 }) {
-  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-
-  const reorder = (from: number, to: number) => {
-    if (from === to || from < 0 || to < 0 || from >= value.length || to >= value.length) return;
-    const next = [...value];
-    const [item] = next.splice(from, 1);
-    next.splice(to, 0, item);
-    onChange(next);
-  };
-
-  const clearDragUi = () => {
-    setDraggingIndex(null);
-    setDragOverIndex(null);
-  };
+  const sortablePrefix = 'tts-';
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+  const itemIds = useMemo(
+    () => value.map((slotColor) => `${sortablePrefix}${slotColor}`),
+    [value]
+  );
 
   return (
     <FormField label="TTS colors (ordered)">
@@ -194,111 +583,111 @@ function TtsColorsEditor({
         tone, the second is next, and so on. Drag the handle on the left to reorder. Each color can
         appear only once.
       </p>
-      <ul className={styles.ttsList}>
-        {value.map((c, i) => (
-          <li
-            key={c}
-            className={clsx(
-              styles.ttsRow,
-              draggingIndex === i && styles.ttsRowDragging,
-              dragOverIndex === i &&
-                draggingIndex !== null &&
-                draggingIndex !== i &&
-                styles.ttsRowDropTarget
-            )}
-            onDragOver={(e) => {
-              if (draggingIndex === null) return;
-              e.preventDefault();
-              e.dataTransfer.dropEffect = 'move';
-              setDragOverIndex(i);
-            }}
-            onDragLeave={(e) => {
-              if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                setDragOverIndex((prev) => (prev === i ? null : prev));
-              }
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              const raw = e.dataTransfer.getData('text/plain');
-              const from = Number.parseInt(raw, 10);
-              if (!Number.isNaN(from)) {
-                reorder(from, i);
-              }
-              clearDragUi();
-            }}
-          >
-            <button
-              type="button"
-              className={styles.ttsDragHandle}
-              draggable
-              aria-label={`Drag to reorder slot ${i + 1}`}
-              onDragStart={(e) => {
-                setDraggingIndex(i);
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/plain', String(i));
-              }}
-              onDragEnd={clearDragUi}
-            >
-              <GripVertical size={18} strokeWidth={2} aria-hidden />
-            </button>
-            <span className={styles.ttsIndex} title="Order index">
-              {i + 1}.
-            </span>
-            <select
-              className={styles.ttsSelect}
-              value={c}
-              aria-label={`TTS color slot ${i + 1}`}
-              draggable={false}
-              onChange={(e) => {
-                const picked = e.target.value as Faction['colors'][number];
-                if (value.some((v, j) => j !== i && v === picked)) return;
-                const next = [...value];
-                next[i] = picked;
-                onChange(next);
-              }}
-            >
-              {optionsForSlot(value, i).map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-            <div className={styles.ttsRowActions}>
-              <button
-                type="button"
-                className={styles.ttsRemove}
-                aria-label={`Remove TTS color slot ${i + 1}`}
-                onClick={() => onChange(value.filter((_, j) => j !== i))}
-              >
-                <X size={18} strokeWidth={2} aria-hidden />
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
-      <FormButton
-        type="button"
-        variant="secondary"
-        disabled={firstUnusedColor(value) == null}
-        onClick={() => {
-          const add = firstUnusedColor(value);
-          if (add) onChange([...value, add]);
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={({ active, over }: DragEndEvent) => {
+          if (!over) return;
+          const from = indexFromSortableId(active.id, sortablePrefix);
+          const to = indexFromSortableId(over.id, sortablePrefix);
+          if (from == null || to == null || from === to) return;
+          onChange(arrayMove(value, from, to));
         }}
       >
-        Add color to end
-      </FormButton>
+        <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+          <ul className={styles.ttsList}>
+            {value.map((c, i) => {
+              const itemId = itemIds[i] ?? `${sortablePrefix}missing-${i}`;
+              return (
+                <SortableTtsRow key={itemId} id={itemId} className={styles.ttsRow}>
+                  {({ setActivatorNodeRef, attributes, listeners }) => (
+                    <>
+                      <ReorderHandleButton
+                        label={`Drag to reorder slot ${i + 1}`}
+                        className={styles.ttsDragHandle}
+                        setActivatorNodeRef={setActivatorNodeRef}
+                        attributes={attributes}
+                        listeners={listeners}
+                      />
+                      <span className={styles.ttsIndex} title="Order index">
+                        {i + 1}.
+                      </span>
+                      <select
+                        className={styles.ttsSelect}
+                        value={c}
+                        aria-label={`TTS color slot ${i + 1}`}
+                        draggable={false}
+                        onChange={(e) => {
+                          const picked = e.target.value as Faction['colors'][number];
+                          if (value.some((v, j) => j !== i && v === picked)) return;
+                          const next = [...value];
+                          next[i] = picked;
+                          onChange(next);
+                        }}
+                      >
+                        {optionsForSlot(value, i).map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                      <div className={styles.ttsRowActions}>
+                        <FormTooltip content={`Remove TTS color slot ${i + 1}`}>
+                          <FormButton
+                            type="button"
+                            variant="danger"
+                            iconOnly
+                            className={styles.ttsRemoveButton}
+                            aria-label={`Remove TTS color slot ${i + 1}`}
+                            onClick={() => onChange(value.filter((_, j) => j !== i))}
+                          >
+                            <Trash2 size={16} strokeWidth={2} aria-hidden />
+                          </FormButton>
+                        </FormTooltip>
+                      </div>
+                    </>
+                  )}
+                </SortableTtsRow>
+              );
+            })}
+          </ul>
+        </SortableContext>
+      </DndContext>
+      <FormTooltip content="Add color at the end">
+        <FormButton
+          type="button"
+          variant="secondary"
+          iconOnly
+          aria-label="Add color at the end"
+          disabled={firstUnusedColor(value) == null}
+          onClick={() => {
+            const add = firstUnusedColor(value);
+            if (add) onChange([...value, add]);
+          }}
+        >
+          <Plus size={16} aria-hidden />
+        </FormButton>
+      </FormTooltip>
     </FormField>
   );
 }
 
 export function FactionFormFields({ form }: { form: FactionFormApi }) {
   const { openId, openSection } = useEditorAccordionHash();
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+  const [troopSideTabByIndex, setTroopSideTabByIndex] = useState<Record<number, 'front' | 'back'>>(
+    {}
+  );
 
   return (
     <div className={styles.formColumn}>
       <AccordionSection
         id="identity"
         title="Identity"
+        icon={renderAccordionIcon('identity')}
         isOpen={openId === 'identity'}
         onOpen={openSection}
       >
@@ -336,8 +725,9 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
               id="faction-logo"
               label="Logo"
               value={field.state.value}
-              onChange={(v) => field.handleChange(v)}
+              onChange={(v) => field.handleChange(v as Faction['logo'])}
               options={logoOptions}
+              optionToLabel={logoOptionToLabel}
             />
           )}
         </form.Field>
@@ -364,18 +754,42 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
       <AccordionSection
         id="background"
         title="Background"
+        icon={renderAccordionIcon('background')}
         isOpen={openId === 'background'}
         onOpen={openSection}
       >
         <form.Field name="background.image">
           {(field) => (
             <FormField label="Background texture image" htmlFor="bg-image">
-              <FormInput
-                id="bg-image"
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-              />
+              <div className={styles.assetInputRow}>
+                <FormInput
+                  id="bg-image"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                />
+                {isPreviewableAssetPath(field.state.value) && (
+                  <FormPopover
+                    trigger={
+                      <FormButton
+                        type="button"
+                        variant="secondary"
+                        iconOnly
+                        aria-label="Preview image"
+                      >
+                        <Eye size={16} aria-hidden />
+                      </FormButton>
+                    }
+                  >
+                    <img
+                      className={styles.assetPreviewImage}
+                      src={assetPathToPublicUrl(field.state.value)}
+                      alt=""
+                      draggable={false}
+                    />
+                  </FormPopover>
+                )}
+              </div>
             </FormField>
           )}
         </form.Field>
@@ -437,7 +851,13 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
         </form.Field>
       </AccordionSection>
 
-      <AccordionSection id="hero" title="Hero" isOpen={openId === 'hero'} onOpen={openSection}>
+      <AccordionSection
+        id="hero"
+        title="Hero"
+        icon={renderAccordionIcon('hero')}
+        isOpen={openId === 'hero'}
+        onOpen={openSection}
+      >
         <form.Field name="hero.name">
           {(field) => (
             <FormField label="Hero name" htmlFor="hero-name">
@@ -456,8 +876,9 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
               id="hero-image"
               label="Hero image"
               value={field.state.value}
-              onChange={(v) => field.handleChange(v)}
+              onChange={(v) => field.handleChange(v as Faction['hero']['image'])}
               options={LEADERS.options}
+              optionToLabel={leaderOptionToLabel}
             />
           )}
         </form.Field>
@@ -466,102 +887,152 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
       <AccordionSection
         id="leaders"
         title="Leaders"
+        icon={renderAccordionIcon('leaders')}
         isOpen={openId === 'leaders'}
         onOpen={openSection}
       >
         <form.Field name="leaders" mode="array">
-          {(lf) => (
-            <>
-              {lf.state.value.map((_, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: row identity follows form array index
-                <div key={i} className={styles.arrayCard}>
-                  <div className={styles.row}>
-                    <form.Field name={`leaders[${i}].name`}>
-                      {(field) => (
-                        <FormField label="Name" htmlFor={`leader-${i}-name`}>
-                          <FormInput
-                            id={`leader-${i}-name`}
-                            value={field.state.value}
-                            onBlur={field.handleBlur}
-                            onChange={(e) => field.handleChange(e.target.value)}
-                          />
-                        </FormField>
-                      )}
-                    </form.Field>
-                    <form.Field name={`leaders[${i}].strength`}>
-                      {(field) => (
-                        <FormField
-                          label="Strength"
-                          htmlFor={`leader-${i}-str`}
-                          hint="Usually one digit or letter (e.g. 5). Multiple digits are stored as a number. Leave empty to omit."
+          {(lf) => {
+            const sortablePrefix = 'leaders-';
+            const itemIds = getSortableIds(sortablePrefix, lf.state.value.length);
+            return (
+              <>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={({ active, over }: DragEndEvent) => {
+                    if (!over) return;
+                    const from = indexFromSortableId(active.id, sortablePrefix);
+                    const to = indexFromSortableId(over.id, sortablePrefix);
+                    if (from == null || to == null || from === to) return;
+                    lf.handleChange(arrayMove(lf.state.value, from, to));
+                  }}
+                >
+                  <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+                    {lf.state.value.map((_, i) => {
+                      const itemId = `${sortablePrefix}${i}`;
+                      return (
+                        <SortableCard
+                          key={itemId}
+                          id={itemId}
+                          className={clsx(styles.arrayCard, styles.arrayCardWithToolbar)}
                         >
-                          <FormInput
-                            id={`leader-${i}-str`}
-                            inputMode="text"
-                            autoComplete="off"
-                            value={
-                              field.state.value === undefined || field.state.value === null
-                                ? ''
-                                : String(field.state.value)
-                            }
-                            onBlur={field.handleBlur}
-                            onChange={(e) => {
-                              const raw = e.target.value.trim();
-                              if (raw === '') {
-                                field.handleChange(undefined);
-                                return;
-                              }
-                              if (/^\d+$/.test(raw)) {
-                                field.handleChange(Number.parseInt(raw, 10));
-                                return;
-                              }
-                              const ch = raw.slice(-1);
-                              if (raw.length === 1 && /^[a-z0-9]$/i.test(ch)) {
-                                field.handleChange(ch);
-                              }
-                            }}
-                          />
-                        </FormField>
-                      )}
-                    </form.Field>
-                    <form.Field name={`leaders[${i}].image`}>
-                      {(field) => (
-                        <AssetAutocomplete
-                          id={`leader-${i}-img`}
-                          label="Image"
-                          value={field.state.value}
-                          onChange={(v) => field.handleChange(v)}
-                          options={LEADERS.options}
-                        />
-                      )}
-                    </form.Field>
-                    <FormField label={'\u00a0'}>
-                      <FormButton
-                        type="button"
-                        variant="secondary"
-                        onClick={() => lf.removeValue(i)}
-                      >
-                        Remove
-                      </FormButton>
-                    </FormField>
-                  </div>
-                </div>
-              ))}
-              <FormButton
-                type="button"
-                variant="secondary"
-                onClick={() => lf.pushValue(defaultLeader())}
-              >
-                Add leader
-              </FormButton>
-            </>
-          )}
+                          {({ setActivatorNodeRef, attributes, listeners }) => (
+                            <>
+                              <FormUnitToolbar
+                                leading={
+                                  <ReorderHandleButton
+                                    label={`Drag to reorder leader ${i + 1}`}
+                                    setActivatorNodeRef={setActivatorNodeRef}
+                                    attributes={attributes}
+                                    listeners={listeners}
+                                  />
+                                }
+                                actions={
+                                  <IconActionButton
+                                    type="button"
+                                    label="Remove leader"
+                                    variant="danger"
+                                    onClick={() => lf.removeValue(i)}
+                                  >
+                                    <Trash2 size={16} aria-hidden />
+                                  </IconActionButton>
+                                }
+                              />
+                              <div className={styles.unitCardBody}>
+                                <div className={styles.arrayCardGrid}>
+                                  <form.Field name={`leaders[${i}].name`}>
+                                    {(field) => (
+                                      <FormField label="Name" htmlFor={`leader-${i}-name`}>
+                                        <FormInput
+                                          id={`leader-${i}-name`}
+                                          value={field.state.value}
+                                          onBlur={field.handleBlur}
+                                          onChange={(e) => field.handleChange(e.target.value)}
+                                        />
+                                      </FormField>
+                                    )}
+                                  </form.Field>
+                                  <form.Field name={`leaders[${i}].strength`}>
+                                    {(field) => (
+                                      <FormField
+                                        label="Strength"
+                                        htmlFor={`leader-${i}-str`}
+                                        hint="Usually one digit or letter (e.g. 5). Multiple digits are stored as a number. Leave empty to omit."
+                                      >
+                                        <FormInput
+                                          id={`leader-${i}-str`}
+                                          inputMode="text"
+                                          autoComplete="off"
+                                          value={
+                                            field.state.value === undefined ||
+                                            field.state.value === null
+                                              ? ''
+                                              : String(field.state.value)
+                                          }
+                                          onBlur={field.handleBlur}
+                                          onChange={(e) => {
+                                            const raw = e.target.value.trim();
+                                            if (raw === '') {
+                                              field.handleChange(undefined);
+                                              return;
+                                            }
+                                            if (/^\d+$/.test(raw)) {
+                                              field.handleChange(Number.parseInt(raw, 10));
+                                              return;
+                                            }
+                                            const ch = raw.slice(-1);
+                                            if (raw.length === 1 && /^[a-z0-9]$/i.test(ch)) {
+                                              field.handleChange(ch);
+                                            }
+                                          }}
+                                        />
+                                      </FormField>
+                                    )}
+                                  </form.Field>
+                                  <form.Field name={`leaders[${i}].image`}>
+                                    {(field) => (
+                                      <AssetAutocomplete
+                                        id={`leader-${i}-img`}
+                                        label="Image"
+                                        value={field.state.value}
+                                        onChange={(v) =>
+                                          field.handleChange(
+                                            v as Faction['leaders'][number]['image']
+                                          )
+                                        }
+                                        options={LEADERS.options}
+                                        optionToLabel={leaderOptionToLabel}
+                                      />
+                                    )}
+                                  </form.Field>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </SortableCard>
+                      );
+                    })}
+                  </SortableContext>
+                </DndContext>
+                <IconActionButton
+                  type="button"
+                  label="Add leader"
+                  variant="secondary"
+                  onClick={() => lf.pushValue(defaultLeader())}
+                >
+                  <Plus size={16} aria-hidden />
+                </IconActionButton>
+              </>
+            );
+          }}
         </form.Field>
       </AccordionSection>
 
       <AccordionSection
         id="decals"
         title="Alliance decals"
+        icon={renderAccordionIcon('decals')}
         isOpen={openId === 'decals'}
         onOpen={openSection}
       >
@@ -570,349 +1041,361 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
           outlined).
         </p>
         <form.Field name="decals" mode="array">
-          {(df) => (
-            <>
-              {df.state.value.map((_, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: row identity follows form array index
-                <div key={i} className={styles.arrayCard}>
-                  <form.Field name={`decals[${i}].id`}>
-                    {(field) => (
-                      <AssetAutocomplete
-                        id={`decal-${i}-id`}
-                        label="Decal asset"
-                        value={field.state.value}
-                        onChange={(v) => field.handleChange(v)}
-                        options={decalAssetOptions}
-                      />
-                    )}
-                  </form.Field>
-                  <div className={styles.row}>
-                    <form.Field name={`decals[${i}].muted`}>
-                      {(field) => (
-                        <FormField label="Muted" htmlFor={`decal-${i}-muted`}>
-                          <input
-                            id={`decal-${i}-muted`}
-                            type="checkbox"
-                            className={styles.checkbox}
-                            checked={field.state.value}
-                            onBlur={field.handleBlur}
-                            onChange={(e) => field.handleChange(e.target.checked)}
-                          />
-                        </FormField>
-                      )}
-                    </form.Field>
-                    <form.Field name={`decals[${i}].outline`}>
-                      {(field) => (
-                        <FormField label="Outline" htmlFor={`decal-${i}-outline`}>
-                          <input
-                            id={`decal-${i}-outline`}
-                            type="checkbox"
-                            className={styles.checkbox}
-                            checked={field.state.value}
-                            onBlur={field.handleBlur}
-                            onChange={(e) => field.handleChange(e.target.checked)}
-                          />
-                        </FormField>
-                      )}
-                    </form.Field>
-                  </div>
-                  <form.Field name={`decals[${i}].scale`}>
-                    {(field) => (
-                      <label className={styles.sliderLabel} htmlFor={`decal-${i}-scale`}>
-                        Scale (0–1)
-                        <span className={styles.sliderValue}>{field.state.value.toFixed(2)}</span>
-                        <input
-                          id={`decal-${i}-scale`}
-                          className={styles.rangeInput}
-                          type="range"
-                          min={0}
-                          max={1}
-                          step={0.01}
-                          value={field.state.value}
-                          onChange={(e) =>
-                            field.handleChange(Number.parseFloat(e.target.value) || 0)
-                          }
-                        />
-                      </label>
-                    )}
-                  </form.Field>
-                  <div className={styles.row}>
-                    <form.Field name={`decals[${i}].offset[0]`}>
-                      {(field) => (
-                        <DecalOffsetAxisSlider
-                          id={`decal-${i}-ox`}
-                          label="Offset X (−500–500)"
-                          value={field.state.value}
-                          onChange={(n) => field.handleChange(n)}
-                        />
-                      )}
-                    </form.Field>
-                    <form.Field name={`decals[${i}].offset[1]`}>
-                      {(field) => (
-                        <DecalOffsetAxisSlider
-                          id={`decal-${i}-oy`}
-                          label="Offset Y (−500–500)"
-                          value={field.state.value}
-                          onChange={(n) => field.handleChange(n)}
-                        />
-                      )}
-                    </form.Field>
-                  </div>
-                  <FormButton type="button" variant="secondary" onClick={() => df.removeValue(i)}>
-                    Remove decal
-                  </FormButton>
-                </div>
-              ))}
-              <FormButton
-                type="button"
-                variant="secondary"
-                onClick={() => df.pushValue(defaultDecal())}
-              >
-                Add decal
-              </FormButton>
-            </>
-          )}
+          {(df) => {
+            const sortablePrefix = 'decals-';
+            const itemIds = getSortableIds(sortablePrefix, df.state.value.length);
+            return (
+              <>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={({ active, over }: DragEndEvent) => {
+                    if (!over) return;
+                    const from = indexFromSortableId(active.id, sortablePrefix);
+                    const to = indexFromSortableId(over.id, sortablePrefix);
+                    if (from == null || to == null || from === to) return;
+                    df.handleChange(arrayMove(df.state.value, from, to));
+                  }}
+                >
+                  <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+                    {df.state.value.map((_, i) => {
+                      const itemId = `${sortablePrefix}${i}`;
+                      return (
+                        <SortableCard
+                          key={itemId}
+                          id={itemId}
+                          className={clsx(styles.arrayCard, styles.arrayCardWithToolbar)}
+                        >
+                          {({ setActivatorNodeRef, attributes, listeners }) => (
+                            <>
+                              <FormUnitToolbar
+                                leading={
+                                  <ReorderHandleButton
+                                    label={`Drag to reorder decal ${i + 1}`}
+                                    setActivatorNodeRef={setActivatorNodeRef}
+                                    attributes={attributes}
+                                    listeners={listeners}
+                                  />
+                                }
+                                actions={
+                                  <IconActionButton
+                                    type="button"
+                                    label="Remove decal"
+                                    variant="danger"
+                                    onClick={() => df.removeValue(i)}
+                                  >
+                                    <Trash2 size={16} aria-hidden />
+                                  </IconActionButton>
+                                }
+                              />
+                              <div className={styles.unitCardBody}>
+                                <form.Field name={`decals[${i}].id`}>
+                                  {(field) => (
+                                    <AssetAutocomplete
+                                      id={`decal-${i}-id`}
+                                      label="Decal asset"
+                                      value={field.state.value}
+                                      onChange={(v) =>
+                                        field.handleChange(v as Faction['decals'][number]['id'])
+                                      }
+                                      options={decalAssetOptions}
+                                      optionToLabel={decalAssetOptionToLabel}
+                                    />
+                                  )}
+                                </form.Field>
+                                <div className={styles.formRow}>
+                                  <form.Field name={`decals[${i}].muted`}>
+                                    {(field) => (
+                                      <FormField label="Muted" htmlFor={`decal-${i}-muted`}>
+                                        <input
+                                          id={`decal-${i}-muted`}
+                                          type="checkbox"
+                                          className={styles.checkbox}
+                                          checked={field.state.value}
+                                          onBlur={field.handleBlur}
+                                          onChange={(e) => field.handleChange(e.target.checked)}
+                                        />
+                                      </FormField>
+                                    )}
+                                  </form.Field>
+                                  <form.Field name={`decals[${i}].outline`}>
+                                    {(field) => (
+                                      <FormField label="Outline" htmlFor={`decal-${i}-outline`}>
+                                        <input
+                                          id={`decal-${i}-outline`}
+                                          type="checkbox"
+                                          className={styles.checkbox}
+                                          checked={field.state.value}
+                                          onBlur={field.handleBlur}
+                                          onChange={(e) => field.handleChange(e.target.checked)}
+                                        />
+                                      </FormField>
+                                    )}
+                                  </form.Field>
+                                </div>
+                                <form.Field name={`decals[${i}].scale`}>
+                                  {(field) => (
+                                    <label
+                                      className={styles.sliderLabel}
+                                      htmlFor={`decal-${i}-scale`}
+                                    >
+                                      Scale (0–1)
+                                      <span className={styles.sliderValue}>
+                                        {field.state.value.toFixed(2)}
+                                      </span>
+                                      <input
+                                        id={`decal-${i}-scale`}
+                                        className={styles.rangeInput}
+                                        type="range"
+                                        min={0}
+                                        max={1}
+                                        step={0.01}
+                                        value={field.state.value}
+                                        onChange={(e) =>
+                                          field.handleChange(Number.parseFloat(e.target.value) || 0)
+                                        }
+                                      />
+                                    </label>
+                                  )}
+                                </form.Field>
+                                <div className={styles.formRow}>
+                                  <form.Field name={`decals[${i}].offset[0]`}>
+                                    {(field) => (
+                                      <DecalOffsetAxisSlider
+                                        id={`decal-${i}-ox`}
+                                        label="Offset X (−500–500)"
+                                        value={field.state.value}
+                                        onChange={(n) => field.handleChange(n)}
+                                      />
+                                    )}
+                                  </form.Field>
+                                  <form.Field name={`decals[${i}].offset[1]`}>
+                                    {(field) => (
+                                      <DecalOffsetAxisSlider
+                                        id={`decal-${i}-oy`}
+                                        label="Offset Y (−500–500)"
+                                        value={field.state.value}
+                                        onChange={(n) => field.handleChange(n)}
+                                      />
+                                    )}
+                                  </form.Field>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </SortableCard>
+                      );
+                    })}
+                  </SortableContext>
+                </DndContext>
+                <IconActionButton
+                  type="button"
+                  label="Add decal"
+                  variant="secondary"
+                  onClick={() => df.pushValue(defaultDecal())}
+                >
+                  <Plus size={16} aria-hidden />
+                </IconActionButton>
+              </>
+            );
+          }}
         </form.Field>
       </AccordionSection>
 
       <AccordionSection
         id="troops"
         title="Troops"
+        icon={renderAccordionIcon('troops')}
         isOpen={openId === 'troops'}
         onOpen={openSection}
       >
         <form.Field name="troops" mode="array">
-          {(tf) => (
-            <>
-              {tf.state.value.map((_, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: row identity follows form array index
-                <div key={i} className={styles.arrayCard}>
-                  <form.Field name={`troops[${i}].name`}>
-                    {(field) => (
-                      <FormField label="Name" htmlFor={`troop-${i}-name`}>
-                        <FormInput
-                          id={`troop-${i}-name`}
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                        />
-                      </FormField>
-                    )}
-                  </form.Field>
-                  <form.Field name={`troops[${i}].image`}>
-                    {(field) => (
-                      <AssetAutocomplete
-                        id={`troop-${i}-img`}
-                        label="Troop image"
-                        value={field.state.value}
-                        onChange={(v) => field.handleChange(v)}
-                        options={TROOP.options}
-                      />
-                    )}
-                  </form.Field>
-                  <form.Field name={`troops[${i}].description`}>
-                    {(field) => (
-                      <FormField label="Description" htmlFor={`troop-${i}-desc`}>
-                        <FormTextarea
-                          id={`troop-${i}-desc`}
-                          rows={2}
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                        />
-                      </FormField>
-                    )}
-                  </form.Field>
-                  <form.Field name={`troops[${i}].star`}>
-                    {(field) => (
-                      <FormField label="Star modifier" htmlFor={`troop-${i}-star`}>
-                        <select
-                          id={`troop-${i}-star`}
-                          className={styles.select}
-                          value={field.state.value ?? ''}
-                          onBlur={field.handleBlur}
-                          onChange={(e) =>
-                            field.handleChange(
-                              e.target.value === ''
-                                ? undefined
-                                : (e.target.value as NonNullable<Faction['troops'][number]['star']>)
-                            )
-                          }
+          {(tf) => {
+            const sortablePrefix = 'troops-';
+            const itemIds = getSortableIds(sortablePrefix, tf.state.value.length);
+            return (
+              <>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={({ active, over }: DragEndEvent) => {
+                    if (!over) return;
+                    const from = indexFromSortableId(active.id, sortablePrefix);
+                    const to = indexFromSortableId(over.id, sortablePrefix);
+                    if (from == null || to == null || from === to) return;
+                    const nextTroops = arrayMove(tf.state.value, from, to);
+                    tf.handleChange(nextTroops);
+                    setTroopSideTabByIndex((prev) => {
+                      const previousTabs = tf.state.value.map((_, index) => prev[index] ?? 'front');
+                      const next = arrayMove(previousTabs, from, to);
+                      return Object.fromEntries(
+                        next
+                          .map((value, nextIdx) => [nextIdx, value] as const)
+                          .filter(([, value]) => value === 'back')
+                      );
+                    });
+                  }}
+                >
+                  <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+                    {tf.state.value.map((troop, i) => {
+                      const itemId = `${sortablePrefix}${i}`;
+                      return (
+                        <SortableCard
+                          key={itemId}
+                          id={itemId}
+                          className={clsx(styles.arrayCard, styles.arrayCardWithToolbar)}
                         >
-                          <option value="">None</option>
-                          {TROOP_MODIFIER.options.map((opt) => (
-                            <option key={opt} value={opt}>
-                              {opt}
-                            </option>
-                          ))}
-                        </select>
-                      </FormField>
-                    )}
-                  </form.Field>
-                  <form.Field name={`troops[${i}].striped`}>
-                    {(field) => (
-                      <FormField label="Striped pattern" htmlFor={`troop-${i}-striped`}>
-                        <input
-                          id={`troop-${i}-striped`}
-                          type="checkbox"
-                          className={styles.checkbox}
-                          checked={field.state.value === true}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.checked ? true : undefined)}
-                        />
-                      </FormField>
-                    )}
-                  </form.Field>
-                  <form.Field name={`troops[${i}].count`}>
-                    {(field) => (
-                      <FormField label="Count" htmlFor={`troop-${i}-count`}>
-                        <FormInput
-                          id={`troop-${i}-count`}
-                          type="number"
-                          min={1}
-                          step={1}
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(e) =>
-                            field.handleChange(Number.parseInt(e.target.value, 10) || 1)
-                          }
-                        />
-                      </FormField>
-                    )}
-                  </form.Field>
-                  <form.Field name={`troops[${i}].back`}>
-                    {(bf) => (
-                      <>
-                        <FormField
-                          label="Flip side (back of token)"
-                          htmlFor={`troop-${i}-flip`}
-                          hint="Optional second face for double-sided tokens; same fields as the front."
-                        >
-                          <input
-                            id={`troop-${i}-flip`}
-                            type="checkbox"
-                            className={styles.checkbox}
-                            checked={bf.state.value != null}
-                            onChange={(e) => {
-                              if (e.target.checked) bf.handleChange(defaultTroopBack());
-                              else bf.handleChange(undefined);
-                            }}
-                          />
-                        </FormField>
-                        {bf.state.value != null && (
-                          <div className={styles.troopFlipSide}>
-                            <form.Field name={`troops[${i}].back.name`}>
-                              {(field) => (
-                                <FormField label="Back name" htmlFor={`troop-${i}-back-name`}>
-                                  <FormInput
-                                    id={`troop-${i}-back-name`}
-                                    value={field.state.value}
-                                    onBlur={field.handleBlur}
-                                    onChange={(e) => field.handleChange(e.target.value)}
-                                  />
-                                </FormField>
-                              )}
-                            </form.Field>
-                            <form.Field name={`troops[${i}].back.image`}>
-                              {(field) => (
-                                <AssetAutocomplete
-                                  id={`troop-${i}-back-img`}
-                                  label="Back image"
-                                  value={field.state.value}
-                                  onChange={(v) => field.handleChange(v)}
-                                  options={TROOP.options}
-                                />
-                              )}
-                            </form.Field>
-                            <form.Field name={`troops[${i}].back.description`}>
-                              {(field) => (
-                                <FormField
-                                  label="Back description"
-                                  htmlFor={`troop-${i}-back-desc`}
-                                >
-                                  <FormTextarea
-                                    id={`troop-${i}-back-desc`}
-                                    rows={2}
-                                    value={field.state.value}
-                                    onBlur={field.handleBlur}
-                                    onChange={(e) => field.handleChange(e.target.value)}
-                                  />
-                                </FormField>
-                              )}
-                            </form.Field>
-                            <form.Field name={`troops[${i}].back.star`}>
-                              {(field) => (
-                                <FormField
-                                  label="Back star modifier"
-                                  htmlFor={`troop-${i}-back-star`}
-                                >
-                                  <select
-                                    id={`troop-${i}-back-star`}
-                                    className={styles.select}
-                                    value={field.state.value ?? ''}
-                                    onBlur={field.handleBlur}
-                                    onChange={(e) =>
-                                      field.handleChange(
-                                        e.target.value === ''
-                                          ? undefined
-                                          : (e.target.value as NonNullable<
-                                              NonNullable<Faction['troops'][number]['back']>['star']
-                                            >)
-                                      )
+                          {({ setActivatorNodeRef, attributes, listeners }) => (
+                            <form.Field name={`troops[${i}].back`}>
+                              {(bf) => (
+                                <>
+                                  <FormUnitToolbar
+                                    leading={
+                                      <>
+                                        <ReorderHandleButton
+                                          label={`Drag to reorder troop ${i + 1}`}
+                                          setActivatorNodeRef={setActivatorNodeRef}
+                                          attributes={attributes}
+                                          listeners={listeners}
+                                        />
+                                        <FormTooltip
+                                          content={
+                                            bf.state.value != null
+                                              ? 'Disable flip side'
+                                              : 'Enable flip side'
+                                          }
+                                        >
+                                          <FormButton
+                                            type="button"
+                                            variant="secondary"
+                                            iconOnly
+                                            aria-label={`Toggle flip side for troop ${i + 1}`}
+                                            aria-pressed={bf.state.value != null}
+                                            onClick={() => {
+                                              if (bf.state.value != null) {
+                                                bf.handleChange(undefined);
+                                                setTroopSideTabByIndex((prev) => ({
+                                                  ...prev,
+                                                  [i]: 'front',
+                                                }));
+                                                return;
+                                              }
+                                              bf.handleChange(createTroopBackFromFront(troop));
+                                              setTroopSideTabByIndex((prev) => ({
+                                                ...prev,
+                                                [i]: 'front',
+                                              }));
+                                            }}
+                                          >
+                                            {bf.state.value != null ? (
+                                              <CircleOff size={16} aria-hidden />
+                                            ) : (
+                                              <Rotate3d size={16} aria-hidden />
+                                            )}
+                                          </FormButton>
+                                        </FormTooltip>
+                                      </>
                                     }
-                                  >
-                                    <option value="">None</option>
-                                    {TROOP_MODIFIER.options.map((opt) => (
-                                      <option key={opt} value={opt}>
-                                        {opt}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </FormField>
-                              )}
-                            </form.Field>
-                            <form.Field name={`troops[${i}].back.striped`}>
-                              {(field) => (
-                                <FormField
-                                  label="Back striped pattern"
-                                  htmlFor={`troop-${i}-back-striped`}
-                                >
-                                  <input
-                                    id={`troop-${i}-back-striped`}
-                                    type="checkbox"
-                                    className={styles.checkbox}
-                                    checked={field.state.value === true}
-                                    onBlur={field.handleBlur}
-                                    onChange={(e) =>
-                                      field.handleChange(e.target.checked ? true : undefined)
+                                    center={
+                                      bf.state.value != null ? (
+                                        <FormTabs
+                                          value={
+                                            troopSideTabByIndex[i] === 'back' ? 'back' : 'front'
+                                          }
+                                          onValueChange={(next) =>
+                                            setTroopSideTabByIndex((prev) => ({
+                                              ...prev,
+                                              [i]: next === 'back' ? 'back' : 'front',
+                                            }))
+                                          }
+                                          items={[
+                                            {
+                                              value: 'front',
+                                              label: 'Front',
+                                              ariaLabel: `Front side troop ${i + 1}`,
+                                            },
+                                            {
+                                              value: 'back',
+                                              label: 'Back',
+                                              ariaLabel: `Backside troop ${i + 1}`,
+                                            },
+                                          ]}
+                                        />
+                                      ) : null
+                                    }
+                                    actions={
+                                      <IconActionButton
+                                        type="button"
+                                        label="Remove troop"
+                                        variant="danger"
+                                        onClick={() => tf.removeValue(i)}
+                                      >
+                                        <Trash2 size={16} aria-hidden />
+                                      </IconActionButton>
                                     }
                                   />
-                                </FormField>
+                                  <div className={styles.unitCardBody}>
+                                    <div className={styles.troopSides}>
+                                      {bf.state.value == null ? (
+                                        <TroopSideFields form={form} troopIndex={i} side="front" />
+                                      ) : troopSideTabByIndex[i] === 'back' ? (
+                                        <TroopSideFields form={form} troopIndex={i} side="back" />
+                                      ) : (
+                                        <TroopSideFields form={form} troopIndex={i} side="front" />
+                                      )}
+                                      <div className={styles.troopCountField}>
+                                        <form.Field name={`troops[${i}].count`}>
+                                          {(field) => (
+                                            <FormField label="Count" htmlFor={`troop-${i}-count`}>
+                                              <FormInput
+                                                id={`troop-${i}-count`}
+                                                type="number"
+                                                min={1}
+                                                step={1}
+                                                value={field.state.value}
+                                                onBlur={field.handleBlur}
+                                                onChange={(e) =>
+                                                  field.handleChange(
+                                                    Number.parseInt(e.target.value, 10) || 1
+                                                  )
+                                                }
+                                              />
+                                            </FormField>
+                                          )}
+                                        </form.Field>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </>
                               )}
                             </form.Field>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </form.Field>
-                  <FormButton type="button" variant="secondary" onClick={() => tf.removeValue(i)}>
-                    Remove troop
-                  </FormButton>
-                </div>
-              ))}
-              <FormButton
-                type="button"
-                variant="secondary"
-                onClick={() => tf.pushValue(defaultTroop())}
-              >
-                Add troop
-              </FormButton>
-            </>
-          )}
+                          )}
+                        </SortableCard>
+                      );
+                    })}
+                  </SortableContext>
+                </DndContext>
+                <IconActionButton
+                  type="button"
+                  label="Add troop"
+                  variant="secondary"
+                  onClick={() => tf.pushValue(defaultTroop())}
+                >
+                  <Plus size={16} aria-hidden />
+                </IconActionButton>
+              </>
+            );
+          }}
         </form.Field>
       </AccordionSection>
 
-      <AccordionSection id="rules" title="Rules" isOpen={openId === 'rules'} onOpen={openSection}>
+      <AccordionSection
+        id="rules"
+        title="Rules"
+        icon={renderAccordionIcon('rules')}
+        isOpen={openId === 'rules'}
+        onOpen={openSection}
+      >
         <form.Field name="rules.startText">
           {(field) => (
             <FormField label="Start text" htmlFor="rules-start">
@@ -997,66 +1480,128 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
       <AccordionSection
         id="advantages"
         title="Advantages"
+        icon={renderAccordionIcon('advantages')}
         isOpen={openId === 'advantages'}
         onOpen={openSection}
       >
         <form.Field name="rules.advantages" mode="array">
-          {(af) => (
-            <>
-              {af.state.value.map((_, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: row identity follows form array index
-                <div key={i} className={styles.arrayCard}>
-                  <form.Field name={`rules.advantages[${i}].title`}>
-                    {(field) => (
-                      <FormField label="Title (optional)" htmlFor={`adv-${i}-title`}>
-                        <FormInput
-                          id={`adv-${i}-title`}
-                          value={field.state.value ?? ''}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.value || undefined)}
-                        />
-                      </FormField>
-                    )}
-                  </form.Field>
-                  <form.Field name={`rules.advantages[${i}].text`}>
-                    {(field) => (
-                      <FormField label="Text" htmlFor={`adv-${i}-text`}>
-                        <FormTextarea
-                          id={`adv-${i}-text`}
-                          rows={2}
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                        />
-                      </FormField>
-                    )}
-                  </form.Field>
-                  <form.Field name={`rules.advantages[${i}].karama`}>
-                    {(field) => (
-                      <FormField label="Karama (optional)" htmlFor={`adv-${i}-karama`}>
-                        <FormInput
-                          id={`adv-${i}-karama`}
-                          value={field.state.value ?? ''}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.value || undefined)}
-                        />
-                      </FormField>
-                    )}
-                  </form.Field>
-                  <FormButton type="button" variant="secondary" onClick={() => af.removeValue(i)}>
-                    Remove advantage
-                  </FormButton>
-                </div>
-              ))}
-              <FormButton
-                type="button"
-                variant="secondary"
-                onClick={() => af.pushValue(defaultAdvantage())}
-              >
-                Add advantage
-              </FormButton>
-            </>
-          )}
+          {(af) => {
+            const sortablePrefix = 'advantages-';
+            const itemIds = getSortableIds(sortablePrefix, af.state.value.length);
+            return (
+              <>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={({ active, over }: DragEndEvent) => {
+                    if (!over) return;
+                    const from = indexFromSortableId(active.id, sortablePrefix);
+                    const to = indexFromSortableId(over.id, sortablePrefix);
+                    if (from == null || to == null || from === to) return;
+                    af.handleChange(arrayMove(af.state.value, from, to));
+                  }}
+                >
+                  <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+                    {af.state.value.map((_, i) => {
+                      const itemId = `${sortablePrefix}${i}`;
+                      return (
+                        <SortableCard
+                          key={itemId}
+                          id={itemId}
+                          className={clsx(styles.arrayCard, styles.arrayCardWithToolbar)}
+                        >
+                          {({ setActivatorNodeRef, attributes, listeners }) => (
+                            <>
+                              <FormUnitToolbar
+                                leading={
+                                  <ReorderHandleButton
+                                    label={`Drag to reorder advantage ${i + 1}`}
+                                    setActivatorNodeRef={setActivatorNodeRef}
+                                    attributes={attributes}
+                                    listeners={listeners}
+                                  />
+                                }
+                                actions={
+                                  <IconActionButton
+                                    type="button"
+                                    label="Remove advantage"
+                                    variant="danger"
+                                    onClick={() => af.removeValue(i)}
+                                  >
+                                    <Trash2 size={16} aria-hidden />
+                                  </IconActionButton>
+                                }
+                              />
+                              <div className={styles.unitCardBody}>
+                                <div className={styles.advantageFields}>
+                                  <form.Field name={`rules.advantages[${i}].title`}>
+                                    {(field) => (
+                                      <FormField
+                                        label="Title (optional)"
+                                        htmlFor={`adv-${i}-title`}
+                                      >
+                                        <FormInput
+                                          id={`adv-${i}-title`}
+                                          value={field.state.value ?? ''}
+                                          onBlur={field.handleBlur}
+                                          onChange={(e) =>
+                                            field.handleChange(e.target.value || undefined)
+                                          }
+                                        />
+                                      </FormField>
+                                    )}
+                                  </form.Field>
+                                  <form.Field name={`rules.advantages[${i}].text`}>
+                                    {(field) => (
+                                      <FormField label="Text" htmlFor={`adv-${i}-text`}>
+                                        <FormTextarea
+                                          id={`adv-${i}-text`}
+                                          rows={2}
+                                          value={field.state.value}
+                                          onBlur={field.handleBlur}
+                                          onChange={(e) => field.handleChange(e.target.value)}
+                                        />
+                                      </FormField>
+                                    )}
+                                  </form.Field>
+                                  <form.Field name={`rules.advantages[${i}].karama`}>
+                                    {(field) => (
+                                      <FormField
+                                        label="Karama (optional)"
+                                        htmlFor={`adv-${i}-karama`}
+                                        hint="Describes what happens when this advantage is Karama'd. Leave empty if this advantage cannot be Karama'd."
+                                      >
+                                        <FormInput
+                                          id={`adv-${i}-karama`}
+                                          value={field.state.value ?? ''}
+                                          onBlur={field.handleBlur}
+                                          onChange={(e) =>
+                                            field.handleChange(e.target.value || undefined)
+                                          }
+                                        />
+                                      </FormField>
+                                    )}
+                                  </form.Field>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </SortableCard>
+                      );
+                    })}
+                  </SortableContext>
+                </DndContext>
+                <IconActionButton
+                  type="button"
+                  label="Add advantage"
+                  variant="secondary"
+                  onClick={() => af.pushValue(defaultAdvantage())}
+                >
+                  <Plus size={16} aria-hidden />
+                </IconActionButton>
+              </>
+            );
+          }}
         </form.Field>
       </AccordionSection>
     </div>

@@ -1,18 +1,19 @@
 import { useForm } from '@tanstack/react-form';
+import { RotateCcw, Save, Trash2, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 import { type Faction, useCreateFaction, useDeleteFaction, useUpdateFaction } from '@db/factions';
-import { FormActions, FormButton } from '@app/components/form';
+import { FormActions, FormButton, FormTooltip } from '@app/components/form';
 import { schema } from '@data/factions';
 import { FactionSchema } from '@game/schema/faction';
 
 import styles from './FactionEditor.module.css';
-import { type FactionFormApi, FactionFormFields } from './FactionFormFields';
+import { FactionFormFields } from './FactionFormFields';
 
-function formatZodIssues(err: {
-  issues: readonly { path: (string | number)[]; message: string }[];
-}) {
-  return err.issues.map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`).join('\n');
+function formatZodIssues(err: { issues: readonly { path: PropertyKey[]; message: string }[] }) {
+  return err.issues
+    .map((i) => `${i.path.map((segment) => String(segment)).join('.') || '(root)'}: ${i.message}`)
+    .join('\n');
 }
 
 export interface FactionEditorProps {
@@ -40,7 +41,20 @@ export function FactionEditor({
 
   const saving = createFaction.isPending || updateFaction.isPending || deleteFaction.isPending;
 
-  const form = useForm({
+  const form = useForm<
+    Faction,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined
+  >({
     defaultValues: initialFaction,
     onSubmit: async ({ value }) => {
       setParseError(null);
@@ -76,7 +90,7 @@ export function FactionEditor({
         );
       }
     },
-  }) as FactionFormApi;
+  });
 
   const handleReset = () => {
     setParseError(null);
@@ -100,19 +114,54 @@ export function FactionEditor({
     <div className={styles.root}>
       <div className={styles.toolbar}>
         <FormActions>
-          <FormButton type="button" disabled={saving} onClick={() => void form.handleSubmit()}>
-            {saving ? 'Saving…' : 'Save'}
-          </FormButton>
-          <FormButton type="button" variant="secondary" disabled={saving} onClick={handleReset}>
-            Reset
-          </FormButton>
-          <FormButton type="button" variant="secondary" disabled={saving} onClick={onCancel}>
-            Cancel
-          </FormButton>
-          {mode === 'edit' && factionRowId && (
-            <FormButton type="button" variant="danger" disabled={saving} onClick={handleDelete}>
-              {deleteFaction.isPending ? 'Deleting…' : 'Delete'}
+          <FormTooltip content="Save changes">
+            <FormButton
+              type="button"
+              iconOnly
+              aria-label="Save changes"
+              disabled={saving}
+              onClick={() => void form.handleSubmit()}
+            >
+              <Save size={16} aria-hidden />
             </FormButton>
+          </FormTooltip>
+          <FormTooltip content="Reset unsaved edits">
+            <FormButton
+              type="button"
+              variant="danger"
+              iconOnly
+              aria-label="Reset unsaved edits"
+              disabled={saving}
+              onClick={handleReset}
+            >
+              <RotateCcw size={16} aria-hidden />
+            </FormButton>
+          </FormTooltip>
+          <FormTooltip content="Close editor">
+            <FormButton
+              type="button"
+              variant="danger"
+              iconOnly
+              aria-label="Close editor"
+              disabled={saving}
+              onClick={onCancel}
+            >
+              <X size={16} aria-hidden />
+            </FormButton>
+          </FormTooltip>
+          {mode === 'edit' && factionRowId && (
+            <FormTooltip content="Delete faction">
+              <FormButton
+                type="button"
+                variant="danger"
+                iconOnly
+                aria-label="Delete faction"
+                disabled={saving}
+                onClick={handleDelete}
+              >
+                <Trash2 size={16} aria-hidden />
+              </FormButton>
+            </FormTooltip>
           )}
         </FormActions>
       </div>
@@ -129,8 +178,10 @@ export function FactionEditor({
             No need to make a screenshot: you can click &quot;Save&quot; and share the URL!
           </p>
           <p className={styles.previewTitle}>Preview (JSON)</p>
-          <form.Subscribe selector={(s) => s.values}>
-            {(values) => <pre className={styles.pre}>{JSON.stringify(values, null, 2)}</pre>}
+          <form.Subscribe selector={(s: { values: Faction }) => s.values}>
+            {(values: Faction) => (
+              <pre className={styles.pre}>{JSON.stringify(values, null, 2)}</pre>
+            )}
           </form.Subscribe>
         </aside>
         <div>

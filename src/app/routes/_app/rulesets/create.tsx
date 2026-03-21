@@ -1,6 +1,9 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { Plus } from 'lucide-react';
+import { useState } from 'react';
 
 import { useCreateRuleset } from '@db/rulesets';
+import { FormActions, FormButton, FormField, FormInput } from '@app/components/form';
 
 export const Route = createFileRoute('/_app/rulesets/create')({
   component: CreateRulesetPage,
@@ -19,6 +22,7 @@ export const Route = createFileRoute('/_app/rulesets/create')({
 function CreateRulesetPage() {
   const navigate = useNavigate();
   const createRuleset = useCreateRuleset();
+  const [name, setName] = useState('');
 
   return (
     <>
@@ -26,11 +30,10 @@ function CreateRulesetPage() {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          const form = e.target as HTMLFormElement;
-          const name = (form.elements.namedItem('name') as HTMLInputElement).value.trim();
-          if (!name) return;
+          const nextName = name.trim();
+          if (!nextName) return;
           createRuleset.mutate(
-            { input: { name } },
+            { input: { name: nextName } },
             {
               onSuccess: (entry) => {
                 navigate({ to: '/rulesets/$id', params: { id: String(entry.id) } });
@@ -39,13 +42,22 @@ function CreateRulesetPage() {
           );
         }}
       >
-        <label>
-          Name <input type="text" name="name" required minLength={1} />
-        </label>
-        <button type="submit" disabled={createRuleset.isPending}>
-          {createRuleset.isPending ? 'Creating…' : 'Create'}
-        </button>
-        {createRuleset.isError && <p style={{ color: 'red' }}>{createRuleset.error.message}</p>}
+        <FormField label="Name" htmlFor="ruleset-name" error={createRuleset.error?.message}>
+          <FormInput
+            id="ruleset-name"
+            name="name"
+            required
+            minLength={1}
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
+        </FormField>
+        <FormActions>
+          <FormButton type="submit" disabled={createRuleset.isPending || name.trim().length === 0}>
+            <Plus size={16} aria-hidden />
+            <span>{createRuleset.isPending ? 'Creating…' : 'Create'}</span>
+          </FormButton>
+        </FormActions>
       </form>
     </>
   );

@@ -1,6 +1,8 @@
+import { LogIn } from 'lucide-react';
 import { useState } from 'react';
 
 import { auth } from '@db/core';
+import { FormActions, FormButton } from '@app/components/form';
 
 export function LoginForm(props: React.ComponentPropsWithoutRef<'div'>) {
   const [error, setError] = useState<string | null>(null);
@@ -30,12 +32,13 @@ export function LoginForm(props: React.ComponentPropsWithoutRef<'div'>) {
       <form onSubmit={handleSocialLogin}>
         <h2>Welcome!</h2>
         <p>Sign in to your account to continue</p>
-        <div>
-          {error && <p>{error}</p>}
-          <button type="submit" disabled={isLoading}>
-            {isLoading ? 'Logging in...' : 'Continue with Discord'}
-          </button>
-        </div>
+        {error && <p role="alert">{error}</p>}
+        <FormActions>
+          <FormButton type="submit" disabled={isLoading}>
+            <LogIn size={16} aria-hidden />
+            <span>{isLoading ? 'Logging in...' : 'Continue with Discord'}</span>
+          </FormButton>
+        </FormActions>
       </form>
     </div>
   );

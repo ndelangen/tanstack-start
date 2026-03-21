@@ -21,11 +21,13 @@ interface AssetAutocompleteProps {
   value: string;
   onChange: (next: string) => void;
   options: readonly string[];
+  optionToLabel?: (raw: string) => string;
   id?: string;
   placeholder?: string;
 }
 
 type ListGeom = { top: number; left: number; width: number };
+const identityOptionLabel = (raw: string) => raw;
 
 const PREVIEW_SIZE = 100;
 const PREVIEW_GAP = 8;
@@ -53,7 +55,7 @@ type Partition = {
 };
 
 /** Higher = better match; `null` = does not contain query */
-function relevanceScore(option: string, qLower: string): number | null {
+function scoreCandidate(option: string, qLower: string): number | null {
   if (qLower.length === 0) return 0;
   const o = option.toLowerCase();
   if (!o.includes(qLower)) return null;
@@ -63,7 +65,18 @@ function relevanceScore(option: string, qLower: string): number | null {
   return 2_000_000 + Math.max(0, 10_000 - idx);
 }
 
-function partitionOptions(options: readonly string[], rawQuery: string): Partition {
+function relevanceScore(option: string, optionLabel: string, qLower: string): number | null {
+  const rawScore = scoreCandidate(option, qLower);
+  const labelScore = scoreCandidate(optionLabel, qLower);
+  if (rawScore == null && labelScore == null) return null;
+  return Math.max(rawScore ?? Number.NEGATIVE_INFINITY, labelScore ?? Number.NEGATIVE_INFINITY);
+}
+
+function partitionOptions(
+  options: readonly string[],
+  rawQuery: string,
+  optionToLabel: (raw: string) => string
+): Partition {
   const q = rawQuery.trim().toLowerCase();
   const unique = [...new Set(options)].sort((a, b) => a.localeCompare(b));
 
@@ -73,7 +86,7 @@ function partitionOptions(options: readonly string[], rawQuery: string): Partiti
 
   const rows = unique.map((opt) => ({
     opt,
-    score: relevanceScore(opt, q),
+    score: relevanceScore(opt, optionToLabel(opt), q),
   }));
 
   const included = rows
@@ -97,6 +110,7 @@ export function AssetAutocomplete({
   value,
   onChange,
   options,
+  optionToLabel = identityOptionLabel,
   id: idProp,
   placeholder = 'Type to search…',
 }: AssetAutocompleteProps) {
@@ -105,7 +119,7 @@ export function AssetAutocomplete({
   const listId = `${id}-listbox`;
 
   const [open, setOpen] = useState(false);
-  const [text, setText] = useState(value);
+  const [text, setText] = useState(optionToLabel(value));
   const [highlight, setHighlight] = useState(0);
   const [listGeom, setListGeom] = useState<ListGeom | null>(null);
   const [previewGeom, setPreviewGeom] = useState<{ left: number; top: number } | null>(null);
@@ -118,10 +132,13 @@ export function AssetAutocomplete({
   const openRef = useRef(open);
 
   useEffect(() => {
-    setText(value);
-  }, [value]);
+    setText(optionToLabel(value));
+  }, [value, optionToLabel]);
 
-  const partition = useMemo(() => partitionOptions(options, text), [options, text]);
+  const partition = useMemo(
+    () => partitionOptions(options, text, optionToLabel),
+    [options, optionToLabel, text]
+  );
 
   highlightRef.current = highlight;
   flatRef.current = partition.flat;
@@ -271,10 +288,10 @@ export function AssetAutocomplete({
   const commit = useCallback(
     (next: string) => {
       onChange(next);
-      setText(next);
+      setText(optionToLabel(next));
       setOpen(false);
     },
-    [onChange]
+    [onChange, optionToLabel]
   );
 
   const tryCommitText = useCallback(() => {
@@ -286,9 +303,22 @@ export function AssetAutocomplete({
     }
     const lower = t.toLowerCase();
     const one = options.filter((o) => o.toLowerCase() === lower);
-    if (one.length === 1) commit(one[0]);
-    else setText(value);
-  }, [commit, options, text, value]);
+    if (one.length === 1) {
+      commit(one[0]);
+      return;
+    }
+    const exactLabel = options.filter((o) => optionToLabel(o) === t);
+    if (exactLabel.length === 1) {
+      commit(exactLabel[0]);
+      return;
+    }
+    const lowerLabel = options.filter((o) => optionToLabel(o).toLowerCase() === lower);
+    if (lowerLabel.length === 1) {
+      commit(lowerLabel[0]);
+      return;
+    }
+    setText(optionToLabel(value));
+  }, [commit, optionToLabel, options, text, value]);
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (!open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
@@ -297,7 +327,7 @@ export function AssetAutocomplete({
     }
     if (e.key === 'Escape') {
       setOpen(false);
-      setText(value);
+      setText(optionToLabel(value));
       return;
     }
     if (e.key === 'ArrowDown') {
@@ -353,7 +383,7 @@ export function AssetAutocomplete({
                   onMouseEnter={() => setHighlight(i)}
                   onClick={() => commit(opt)}
                 >
-                  {opt}
+                  {optionToLabel(opt)}
                 </button>
               );
             })}
@@ -375,7 +405,7 @@ export function AssetAutocomplete({
                     onMouseEnter={() => setHighlight(i)}
                     onClick={() => commit(opt)}
                   >
-                    {opt}
+                    {optionToLabel(opt)}
                   </button>
                 );
               })}
@@ -397,7 +427,7 @@ export function AssetAutocomplete({
                       onMouseEnter={() => setHighlight(i)}
                       onClick={() => commit(opt)}
                     >
-                      {opt}
+                      {optionToLabel(opt)}
                     </button>
                   );
                 })}
@@ -468,7 +498,7 @@ export function AssetAutocomplete({
           className={clsx(styles.comboboxCaret, open && styles.comboboxCaretOpen)}
           tabIndex={-1}
           disabled={options.length === 0}
-          aria-label={open ? 'Close suggestions' : 'Open suggestions'}
+          aria-label="Toggle suggestions"
           aria-expanded={open}
           aria-controls={listId}
           onMouseDown={(e) => {

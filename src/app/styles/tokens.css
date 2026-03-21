@@ -1,0 +1,86 @@
+:root {
+  --color-text: #2e2927;
+  --color-muted: #735c47;
+  --color-link: #84220c;
+  --color-error: #d34409;
+  --color-accent: #f8af40;
+  --color-accent-strong: #c78346;
+  --color-focus-ring: rgba(244, 207, 139, 0.42);
+
+  --button-neutral-bg: #d7cfc2;
+  --button-neutral-hover-bg: #ccc3b5;
+  --button-neutral-active-bg: #bdb3a4;
+  --button-neutral-fg: #2e2927;
+  --button-neutral-disabled-bg: #ece6dc;
+  --button-neutral-disabled-fg: #877b6a;
+
+  --button-add-bg: #e1b469;
+  --button-add-hover-bg: #d4a24f;
+  --button-add-active-bg: #be8837;
+  --button-add-fg: #2e2112;
+  --button-add-disabled-bg: #ecd7ad;
+  --button-add-disabled-fg: #7d6846;
+
+  --button-confirm-bg: #7f9e66;
+  --button-confirm-hover-bg: #6f8e57;
+  --button-confirm-active-bg: #607c49;
+  --button-confirm-fg: #f8f3e6;
+  --button-confirm-disabled-bg: #c8d6bc;
+  --button-confirm-disabled-fg: #5b6f4a;
+
+  --button-danger-bg: #c76349;
+  --button-danger-hover-bg: #b5533b;
+  --button-danger-active-bg: #9f4530;
+  --button-danger-fg: #fff3ee;
+  --button-danger-disabled-bg: #e5c2b7;
+  --button-danger-disabled-fg: #7e564c;
+
+  --button-toggle-bg: var(--button-neutral-bg);
+  --button-toggle-hover-bg: var(--button-neutral-hover-bg);
+  --button-toggle-active-bg: #b8ad9b;
+  --button-toggle-fg: var(--button-neutral-fg);
+
+  --glass-surface-0: rgba(255, 255, 255, 0.1);
+  --glass-surface-1: rgba(255, 255, 255, 0.12);
+  --glass-surface-2: rgba(255, 255, 255, 0.2);
+  --glass-input: rgba(255, 251, 243, 0.94);
+  --glass-overlay: rgba(255, 253, 248, 0.95);
+  --glass-blur-sm: 6px;
+  --glass-blur-md: 10px;
+
+  --panel-bg: var(--glass-surface-1);
+  --panel-border: #fee7c0;
+  --panel-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.166);
+  --panel-radius: 6px;
+  --input-bg: var(--glass-input);
+  --input-border: rgba(92, 63, 34, 0.35);
+  --input-border-strong: rgba(86, 58, 31, 0.45);
+  --field-shadow: 0 3px 12px rgba(38, 24, 11, 0.2);
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-pill: 999px;
+  --border-strong: 2px solid var(--panel-border);
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --card-padding: var(--space-3);
+  --gap-sm: var(--space-2);
+  --gap-md: 0.625rem;
+  --gap-lg: var(--space-4);
+
+  --control-h-sm: 2rem;
+  --control-h-md: 2.2rem;
+  --control-px-sm: 0.45rem;
+  --control-px-md: 0.58rem;
+
+  --icon-sm: 0.95rem;
+  --icon-md: 1.1rem;
+
+  --transition-fast: 140ms ease;
+  --transition-base: 200ms ease;
+}

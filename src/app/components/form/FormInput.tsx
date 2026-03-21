@@ -1,7 +1,9 @@
+import clsx from 'clsx';
 import type { ComponentPropsWithoutRef } from 'react';
 
 import styles from './Form.module.css';
 
 export function FormInput(props: ComponentPropsWithoutRef<'input'>) {
-  return <input className={styles.input} {...props} />;
+  const { className, ...rest } = props;
+  return <input className={clsx(styles.input, className)} {...rest} />;
 }
