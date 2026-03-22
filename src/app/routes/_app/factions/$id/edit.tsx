@@ -10,26 +10,6 @@ export const Route = createFileRoute('/_app/factions/$id/edit')({
     await context.queryClient.ensureQueryData(factionDetailQueryOptions(params.id));
   },
   component: FactionEditPage,
-  staticData: {
-    PageHead: () => (
-      <div>
-        <h1>Edit faction</h1>
-        <p>
-          <Link to="/factions" activeProps={{ style: { fontWeight: 'bold' } }}>
-            All factions
-          </Link>
-          {' · '}
-          <Link to="/factions/mine" activeProps={{ style: { fontWeight: 'bold' } }}>
-            My factions
-          </Link>
-          {' · '}
-          <Link to="/factions/create" activeProps={{ style: { fontWeight: 'bold' } }}>
-            Create a new faction
-          </Link>
-        </p>
-      </div>
-    ),
-  },
 });
 
 function FactionEditPage() {
