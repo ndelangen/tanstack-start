@@ -47,7 +47,7 @@ function FactionPageHead() {
   const faction = useFaction(factionId);
   const profile = useCurrentProfile();
   const profiles = useProfilesAll();
-  const memberships = useUserGroupMemberships(profile.data?.id ?? '');
+  const memberships = useUserGroupMemberships(profile.data?.id);
 
   const ownerId = faction.data?.owner_id ?? null;
   const ownerName =
@@ -100,7 +100,7 @@ function FactionDetailPage() {
   const faction = useFaction(factionId, { enabled: !isLiveSheet });
   const rulesets = useRulesetsByFaction(faction.data?.id);
   const profile = useCurrentProfile();
-  const memberships = useUserGroupMemberships(profile.data?.id ?? '');
+  const memberships = useUserGroupMemberships(profile.data?.id);
 
   const isChildOnlyRoute = matches.some(
     (m) => m.pathname.endsWith('/edit') || m.pathname.endsWith('/sheet')

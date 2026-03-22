@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 
 import { profilesListQueryOptions, useProfilesAll } from '@db/profiles';
+import { Card } from '@app/components/card/Card';
+
+import styles from './ProfilesIndex.module.css';
 
 export const Route = createFileRoute('/_app/profiles/')({
   loader: ({ context }) => context.queryClient.ensureQueryData(profilesListQueryOptions()),
@@ -11,58 +14,40 @@ function ProfilesPage() {
   const profiles = useProfilesAll();
 
   return (
-    <>
+    <div className={styles.root}>
       {profiles.data && profiles.data.length > 0 ? (
-        <ul>
-          {profiles.data.map((profile) => {
-            const initials =
-              profile.username
-                ?.slice(0, 2)
-                .toUpperCase()
-                .replace(/[^A-Z]/g, '') || '?';
-            return (
-              <li key={profile.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Link to="/profiles/$id" params={{ id: profile.id }}>
-                  {profile.avatar_url ? (
-                    <img
-                      src={profile.avatar_url}
-                      alt={profile.username ?? 'Avatar'}
-                      style={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                        display: 'block',
-                      }}
-                    />
-                  ) : (
-                    <span
-                      style={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: '50%',
-                        background: 'rgba(0,0,0,0.2)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '0.65rem',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {initials}
-                    </span>
-                  )}
-                </Link>
-                <Link to="/profiles/$id" params={{ id: profile.id }}>
-                  {profile.username ?? 'Unknown'}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        <Card>
+          <ul className={styles.list}>
+            {profiles.data.map((profile) => {
+              const initials =
+                profile.username
+                  ?.slice(0, 2)
+                  .toUpperCase()
+                  .replace(/[^A-Z]/g, '') || '?';
+              return (
+                <li key={profile.id} className={styles.row}>
+                  <Link to="/profiles/$slug" params={{ slug: profile.slug }}>
+                    {profile.avatar_url ? (
+                      <img
+                        src={profile.avatar_url}
+                        alt={profile.username ?? 'Avatar'}
+                        className={styles.avatar}
+                      />
+                    ) : (
+                      <span className={styles.avatarPlaceholder}>{initials}</span>
+                    )}
+                  </Link>
+                  <Link to="/profiles/$slug" params={{ slug: profile.slug }}>
+                    {profile.username ?? 'Unknown'}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
       ) : (
-        <p>No profiles yet.</p>
+        <p className={styles.empty}>No profiles yet.</p>
       )}
-    </>
+    </div>
   );
 }

@@ -1,0 +1,33 @@
+/**
+ * Icon-only controls: composes shared chrome from Form.module.css.
+ * Nav neutral tone lives here (not in Form.module.css).
+ */
+.nav {
+  composes: button buttonIconOnly from "../form/Form.module.css";
+  text-decoration: none;
+  color: var(--button-neutral-fg, #2e2927);
+  background-color: var(--button-neutral-bg, #d7cfc2);
+}
+
+.nav:hover:not(:disabled) {
+  background-color: var(--button-neutral-hover-bg, #ccc3b5);
+}
+
+.nav:active:not(:disabled) {
+  background-color: var(--button-neutral-active-bg, #bdb3a4);
+}
+
+.secondary {
+  composes: buttonSecondary buttonIconOnly from "../form/Form.module.css";
+  text-decoration: none;
+}
+
+.confirm {
+  composes: button buttonIconOnly from "../form/Form.module.css";
+  text-decoration: none;
+}
+
+.critical {
+  composes: buttonDanger buttonIconOnly from "../form/Form.module.css";
+  text-decoration: none;
+}

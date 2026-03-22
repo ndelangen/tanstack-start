@@ -21,8 +21,8 @@ function AuthNav() {
 
     return (
       <Link
-        to="/profiles/$id"
-        params={{ id: profile.data.id }}
+        to="/profiles/$slug"
+        params={{ slug: profile.data.slug }}
         className={styles.avatarLink}
         title={profile.data.username ?? 'Profile'}
       >

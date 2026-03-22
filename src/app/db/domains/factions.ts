@@ -158,15 +158,18 @@ export function useFactionsAll() {
   return useQuery(factionsListQueryOptions());
 }
 
-export function useFactionsByOwner(ownerId: NonNullable<FactionEntry['owner_id']>) {
+export function useFactionsByOwner(ownerId: FactionEntry['owner_id'] | undefined) {
   const qc = useQueryClient();
 
   return useQuery({
-    ...factionsByOwnerQueryOptions(ownerId),
+    ...factionsByOwnerQueryOptions(ownerId ?? ''),
+    enabled: Boolean(ownerId),
     initialData: () =>
-      qc
-        .getQueryData<FactionEntry[]>(factionKeys.list({ type: 'all' }))
-        ?.filter((d) => d.owner_id === ownerId),
+      ownerId
+        ? qc
+            .getQueryData<FactionEntry[]>(factionKeys.list({ type: 'all' }))
+            ?.filter((d) => d.owner_id === ownerId)
+        : undefined,
   });
 }
 

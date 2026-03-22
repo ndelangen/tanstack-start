@@ -3,9 +3,8 @@ import Fuse from 'fuse.js';
 import { Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import { type FactionEntry, factionsListQueryOptions, useFactionsAll } from '@db/factions';
-import { BlockLink } from '@app/components/block';
-import { Token as FactionToken } from '@game/assets/faction/token/Token';
+import { factionsListQueryOptions, useFactionsAll } from '@db/factions';
+import { FactionList } from '@app/components/factions/FactionList';
 
 import styles from './FactionsIndex.module.css';
 
@@ -90,31 +89,10 @@ function FactionsPage() {
       </div>
 
       {filtered.length > 0 ? (
-        <div className={styles.grid}>
-          {filtered.map((faction) => (
-            <FactionCard key={faction.id} faction={faction} />
-          ))}
-        </div>
+        <FactionList factions={filtered} />
       ) : (
         <p className={styles.noResults}>No factions match your search.</p>
       )}
     </>
-  );
-}
-
-function FactionCard({ faction }: { faction: FactionEntry }) {
-  const { name, logo, background } = faction.data;
-
-  return (
-    <BlockLink
-      to="/factions/$factionId"
-      params={{ factionId: faction.data.id }}
-      className={styles.card}
-    >
-      <div className={styles.coverSlot}>
-        <FactionToken logo={logo} background={background} />
-      </div>
-      <span className={styles.name}>{name}</span>
-    </BlockLink>
   );
 }

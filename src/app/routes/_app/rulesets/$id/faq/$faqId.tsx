@@ -180,7 +180,11 @@ function FaqDetailPage() {
             <>
               <div className={styles.questionHeader}>
                 {askerProfile.data && (
-                  <Link to="/profiles/$id" params={{ id: item.asked_by }} style={{ flexShrink: 0 }}>
+                  <Link
+                    to="/profiles/$slug"
+                    params={{ slug: askerProfile.data.slug }}
+                    style={{ flexShrink: 0 }}
+                  >
                     {askerProfile.data.avatar_url ? (
                       <img
                         src={askerProfile.data.avatar_url}
@@ -202,7 +206,7 @@ function FaqDetailPage() {
                   {askerProfile.data && (
                     <span className={styles.askedBy}>
                       Asked by{' '}
-                      <Link to="/profiles/$id" params={{ id: item.asked_by }}>
+                      <Link to="/profiles/$slug" params={{ slug: askerProfile.data.slug }}>
                         {askerProfile.data.username ?? 'Unknown'}
                       </Link>
                     </span>

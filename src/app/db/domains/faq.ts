@@ -32,7 +32,7 @@ export const faqKeys = {
 
 export type FaqItemWithDetails = FaqItemEntry & {
   faq_answers: FaqAnswerEntry[];
-  asker_profile: { id: string; username: string | null; avatar_url: string | null } | null;
+  asker_profile: { id: string; slug: string; username: string | null; avatar_url: string | null } | null;
 };
 
 export function faqItemsByRulesetQueryOptions(rulesetId: number) {
@@ -54,7 +54,7 @@ export function faqItemsByRulesetQueryOptions(rulesetId: number) {
 
       const [answersResult, profilesResult] = await Promise.all([
         db.from('faq_answers').select('*').in('faq_item_id', itemIds),
-        db.from('profiles').select('id, username, avatar_url').in('id', askerIds),
+        db.from('profiles').select('id, slug, username, avatar_url').in('id', askerIds),
       ]);
 
       if (answersResult.error) throw answersResult.error;
@@ -70,7 +70,7 @@ export function faqItemsByRulesetQueryOptions(rulesetId: number) {
       const profilesById = new Map(
         (profilesResult.data ?? []).map((p) => [
           p.id,
-          { id: p.id, username: p.username, avatar_url: p.avatar_url },
+          { id: p.id, slug: p.slug, username: p.username, avatar_url: p.avatar_url },
         ])
       );
 

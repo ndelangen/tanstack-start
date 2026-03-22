@@ -55,8 +55,11 @@ export function userGroupMembershipsQueryOptions(userId: string) {
   });
 }
 
-export function useUserGroupMemberships(userId: string) {
-  return useQuery(userGroupMembershipsQueryOptions(userId));
+export function useUserGroupMemberships(userId: string | undefined) {
+  return useQuery({
+    ...userGroupMembershipsQueryOptions(userId ?? ''),
+    enabled: Boolean(userId),
+  });
 }
 
 export function useGroupMembers(groupId: string) {

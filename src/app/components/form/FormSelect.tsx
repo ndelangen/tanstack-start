@@ -29,7 +29,10 @@ export function FormSelect({
 }: FormSelectProps) {
   return (
     <Select.Root value={value} onValueChange={onValueChange}>
-      <Select.Trigger className={clsx(styles.selectTrigger, triggerClassName)} aria-label={ariaLabel}>
+      <Select.Trigger
+        className={clsx(styles.selectTrigger, triggerClassName)}
+        aria-label={ariaLabel}
+      >
         <Select.Value className={styles.selectValue} placeholder={placeholder} />
         <Select.Icon className={styles.selectIcon}>
           <ChevronDown size={16} aria-hidden />

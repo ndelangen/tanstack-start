@@ -23,9 +23,13 @@ export function FormPrefixedInput({
 }: FormPrefixedInputProps) {
   return (
     <div className={clsx(styles.prefixedInput, className)}>
-      {prefix != null && <div className={clsx(styles.prefixedPrefix, prefixClassName)}>{prefix}</div>}
+      {prefix != null && (
+        <div className={clsx(styles.prefixedPrefix, prefixClassName)}>{prefix}</div>
+      )}
       <div className={clsx(styles.prefixedMain, mainClassName)}>{children}</div>
-      {suffix != null && <div className={clsx(styles.prefixedSuffix, suffixClassName)}>{suffix}</div>}
+      {suffix != null && (
+        <div className={clsx(styles.prefixedSuffix, suffixClassName)}>{suffix}</div>
+      )}
     </div>
   );
 }

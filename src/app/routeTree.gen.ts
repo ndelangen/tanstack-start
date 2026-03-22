@@ -21,7 +21,8 @@ import { Route as AppFactionsIndexRouteImport } from './routes/_app/factions/ind
 import { Route as AppAssetsIndexRouteImport } from './routes/_app/assets/index'
 import { Route as AppRulesetsCreateRouteImport } from './routes/_app/rulesets/create'
 import { Route as AppRulesetsIdRouteImport } from './routes/_app/rulesets/$id'
-import { Route as AppProfilesIdRouteImport } from './routes/_app/profiles/$id'
+import { Route as AppProfilesSettingsRouteImport } from './routes/_app/profiles/settings'
+import { Route as AppProfilesSlugRouteImport } from './routes/_app/profiles/$slug'
 import { Route as AppFactionsMineRouteImport } from './routes/_app/factions/mine'
 import { Route as AppFactionsCreateRouteImport } from './routes/_app/factions/create'
 import { Route as AppFactionsFactionIdRouteImport } from './routes/_app/factions/$factionId'
@@ -90,9 +91,14 @@ const AppRulesetsIdRoute = AppRulesetsIdRouteImport.update({
   path: '/rulesets/$id',
   getParentRoute: () => AppRoute,
 } as any)
-const AppProfilesIdRoute = AppProfilesIdRouteImport.update({
-  id: '/profiles/$id',
-  path: '/profiles/$id',
+const AppProfilesSettingsRoute = AppProfilesSettingsRouteImport.update({
+  id: '/profiles/settings',
+  path: '/profiles/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProfilesSlugRoute = AppProfilesSlugRouteImport.update({
+  id: '/profiles/$slug',
+  path: '/profiles/$slug',
   getParentRoute: () => AppRoute,
 } as any)
 const AppFactionsMineRoute = AppFactionsMineRouteImport.update({
@@ -148,7 +154,8 @@ export interface FileRoutesByFullPath {
   '/factions/$factionId': typeof AppFactionsFactionIdRouteWithChildren
   '/factions/create': typeof AppFactionsCreateRoute
   '/factions/mine': typeof AppFactionsMineRoute
-  '/profiles/$id': typeof AppProfilesIdRoute
+  '/profiles/$slug': typeof AppProfilesSlugRoute
+  '/profiles/settings': typeof AppProfilesSettingsRoute
   '/rulesets/$id': typeof AppRulesetsIdRouteWithChildren
   '/rulesets/create': typeof AppRulesetsCreateRoute
   '/assets/': typeof AppAssetsIndexRoute
@@ -170,7 +177,8 @@ export interface FileRoutesByTo {
   '/factions/$factionId': typeof AppFactionsFactionIdRouteWithChildren
   '/factions/create': typeof AppFactionsCreateRoute
   '/factions/mine': typeof AppFactionsMineRoute
-  '/profiles/$id': typeof AppProfilesIdRoute
+  '/profiles/$slug': typeof AppProfilesSlugRoute
+  '/profiles/settings': typeof AppProfilesSettingsRoute
   '/rulesets/$id': typeof AppRulesetsIdRouteWithChildren
   '/rulesets/create': typeof AppRulesetsCreateRoute
   '/assets': typeof AppAssetsIndexRoute
@@ -194,7 +202,8 @@ export interface FileRoutesById {
   '/_app/factions/$factionId': typeof AppFactionsFactionIdRouteWithChildren
   '/_app/factions/create': typeof AppFactionsCreateRoute
   '/_app/factions/mine': typeof AppFactionsMineRoute
-  '/_app/profiles/$id': typeof AppProfilesIdRoute
+  '/_app/profiles/$slug': typeof AppProfilesSlugRoute
+  '/_app/profiles/settings': typeof AppProfilesSettingsRoute
   '/_app/rulesets/$id': typeof AppRulesetsIdRouteWithChildren
   '/_app/rulesets/create': typeof AppRulesetsCreateRoute
   '/_app/assets/': typeof AppAssetsIndexRoute
@@ -218,7 +227,8 @@ export interface FileRouteTypes {
     | '/factions/$factionId'
     | '/factions/create'
     | '/factions/mine'
-    | '/profiles/$id'
+    | '/profiles/$slug'
+    | '/profiles/settings'
     | '/rulesets/$id'
     | '/rulesets/create'
     | '/assets/'
@@ -240,7 +250,8 @@ export interface FileRouteTypes {
     | '/factions/$factionId'
     | '/factions/create'
     | '/factions/mine'
-    | '/profiles/$id'
+    | '/profiles/$slug'
+    | '/profiles/settings'
     | '/rulesets/$id'
     | '/rulesets/create'
     | '/assets'
@@ -263,7 +274,8 @@ export interface FileRouteTypes {
     | '/_app/factions/$factionId'
     | '/_app/factions/create'
     | '/_app/factions/mine'
-    | '/_app/profiles/$id'
+    | '/_app/profiles/$slug'
+    | '/_app/profiles/settings'
     | '/_app/rulesets/$id'
     | '/_app/rulesets/create'
     | '/_app/assets/'
@@ -370,11 +382,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRulesetsIdRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/profiles/$id': {
-      id: '/_app/profiles/$id'
-      path: '/profiles/$id'
-      fullPath: '/profiles/$id'
-      preLoaderRoute: typeof AppProfilesIdRouteImport
+    '/_app/profiles/settings': {
+      id: '/_app/profiles/settings'
+      path: '/profiles/settings'
+      fullPath: '/profiles/settings'
+      preLoaderRoute: typeof AppProfilesSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/profiles/$slug': {
+      id: '/_app/profiles/$slug'
+      path: '/profiles/$slug'
+      fullPath: '/profiles/$slug'
+      preLoaderRoute: typeof AppProfilesSlugRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/factions/mine': {
@@ -469,7 +488,8 @@ interface AppRouteChildren {
   AppFactionsFactionIdRoute: typeof AppFactionsFactionIdRouteWithChildren
   AppFactionsCreateRoute: typeof AppFactionsCreateRoute
   AppFactionsMineRoute: typeof AppFactionsMineRoute
-  AppProfilesIdRoute: typeof AppProfilesIdRoute
+  AppProfilesSlugRoute: typeof AppProfilesSlugRoute
+  AppProfilesSettingsRoute: typeof AppProfilesSettingsRoute
   AppRulesetsIdRoute: typeof AppRulesetsIdRouteWithChildren
   AppRulesetsCreateRoute: typeof AppRulesetsCreateRoute
   AppAssetsIndexRoute: typeof AppAssetsIndexRoute
@@ -484,7 +504,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppFactionsFactionIdRoute: AppFactionsFactionIdRouteWithChildren,
   AppFactionsCreateRoute: AppFactionsCreateRoute,
   AppFactionsMineRoute: AppFactionsMineRoute,
-  AppProfilesIdRoute: AppProfilesIdRoute,
+  AppProfilesSlugRoute: AppProfilesSlugRoute,
+  AppProfilesSettingsRoute: AppProfilesSettingsRoute,
   AppRulesetsIdRoute: AppRulesetsIdRouteWithChildren,
   AppRulesetsCreateRoute: AppRulesetsCreateRoute,
   AppAssetsIndexRoute: AppAssetsIndexRoute,

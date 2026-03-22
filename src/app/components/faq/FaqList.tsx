@@ -109,8 +109,8 @@ export function FaqList({
                       <>
                         <span>·</span>
                         <Link
-                          to="/profiles/$id"
-                          params={{ id: item.asked_by }}
+                          to="/profiles/$slug"
+                          params={{ slug: item.asker_profile.slug }}
                           className={styles.askerLink}
                         >
                           {item.asker_profile.avatar_url ? (

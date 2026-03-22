@@ -8,6 +8,7 @@ import {
 } from '@db/factions';
 import { userGroupMembershipsQueryOptions, useUserGroupMemberships } from '@db/members';
 import { currentProfileQueryOptions, useCurrentProfile } from '@db/profiles';
+import { FactionList } from '@app/components/factions/FactionList';
 
 export const Route = createFileRoute('/_app/factions/mine')({
   loader: async ({ context }) => {
@@ -82,17 +83,7 @@ function FactionsOwnedList({ ownerId }: { ownerId: string }) {
     return <p>You don&apos;t own any factions yet.</p>;
   }
 
-  return (
-    <ul>
-      {factions.data.map((faction) => (
-        <li key={faction.id}>
-          <Link to="/factions/$factionId" params={{ factionId: faction.data.id }}>
-            {faction.data.name}
-          </Link>
-        </li>
-      ))}
-    </ul>
-  );
+  return <FactionList factions={factions.data} />;
 }
 
 function FactionsByGroupsList({ userId }: { userId: string }) {

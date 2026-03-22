@@ -1,6 +1,7 @@
 import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { auth, db, type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
+import { type ProfileUserEditInput, profileUserEditFormSchema } from '@app/profile/validation';
 
 /* Types */
 
@@ -17,6 +18,7 @@ export const profileKeys = {
   lists: () => [...profileKeys.all, 'list'] as const,
   list: (filters: object) => [...profileKeys.lists(), filters] as const,
   detail: (id: string) => [...profileKeys.all, 'detail', id] as const,
+  detailBySlug: (slug: string) => [...profileKeys.all, 'detailBySlug', slug] as const,
   current: () => [...profileKeys.all, 'current'] as const,
 };
 
@@ -34,6 +36,29 @@ export function profileDetailQueryOptions(id: NonNullable<ProfileEntry['id']>) {
 
       if (!entry) {
         throw new Error(`Profile with id ${id} not found`);
+      }
+
+      return entry;
+    },
+  });
+}
+
+export function profileBySlugQueryOptions(slug: string) {
+  return queryOptions({
+    queryKey: profileKeys.detailBySlug(slug),
+    queryFn: async () => {
+      const { data: entry, error } = await db
+        .from('profiles')
+        .select('*')
+        .eq('slug', slug)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      if (!entry) {
+        throw new Error(`Profile with slug ${slug} not found`);
       }
 
       return entry;
@@ -98,6 +123,18 @@ export function useProfile(id: NonNullable<ProfileEntry['id']>) {
   });
 }
 
+export function useProfileBySlug(slug: string) {
+  const qc = useQueryClient();
+
+  return useQuery({
+    ...profileBySlugQueryOptions(slug),
+    initialData: () =>
+      qc
+        .getQueryData<ProfileEntry[]>(profileKeys.list({ type: 'all' }))
+        ?.find((d) => d.slug === slug),
+  });
+}
+
 export function useProfilesAll() {
   return useQuery(profilesListQueryOptions());
 }
@@ -112,13 +149,22 @@ export function useUpdateCurrentProfile() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ input }: { input: ProfileUpdate }) => {
+    mutationFn: async ({ input }: { input: ProfileUserEditInput }) => {
       const user = await auth.getUser();
       if (!user.data.user?.id) throw new Error('Not authenticated');
 
+      const parsed = profileUserEditFormSchema.safeParse(input);
+      if (!parsed.success) {
+        const msg = parsed.error.issues.map((i) => i.message).join(' ');
+        throw new Error(msg || 'Invalid profile input');
+      }
+
       const { data: entry, error } = await db
         .from('profiles')
-        .update(input)
+        .update({
+          username: parsed.data.username,
+          avatar_url: parsed.data.avatar_url,
+        } satisfies ProfileUpdate)
         .eq('id', user.data.user.id)
         .select()
         .single();
@@ -129,10 +175,22 @@ export function useUpdateCurrentProfile() {
       return entry;
     },
 
-    onSuccess: (entry) => {
+    onMutate: async () => {
+      const previous = qc.getQueryData<ProfileEntry>(profileKeys.current());
+      return { previous };
+    },
+
+    onSuccess: (entry, _vars, context) => {
+      const prev = context?.previous;
+      if (prev?.slug && prev.slug !== entry.slug) {
+        qc.removeQueries({ queryKey: profileKeys.detailBySlug(prev.slug) });
+      }
       qc.setQueryData(profileKeys.detail(entry.id), entry);
+      qc.setQueryData(profileKeys.detailBySlug(entry.slug), entry);
       qc.setQueryData(profileKeys.current(), entry);
       qc.invalidateQueries({ queryKey: profileKeys.lists() });
     },
   });
 }
+
+export type { ProfileUserEditInput };
