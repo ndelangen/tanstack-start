@@ -1,17 +1,28 @@
-import { createFileRoute, Link, Outlet, useMatches } from '@tanstack/react-router';
+import { createFileRoute, Link, Outlet, useLocation, useMatches } from '@tanstack/react-router';
 
 import { factionDetailQueryOptions, useFaction } from '@db/factions';
 import { useUserGroupMemberships } from '@db/members';
 import { currentProfileQueryOptions, useCurrentProfile, useProfilesAll } from '@db/profiles';
 import { rulesetsByFactionQueryOptions, useRulesetsByFaction } from '@db/rulesets';
 
-export const Route = createFileRoute('/_app/factions/$id')({
-  loader: async ({ context, params }) => {
-    await Promise.all([
-      context.queryClient.ensureQueryData(currentProfileQueryOptions()),
-      context.queryClient.ensureQueryData(factionDetailQueryOptions(params.id)),
-      context.queryClient.ensureQueryData(rulesetsByFactionQueryOptions(params.id)),
-    ]);
+export const Route = createFileRoute('/_app/factions/$factionId')({
+  loader: async ({ context, params, location }) => {
+    await context.queryClient.ensureQueryData(currentProfileQueryOptions());
+
+    const isSheet = location.pathname.endsWith('/sheet');
+    const mode = new URLSearchParams(location.search).get('mode') ?? 'db';
+
+    if (isSheet && mode === 'live') {
+      return;
+    }
+
+    const faction = await context.queryClient.ensureQueryData(
+      factionDetailQueryOptions(params.factionId)
+    );
+
+    if (!isSheet) {
+      await context.queryClient.ensureQueryData(rulesetsByFactionQueryOptions(faction.id));
+    }
   },
   component: FactionDetailPage,
   staticData: {
@@ -32,8 +43,8 @@ function canEditFaction(
 }
 
 function FactionPageHead() {
-  const { id } = Route.useParams();
-  const faction = useFaction(id);
+  const { factionId } = Route.useParams();
+  const faction = useFaction(factionId);
   const profile = useCurrentProfile();
   const profiles = useProfilesAll();
   const memberships = useUserGroupMemberships(profile.data?.id ?? '');
@@ -56,7 +67,7 @@ function FactionPageHead() {
       <p>{ownerName ? `Owner: ${ownerName}` : 'Owner: loading...'}</p>
       {canEdit && (
         <p>
-          <Link to="/factions/$id/edit" params={{ id }}>
+          <Link to="/factions/$factionId/edit" params={{ factionId }}>
             Edit faction
           </Link>
         </p>
@@ -79,20 +90,31 @@ function FactionPageHead() {
 }
 
 function FactionDetailPage() {
-  const { id } = Route.useParams();
+  const { factionId } = Route.useParams();
+  const location = useLocation();
   const matches = useMatches();
-  const faction = useFaction(id);
-  const rulesets = useRulesetsByFaction(id);
+  const isSheet = location.pathname.endsWith('/sheet');
+  const sheetMode = new URLSearchParams(location.search).get('mode') ?? 'db';
+  const isLiveSheet = isSheet && sheetMode === 'live';
+
+  const faction = useFaction(factionId, { enabled: !isLiveSheet });
+  const rulesets = useRulesetsByFaction(faction.data?.id);
   const profile = useCurrentProfile();
   const memberships = useUserGroupMemberships(profile.data?.id ?? '');
 
-  const isEditRoute = matches.some((m) => m.pathname.endsWith('/edit'));
+  const isChildOnlyRoute = matches.some(
+    (m) => m.pathname.endsWith('/edit') || m.pathname.endsWith('/sheet')
+  );
+
+  if (isLiveSheet) {
+    return <Outlet />;
+  }
 
   if (!faction.data) {
     return null;
   }
 
-  if (isEditRoute) {
+  if (isChildOnlyRoute) {
     return <Outlet />;
   }
 
@@ -109,11 +131,18 @@ function FactionDetailPage() {
 
       {canEdit && (
         <p>
-          <Link to="/factions/$id/edit" params={{ id }}>
+          <Link to="/factions/$factionId/edit" params={{ factionId }}>
             Edit faction
           </Link>
         </p>
       )}
+
+      <p>
+        <Link to="/factions/$factionId/sheet" params={{ factionId }}>
+          Printable faction sheet
+        </Link>{' '}
+        (opens without site chrome; use the browser print dialog for PDF)
+      </p>
 
       {rulesets.data && rulesets.data.length > 0 && (
         <section>

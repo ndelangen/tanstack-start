@@ -1,0 +1,22 @@
+/* Screen: full-width sheet, no app padding (parent is bare outlet). */
+.root {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  background: #fff;
+}
+
+@media print {
+  @page {
+    margin: 0;
+    size: auto;
+  }
+
+  .root {
+    min-height: unset;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

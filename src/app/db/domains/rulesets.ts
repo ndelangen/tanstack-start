@@ -2,6 +2,7 @@ import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/r
 import { z } from 'zod';
 
 import { auth, db, type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
+import { schema as factionDataSchema } from '@data/factions';
 
 /* Schema (rulesets uses normal columns, not data JSONB – kept here to avoid db:schemas) */
 const schema = z.object({
@@ -110,10 +111,17 @@ export function rulesetFactionsWithDetailsQueryOptions(rulesetId: number) {
       if (error) throw error;
       if (!entries) return [];
 
-      return entries.map((e) => ({
-        factionId: e.faction_id,
-        name: (e.factions as { data?: { name?: string } } | null)?.data?.name ?? e.faction_id,
-      }));
+      return entries.map((e) => {
+        const raw = (e.factions as { data: unknown } | null)?.data;
+        const parsed = raw != null ? factionDataSchema.safeParse(raw) : null;
+        const data = parsed?.success ? parsed.data : null;
+        return {
+          factionId: e.faction_id,
+          name: data?.name ?? e.faction_id,
+          /** Public URL segment (`factions.data.id`), not the row UUID. */
+          urlSlug: data?.id ?? e.faction_id,
+        };
+      });
     },
   });
 }
@@ -179,8 +187,12 @@ export function useRulesetFactionsWithDetails(rulesetId: number) {
   return useQuery(rulesetFactionsWithDetailsQueryOptions(rulesetId));
 }
 
-export function useRulesetsByFaction(factionId: string) {
-  return useQuery(rulesetsByFactionQueryOptions(factionId));
+/** `factionRowId` is the `factions.id` UUID (FK), not the public slug. */
+export function useRulesetsByFaction(factionRowId: string | undefined) {
+  return useQuery({
+    ...rulesetsByFactionQueryOptions(factionRowId ?? ''),
+    enabled: Boolean(factionRowId),
+  });
 }
 
 /* Mutations */

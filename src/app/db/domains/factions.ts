@@ -26,23 +26,30 @@ export const factionKeys = {
   all: ['factions'] as const,
   lists: () => [...factionKeys.all, 'list'] as const,
   list: (filters: object) => [...factionKeys.lists(), filters] as const,
-  detail: (id: string) => [...factionKeys.all, 'detail', id] as const,
+  /** `slug` is `factions.data.id` (URL segment), not the row UUID. */
+  detail: (slug: string) => [...factionKeys.all, 'detail', slug] as const,
 };
 
 /* Queries */
 
-export function factionDetailQueryOptions(id: NonNullable<FactionEntry['id']>) {
+/** Load a faction by public slug (`data.id`), used in `/factions/:slug` URLs. */
+export function factionDetailQueryOptions(slug: string) {
   return queryOptions({
-    queryKey: factionKeys.detail(id),
+    queryKey: factionKeys.detail(slug),
     queryFn: async () => {
-      const { data: entries, error } = await db.from('factions').select('*').eq('id', id).single();
+      const { data: entries, error } = await db
+        .from('factions')
+        .select('*')
+        .eq('is_deleted', false)
+        .eq('data->>id', slug)
+        .single();
 
       if (error) {
         throw error;
       }
 
       if (!entries) {
-        throw new Error(`Faction with id ${id} not found`);
+        throw new Error(`Faction with id ${slug} not found`);
       }
 
       return {
@@ -130,13 +137,20 @@ export function factionsByGroupQueryOptions(groupId: NonNullable<FactionEntry['g
   });
 }
 
-export function useFaction(id: NonNullable<FactionEntry['id']>) {
+/** `slug` is `data.id` (URL segment). */
+export function useFaction(slug: string, options?: { enabled?: boolean }) {
   const qc = useQueryClient();
+  const enabled = options?.enabled ?? true;
 
   return useQuery({
-    ...factionDetailQueryOptions(id),
+    ...factionDetailQueryOptions(slug),
+    enabled,
     initialData: () =>
-      qc.getQueryData<FactionEntry[]>(factionKeys.list({ type: 'all' }))?.find((d) => d.id === id),
+      enabled
+        ? qc
+            .getQueryData<FactionEntry[]>(factionKeys.list({ type: 'all' }))
+            ?.find((d) => d.data.id === slug)
+        : undefined,
   });
 }
 
@@ -204,7 +218,7 @@ export function useCreateFaction() {
     },
 
     onSuccess: (faction) => {
-      qc.setQueryData(factionKeys.detail(faction.id), faction);
+      qc.setQueryData(factionKeys.detail(faction.data.id), faction);
       qc.invalidateQueries({ queryKey: factionKeys.lists() });
     },
   });
@@ -214,7 +228,16 @@ export function useUpdateFaction() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ input, id }: { input: Faction; id: string }) => {
+    mutationFn: async ({
+      input,
+      id,
+    }: {
+      input: Faction;
+      /** Row UUID */
+      id: string;
+      /** Previous `data.id` when the slug may change (cache invalidation). */
+      previousUrlSlug?: string;
+    }) => {
       // Validate data before sending to DB (better error handling)
       const validatedData = schema.parse(input);
 
@@ -235,8 +258,14 @@ export function useUpdateFaction() {
       };
     },
 
-    onSuccess: (entry) => {
-      qc.setQueryData(factionKeys.detail(entry.id), entry);
+    onSuccess: (entry, variables) => {
+      if (
+        variables.previousUrlSlug != null &&
+        variables.previousUrlSlug !== entry.data.id
+      ) {
+        qc.removeQueries({ queryKey: factionKeys.detail(variables.previousUrlSlug) });
+      }
+      qc.setQueryData(factionKeys.detail(entry.data.id), entry);
       qc.invalidateQueries({ queryKey: factionKeys.lists() });
     },
   });
@@ -246,15 +275,18 @@ export function useDeleteFaction() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id }: { id: string; urlSlug?: string }) => {
       const { error } = await db.from('factions').update({ is_deleted: true }).eq('id', id);
 
       if (error) throw error;
-      return id;
     },
 
-    onSuccess: (id) => {
-      qc.removeQueries({ queryKey: factionKeys.detail(id) });
+    onSuccess: (_result, variables) => {
+      if (variables.urlSlug != null) {
+        qc.removeQueries({ queryKey: factionKeys.detail(variables.urlSlug) });
+      } else {
+        qc.removeQueries({ queryKey: ['factions', 'detail'] });
+      }
       qc.invalidateQueries({ queryKey: factionKeys.lists() });
     },
   });

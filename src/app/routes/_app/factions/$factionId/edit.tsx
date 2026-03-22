@@ -5,17 +5,17 @@ import { useCurrentProfile } from '@db/profiles';
 import { Card } from '@app/components/card/Card';
 import { FactionEditor } from '@app/components/factions/editor';
 
-export const Route = createFileRoute('/_app/factions/$id/edit')({
+export const Route = createFileRoute('/_app/factions/$factionId/edit')({
   loader: async ({ context, params }) => {
-    await context.queryClient.ensureQueryData(factionDetailQueryOptions(params.id));
+    await context.queryClient.ensureQueryData(factionDetailQueryOptions(params.factionId));
   },
   component: FactionEditPage,
 });
 
 function FactionEditPage() {
-  const { id } = Route.useParams();
+  const { factionId } = Route.useParams();
   const navigate = useNavigate();
-  const faction = useFaction(id);
+  const faction = useFaction(factionId);
   const profile = useCurrentProfile();
 
   if (!profile?.data?.id) {
@@ -25,7 +25,7 @@ function FactionEditPage() {
           <Link to="/auth/login">Log in</Link> to edit factions.
         </p>
         <p>
-          <Link to="/factions/$id" params={{ id }}>
+          <Link to="/factions/$factionId" params={{ factionId }}>
             Back to faction
           </Link>
         </p>
@@ -39,11 +39,20 @@ function FactionEditPage() {
 
   return (
     <FactionEditor
-      key={id}
+      key={faction.data.id}
       mode="edit"
-      factionRowId={id}
+      factionRowId={faction.data.id}
       initialFaction={faction.data.data}
-      onCancel={() => navigate({ to: '/factions/$id', params: { id } })}
+      onCancel={() => navigate({ to: '/factions/$factionId', params: { factionId } })}
+      onSaved={(newSlug) => {
+        if (newSlug !== factionId) {
+          navigate({
+            to: '/factions/$factionId/edit',
+            params: { factionId: newSlug },
+            replace: true,
+          });
+        }
+      }}
     />
   );
 }

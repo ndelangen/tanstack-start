@@ -32,7 +32,7 @@ function CreateFactionPage() {
       mode="create"
       initialFaction={defaultFaction}
       onCancel={() => navigate({ to: '/factions' })}
-      onSaved={(rowId) => navigate({ to: '/factions/$id', params: { id: rowId } })}
+      onSaved={(slug) => navigate({ to: '/factions/$factionId', params: { factionId: slug } })}
     />
   );
 }

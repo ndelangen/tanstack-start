@@ -136,7 +136,7 @@ function RulesetDetailPage() {
           <ul>
             {factions.data.map((f) => (
               <li key={f.factionId}>
-                <Link to="/factions/$id" params={{ id: f.factionId }}>
+                <Link to="/factions/$factionId" params={{ factionId: f.urlSlug }}>
                   {f.name}
                 </Link>
               </li>

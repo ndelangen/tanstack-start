@@ -106,18 +106,23 @@
   margin: 0 0 var(--space-2);
 }
 
-.pre {
+.sheetIframeWrap {
   margin: 0;
-  padding: var(--space-3);
-  font-size: 0.72rem;
-  line-height: 1.4;
   overflow: auto;
   max-height: min(70vh, 800px);
   background: var(--panel-bg);
   border: var(--border-strong, 2px solid var(--panel-border));
   border-radius: var(--radius-sm, 6px);
   backdrop-filter: blur(var(--glass-blur-sm, 6px));
-  color: inherit;
+}
+
+.sheetIframe {
+  display: block;
+  width: 100%;
+  min-height: 360px;
+  border: none;
+  vertical-align: top;
+  background: #fff;
 }
 
 .formColumn {

@@ -106,7 +106,11 @@ function FactionCard({ faction }: { faction: FactionEntry }) {
   const { name, logo, background } = faction.data;
 
   return (
-    <BlockLink to="/factions/$id" params={{ id: faction.id }} className={styles.card}>
+    <BlockLink
+      to="/factions/$factionId"
+      params={{ factionId: faction.data.id }}
+      className={styles.card}
+    >
       <div className={styles.coverSlot}>
         <FactionToken logo={logo} background={background} />
       </div>

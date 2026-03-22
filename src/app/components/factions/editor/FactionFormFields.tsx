@@ -752,18 +752,26 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
       >
         <form.Field name="name">
           {(field) => (
-            <FormField label="Display name" htmlFor="faction-name">
-              <FormInput
-                id="faction-name"
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  field.handleChange(v);
-                  form.setFieldValue('id', factionSlugBaseFromName(v));
-                }}
-              />
-            </FormField>
+            <>
+              <FormField label="Display name" htmlFor="faction-name">
+                <FormInput
+                  id="faction-name"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    field.handleChange(v);
+                    form.setFieldValue('id', factionSlugBaseFromName(v));
+                  }}
+                />
+              </FormField>
+              <p className={styles.ttsHint}>
+                The display name sets your faction&apos;s public id, which appears in the shareable
+                URL. If you rename an existing faction, that id (and the URL) can change, so older
+                links may break—including bookmarks, pasted links, and references in Tabletop
+                Simulator.
+              </p>
+            </>
           )}
         </form.Field>
         <form.Field name="logo">

@@ -1,4 +1,5 @@
 import { useForm } from '@tanstack/react-form';
+import { Link } from '@tanstack/react-router';
 import { Copy, RotateCcw, Save, Trash2, X } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 
@@ -20,6 +21,7 @@ import { FactionSchema } from '@game/schema/faction';
 import { AssetAutocomplete } from './AssetAutocomplete';
 import styles from './FactionEditor.module.css';
 import { FactionFormFields } from './FactionFormFields';
+import { FactionSheetPreviewIframe } from './FactionSheetPreviewIframe';
 
 function formatZodIssues(err: { issues: readonly { path: PropertyKey[]; message: string }[] }) {
   return err.issues
@@ -33,7 +35,8 @@ export interface FactionEditorProps {
   factionRowId?: string;
   initialFaction: Faction;
   onCancel: () => void;
-  onSaved?: (rowId: string) => void;
+  /** Called with public faction id (`data.id`, URL slug) after save. */
+  onSaved?: (slug: string) => void;
 }
 
 export function FactionEditor({
@@ -91,20 +94,20 @@ export function FactionEditor({
               initialValuesRef.current = structuredClone(saved);
               baselineRef.current = structuredClone(saved);
               form.reset(structuredClone(saved));
-              onSaved?.(entry.id);
+              onSaved?.(saved.id);
             },
           }
         );
       } else if (factionRowId) {
         updateFaction.mutate(
-          { id: factionRowId, input: parsed.data },
+          { id: factionRowId, input: parsed.data, previousUrlSlug: baselineRef.current.id },
           {
             onSuccess: (entry) => {
               const saved = schema.parse(entry.data);
               initialValuesRef.current = structuredClone(saved);
               baselineRef.current = structuredClone(saved);
               form.reset(structuredClone(saved));
-              onSaved?.(factionRowId);
+              onSaved?.(saved.id);
             },
           }
         );
@@ -120,9 +123,12 @@ export function FactionEditor({
   const handleDelete = () => {
     if (!factionRowId || mode !== 'edit') return;
     if (!window.confirm('Delete this faction? It will be hidden from lists.')) return;
-    deleteFaction.mutate(factionRowId, {
-      onSuccess: () => onCancel(),
-    });
+    deleteFaction.mutate(
+      { id: factionRowId, urlSlug: baselineRef.current.id },
+      {
+        onSuccess: () => onCancel(),
+      }
+    );
   };
 
   const factionsById = useMemo(
@@ -331,13 +337,26 @@ export function FactionEditor({
       <div className={styles.body}>
         <aside className={styles.preview}>
           <p className={styles.previewHint}>
-            No need to make a screenshot: you can click &quot;Save&quot; and share the URL!
+            Sheet updates as you edit (unsaved). Save and share the faction URL when ready.
           </p>
-          <p className={styles.previewTitle}>Preview (JSON)</p>
-          <form.Subscribe selector={(s: { values: Faction }) => s.values}>
-            {(values: Faction) => (
-              <pre className={styles.pre}>{JSON.stringify(values, null, 2)}</pre>
+          <form.Subscribe selector={(s: { values: Faction }) => s.values.id}>
+            {(slug) => (
+              <p className={styles.previewHint}>
+                <Link
+                  to="/factions/$factionId/sheet"
+                  params={{ factionId: slug }}
+                  search={{ mode: 'live' }}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open sheet in new tab
+                </Link>
+              </p>
             )}
+          </form.Subscribe>
+          <p className={styles.previewTitle}>Sheet preview</p>
+          <form.Subscribe selector={(s: { values: Faction }) => s.values}>
+            {(values: Faction) => <FactionSheetPreviewIframe faction={values} />}
           </form.Subscribe>
         </aside>
         <div>

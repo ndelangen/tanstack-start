@@ -104,7 +104,7 @@ function ProfileDetailPage() {
         <ul>
           {factions.data.map((faction) => (
             <li key={faction.id}>
-              <Link to="/factions/$id" params={{ id: faction.id }}>
+              <Link to="/factions/$factionId" params={{ factionId: faction.data.id }}>
                 {faction.data.name}
               </Link>
             </li>

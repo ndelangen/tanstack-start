@@ -1,6 +1,7 @@
-import { createFileRoute, Outlet, useMatches } from '@tanstack/react-router';
+import { createFileRoute, Outlet, useLocation, useMatches } from '@tanstack/react-router';
 import React from 'react';
 
+import { isFactionSheetBarePath } from '@app/lib/factionSheetRoute';
 import { Page } from '@app/components/page/Page';
 
 export const Route = createFileRoute('/_app')({
@@ -8,6 +9,7 @@ export const Route = createFileRoute('/_app')({
 });
 
 function AppLayout() {
+  const pathname = useLocation({ select: (l) => l.pathname });
   const pageHead = useMatches({
     select: (matches) => {
       const leaf = matches.at(-1);
@@ -15,6 +17,10 @@ function AppLayout() {
       return HeadComponent ? <HeadComponent /> : undefined;
     },
   });
+
+  if (isFactionSheetBarePath(pathname)) {
+    return <Outlet />;
+  }
 
   return <Page head={pageHead} content={<Outlet />} />;
 }
