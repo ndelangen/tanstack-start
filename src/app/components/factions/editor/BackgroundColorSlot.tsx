@@ -97,7 +97,6 @@ export function BackgroundColorSlot({
           value={value}
           onChange={(h) => onChange(h)}
           pickerAriaLabel="Pick background color"
-          constrainedWidth
         />
       )}
 

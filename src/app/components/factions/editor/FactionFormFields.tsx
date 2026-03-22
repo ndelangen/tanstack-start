@@ -41,6 +41,7 @@ import {
   FormField,
   FormInput,
   FormPopover,
+  FormPrefixedInput,
   FormSelect,
   FormTabs,
   FormTextarea,
@@ -172,7 +173,7 @@ function ReorderHandleButton({
   listeners?: SortableHandleProps['listeners'];
 }) {
   return (
-    <FormTooltip content={label}>
+    <FormTooltip content={label} side="left" align="center" collisionPadding={12}>
       <button
         type="button"
         className={clsx(styles.reorderHandleButton, className)}
@@ -337,6 +338,48 @@ const defaultLeader = (): Faction['leaders'][number] => ({
   strength: '1',
   image: LEADERS.options[0],
 });
+
+function nextStrengthChar(value: Faction['leaders'][number]['strength']): string {
+  const raw =
+    value === undefined || value === null ? '' : typeof value === 'number' ? String(value) : value;
+  const ch = raw.trim().slice(-1);
+  if (ch.length === 0) return '1';
+
+  if (/^[0-9]$/u.test(ch)) {
+    return ch === '9' ? '0' : String.fromCharCode(ch.charCodeAt(0) + 1);
+  }
+
+  if (/^[a-z]$/u.test(ch)) {
+    return ch === 'z' ? 'a' : String.fromCharCode(ch.charCodeAt(0) + 1);
+  }
+
+  if (/^[A-Z]$/u.test(ch)) {
+    return ch === 'Z' ? 'A' : String.fromCharCode(ch.charCodeAt(0) + 1);
+  }
+
+  return '1';
+}
+
+function nextLeaderImage(
+  image: Faction['leaders'][number]['image']
+): Faction['leaders'][number]['image'] {
+  const total = LEADERS.options.length;
+  if (total === 0) return LEADERS.options[0] as Faction['leaders'][number]['image'];
+  const idx = LEADERS.options.indexOf(image);
+  if (idx < 0) return LEADERS.options[0];
+  return LEADERS.options[(idx + 1) % total];
+}
+
+function nextLeaderFromLast(
+  last: Faction['leaders'][number] | undefined
+): Faction['leaders'][number] {
+  if (last == null) return defaultLeader();
+  return {
+    name: 'new leader',
+    strength: nextStrengthChar(last.strength),
+    image: nextLeaderImage(last.image),
+  };
+}
 
 const defaultDecal = (): Faction['decals'][number] => ({
   id: DECAL.options[0],
@@ -571,10 +614,7 @@ function TtsColorsEditor({
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
-  const itemIds = useMemo(
-    () => value.map((slotColor) => `${sortablePrefix}${slotColor}`),
-    [value]
-  );
+  const itemIds = useMemo(() => value.map((slotColor) => `${sortablePrefix}${slotColor}`), [value]);
 
   return (
     <FormField label="TTS colors (ordered)">
@@ -606,37 +646,21 @@ function TtsColorsEditor({
               return (
                 <SortableTtsRow key={itemId} id={itemId} className={styles.ttsRow}>
                   {({ setActivatorNodeRef, attributes, listeners }) => (
-                    <>
-                      <ReorderHandleButton
-                        label={`Drag to reorder slot ${i + 1}`}
-                        className={styles.ttsDragHandle}
-                        setActivatorNodeRef={setActivatorNodeRef}
-                        attributes={attributes}
-                        listeners={listeners}
-                      />
-                      <span className={styles.ttsIndex} title="Order index">
-                        {i + 1}.
-                      </span>
-                      <select
-                        className={styles.ttsSelect}
-                        value={c}
-                        aria-label={`TTS color slot ${i + 1}`}
-                        draggable={false}
-                        onChange={(e) => {
-                          const picked = e.target.value as Faction['colors'][number];
-                          if (value.some((v, j) => j !== i && v === picked)) return;
-                          const next = [...value];
-                          next[i] = picked;
-                          onChange(next);
-                        }}
-                      >
-                        {optionsForSlot(value, i).map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
-                        ))}
-                      </select>
-                      <div className={styles.ttsRowActions}>
+                    <FormPrefixedInput
+                      className={styles.ttsRowControl}
+                      prefix={
+                        <div className={styles.ttsPrefixContent}>
+                          <ReorderHandleButton
+                            label={`Drag to reorder slot ${i + 1}`}
+                            className={styles.ttsDragHandle}
+                            setActivatorNodeRef={setActivatorNodeRef}
+                            attributes={attributes}
+                            listeners={listeners}
+                          />
+                        </div>
+                      }
+                      suffixClassName={styles.ttsRowActions}
+                      suffix={
                         <FormTooltip content={`Remove TTS color slot ${i + 1}`}>
                           <FormButton
                             type="button"
@@ -649,8 +673,25 @@ function TtsColorsEditor({
                             <Trash2 size={16} strokeWidth={2} aria-hidden />
                           </FormButton>
                         </FormTooltip>
-                      </div>
-                    </>
+                      }
+                    >
+                      <FormSelect
+                        ariaLabel={`TTS color slot ${i + 1}`}
+                        value={c}
+                        onValueChange={(picked) => {
+                          const nextPicked = picked as Faction['colors'][number];
+                          if (value.some((v, j) => j !== i && v === nextPicked)) return;
+                          const next = [...value];
+                          next[i] = nextPicked;
+                          onChange(next);
+                        }}
+                        options={optionsForSlot(value, i).map((opt) => ({
+                          value: opt,
+                          label: opt,
+                        }))}
+                        triggerClassName={styles.ttsSelectTrigger}
+                      />
+                    </FormPrefixedInput>
                   )}
                 </SortableTtsRow>
               );
@@ -683,9 +724,22 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
+  const [pendingLeaderFocusId, setPendingLeaderFocusId] = useState<string | null>(null);
   const [troopSideTabByIndex, setTroopSideTabByIndex] = useState<Record<number, 'front' | 'back'>>(
     {}
   );
+
+  useLayoutEffect(() => {
+    if (pendingLeaderFocusId == null) return;
+    if (typeof document !== 'undefined') {
+      const target = document.getElementById(pendingLeaderFocusId);
+      if (target instanceof HTMLInputElement) {
+        target.focus();
+        target.select();
+      }
+    }
+    setPendingLeaderFocusId(null);
+  }, [pendingLeaderFocusId]);
 
   return (
     <div className={styles.formColumn}>
@@ -712,18 +766,6 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
             </FormField>
           )}
         </form.Field>
-        <form.Field name="id">
-          {(field) => (
-            <FormField
-              label="Faction id (auto)"
-              hint="Set from display name when you save. A number is appended if this id is already in use."
-            >
-              <p className={styles.readOnlySlug} aria-live="polite">
-                {field.state.value}
-              </p>
-            </FormField>
-          )}
-        </form.Field>
         <form.Field name="logo">
           {(field) => (
             <AssetAutocomplete
@@ -746,15 +788,12 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
                 onChange={(v) => field.handleChange(v)}
                 onBlur={field.handleBlur}
                 pickerAriaLabel="Pick theme color"
-                constrainedWidth
               />
             </FormField>
           )}
         </form.Field>
         <form.Field name="colors">
-          {(field) => (
-            <TtsColorsEditor value={field.state.value} onChange={field.handleChange} />
-          )}
+          {(field) => <TtsColorsEditor value={field.state.value} onChange={field.handleChange} />}
         </form.Field>
       </AccordionSection>
 
@@ -904,6 +943,9 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
             const itemIds = getSortableIds(sortablePrefix, lf.state.value.length);
             return (
               <>
+                {lf.state.value.length === 0 && (
+                  <p className={styles.sectionIntro}>This faction has no leaders.</p>
+                )}
                 <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}
@@ -1026,7 +1068,12 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
                   type="button"
                   label="Add leader"
                   variant="secondary"
-                  onClick={() => lf.pushValue(defaultLeader())}
+                  onClick={() => {
+                    const newIndex = lf.state.value.length;
+                    const last = lf.state.value[newIndex - 1];
+                    lf.pushValue(nextLeaderFromLast(last));
+                    setPendingLeaderFocusId(`leader-${newIndex}-name`);
+                  }}
                 >
                   <Plus size={16} aria-hidden />
                 </IconActionButton>
@@ -1222,6 +1269,9 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
             const itemIds = getSortableIds(sortablePrefix, tf.state.value.length);
             return (
               <>
+                {tf.state.value.length === 0 && (
+                  <p className={styles.sectionIntro}>This faction has no troops.</p>
+                )}
                 <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}
@@ -1497,6 +1547,9 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
             const itemIds = getSortableIds(sortablePrefix, af.state.value.length);
             return (
               <>
+                {af.state.value.length === 0 && (
+                  <p className={styles.sectionIntro}>This faction has no advantages.</p>
+                )}
                 <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}

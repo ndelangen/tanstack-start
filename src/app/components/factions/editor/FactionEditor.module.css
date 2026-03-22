@@ -147,8 +147,8 @@
 }
 
 .arrayCardGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: var(--space-2);
 }
 
@@ -587,67 +587,35 @@
 
 /* Shared: native color + hex text (theme, background solid, gradient stops) */
 .hexColorRow {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: stretch;
-  flex: 1;
-  min-width: 10rem;
-  border: var(--border-strong, 2px solid var(--panel-border));
-  border-radius: var(--radius-sm, 6px);
-  background-color: var(--input-bg, rgba(255, 255, 255, 0.95));
-  overflow: hidden;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.hexColorRowConstrained {
-  flex: none;
-  max-width: 20rem;
-  min-width: 0;
-}
-
-.hexColorRow:focus-within {
-  border-color: var(--color-accent-strong, #c78346);
-  box-shadow: 0 0 0 2px var(--color-focus-ring, rgba(244, 207, 139, 0.42));
+  width: 100%;
 }
 
 .hexColorPickerWrap {
-  position: relative;
-  flex-shrink: 0;
-  align-self: stretch;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  min-height: var(--control-h-md);
-  border-right: 1px solid var(--input-border, rgba(0, 0, 0, 0.12));
-  background: rgba(0, 0, 0, 0.03);
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.hexColorPickerWrap:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--color-focus-ring, rgba(244, 207, 139, 0.42));
 }
 
 /* Filled circle shows current color; native input is invisible but covers the hit area */
 .hexColorSwatch {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.3rem;
+  height: 1.3rem;
   border-radius: 50%;
-  border: 1px solid var(--input-border, rgba(0, 0, 0, 0.2));
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
-    0 0 0 1px rgba(0, 0, 0, 0.04);
   pointer-events: none;
-}
-
-.hexColorPicker {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  border: none;
-  border-radius: 0;
-  cursor: pointer;
-  opacity: 0;
 }
 
 .hexColorHexInput {
@@ -672,6 +640,63 @@
 
 .hexColorHexInput::placeholder {
   color: var(--color-muted, #666);
+}
+
+.hexColorPopover {
+  z-index: 11000;
+  width: 13rem;
+  padding: var(--space-2);
+  color: var(--color-text, #2e2927);
+  background: var(--glass-overlay, rgba(255, 253, 248, 0.95));
+  border: var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(var(--glass-blur-md, 10px));
+}
+
+.hexColorPopoverFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.hexColorPopoverValue {
+  font-size: 0.82rem;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+    monospace;
+  color: color-mix(in srgb, var(--color-text, #2e2927) 84%, transparent);
+}
+
+.hexColorNativePickerButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  color: var(--button-toggle-fg, #2e2927);
+  background: var(--button-toggle-bg, #d7cfc2);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.hexColorNativePickerButton:hover {
+  background: var(--button-toggle-hover-bg, #ccc3b5);
+}
+
+.hexColorNativePickerInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.hexColorPopoverArrow {
+  fill: var(--panel-border, #fee7c0);
 }
 
 .gradientWrap {
@@ -716,27 +741,18 @@
 
 /* One shared “input” frame: handle + index + select + actions read as a single field */
 .ttsRow {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: stretch;
-  gap: 0;
   margin-bottom: var(--space-1);
-  padding: 0;
-  border: 2px solid var(--input-border-strong, rgba(86, 58, 31, 0.45));
-  border-radius: var(--radius-sm, 6px);
-  background-color: var(--input-bg, rgba(255, 255, 255, 0.95));
-  box-shadow: none;
-  overflow: hidden;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    background-color 0.12s ease,
-    opacity 0.12s ease;
 }
 
-.ttsRow:focus-within {
-  border-color: var(--color-accent-strong, #c78346);
-  box-shadow: 0 0 0 3px var(--color-focus-ring, rgba(244, 207, 139, 0.42));
+.ttsRowControl {
+  width: 100%;
+}
+
+.ttsPrefixContent {
+  display: inline-flex;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
 }
 
 .ttsRowDragging {
@@ -744,20 +760,25 @@
 }
 
 .ttsRowDropTarget {
-  border-color: var(--color-accent-strong, #c78346);
-  background: rgba(199, 131, 70, 0.16);
+  outline: 2px dashed var(--color-accent-strong, #c78346);
+  outline-offset: 2px;
+}
+
+.ttsDragHandle:hover {
+  background: #fff;
 }
 
 .ttsDragHandle {
-  width: var(--control-h-md);
-  min-width: var(--control-h-md);
-  min-height: var(--control-h-md);
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
   margin: 0;
   padding: 0;
-  flex-shrink: 0;
-  border-right: 1px solid var(--input-border, rgba(0, 0, 0, 0.12));
+  flex-shrink: 1;
+  border: none;
   border-radius: 0;
   cursor: ns-resize;
+  background: none;
 }
 
 .ttsIndex {
@@ -771,24 +792,20 @@
   color: rgba(0, 0, 0, 0.55);
 }
 
-.ttsSelect {
-  flex: 1;
+.ttsSelectTrigger {
+  width: 100%;
   min-width: 0;
-  margin: 0 var(--space-1) 0 0;
   min-height: var(--control-h-md);
-  padding: var(--control-px-sm) var(--space-5) var(--control-px-sm) var(--space-2);
-  font-size: 0.9rem;
-  font-family: inherit;
-  color: inherit;
+  margin: 0;
+  padding: var(--control-px-sm) var(--space-4) var(--control-px-sm) var(--space-2);
   background: transparent;
   border: none;
   border-radius: 0;
   box-shadow: none;
-  box-sizing: border-box;
-  cursor: pointer;
+  backdrop-filter: none;
 }
 
-.ttsSelect:focus {
+.ttsSelectTrigger:focus {
   outline: none;
 }
 
@@ -797,7 +814,8 @@
   flex-wrap: nowrap;
   align-items: stretch;
   flex-shrink: 0;
-  border-left: 1px solid var(--input-border-strong, rgba(86, 58, 31, 0.45));
+  width: auto;
+  min-width: 0;
   background: transparent;
 }
 
@@ -808,25 +826,19 @@
   border: none;
   border-radius: 0;
   box-shadow: none;
+
   backdrop-filter: none;
 }
 
 @media (max-width: 520px) {
-  .ttsRow {
-    flex-wrap: wrap;
-  }
-
   .ttsRowActions {
-    flex: 1 1 100%;
-    justify-content: flex-end;
-    border-left: none;
-    border-top: 1px solid var(--input-border, rgba(0, 0, 0, 0.1));
+    justify-content: flex-start;
   }
 
   .ttsRemoveButton {
-    width: auto;
-    min-width: 2.25rem;
-    min-height: var(--control-h-md);
-    padding: 0 0.5rem;
+    width: 100%;
+    min-width: var(--control-h-md);
+    min-height: 100%;
+    padding: 0;
   }
 }

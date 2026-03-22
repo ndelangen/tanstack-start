@@ -1,6 +1,10 @@
 import clsx from 'clsx';
 import type { ComponentPropsWithoutRef } from 'react';
+import * as Popover from '@radix-ui/react-popover';
+import { Pipette } from 'lucide-react';
+import { HexColorPicker } from 'react-colorful';
 
+import { FormPrefixedInput, FormTooltip } from '@app/components/form';
 import styles from './FactionEditor.module.css';
 
 export function normalizePickerHex(hex: string): string {
@@ -16,8 +20,6 @@ export type HexColorRowProps = {
   pickerAriaLabel: string;
   onBlur?: () => void;
   placeholder?: string;
-  /** e.g. theme color — caps width; omit for flexible width in toolbars */
-  constrainedWidth?: boolean;
 } & Pick<ComponentPropsWithoutRef<'div'>, 'className'>;
 
 /**
@@ -31,34 +33,62 @@ export function HexColorRow({
   onBlur,
   pickerAriaLabel,
   placeholder = '#rrggbb',
-  constrainedWidth = false,
   className,
 }: HexColorRowProps) {
   const pickerValue = normalizePickerHex(value);
 
   return (
-    <div
-      className={clsx(
-        styles.hexColorRow,
-        constrainedWidth && styles.hexColorRowConstrained,
-        className
-      )}
+    <FormPrefixedInput
+      className={clsx(styles.hexColorRow, className)}
+      prefix={
+        <Popover.Root>
+          <Popover.Trigger asChild>
+            <button
+              id={pickerId}
+              type="button"
+              className={styles.hexColorPickerWrap}
+              aria-label={pickerAriaLabel}
+            >
+              <span
+                className={styles.hexColorSwatch}
+                style={{ backgroundColor: pickerValue }}
+                aria-hidden
+              />
+            </button>
+          </Popover.Trigger>
+          <Popover.Portal>
+            <Popover.Content
+              className={styles.hexColorPopover}
+              side="bottom"
+              align="start"
+              sideOffset={8}
+              collisionPadding={10}
+            >
+              <HexColorPicker
+                color={pickerValue}
+                onChange={(next) => onChange(normalizePickerHex(next))}
+              />
+              <div className={styles.hexColorPopoverFooter}>
+                <span className={styles.hexColorPopoverValue}>{pickerValue}</span>
+                <FormTooltip content="Open system color picker">
+                  <label className={styles.hexColorNativePickerButton}>
+                    <Pipette size={14} aria-hidden />
+                    <input
+                      className={styles.hexColorNativePickerInput}
+                      type="color"
+                      value={pickerValue}
+                      onChange={(e) => onChange(normalizePickerHex(e.target.value))}
+                      aria-label={pickerAriaLabel}
+                    />
+                  </label>
+                </FormTooltip>
+              </div>
+              <Popover.Arrow className={styles.hexColorPopoverArrow} width={10} height={6} />
+            </Popover.Content>
+          </Popover.Portal>
+        </Popover.Root>
+      }
     >
-      <span className={styles.hexColorPickerWrap}>
-        <span
-          className={styles.hexColorSwatch}
-          style={{ backgroundColor: pickerValue }}
-          aria-hidden
-        />
-        <input
-          id={pickerId}
-          className={styles.hexColorPicker}
-          type="color"
-          value={pickerValue}
-          onChange={(e) => onChange(normalizePickerHex(e.target.value))}
-          aria-label={pickerAriaLabel}
-        />
-      </span>
       <input
         id={textId}
         className={styles.hexColorHexInput}
@@ -69,6 +99,6 @@ export function HexColorRow({
         onBlur={onBlur}
         onChange={(e) => onChange(e.target.value)}
       />
-    </div>
+    </FormPrefixedInput>
   );
 }

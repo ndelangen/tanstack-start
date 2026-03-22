@@ -3,6 +3,7 @@ export { FormButton } from './FormButton';
 export { FormField } from './FormField';
 export { FormInput } from './FormInput';
 export { FormPopover } from './FormPopover';
+export { FormPrefixedInput } from './FormPrefixedInput';
 export { FormSelect, type FormSelectOption } from './FormSelect';
 export { FormTabs, type FormTabsItem, FormTabsPanel } from './FormTabs';
 export { FormTextarea } from './FormTextarea';

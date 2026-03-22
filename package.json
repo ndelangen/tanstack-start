@@ -47,6 +47,7 @@
     "markdown-to-jsx": "^9.7.6",
     "react": "^19.2.0",
     "react-children-utilities": "^2.10.0",
+    "react-colorful": "^5.6.1",
     "react-dom": "^19.2.0",
     "zod": "^4.3.6"
   },

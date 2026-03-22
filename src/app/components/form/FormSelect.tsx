@@ -1,4 +1,5 @@
 import * as Select from '@radix-ui/react-select';
+import clsx from 'clsx';
 import { Check, ChevronDown } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -15,6 +16,7 @@ interface FormSelectProps {
   options: readonly FormSelectOption[];
   placeholder?: string;
   ariaLabel?: string;
+  triggerClassName?: string;
 }
 
 export function FormSelect({
@@ -23,10 +25,11 @@ export function FormSelect({
   options,
   placeholder = 'Select…',
   ariaLabel,
+  triggerClassName,
 }: FormSelectProps) {
   return (
     <Select.Root value={value} onValueChange={onValueChange}>
-      <Select.Trigger className={styles.selectTrigger} aria-label={ariaLabel}>
+      <Select.Trigger className={clsx(styles.selectTrigger, triggerClassName)} aria-label={ariaLabel}>
         <Select.Value className={styles.selectValue} placeholder={placeholder} />
         <Select.Icon className={styles.selectIcon}>
           <ChevronDown size={16} aria-hidden />

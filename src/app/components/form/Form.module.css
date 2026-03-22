@@ -423,3 +423,40 @@
 .selectItemText {
   font-size: 0.9rem;
 }
+
+.prefixedInput {
+  composes: input;
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.prefixedPrefix,
+.prefixedSuffix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--control-prefix-w, var(--control-h-md));
+  min-width: var(--control-prefix-w, var(--control-h-md));
+  min-height: var(--control-h-md);
+  color: inherit;
+  background: transparent;
+}
+
+.prefixedPrefix {
+  border-right: 1px solid var(--input-border-strong, rgba(86, 58, 31, 0.45));
+}
+
+.prefixedSuffix {
+  border-left: 1px solid var(--input-border-strong, rgba(86, 58, 31, 0.45));
+}
+
+.prefixedMain {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  min-width: 0;
+}
