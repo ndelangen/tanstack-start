@@ -1,9 +1,9 @@
 import clsx from 'clsx';
 import type { ComponentPropsWithoutRef } from 'react';
 
-import styles from './Form.module.css';
+import inputStyles from '../ui/Input.module.css';
 
 export function FormTextarea(props: ComponentPropsWithoutRef<'textarea'>) {
   const { className, ...rest } = props;
-  return <textarea className={clsx(styles.textarea, className)} {...rest} />;
+  return <textarea className={clsx(inputStyles.textarea, className)} {...rest} />;
 }

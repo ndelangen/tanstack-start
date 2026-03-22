@@ -272,11 +272,6 @@
   white-space: pre-wrap;
 }
 
-.filterInput {
-  composes: input from "../../form/Form.module.css";
-  margin-bottom: var(--space-2);
-}
-
 .assetInputRow {
   display: flex;
   align-items: center;
@@ -288,11 +283,6 @@
   width: min(16rem, 65vw);
   max-height: 12rem;
   object-fit: contain;
-}
-
-.select {
-  composes: input from "../../form/Form.module.css";
-  min-width: 12rem;
 }
 
 .checkbox {
@@ -465,7 +455,6 @@
 }
 
 .comboboxInput {
-  composes: input from "../../form/Form.module.css";
   width: 100%;
   box-sizing: border-box;
   padding-right: 2.35rem;
@@ -645,7 +634,6 @@
 }
 
 .hexText {
-  composes: input from "../../form/Form.module.css";
   flex: 1;
   min-width: 8rem;
   max-width: 12rem;

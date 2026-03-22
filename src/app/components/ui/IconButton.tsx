@@ -2,6 +2,7 @@ import { Link, type LinkComponentProps } from '@tanstack/react-router';
 import clsx from 'clsx';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 
+import btnStyles from './Button.module.css';
 import styles from './IconButton.module.css';
 
 export type IconButtonVariant = 'nav' | 'secondary' | 'confirm' | 'critical';
@@ -21,16 +22,17 @@ type IconButtonAsButton = IconButtonShared &
 
 export type IconButtonProps = IconButtonAsLink | IconButtonAsButton;
 
-function variantClassName(variant: IconButtonVariant): string {
+function iconButtonClassNames(variant: IconButtonVariant): string {
+  const base = [btnStyles.button, btnStyles.buttonIconOnly];
   switch (variant) {
     case 'nav':
-      return styles.nav;
+      return clsx(...base, styles.nav);
     case 'secondary':
-      return styles.secondary;
+      return clsx(...base, btnStyles.buttonSecondary, styles.linkPlain);
     case 'critical':
-      return styles.critical;
+      return clsx(...base, btnStyles.buttonDanger, styles.linkPlain);
     case 'confirm':
-      return styles.confirm;
+      return clsx(...base, styles.linkPlain);
   }
 }
 
@@ -39,7 +41,7 @@ function variantClassName(variant: IconButtonVariant): string {
  * Pass `to` to render a TanStack Router [`Link`](https://tanstack.com/router); otherwise a `<button>`.
  */
 export function IconButton({ variant = 'confirm', className, children, ...rest }: IconButtonProps) {
-  const cn = clsx(variantClassName(variant), className);
+  const cn = clsx(iconButtonClassNames(variant), className);
 
   if ('to' in rest && rest.to !== undefined) {
     const { to, ...linkProps } = rest as Omit<

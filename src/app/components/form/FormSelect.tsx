@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import { Check, ChevronDown } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+import inputStyles from '../ui/Input.module.css';
 import styles from './Form.module.css';
 
 export interface FormSelectOption {
@@ -30,7 +31,7 @@ export function FormSelect({
   return (
     <Select.Root value={value} onValueChange={onValueChange}>
       <Select.Trigger
-        className={clsx(styles.selectTrigger, triggerClassName)}
+        className={clsx(inputStyles.input, styles.selectTrigger, triggerClassName)}
         aria-label={ariaLabel}
       >
         <Select.Value className={styles.selectValue} placeholder={placeholder} />

@@ -44,14 +44,6 @@
   color: var(--color-muted, #666);
 }
 
-.section {
-  margin-bottom: var(--space-2);
-}
-
-.section:last-child {
-  margin-bottom: 0;
-}
-
 .sectionTitle {
   margin: 0 0 var(--space-2) 0;
   font-size: 1rem;

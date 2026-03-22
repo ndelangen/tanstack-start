@@ -1,7 +1,9 @@
+import clsx from 'clsx';
 import { Plus, Trash2 } from 'lucide-react';
 
 import type { Faction } from '@db/factions';
 import { FormButton, FormTooltip } from '@app/components/form';
+import inputStyles from '@app/components/ui/Input.module.css';
 
 import styles from './FactionEditor.module.css';
 import { HexColorRow } from './HexColorRow';
@@ -192,7 +194,7 @@ function GradientEditor({
             <input
               type="number"
               step="0.01"
-              className={styles.hexText}
+              className={clsx(inputStyles.input, inputStyles.padded, styles.hexText)}
               value={value.x ?? ''}
               placeholder="default"
               onChange={(e) => {
@@ -209,7 +211,7 @@ function GradientEditor({
             <input
               type="number"
               step="0.01"
-              className={styles.hexText}
+              className={clsx(inputStyles.input, inputStyles.padded, styles.hexText)}
               value={value.y ?? ''}
               placeholder="default"
               onChange={(e) => {
@@ -226,7 +228,7 @@ function GradientEditor({
             <input
               type="number"
               step="0.01"
-              className={styles.hexText}
+              className={clsx(inputStyles.input, inputStyles.padded, styles.hexText)}
               value={value.r ?? ''}
               placeholder="default"
               onChange={(e) => {

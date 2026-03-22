@@ -1,0 +1,32 @@
+.contextStrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.82em;
+  color: var(--color-muted, #666);
+}
+
+.rulesetLink {
+  font-weight: 600;
+  color: var(--color-accent-strong, #8b5a2b);
+  text-decoration: none;
+}
+
+.rulesetLink:hover {
+  text-decoration: underline;
+}
+
+.selfNote {
+  font-style: italic;
+  color: var(--color-muted, #735c47);
+}
+
+.answerFooter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}

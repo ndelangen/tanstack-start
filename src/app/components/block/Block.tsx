@@ -1,4 +1,5 @@
 import { Link, type LinkProps } from '@tanstack/react-router';
+import clsx from 'clsx';
 import type { ReactNode } from 'react';
 
 import styles from './Block.module.css';
@@ -21,10 +22,7 @@ interface BlockLinkProps extends LinkProps {
 
 export function BlockLink({ children, className, ...linkProps }: BlockLinkProps) {
   return (
-    <Link
-      {...linkProps}
-      className={className ? `${styles.blockLink} ${className}` : styles.blockLink}
-    >
+    <Link {...linkProps} className={clsx(styles.block, styles.blockLink, className)}>
       {children}
     </Link>
   );

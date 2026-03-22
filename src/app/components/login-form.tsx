@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 import { auth } from '@db/core';
 import { FormActions, FormButton } from '@app/components/form';
+import { Stack } from '@app/components/layout';
 
 export function LoginForm(props: React.ComponentPropsWithoutRef<'div'>) {
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +30,7 @@ export function LoginForm(props: React.ComponentPropsWithoutRef<'div'>) {
 
   return (
     <div {...props}>
-      <form onSubmit={handleSocialLogin}>
+      <Stack as="form" gap={3} onSubmit={handleSocialLogin}>
         <h2>Welcome!</h2>
         <p>Sign in to your account to continue</p>
         {error && <p role="alert">{error}</p>}
@@ -39,7 +40,7 @@ export function LoginForm(props: React.ComponentPropsWithoutRef<'div'>) {
             <span>{isLoading ? 'Logging in...' : 'Continue with Discord'}</span>
           </FormButton>
         </FormActions>
-      </form>
+      </Stack>
     </div>
   );
 }

@@ -20,8 +20,3 @@
   padding: var(--space-2) 0;
   border-bottom: var(--border-strong, 2px solid var(--panel-border));
 }
-
-/* FormActions applies `.buttons` with margin-top; flush inside the toolbar strip. */
-.toolbar > :first-child {
-  margin-top: 0;
-}

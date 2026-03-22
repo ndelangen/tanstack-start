@@ -6,6 +6,7 @@ import { type ProfileEntry, useCurrentProfile, useUpdateCurrentProfile } from '@
 import { Card } from '@app/components/card/Card';
 import { FormActions, FormButton, FormField, FormInput, FormTooltip } from '@app/components/form';
 import formStyles from '@app/components/form/Form.module.css';
+import { Stack } from '@app/components/layout';
 import { IconButton } from '@app/components/ui';
 import { profileSlugBaseFromName } from '@app/profile/validation';
 
@@ -75,7 +76,7 @@ function ProfileSettingsFormFields({ initial }: { initial: ProfileEntry }) {
       </div>
 
       <Card>
-        <form id={PROFILE_SETTINGS_FORM_ID} onSubmit={handleSubmit}>
+        <Stack as="form" gap={3} id={PROFILE_SETTINGS_FORM_ID} onSubmit={handleSubmit}>
           <FormField label="Display name" htmlFor="profile-display-name">
             <FormInput
               id="profile-display-name"
@@ -111,7 +112,7 @@ function ProfileSettingsFormFields({ initial }: { initial: ProfileEntry }) {
               {mutationError}
             </p>
           )}
-        </form>
+        </Stack>
       </Card>
     </div>
   );

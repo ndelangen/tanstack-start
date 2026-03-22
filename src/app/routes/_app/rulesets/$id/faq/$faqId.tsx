@@ -21,6 +21,7 @@ import {
   FormTextarea,
   FormTooltip,
 } from '@app/components/form';
+import { Stack } from '@app/components/layout';
 
 import styles from './FaqDetail.module.css';
 
@@ -140,7 +141,7 @@ function FaqDetailPage() {
       <Card>
         <div className={styles.section}>
           {editingQuestion ? (
-            <div>
+            <Stack gap={3}>
               <FormField label="Edit question">
                 <FormTextarea
                   value={editQuestionValue}
@@ -175,7 +176,7 @@ function FaqDetailPage() {
                   <span className={styles.error}>{updateFaqItem.error.message}</span>
                 )}
               </FormActions>
-            </div>
+            </Stack>
           ) : (
             <>
               <div className={styles.questionHeader}>
@@ -247,16 +248,18 @@ function FaqDetailPage() {
         </div>
 
         {showAddAnswerForm && (
-          <form
+          <Stack
+            as="form"
+            gap={3}
             className={styles.section}
             onSubmit={(e) => {
               e.preventDefault();
-              const form = e.target as HTMLFormElement;
+              const formEl = e.target as HTMLFormElement;
               const answer = (
-                form.elements.namedItem('answer') as HTMLTextAreaElement
+                formEl.elements.namedItem('answer') as HTMLTextAreaElement
               ).value.trim();
               if (!answer) return;
-              createFaqAnswer.mutate({ faqItemId, answer }, { onSuccess: () => form.reset() });
+              createFaqAnswer.mutate({ faqItemId, answer }, { onSuccess: () => formEl.reset() });
             }}
           >
             <FormField
@@ -283,7 +286,7 @@ function FaqDetailPage() {
                 </FormButton>
               </FormTooltip>
             </FormActions>
-          </form>
+          </Stack>
         )}
 
         {hasUserAnswered && !showAddAnswerForm && (
@@ -298,7 +301,7 @@ function FaqDetailPage() {
               return (
                 <li key={a.id} className={styles.answerItem}>
                   {isEditing ? (
-                    <div>
+                    <Stack gap={3}>
                       <FormField label="Edit your answer">
                         <FormTextarea
                           value={editAnswerValue}
@@ -333,7 +336,7 @@ function FaqDetailPage() {
                           <span className={styles.error}>{updateFaqAnswer.error.message}</span>
                         )}
                       </FormActions>
-                    </div>
+                    </Stack>
                   ) : (
                     <>
                       {isUserAnswer && (

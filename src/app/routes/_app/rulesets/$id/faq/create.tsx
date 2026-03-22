@@ -5,6 +5,7 @@ import { useCurrentProfile } from '@db/profiles';
 import { rulesetDetailQueryOptions, useRuleset } from '@db/rulesets';
 import { Card } from '@app/components/card/Card';
 import { FormActions, FormButton, FormField, FormInput, FormTextarea } from '@app/components/form';
+import { Stack } from '@app/components/layout';
 
 import styles from '../../RulesetDetail.module.css';
 
@@ -60,18 +61,24 @@ function FaqCreatePage() {
         Back to ruleset
       </Link>
       <Card>
-        <form
+        <Stack
+          as="form"
+          gap={3}
           onSubmit={(e) => {
             e.preventDefault();
-            const form = e.target as HTMLFormElement;
-            const question = (form.elements.namedItem('question') as HTMLInputElement).value.trim();
-            const answer = (form.elements.namedItem('answer') as HTMLTextAreaElement).value.trim();
+            const formEl = e.target as HTMLFormElement;
+            const question = (
+              formEl.elements.namedItem('question') as HTMLInputElement
+            ).value.trim();
+            const answer = (
+              formEl.elements.namedItem('answer') as HTMLTextAreaElement
+            ).value.trim();
             if (!question) return;
             createFaqItem.mutate(
               { rulesetId, question, answer: answer || undefined },
               {
                 onSuccess: (entry) => {
-                  form.reset();
+                  formEl.reset();
                   navigate({
                     to: '/rulesets/$id/faq/$faqId',
                     params: { id, faqId: String(entry.id) },
@@ -101,7 +108,7 @@ function FaqCreatePage() {
               <span className={styles.error}>{createFaqItem.error.message}</span>
             )}
           </FormActions>
-        </form>
+        </Stack>
       </Card>
     </>
   );

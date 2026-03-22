@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 
+import inputStyles from '../ui/Input.module.css';
 import styles from './Form.module.css';
 
 interface FormPrefixedInputProps extends Pick<ComponentPropsWithoutRef<'div'>, 'className'> {
@@ -22,7 +23,7 @@ export function FormPrefixedInput({
   suffixClassName,
 }: FormPrefixedInputProps) {
   return (
-    <div className={clsx(styles.prefixedInput, className)}>
+    <div className={clsx(inputStyles.input, styles.prefixedInput, className)}>
       {prefix != null && (
         <div className={clsx(styles.prefixedPrefix, prefixClassName)}>{prefix}</div>
       )}

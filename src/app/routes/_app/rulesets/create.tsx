@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { useCreateRuleset } from '@db/rulesets';
 import { FormActions, FormButton, FormField, FormInput } from '@app/components/form';
+import { Stack } from '@app/components/layout';
 
 export const Route = createFileRoute('/_app/rulesets/create')({
   component: CreateRulesetPage,
@@ -27,7 +28,9 @@ function CreateRulesetPage() {
   return (
     <>
       <h2>Create a new ruleset</h2>
-      <form
+      <Stack
+        as="form"
+        gap={3}
         onSubmit={(e) => {
           e.preventDefault();
           const nextName = name.trim();
@@ -58,7 +61,7 @@ function CreateRulesetPage() {
             <span>{createRuleset.isPending ? 'Creating…' : 'Create'}</span>
           </FormButton>
         </FormActions>
-      </form>
+      </Stack>
     </>
   );
 }

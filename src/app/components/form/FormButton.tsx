@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import type { ComponentPropsWithoutRef } from 'react';
 
-import styles from './Form.module.css';
+import btnStyles from '../ui/Button.module.css';
 
 type Variant = 'primary' | 'secondary' | 'danger';
 
@@ -19,14 +19,19 @@ export function FormButton({
 }: FormButtonProps) {
   const variantClass =
     variant === 'danger'
-      ? styles.buttonDanger
+      ? btnStyles.buttonDanger
       : variant === 'secondary'
-        ? styles.buttonSecondary
-        : styles.button;
+        ? btnStyles.buttonSecondary
+        : undefined;
   return (
     <button
       type={type}
-      className={clsx(variantClass, iconOnly && styles.buttonIconOnly, className)}
+      className={clsx(
+        btnStyles.button,
+        variantClass,
+        iconOnly && btnStyles.buttonIconOnly,
+        className
+      )}
       {...props}
     />
   );

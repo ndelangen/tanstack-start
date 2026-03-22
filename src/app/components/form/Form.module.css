@@ -2,11 +2,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  margin-bottom: var(--space-3);
-}
-
-.field:last-child {
-  margin-bottom: 0;
 }
 
 .label {
@@ -14,149 +9,6 @@
   font-weight: 600;
   line-height: 1.2;
   color: var(--color-text, #2e2927);
-}
-
-.input,
-.textarea {
-  display: block;
-  width: 100%;
-  min-width: 16em;
-  min-height: var(--control-h-md);
-  padding: var(--control-px-sm) var(--control-px-md);
-  font-size: 0.9rem;
-  line-height: 1.2;
-  font-family: inherit;
-  color: var(--color-text, #2e2927);
-
-  background-color: var(--input-bg);
-  border-radius: var(--radius-sm);
-  backdrop-filter: blur(var(--glass-blur-sm));
-  border: 2px solid var(--input-border-strong, rgba(86, 58, 31, 0.45));
-  box-sizing: border-box;
-
-  transition:
-    border-color var(--transition-base),
-    box-shadow var(--transition-base),
-    background-color var(--transition-fast);
-}
-
-.input:focus,
-.textarea:focus {
-  outline: none;
-  border-color: var(--color-accent-strong, #c78346);
-  box-shadow: 0 0 0 3px var(--color-focus-ring, rgba(244, 207, 139, 0.42));
-}
-
-.input[aria-invalid="true"],
-.textarea[aria-invalid="true"] {
-  border-color: var(--color-error, #d34409);
-  box-shadow: 0 0 0 3px rgba(211, 68, 9, 0.22);
-}
-
-.input::placeholder,
-.textarea::placeholder {
-  color: color-mix(in srgb, var(--color-muted, #735c47) 80%, transparent);
-}
-
-.textarea {
-  min-height: 4.8rem;
-  resize: vertical;
-}
-
-.button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  min-height: var(--control-h-md);
-  padding: var(--control-px-sm) var(--space-3);
-  font-size: 0.9rem;
-  line-height: 1;
-  font-family: inherit;
-  font-weight: 700;
-  color: var(--button-confirm-fg, #f8f3e6);
-  background-color: var(--button-confirm-bg, #7f9e66);
-  border: none;
-  border-radius: var(--radius-sm);
-  box-shadow: none;
-  backdrop-filter: none;
-  cursor: pointer;
-  transition:
-    background-color var(--transition-fast),
-    color var(--transition-fast),
-    transform var(--transition-fast);
-}
-
-.button:hover:not(:disabled) {
-  background-color: var(--button-confirm-hover-bg, #6f8e57);
-}
-
-.button:active:not(:disabled) {
-  background-color: var(--button-confirm-active-bg, #607c49);
-}
-
-.button:disabled {
-  opacity: 1;
-  color: var(--button-confirm-disabled-fg, #5b6f4a);
-  background-color: var(--button-confirm-disabled-bg, #c8d6bc);
-  cursor: not-allowed;
-}
-
-.button:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--color-focus-ring, rgba(244, 207, 139, 0.42));
-}
-
-.buttonSecondary {
-  composes: button;
-  color: var(--button-add-fg, #2e2112);
-  background-color: var(--button-add-bg, #e1b469);
-}
-
-.buttonSecondary:hover:not(:disabled) {
-  background-color: var(--button-add-hover-bg, #d4a24f);
-}
-
-.buttonSecondary:active:not(:disabled) {
-  background-color: var(--button-add-active-bg, #be8837);
-}
-
-.buttonSecondary:disabled {
-  color: var(--button-add-disabled-fg, #7d6846);
-  background-color: var(--button-add-disabled-bg, #ecd7ad);
-}
-
-.buttonDanger {
-  composes: button;
-  color: var(--button-danger-fg, #fff3ee);
-  background-color: var(--button-danger-bg, #c76349);
-}
-
-.buttonDanger:hover:not(:disabled) {
-  background-color: var(--button-danger-hover-bg, #b5533b);
-}
-
-.buttonDanger:active:not(:disabled) {
-  background-color: var(--button-danger-active-bg, #9f4530);
-}
-
-.buttonDanger:disabled {
-  color: var(--button-danger-disabled-fg, #7e564c);
-  background-color: var(--button-danger-disabled-bg, #e5c2b7);
-}
-
-.buttonIconOnly {
-  width: var(--control-h-md);
-  min-width: var(--control-h-md);
-  padding: 0;
-}
-
-.buttons {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-  margin-top: var(--space-1);
 }
 
 .tabsRoot {
@@ -364,7 +216,6 @@
 }
 
 .selectTrigger {
-  composes: input;
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
@@ -425,7 +276,6 @@
 }
 
 .prefixedInput {
-  composes: input;
   display: flex;
   align-items: stretch;
   min-width: 0;

@@ -1,10 +1,12 @@
 /**
- * Icon-only controls: composes shared chrome from Form.module.css.
- * Nav neutral tone lives here (not in Form.module.css).
+ * Variant chrome layered on `Button.module.css` via clsx in IconButton.tsx.
+ * Nav neutral tone stays here (not on default confirm buttons).
  */
-.nav {
-  composes: button buttonIconOnly from "../form/Form.module.css";
+.linkPlain {
   text-decoration: none;
+}
+
+.nav {
   color: var(--button-neutral-fg, #2e2927);
   background-color: var(--button-neutral-bg, #d7cfc2);
 }
@@ -15,19 +17,4 @@
 
 .nav:active:not(:disabled) {
   background-color: var(--button-neutral-active-bg, #bdb3a4);
-}
-
-.secondary {
-  composes: buttonSecondary buttonIconOnly from "../form/Form.module.css";
-  text-decoration: none;
-}
-
-.confirm {
-  composes: button buttonIconOnly from "../form/Form.module.css";
-  text-decoration: none;
-}
-
-.critical {
-  composes: buttonDanger buttonIconOnly from "../form/Form.module.css";
-  text-decoration: none;
 }
