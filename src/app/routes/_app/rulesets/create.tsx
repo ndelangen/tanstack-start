@@ -3,7 +3,7 @@ import { Plus } from 'lucide-react';
 import { useState } from 'react';
 
 import { useCreateRuleset } from '@db/rulesets';
-import { FormActions, FormButton, FormField, FormInput } from '@app/components/form';
+import { FormActions, FormButton, FormField, TextField } from '@app/components/form';
 import { Stack } from '@app/components/layout';
 
 export const Route = createFileRoute('/_app/rulesets/create')({
@@ -46,7 +46,7 @@ function CreateRulesetPage() {
         }}
       >
         <FormField label="Name" htmlFor="ruleset-name" error={createRuleset.error?.message}>
-          <FormInput
+          <TextField
             id="ruleset-name"
             name="name"
             required

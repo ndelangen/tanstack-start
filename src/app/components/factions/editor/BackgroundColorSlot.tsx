@@ -1,12 +1,12 @@
-import clsx from 'clsx';
 import { Plus, Trash2 } from 'lucide-react';
 
 import type { Faction } from '@db/factions';
-import { FormButton, FormTooltip } from '@app/components/form';
-import inputStyles from '@app/components/ui/Input.module.css';
+import { FormButton } from '@app/components/form/FormButton';
+import { FormTooltip } from '@app/components/form/FormTooltip';
+import { HexColorPicker } from '@app/components/form/HexColorPicker';
+import { TextField } from '@app/components/form/TextField';
 
 import styles from './FactionEditor.module.css';
-import { HexColorRow } from './HexColorRow';
 
 type BgColor = Faction['background']['colors'][number];
 
@@ -93,7 +93,7 @@ export function BackgroundColorSlot({
       </div>
 
       {mode === 'hex' && isHex(value) && (
-        <HexColorRow
+        <HexColorPicker
           pickerId={`${idPrefix}-picker`}
           textId={`${idPrefix}-hex`}
           value={value}
@@ -189,12 +189,13 @@ function GradientEditor({
 
       {value.type === 'radial' && (
         <div className={styles.radialGrid}>
-          <label>
+          <label htmlFor={`${idPrefix}-radial-x`}>
             x (optional)
-            <input
+            <TextField
+              id={`${idPrefix}-radial-x`}
               type="number"
               step="0.01"
-              className={clsx(inputStyles.input, inputStyles.padded, styles.hexText)}
+              className={styles.hexText}
               value={value.x ?? ''}
               placeholder="default"
               onChange={(e) => {
@@ -206,12 +207,13 @@ function GradientEditor({
               }}
             />
           </label>
-          <label>
+          <label htmlFor={`${idPrefix}-radial-y`}>
             y (optional)
-            <input
+            <TextField
+              id={`${idPrefix}-radial-y`}
               type="number"
               step="0.01"
-              className={clsx(inputStyles.input, inputStyles.padded, styles.hexText)}
+              className={styles.hexText}
               value={value.y ?? ''}
               placeholder="default"
               onChange={(e) => {
@@ -223,12 +225,13 @@ function GradientEditor({
               }}
             />
           </label>
-          <label>
+          <label htmlFor={`${idPrefix}-radial-r`}>
             r (optional)
-            <input
+            <TextField
+              id={`${idPrefix}-radial-r`}
               type="number"
               step="0.01"
-              className={clsx(inputStyles.input, inputStyles.padded, styles.hexText)}
+              className={styles.hexText}
               value={value.r ?? ''}
               placeholder="default"
               onChange={(e) => {
@@ -247,7 +250,7 @@ function GradientEditor({
       {value.stops.map((stop, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: stop rows tracked by array index in form state
         <div key={`${idPrefix}-stop-${i}`} className={styles.stopRow}>
-          <HexColorRow
+          <HexColorPicker
             pickerId={`${idPrefix}-stop-${i}-picker`}
             textId={`${idPrefix}-stop-${i}-hex`}
             value={stop[0]}

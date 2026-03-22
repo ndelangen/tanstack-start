@@ -18,8 +18,8 @@ import {
   FormActions,
   FormButton,
   FormField,
-  FormTextarea,
   FormTooltip,
+  MultilineTextField,
 } from '@app/components/form';
 import { Stack } from '@app/components/layout';
 
@@ -143,7 +143,7 @@ function FaqDetailPage() {
           {editingQuestion ? (
             <Stack gap={3}>
               <FormField label="Edit question">
-                <FormTextarea
+                <MultilineTextField
                   value={editQuestionValue}
                   onChange={(e) => setEditQuestionValue(e.target.value)}
                   rows={2}
@@ -266,7 +266,7 @@ function FaqDetailPage() {
               hint="Add your answer (1 per person—you can edit it later)"
               error={createFaqAnswer.isError ? createFaqAnswer.error.message : undefined}
             >
-              <FormTextarea
+              <MultilineTextField
                 name="answer"
                 rows={3}
                 required
@@ -303,7 +303,7 @@ function FaqDetailPage() {
                   {isEditing ? (
                     <Stack gap={3}>
                       <FormField label="Edit your answer">
-                        <FormTextarea
+                        <MultilineTextField
                           value={editAnswerValue}
                           onChange={(e) => setEditAnswerValue(e.target.value)}
                           rows={3}

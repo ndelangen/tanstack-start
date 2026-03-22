@@ -39,22 +39,22 @@ import type { Faction } from '@db/factions';
 import {
   FormButton,
   FormField,
-  FormInput,
   FormPopover,
-  FormPrefixedInput,
-  FormSelect,
   FormTabs,
-  FormTextarea,
   FormTooltip,
   FormUnitToolbar,
+  MultilineTextField,
+  OptionPicker,
+  PrefixedField,
+  TextField,
 } from '@app/components/form';
+import { HexColorPicker } from '@app/components/form/HexColorPicker';
 import { DECAL, GENERIC, ICON, LEADERS, LOGO, TROOP, TROOP_MODIFIER } from '@game/data/generated';
 import { factionSlugBaseFromName, TTSColor } from '@game/schema/faction';
 
-import { AssetAutocomplete } from './AssetAutocomplete';
-import { BackgroundColorSlot } from './BackgroundColorSlot';
+import { AssetAutocomplete as TypeSuggestPicker } from './AssetAutocomplete';
+import { BackgroundColorSlot as ColorPicker } from './BackgroundColorSlot';
 import styles from './FactionEditor.module.css';
-import { HexColorRow } from './HexColorRow';
 import { type FactionEditorSectionId, useEditorAccordionHash } from './useEditorAccordionHash';
 
 const NONE_SELECT_VALUE = '__none__';
@@ -451,7 +451,7 @@ function TroopSideFields({
         <form.Field name={nameField}>
           {(field) => (
             <FormField label={isBack ? 'Back name' : 'Name'} htmlFor={`${idBase}-name`}>
-              <FormInput
+              <TextField
                 id={`${idBase}-name`}
                 value={field.state.value}
                 onBlur={field.handleBlur}
@@ -462,7 +462,7 @@ function TroopSideFields({
         </form.Field>
         <form.Field name={imageField}>
           {(field) => (
-            <AssetAutocomplete
+            <TypeSuggestPicker
               id={`${idBase}-img`}
               label={imageLabel}
               value={field.state.value ?? ''}
@@ -475,7 +475,7 @@ function TroopSideFields({
         <form.Field name={descField}>
           {(field) => (
             <FormField label={descriptionLabel} htmlFor={`${idBase}-desc`}>
-              <FormTextarea
+              <MultilineTextField
                 id={`${idBase}-desc`}
                 rows={2}
                 value={field.state.value}
@@ -488,7 +488,7 @@ function TroopSideFields({
         <form.Field name={starField}>
           {(field) => (
             <FormField label={starLabel}>
-              <FormSelect
+              <OptionPicker
                 ariaLabel={`${starLabel} for troop ${troopIndex + 1}`}
                 value={field.state.value ?? NONE_SELECT_VALUE}
                 onValueChange={(next) =>
@@ -646,7 +646,7 @@ function TtsColorsEditor({
               return (
                 <SortableTtsRow key={itemId} id={itemId} className={styles.ttsRow}>
                   {({ setActivatorNodeRef, attributes, listeners }) => (
-                    <FormPrefixedInput
+                    <PrefixedField
                       className={styles.ttsRowControl}
                       prefix={
                         <div className={styles.ttsPrefixContent}>
@@ -675,7 +675,7 @@ function TtsColorsEditor({
                         </FormTooltip>
                       }
                     >
-                      <FormSelect
+                      <OptionPicker
                         ariaLabel={`TTS color slot ${i + 1}`}
                         value={c}
                         onValueChange={(picked) => {
@@ -691,7 +691,7 @@ function TtsColorsEditor({
                         }))}
                         triggerClassName={styles.ttsSelectTrigger}
                       />
-                    </FormPrefixedInput>
+                    </PrefixedField>
                   )}
                 </SortableTtsRow>
               );
@@ -754,7 +754,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
           {(field) => (
             <>
               <FormField label="Display name" htmlFor="faction-name">
-                <FormInput
+                <TextField
                   id="faction-name"
                   value={field.state.value}
                   onBlur={field.handleBlur}
@@ -776,7 +776,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
         </form.Field>
         <form.Field name="logo">
           {(field) => (
-            <AssetAutocomplete
+            <TypeSuggestPicker
               id="faction-logo"
               label="Logo"
               value={field.state.value}
@@ -789,7 +789,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
         <form.Field name="themeColor">
           {(field) => (
             <FormField label="Theme color (#rrggbb)" htmlFor="faction-theme-text">
-              <HexColorRow
+              <HexColorPicker
                 pickerId="faction-theme-picker"
                 textId="faction-theme-text"
                 value={field.state.value}
@@ -816,7 +816,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
           {(field) => (
             <FormField label="Background texture image" htmlFor="bg-image">
               <div className={styles.assetInputRow}>
-                <FormInput
+                <TextField
                   id="bg-image"
                   value={field.state.value}
                   onBlur={field.handleBlur}
@@ -849,7 +849,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
         </form.Field>
         <form.Field name="background.colors[0]">
           {(field) => (
-            <BackgroundColorSlot
+            <ColorPicker
               legend="Background layer A"
               idPrefix="bg-a"
               value={field.state.value}
@@ -859,7 +859,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
         </form.Field>
         <form.Field name="background.colors[1]">
           {(field) => (
-            <BackgroundColorSlot
+            <ColorPicker
               legend="Background layer B"
               idPrefix="bg-b"
               value={field.state.value}
@@ -915,7 +915,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
         <form.Field name="hero.name">
           {(field) => (
             <FormField label="Hero name" htmlFor="hero-name">
-              <FormInput
+              <TextField
                 id="hero-name"
                 value={field.state.value}
                 onBlur={field.handleBlur}
@@ -926,7 +926,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
         </form.Field>
         <form.Field name="hero.image">
           {(field) => (
-            <AssetAutocomplete
+            <TypeSuggestPicker
               id="hero-image"
               label="Hero image"
               value={field.state.value}
@@ -1001,7 +1001,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
                                   <form.Field name={`leaders[${i}].name`}>
                                     {(field) => (
                                       <FormField label="Name" htmlFor={`leader-${i}-name`}>
-                                        <FormInput
+                                        <TextField
                                           id={`leader-${i}-name`}
                                           value={field.state.value}
                                           onBlur={field.handleBlur}
@@ -1017,7 +1017,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
                                         htmlFor={`leader-${i}-str`}
                                         hint="Usually one digit or letter (e.g. 5). Multiple digits are stored as a number. Leave empty to omit."
                                       >
-                                        <FormInput
+                                        <TextField
                                           id={`leader-${i}-str`}
                                           inputMode="text"
                                           autoComplete="off"
@@ -1049,7 +1049,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
                                   </form.Field>
                                   <form.Field name={`leaders[${i}].image`}>
                                     {(field) => (
-                                      <AssetAutocomplete
+                                      <TypeSuggestPicker
                                         id={`leader-${i}-img`}
                                         label="Image"
                                         value={field.state.value}
@@ -1153,7 +1153,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
                               <div className={styles.unitCardBody}>
                                 <form.Field name={`decals[${i}].id`}>
                                   {(field) => (
-                                    <AssetAutocomplete
+                                    <TypeSuggestPicker
                                       id={`decal-${i}-id`}
                                       label="Decal asset"
                                       value={field.state.value}
@@ -1412,7 +1412,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
                                         <form.Field name={`troops[${i}].count`}>
                                           {(field) => (
                                             <FormField label="Count" htmlFor={`troop-${i}-count`}>
-                                              <FormInput
+                                              <TextField
                                                 id={`troop-${i}-count`}
                                                 type="number"
                                                 min={1}
@@ -1464,7 +1464,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
         <form.Field name="rules.startText">
           {(field) => (
             <FormField label="Start text" htmlFor="rules-start">
-              <FormTextarea
+              <MultilineTextField
                 id="rules-start"
                 rows={3}
                 value={field.state.value}
@@ -1477,7 +1477,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
         <form.Field name="rules.revivalText">
           {(field) => (
             <FormField label="Revival text" htmlFor="rules-revival">
-              <FormTextarea
+              <MultilineTextField
                 id="rules-revival"
                 rows={3}
                 value={field.state.value}
@@ -1490,7 +1490,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
         <form.Field name="rules.spiceCount">
           {(field) => (
             <FormField label="Spice count" htmlFor="rules-spice">
-              <FormInput
+              <TextField
                 id="rules-spice"
                 type="number"
                 min={1}
@@ -1505,7 +1505,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
         <form.Field name="rules.alliance.text">
           {(field) => (
             <FormField label="Alliance text" htmlFor="rules-alliance">
-              <FormTextarea
+              <MultilineTextField
                 id="rules-alliance"
                 rows={3}
                 value={field.state.value}
@@ -1518,7 +1518,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
         <form.Field name="rules.fate.title">
           {(field) => (
             <FormField label="Fate title" htmlFor="rules-fate-title">
-              <FormInput
+              <TextField
                 id="rules-fate-title"
                 value={field.state.value}
                 onBlur={field.handleBlur}
@@ -1530,7 +1530,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
         <form.Field name="rules.fate.text">
           {(field) => (
             <FormField label="Fate text" htmlFor="rules-fate-text">
-              <FormTextarea
+              <MultilineTextField
                 id="rules-fate-text"
                 rows={2}
                 value={field.state.value}
@@ -1608,7 +1608,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
                                         label="Title (optional)"
                                         htmlFor={`adv-${i}-title`}
                                       >
-                                        <FormInput
+                                        <TextField
                                           id={`adv-${i}-title`}
                                           value={field.state.value ?? ''}
                                           onBlur={field.handleBlur}
@@ -1622,7 +1622,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
                                   <form.Field name={`rules.advantages[${i}].text`}>
                                     {(field) => (
                                       <FormField label="Text" htmlFor={`adv-${i}-text`}>
-                                        <FormTextarea
+                                        <MultilineTextField
                                           id={`adv-${i}-text`}
                                           rows={2}
                                           value={field.state.value}
@@ -1639,7 +1639,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
                                         htmlFor={`adv-${i}-karama`}
                                         hint="Describes what happens when this advantage is Karama'd. Leave empty if this advantage cannot be Karama'd."
                                       >
-                                        <FormInput
+                                        <TextField
                                           id={`adv-${i}-karama`}
                                           value={field.state.value ?? ''}
                                           onBlur={field.handleBlur}

@@ -13,12 +13,17 @@ import {
 } from '@db/factions';
 import { useGroupsAll } from '@db/groups';
 import { useProfilesAll } from '@db/profiles';
-import { FormActions, FormButton, FormPopover, FormTooltip } from '@app/components/form';
+import {
+  FormActions,
+  FormButton,
+  FormPopover,
+  FormTooltip,
+  TypeSuggestPicker,
+} from '@app/components/form';
 import { schema } from '@data/factions';
 import { Token as FactionToken } from '@game/assets/faction/token/Token';
 import { FactionSchema } from '@game/schema/faction';
 
-import { AssetAutocomplete } from './AssetAutocomplete';
 import styles from './FactionEditor.module.css';
 import { FactionFormFields } from './FactionFormFields';
 import { FactionSheetPreviewIframe } from './FactionSheetPreviewIframe';
@@ -273,7 +278,7 @@ export function FactionEditor({
                   No different faction is available to load right now.
                 </p>
               ) : (
-                <AssetAutocomplete
+                <TypeSuggestPicker
                   id="faction-load"
                   label="Search factions"
                   value={loadFactionId}

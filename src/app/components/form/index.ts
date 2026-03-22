@@ -1,11 +1,22 @@
+export { AssetAutocomplete as TypeSuggestPicker } from '../factions/editor/AssetAutocomplete';
+export { BackgroundColorSlot as ColorPicker } from '../factions/editor/BackgroundColorSlot';
 export { FormActions } from './FormActions';
 export { FormButton } from './FormButton';
 export { FormField } from './FormField';
-export { FormInput } from './FormInput';
 export { FormPopover } from './FormPopover';
-export { FormPrefixedInput } from './FormPrefixedInput';
-export { FormSelect, type FormSelectOption } from './FormSelect';
 export { FormTabs, type FormTabsItem, FormTabsPanel } from './FormTabs';
-export { FormTextarea } from './FormTextarea';
 export { FormTooltip } from './FormTooltip';
 export { FormUnitToolbar } from './FormUnitToolbar';
+export {
+  HexColorPicker,
+  type HexColorPickerProps,
+  normalizePickerHex,
+} from './HexColorPicker';
+export { MultilineTextField } from './MultilineTextField';
+export { OptionPicker, type OptionPickerOption } from './OptionPicker';
+export {
+  FormPrefixedInput,
+  PrefixedField,
+  type PrefixedFieldProps,
+} from './PrefixedField';
+export { TextField } from './TextField';

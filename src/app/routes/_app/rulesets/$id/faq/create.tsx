@@ -4,7 +4,13 @@ import { faqItemsByRulesetQueryOptions, useCreateFaqItem } from '@db/faq';
 import { useCurrentProfile } from '@db/profiles';
 import { rulesetDetailQueryOptions, useRuleset } from '@db/rulesets';
 import { Card } from '@app/components/card/Card';
-import { FormActions, FormButton, FormField, FormInput, FormTextarea } from '@app/components/form';
+import {
+  FormActions,
+  FormButton,
+  FormField,
+  MultilineTextField,
+  TextField,
+} from '@app/components/form';
 import { Stack } from '@app/components/layout';
 
 import styles from '../../RulesetDetail.module.css';
@@ -89,7 +95,7 @@ function FaqCreatePage() {
           }}
         >
           <FormField label="Ask a question">
-            <FormInput
+            <TextField
               type="text"
               name="question"
               required
@@ -98,7 +104,7 @@ function FaqCreatePage() {
             />
           </FormField>
           <FormField label="Your answer (optional—you can add or edit it later)">
-            <FormTextarea name="answer" rows={3} placeholder="Optional answer…" />
+            <MultilineTextField name="answer" rows={3} placeholder="Optional answer…" />
           </FormField>
           <FormActions>
             <FormButton type="submit" disabled={createFaqItem.isPending}>

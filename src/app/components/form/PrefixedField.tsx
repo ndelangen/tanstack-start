@@ -1,10 +1,10 @@
 import clsx from 'clsx';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 
-import inputStyles from '../ui/Input.module.css';
+import { inputFieldClassNames } from '../ui/Input';
 import styles from './Form.module.css';
 
-interface FormPrefixedInputProps extends Pick<ComponentPropsWithoutRef<'div'>, 'className'> {
+export interface PrefixedFieldProps extends Pick<ComponentPropsWithoutRef<'div'>, 'className'> {
   prefix?: ReactNode;
   suffix?: ReactNode;
   children: ReactNode;
@@ -13,7 +13,7 @@ interface FormPrefixedInputProps extends Pick<ComponentPropsWithoutRef<'div'>, '
   suffixClassName?: string;
 }
 
-export function FormPrefixedInput({
+export function PrefixedField({
   prefix,
   suffix,
   children,
@@ -21,9 +21,15 @@ export function FormPrefixedInput({
   prefixClassName,
   mainClassName,
   suffixClassName,
-}: FormPrefixedInputProps) {
+}: PrefixedFieldProps) {
   return (
-    <div className={clsx(inputStyles.input, styles.prefixedInput, className)}>
+    <div
+      className={clsx(
+        inputFieldClassNames({ variant: 'input', padded: false }),
+        styles.prefixedInput,
+        className
+      )}
+    >
       {prefix != null && (
         <div className={clsx(styles.prefixedPrefix, prefixClassName)}>{prefix}</div>
       )}
@@ -34,3 +40,6 @@ export function FormPrefixedInput({
     </div>
   );
 }
+
+/** @deprecated Use `PrefixedField` instead. */
+export const FormPrefixedInput = PrefixedField;

@@ -1,18 +1,21 @@
-import clsx from 'clsx';
-import type { ComponentPropsWithoutRef } from 'react';
 import * as Popover from '@radix-ui/react-popover';
+import clsx from 'clsx';
 import { Pipette } from 'lucide-react';
-import { HexColorPicker } from 'react-colorful';
+import type { ComponentPropsWithoutRef } from 'react';
+import { HexColorPicker as ColorfulHexPicker } from 'react-colorful';
 
-import { FormPrefixedInput, FormTooltip } from '@app/components/form';
-import styles from './FactionEditor.module.css';
+import { FormTooltip } from '@app/components/form/FormTooltip';
+import { PrefixedField } from '@app/components/form/PrefixedField';
+import { Input } from '@app/components/ui/Input';
+
+import styles from './HexColorPicker.module.css';
 
 export function normalizePickerHex(hex: string): string {
   if (/^#[0-9a-f]{6}$/i.test(hex)) return hex.toLowerCase();
   return '#000000';
 }
 
-export type HexColorRowProps = {
+export type HexColorPickerProps = {
   pickerId: string;
   textId: string;
   value: string;
@@ -23,9 +26,9 @@ export type HexColorRowProps = {
 } & Pick<ComponentPropsWithoutRef<'div'>, 'className'>;
 
 /**
- * Native `<input type="color">` + hex text in one bordered control (faction editor).
+ * Swatch + popover (react-colorful) + hex text in one bordered control. App-wide form primitive.
  */
-export function HexColorRow({
+export function HexColorPicker({
   pickerId,
   textId,
   value,
@@ -34,11 +37,11 @@ export function HexColorRow({
   pickerAriaLabel,
   placeholder = '#rrggbb',
   className,
-}: HexColorRowProps) {
+}: HexColorPickerProps) {
   const pickerValue = normalizePickerHex(value);
 
   return (
-    <FormPrefixedInput
+    <PrefixedField
       className={clsx(styles.hexColorRow, className)}
       prefix={
         <Popover.Root>
@@ -64,7 +67,7 @@ export function HexColorRow({
               sideOffset={8}
               collisionPadding={10}
             >
-              <HexColorPicker
+              <ColorfulHexPicker
                 color={pickerValue}
                 onChange={(next) => onChange(normalizePickerHex(next))}
               />
@@ -89,8 +92,9 @@ export function HexColorRow({
         </Popover.Root>
       }
     >
-      <input
+      <Input
         id={textId}
+        unstyled
         className={styles.hexColorHexInput}
         type="text"
         value={value}
@@ -99,6 +103,6 @@ export function HexColorRow({
         onBlur={onBlur}
         onChange={(e) => onChange(e.target.value)}
       />
-    </FormPrefixedInput>
+    </PrefixedField>
   );
 }

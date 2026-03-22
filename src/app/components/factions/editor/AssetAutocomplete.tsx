@@ -13,8 +13,8 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 
-import { FormField } from '@app/components/form';
-import inputStyles from '@app/components/ui/Input.module.css';
+import { FormField } from '@app/components/form/FormField';
+import { Input } from '@app/components/ui/Input';
 
 import styles from './FactionEditor.module.css';
 
@@ -480,10 +480,10 @@ export function AssetAutocomplete({
   return (
     <FormField label={label} htmlFor={id}>
       <div ref={wrapRef} className={clsx(styles.comboboxWrap, open && styles.comboboxWrapOpen)}>
-        <input
+        <Input
           ref={inputRef}
           id={id}
-          className={clsx(inputStyles.input, inputStyles.padded, styles.comboboxInput)}
+          className={styles.comboboxInput}
           type="text"
           role="combobox"
           aria-expanded={open}

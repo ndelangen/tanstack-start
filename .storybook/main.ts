@@ -3,11 +3,20 @@ import { fileURLToPath } from 'node:url';
 
 import { defineMain } from '@storybook/react-vite/node';
 import { mergeConfig } from 'vite';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineMain({
   stories: [
+    {
+      directory: '../src/app/components/ui',
+      titlePrefix: 'App/UI',
+    },
+    {
+      directory: '../src/app/components/form',
+      titlePrefix: 'App/Form',
+    },
     {
       directory: '../src/game/assets/faction',
       titlePrefix: 'Faction',
@@ -46,6 +55,11 @@ export default defineMain({
   ],
   async viteFinal(config) {
     return mergeConfig(config, {
+      plugins: [
+        tsconfigPaths({
+          projects: [path.resolve(dirname, '../tsconfig.json')],
+        }),
+      ],
       resolve: {
         alias: {
           '@game': path.resolve(dirname, '../src/game'),

@@ -3,35 +3,39 @@ import clsx from 'clsx';
 import { Check, ChevronDown } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import inputStyles from '../ui/Input.module.css';
+import { inputFieldClassNames } from '../ui/Input';
 import styles from './Form.module.css';
 
-export interface FormSelectOption {
+export interface OptionPickerOption {
   value: string;
   label: ReactNode;
 }
 
-interface FormSelectProps {
+interface OptionPickerProps {
   value: string;
   onValueChange: (value: string) => void;
-  options: readonly FormSelectOption[];
+  options: readonly OptionPickerOption[];
   placeholder?: string;
   ariaLabel?: string;
   triggerClassName?: string;
 }
 
-export function FormSelect({
+export function OptionPicker({
   value,
   onValueChange,
   options,
   placeholder = 'Select…',
   ariaLabel,
   triggerClassName,
-}: FormSelectProps) {
+}: OptionPickerProps) {
   return (
     <Select.Root value={value} onValueChange={onValueChange}>
       <Select.Trigger
-        className={clsx(inputStyles.input, styles.selectTrigger, triggerClassName)}
+        className={clsx(
+          inputFieldClassNames({ variant: 'input', padded: false }),
+          styles.selectTrigger,
+          triggerClassName
+        )}
         aria-label={ariaLabel}
       >
         <Select.Value className={styles.selectValue} placeholder={placeholder} />

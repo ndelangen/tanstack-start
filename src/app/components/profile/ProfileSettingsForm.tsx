@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 import { type ProfileEntry, useCurrentProfile, useUpdateCurrentProfile } from '@db/profiles';
 import { Card } from '@app/components/card/Card';
-import { FormActions, FormButton, FormField, FormInput, FormTooltip } from '@app/components/form';
+import { FormActions, FormButton, FormField, FormTooltip, TextField } from '@app/components/form';
 import formStyles from '@app/components/form/Form.module.css';
 import { Stack } from '@app/components/layout';
 import { IconButton } from '@app/components/ui';
@@ -78,7 +78,7 @@ function ProfileSettingsFormFields({ initial }: { initial: ProfileEntry }) {
       <Card>
         <Stack as="form" gap={3} id={PROFILE_SETTINGS_FORM_ID} onSubmit={handleSubmit}>
           <FormField label="Display name" htmlFor="profile-display-name">
-            <FormInput
+            <TextField
               id="profile-display-name"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -94,7 +94,7 @@ function ProfileSettingsFormFields({ initial }: { initial: ProfileEntry }) {
           </p>
 
           <FormField label="Avatar image URL" htmlFor="profile-avatar-url">
-            <FormInput
+            <TextField
               id="profile-avatar-url"
               type="url"
               value={avatarUrl}
