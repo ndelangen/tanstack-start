@@ -43,6 +43,7 @@ export function FactionEditor({
   onCancel,
   onSaved,
 }: FactionEditorProps) {
+  const initialValuesRef = useRef(structuredClone(initialFaction));
   const baselineRef = useRef(structuredClone(initialFaction));
   const [parseError, setParseError] = useState<string | null>(null);
   const [loadPopoverOpen, setLoadPopoverOpen] = useState(false);
@@ -72,7 +73,7 @@ export function FactionEditor({
     undefined,
     undefined
   >({
-    defaultValues: initialFaction,
+    defaultValues: initialValuesRef.current,
     onSubmit: async ({ value }) => {
       setParseError(null);
       const parsed = FactionSchema.safeParse(value);
@@ -87,6 +88,7 @@ export function FactionEditor({
           {
             onSuccess: (entry) => {
               const saved = schema.parse(entry.data);
+              initialValuesRef.current = structuredClone(saved);
               baselineRef.current = structuredClone(saved);
               form.reset(structuredClone(saved));
               onSaved?.(entry.id);
@@ -99,6 +101,7 @@ export function FactionEditor({
           {
             onSuccess: (entry) => {
               const saved = schema.parse(entry.data);
+              initialValuesRef.current = structuredClone(saved);
               baselineRef.current = structuredClone(saved);
               form.reset(structuredClone(saved));
               onSaved?.(factionRowId);
@@ -142,8 +145,11 @@ export function FactionEditor({
     return map;
   }, [groups.data]);
   const factionLoadOptions = useMemo(
-    () => (factions.data ?? []).map((entry) => entry.id),
-    [factions.data]
+    () =>
+      (factions.data ?? [])
+        .filter((entry) => entry.data.id !== form.state.values.id)
+        .map((entry) => entry.id),
+    [factions.data, form.state.values.id]
   );
 
   const formatOwnerLabel = (entry: FactionEntry) =>
@@ -188,11 +194,15 @@ export function FactionEditor({
     setLoadFactionId(rowId);
     const entry = factionsById.get(rowId);
     if (!entry) return;
-    if (
-      !window.confirm(
-        `Load faction "${entry.data.name}"? Any local unsaved changes will be discarded and replaced.`
-      )
-    ) {
+    const isNoopLoad = entry.data.id === form.state.values.id;
+    if (isNoopLoad) {
+      window.alert('The selected faction is already loaded.');
+      return;
+    }
+    const confirmed = window.confirm(
+      `Load faction "${entry.data.name}"? Any local unsaved changes will be discarded and replaced.`
+    );
+    if (!confirmed) {
       return;
     }
     const parsed = FactionSchema.safeParse(entry.data);
@@ -202,6 +212,7 @@ export function FactionEditor({
     }
     setParseError(null);
     const loaded = structuredClone(parsed.data);
+    initialValuesRef.current = structuredClone(loaded);
     baselineRef.current = structuredClone(loaded);
     form.reset(loaded);
     setLoadPopoverOpen(false);
@@ -252,7 +263,9 @@ export function FactionEditor({
               {factions.isPending ? (
                 <p className={styles.loadFactionHint}>Loading factions...</p>
               ) : factionLoadOptions.length === 0 ? (
-                <p className={styles.loadFactionHint}>No existing factions available.</p>
+                <p className={styles.loadFactionHint}>
+                  No different faction is available to load right now.
+                </p>
               ) : (
                 <AssetAutocomplete
                   id="faction-load"
