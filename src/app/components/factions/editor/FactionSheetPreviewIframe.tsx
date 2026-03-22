@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
 import type { Faction } from '@db/factions';
+import { page } from '@game/data/sizes';
 import { FactionSchema } from '@game/schema/faction';
 
 import styles from './FactionEditor.module.css';
@@ -66,12 +67,15 @@ export function FactionSheetPreviewIframe({ faction }: { faction: Faction }) {
     return () => window.removeEventListener('message', onMessage);
   }, []);
 
+  const sheetAspect = `${page.width} / ${page.height}` as const;
+
   return (
     <div className={styles.sheetIframeWrap}>
       <iframe
         ref={iframeRef}
         key={slug}
         className={styles.sheetIframe}
+        style={{ aspectRatio: sheetAspect }}
         src={iframeSrc}
         title="Faction sheet preview"
       />

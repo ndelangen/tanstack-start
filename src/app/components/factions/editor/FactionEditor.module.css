@@ -108,6 +108,8 @@
 
 .sheetIframeWrap {
   margin: 0;
+  width: 100%;
+  max-width: 100%;
   overflow: auto;
   max-height: min(70vh, 800px);
   background: var(--panel-bg);
@@ -119,7 +121,7 @@
 .sheetIframe {
   display: block;
   width: 100%;
-  min-height: 360px;
+  height: auto;
   border: none;
   vertical-align: top;
   background: #fff;

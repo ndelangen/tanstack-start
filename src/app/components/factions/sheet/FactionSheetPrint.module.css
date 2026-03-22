@@ -6,6 +6,23 @@
   margin: 0;
   padding: 0;
   background: #fff;
+
+  /* Isolate from __root fonts.css (body / headings). */
+  font-family: "Caladea", serif;
+  color: #0b0503;
+  line-height: 1.35;
+}
+
+.root :where(h1, h2, h3, h4, h5, h6) {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  margin: 0;
+}
+
+.root :where(button, input, textarea, select) {
+  font-family: inherit;
 }
 
 @media print {

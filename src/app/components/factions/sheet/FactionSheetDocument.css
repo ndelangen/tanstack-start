@@ -1,0 +1,22 @@
+/* Neutralize Page.css html decoration when faction sheet route is active (see sheet.tsx). */
+html[data-faction-sheet] {
+  background-color: #fff;
+  background-image: none;
+  box-shadow: none;
+  min-height: 100%;
+  width: 100%;
+  background-attachment: scroll;
+  background-position: center;
+}
+
+html[data-faction-sheet]::after {
+  content: none;
+  display: none;
+}
+
+@media (max-width: 900px) {
+  html[data-faction-sheet]::after {
+    content: none;
+    display: none;
+  }
+}

@@ -1,6 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { useEffect } from 'react';
 
 import { factionDetailQueryOptions, useFaction } from '@db/factions';
+import '@app/components/factions/sheet/FactionSheetDocument.css';
+
 import { FactionSheetView } from '@app/components/factions/sheet/FactionSheetView';
 import { useFactionSheetPostMessage } from '@app/hooks/useFactionSheetPostMessage';
 
@@ -24,6 +27,13 @@ function FactionSheetPage() {
   const { mode } = Route.useSearch();
   const factionFromDb = useFaction(factionId, { enabled: mode === 'db' });
   const factionFromMessage = useFactionSheetPostMessage(mode === 'live');
+
+  useEffect(() => {
+    document.documentElement.dataset.factionSheet = '';
+    return () => {
+      delete document.documentElement.dataset.factionSheet;
+    };
+  }, []);
 
   if (mode === 'live') {
     if (!factionFromMessage) {
