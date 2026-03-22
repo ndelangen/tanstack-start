@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import { ChevronDown } from 'lucide-react';
 import {
   type KeyboardEvent,
+  type ReactNode,
   useCallback,
   useEffect,
   useId,
@@ -22,12 +23,15 @@ interface AssetAutocompleteProps {
   onChange: (next: string) => void;
   options: readonly string[];
   optionToLabel?: (raw: string) => string;
+  optionToSearchText?: (raw: string) => string;
+  renderOption?: (raw: string) => ReactNode;
   id?: string;
   placeholder?: string;
 }
 
 type ListGeom = { top: number; left: number; width: number };
 const identityOptionLabel = (raw: string) => raw;
+const identityOptionSearchText = (raw: string) => raw;
 
 const PREVIEW_SIZE = 100;
 const PREVIEW_GAP = 8;
@@ -65,17 +69,28 @@ function scoreCandidate(option: string, qLower: string): number | null {
   return 2_000_000 + Math.max(0, 10_000 - idx);
 }
 
-function relevanceScore(option: string, optionLabel: string, qLower: string): number | null {
+function relevanceScore(
+  option: string,
+  optionLabel: string,
+  optionSearchText: string,
+  qLower: string
+): number | null {
   const rawScore = scoreCandidate(option, qLower);
   const labelScore = scoreCandidate(optionLabel, qLower);
-  if (rawScore == null && labelScore == null) return null;
-  return Math.max(rawScore ?? Number.NEGATIVE_INFINITY, labelScore ?? Number.NEGATIVE_INFINITY);
+  const searchScore = scoreCandidate(optionSearchText, qLower);
+  if (rawScore == null && labelScore == null && searchScore == null) return null;
+  return Math.max(
+    rawScore ?? Number.NEGATIVE_INFINITY,
+    labelScore ?? Number.NEGATIVE_INFINITY,
+    searchScore ?? Number.NEGATIVE_INFINITY
+  );
 }
 
 function partitionOptions(
   options: readonly string[],
   rawQuery: string,
-  optionToLabel: (raw: string) => string
+  optionToLabel: (raw: string) => string,
+  optionToSearchText: (raw: string) => string
 ): Partition {
   const q = rawQuery.trim().toLowerCase();
   const unique = [...new Set(options)].sort((a, b) => a.localeCompare(b));
@@ -86,7 +101,7 @@ function partitionOptions(
 
   const rows = unique.map((opt) => ({
     opt,
-    score: relevanceScore(opt, optionToLabel(opt), q),
+    score: relevanceScore(opt, optionToLabel(opt), optionToSearchText(opt), q),
   }));
 
   const included = rows
@@ -111,6 +126,8 @@ export function AssetAutocomplete({
   onChange,
   options,
   optionToLabel = identityOptionLabel,
+  optionToSearchText = identityOptionSearchText,
+  renderOption,
   id: idProp,
   placeholder = 'Type to search…',
 }: AssetAutocompleteProps) {
@@ -136,8 +153,8 @@ export function AssetAutocomplete({
   }, [value, optionToLabel]);
 
   const partition = useMemo(
-    () => partitionOptions(options, text, optionToLabel),
-    [options, optionToLabel, text]
+    () => partitionOptions(options, text, optionToLabel, optionToSearchText),
+    [options, optionToLabel, optionToSearchText, text]
   );
 
   highlightRef.current = highlight;
@@ -383,7 +400,7 @@ export function AssetAutocomplete({
                   onMouseEnter={() => setHighlight(i)}
                   onClick={() => commit(opt)}
                 >
-                  {optionToLabel(opt)}
+                  {renderOption ? renderOption(opt) : optionToLabel(opt)}
                 </button>
               );
             })}
@@ -405,7 +422,7 @@ export function AssetAutocomplete({
                     onMouseEnter={() => setHighlight(i)}
                     onClick={() => commit(opt)}
                   >
-                    {optionToLabel(opt)}
+                    {renderOption ? renderOption(opt) : optionToLabel(opt)}
                   </button>
                 );
               })}
@@ -427,7 +444,7 @@ export function AssetAutocomplete({
                       onMouseEnter={() => setHighlight(i)}
                       onClick={() => commit(opt)}
                     >
-                      {optionToLabel(opt)}
+                      {renderOption ? renderOption(opt) : optionToLabel(opt)}
                     </button>
                   );
                 })}

@@ -8,6 +8,8 @@ interface FormPopoverProps {
   children: ReactNode;
   align?: 'start' | 'center' | 'end';
   side?: 'top' | 'right' | 'bottom' | 'left';
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function FormPopover({
@@ -15,9 +17,11 @@ export function FormPopover({
   children,
   align = 'start',
   side = 'bottom',
+  open,
+  onOpenChange,
 }: FormPopoverProps) {
   return (
-    <Popover.Root>
+    <Popover.Root open={open} onOpenChange={onOpenChange}>
       <Popover.Trigger asChild>{trigger}</Popover.Trigger>
       <Popover.Portal>
         <Popover.Content

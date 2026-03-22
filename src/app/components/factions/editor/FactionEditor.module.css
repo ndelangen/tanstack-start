@@ -16,6 +16,65 @@
   border-bottom: var(--border-strong, 2px solid var(--panel-border));
 }
 
+.loadFactionPopover {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.loadFactionTitle {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.loadFactionHint {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  opacity: 0.9;
+}
+
+.loadFactionOptionRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  word-break: normal;
+}
+
+.loadFactionOptionToken {
+  width: 1.9rem;
+  height: 1.9rem;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loadFactionOptionToken > * {
+  width: 100%;
+  height: 100%;
+}
+
+.loadFactionOptionBody {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.loadFactionOptionName {
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.loadFactionOptionMeta {
+  font-size: 0.75rem;
+  line-height: 1.2;
+  opacity: 0.9;
+}
+
 .body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -444,7 +503,7 @@
 /* Portaled list (see AssetAutocomplete) — fixed layer, fully opaque so nothing shows through */
 .comboboxListPortal {
   position: fixed;
-  z-index: 10000;
+  z-index: 11100;
   box-sizing: border-box;
   margin: 0;
   /* No vertical padding: rows can scroll into the padding box and show as a “text sliver” above
@@ -464,7 +523,7 @@
 /* Image hover preview (AssetAutocomplete) — fixed, left of input; above list z-index */
 .comboboxPreviewPopout {
   position: fixed;
-  z-index: 10001;
+  z-index: 11101;
   box-sizing: border-box;
   width: 100px;
   height: 100px;
