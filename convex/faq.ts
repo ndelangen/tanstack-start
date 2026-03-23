@@ -1,5 +1,6 @@
-import { mutationGeneric, queryGeneric } from 'convex/server';
 import { v } from 'convex/values';
+
+import { mutation, query } from './_generated/server';
 
 import { nextNumberId } from './lib/ids';
 import { canAccessRuleset, requireAuthUserId } from './lib/policy';
@@ -41,7 +42,7 @@ async function profileSummary(ctx: QueryCtx | MutationCtx, id: string) {
   };
 }
 
-export const byRuleset = queryGeneric({
+export const byRuleset = query({
   args: { ruleset_id: v.number() },
   handler: async (ctx, args) => {
     const items = await ctx.db
@@ -69,7 +70,7 @@ export const byRuleset = queryGeneric({
   },
 });
 
-export const detail = queryGeneric({
+export const detail = query({
   args: { id: v.number() },
   handler: async (ctx, args) => {
     const item = await getFaqItem(ctx, args.id);
@@ -85,7 +86,7 @@ export const detail = queryGeneric({
   },
 });
 
-export const askedBy = queryGeneric({
+export const askedBy = query({
   args: { profile_id: v.string() },
   handler: async (ctx, args) => {
     const rows = await ctx.db
@@ -106,7 +107,7 @@ export const askedBy = queryGeneric({
   },
 });
 
-export const answeredBy = queryGeneric({
+export const answeredBy = query({
   args: { profile_id: v.string() },
   handler: async (ctx, args) => {
     const answers = await ctx.db
@@ -141,7 +142,7 @@ export const answeredBy = queryGeneric({
   },
 });
 
-export const createItem = mutationGeneric({
+export const createItem = mutation({
   args: {
     ruleset_id: v.number(),
     question: v.string(),
@@ -181,7 +182,7 @@ export const createItem = mutationGeneric({
   },
 });
 
-export const updateItem = mutationGeneric({
+export const updateItem = mutation({
   args: {
     id: v.number(),
     question: v.optional(v.string()),
@@ -210,7 +211,7 @@ export const updateItem = mutationGeneric({
   },
 });
 
-export const setAcceptedAnswer = mutationGeneric({
+export const setAcceptedAnswer = mutation({
   args: {
     faq_item_id: v.number(),
     accepted_answer_id: v.union(v.number(), v.null()),
@@ -234,7 +235,7 @@ export const setAcceptedAnswer = mutationGeneric({
   },
 });
 
-export const deleteItem = mutationGeneric({
+export const deleteItem = mutation({
   args: { id: v.number() },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
@@ -256,7 +257,7 @@ export const deleteItem = mutationGeneric({
   },
 });
 
-export const createAnswer = mutationGeneric({
+export const createAnswer = mutation({
   args: {
     faq_item_id: v.number(),
     answer: v.string(),
@@ -290,7 +291,7 @@ export const createAnswer = mutationGeneric({
   },
 });
 
-export const updateAnswer = mutationGeneric({
+export const updateAnswer = mutation({
   args: { id: v.number(), answer: v.string() },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
@@ -305,7 +306,7 @@ export const updateAnswer = mutationGeneric({
   },
 });
 
-export const deleteAnswer = mutationGeneric({
+export const deleteAnswer = mutation({
   args: { id: v.number() },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);

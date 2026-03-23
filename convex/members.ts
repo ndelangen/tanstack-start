@@ -1,9 +1,9 @@
-import { mutationGeneric, queryGeneric } from 'convex/server';
 import { v } from 'convex/values';
+
+import { mutation, query, type MutationCtx, type QueryCtx } from './_generated/server';
 
 import { isActiveGroupMember, requireAuthUserId } from './lib/policy';
 import { nowIso } from './lib/utils';
-import type { MutationCtx, QueryCtx } from './types';
 
 const statusValidator = v.union(v.literal('pending'), v.literal('active'), v.literal('removed'));
 
@@ -14,7 +14,7 @@ async function getMembership(ctx: QueryCtx | MutationCtx, groupId: string, userI
     .unique();
 }
 
-export const listByUserActiveWithGroups = queryGeneric({
+export const listByUserActiveWithGroups = query({
   args: { user_id: v.string() },
   handler: async (ctx, args) => {
     const rows = await ctx.db
@@ -40,7 +40,7 @@ export const listByUserActiveWithGroups = queryGeneric({
   },
 });
 
-export const listByGroup = queryGeneric({
+export const listByGroup = query({
   args: { group_id: v.string() },
   handler: async (ctx, args) => {
     return await ctx.db
@@ -50,7 +50,7 @@ export const listByGroup = queryGeneric({
   },
 });
 
-export const listByGroupAndStatus = queryGeneric({
+export const listByGroupAndStatus = query({
   args: { group_id: v.string(), status: statusValidator },
   handler: async (ctx, args) => {
     return await ctx.db
@@ -62,7 +62,7 @@ export const listByGroupAndStatus = queryGeneric({
   },
 });
 
-export const get = queryGeneric({
+export const get = query({
   args: { group_id: v.string(), user_id: v.string() },
   handler: async (ctx, args) => {
     const row = await getMembership(ctx, args.group_id, args.user_id);
@@ -71,7 +71,7 @@ export const get = queryGeneric({
   },
 });
 
-export const request = mutationGeneric({
+export const request = mutation({
   args: { group_id: v.string() },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
@@ -108,7 +108,7 @@ export const request = mutationGeneric({
   },
 });
 
-export const approve = mutationGeneric({
+export const approve = mutation({
   args: { group_id: v.string(), user_id: v.string() },
   handler: async (ctx, args) => {
     const actorId = await requireAuthUserId(ctx);
@@ -128,7 +128,7 @@ export const approve = mutationGeneric({
   },
 });
 
-export const reject = mutationGeneric({
+export const reject = mutation({
   args: { group_id: v.string(), user_id: v.string() },
   handler: async (ctx, args) => {
     const actorId = await requireAuthUserId(ctx);
@@ -148,7 +148,7 @@ export const reject = mutationGeneric({
   },
 });
 
-export const remove = mutationGeneric({
+export const remove = mutation({
   args: { group_id: v.string(), user_id: v.string() },
   handler: async (ctx, args) => {
     const actorId = await requireAuthUserId(ctx);
@@ -166,7 +166,7 @@ export const remove = mutationGeneric({
   },
 });
 
-export const add = mutationGeneric({
+export const add = mutation({
   args: { group_id: v.string(), user_id: v.string() },
   handler: async (ctx, args) => {
     const actorId = await requireAuthUserId(ctx);

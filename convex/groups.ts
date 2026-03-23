@@ -1,10 +1,11 @@
-import { mutationGeneric, queryGeneric } from 'convex/server';
 import { v } from 'convex/values';
+
+import { mutation, query } from './_generated/server';
 
 import { requireAuthUserId } from './lib/policy';
 import { nowIso } from './lib/utils';
 
-export const getById = queryGeneric({
+export const getById = query({
   args: { id: v.string() },
   handler: async (ctx, args) => {
     const group = await ctx.db
@@ -16,14 +17,14 @@ export const getById = queryGeneric({
   },
 });
 
-export const list = queryGeneric({
+export const list = query({
   args: {},
   handler: async (ctx) => {
     return await ctx.db.query('groups').collect();
   },
 });
 
-export const listByCreator = queryGeneric({
+export const listByCreator = query({
   args: { created_by: v.string() },
   handler: async (ctx, args) => {
     return await ctx.db
@@ -33,7 +34,7 @@ export const listByCreator = queryGeneric({
   },
 });
 
-export const create = mutationGeneric({
+export const create = mutation({
   args: { name: v.string() },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
@@ -58,7 +59,7 @@ export const create = mutationGeneric({
   },
 });
 
-export const update = mutationGeneric({
+export const update = mutation({
   args: {
     id: v.string(),
     name: v.string(),
@@ -85,7 +86,7 @@ export const update = mutationGeneric({
   },
 });
 
-export const remove = mutationGeneric({
+export const remove = mutation({
   args: { id: v.string() },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);

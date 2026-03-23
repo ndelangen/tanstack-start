@@ -1,4 +1,4 @@
-import type { MutationCtx } from '../types';
+import type { MutationCtx } from '../_generated/server';
 
 export async function nextNumberId(ctx: MutationCtx, key: string) {
   const counter = await ctx.db

@@ -1,8 +1,9 @@
-import { mutationGeneric, queryGeneric } from 'convex/server';
 import { v } from 'convex/values';
 
+import { mutation, query } from './_generated/server';
+
 import { nextNumberId } from './lib/ids';
-import { canAccessRuleset, requireAuthUserId } from './lib/policy';
+import { canAccessRuleset, isActiveGroupMember, requireAuthUserId } from './lib/policy';
 import { ensureObject, nowIso } from './lib/utils';
 import type { MutationCtx, QueryCtx } from './types';
 
@@ -13,7 +14,7 @@ async function getRulesetById(ctx: QueryCtx | MutationCtx, id: number) {
     .unique();
 }
 
-export const list = queryGeneric({
+export const list = query({
   args: {},
   handler: async (ctx) => {
     const rows = await ctx.db
@@ -24,7 +25,7 @@ export const list = queryGeneric({
   },
 });
 
-export const get = queryGeneric({
+export const get = query({
   args: { id: v.number() },
   handler: async (ctx, args) => {
     const row = await getRulesetById(ctx, args.id);
@@ -33,7 +34,7 @@ export const get = queryGeneric({
   },
 });
 
-export const factionIds = queryGeneric({
+export const factionIds = query({
   args: { ruleset_id: v.number() },
   handler: async (ctx, args) => {
     const links = await ctx.db
@@ -44,7 +45,7 @@ export const factionIds = queryGeneric({
   },
 });
 
-export const factionDetails = queryGeneric({
+export const factionDetails = query({
   args: { ruleset_id: v.number() },
   handler: async (ctx, args) => {
     const links = await ctx.db
@@ -74,7 +75,7 @@ export const factionDetails = queryGeneric({
   },
 });
 
-export const canAccess = queryGeneric({
+export const canAccess = query({
   args: { ruleset_id: v.number() },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -85,7 +86,7 @@ export const canAccess = queryGeneric({
   },
 });
 
-export const listByFaction = queryGeneric({
+export const listByFaction = query({
   args: { faction_id: v.string() },
   handler: async (ctx, args) => {
     const links = await ctx.db
@@ -97,7 +98,7 @@ export const listByFaction = queryGeneric({
   },
 });
 
-export const create = mutationGeneric({
+export const create = mutation({
   args: {
     name: v.string(),
     group_id: v.optional(v.union(v.string(), v.null())),
@@ -105,6 +106,11 @@ export const create = mutationGeneric({
   },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
+
+    if (args.group_id) {
+      const canUseGroup = await isActiveGroupMember(ctx, args.group_id, userId);
+      if (!canUseGroup) throw new Error('Not authorized for group');
+    }
 
     const duplicate = await ctx.db
       .query('rulesets')
@@ -130,7 +136,7 @@ export const create = mutationGeneric({
   },
 });
 
-export const update = mutationGeneric({
+export const update = mutation({
   args: {
     id: v.number(),
     name: v.string(),
@@ -144,6 +150,11 @@ export const update = mutationGeneric({
 
     const permitted = await canAccessRuleset(ctx, ruleset, userId);
     if (!permitted) throw new Error('Not authorized');
+
+    if (args.group_id !== undefined && args.group_id !== null) {
+      const canUseGroup = await isActiveGroupMember(ctx, args.group_id, userId);
+      if (!canUseGroup) throw new Error('Not authorized for group');
+    }
 
     const duplicate = await ctx.db
       .query('rulesets')
@@ -172,7 +183,7 @@ export const update = mutationGeneric({
   },
 });
 
-export const softDelete = mutationGeneric({
+export const softDelete = mutation({
   args: { id: v.number() },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
@@ -189,7 +200,7 @@ export const softDelete = mutationGeneric({
   },
 });
 
-export const addFaction = mutationGeneric({
+export const addFaction = mutation({
   args: { ruleset_id: v.number(), faction_id: v.string() },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
@@ -221,7 +232,7 @@ export const addFaction = mutationGeneric({
   },
 });
 
-export const removeFaction = mutationGeneric({
+export const removeFaction = mutation({
   args: { ruleset_id: v.number(), faction_id: v.string() },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);

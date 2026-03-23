@@ -1,6 +1,6 @@
 import { getAuthUserId } from '@convex-dev/auth/server';
 
-import type { MutationCtx, QueryCtx } from '../types';
+import type { MutationCtx, QueryCtx } from '../_generated/server';
 
 type AnyCtx = QueryCtx | MutationCtx;
 

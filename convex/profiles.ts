@@ -1,14 +1,12 @@
-import { mutationGeneric, queryGeneric } from 'convex/server';
-import { v } from 'convex/values';
 import { getAuthUserId } from '@convex-dev/auth/server';
+import { v } from 'convex/values';
+
+import { mutation, query, type MutationCtx } from './_generated/server';
 
 import { requireAuthUserId } from './lib/policy';
 import { nowIso, slugify } from './lib/utils';
 
-async function createProfileIfMissing(
-  ctx: Parameters<Parameters<typeof mutationGeneric>[0]['handler']>[0],
-  userId: string
-) {
+async function createProfileIfMissing(ctx: MutationCtx, userId: string) {
   const identity = await ctx.auth.getUserIdentity();
   const authUserId = await getAuthUserId(ctx);
   const authUser = authUserId ? await ctx.db.get(authUserId) : null;
@@ -97,7 +95,7 @@ async function createProfileIfMissing(
   return await ctx.db.get(_id);
 }
 
-export const currentUserId = queryGeneric({
+export const currentUserId = query({
   args: {},
   handler: async (ctx) => {
     const authUserId = await getAuthUserId(ctx);
@@ -105,7 +103,7 @@ export const currentUserId = queryGeneric({
   },
 });
 
-export const current = queryGeneric({
+export const current = query({
   args: {},
   handler: async (ctx) => {
     const authUserId = await getAuthUserId(ctx);
@@ -118,7 +116,7 @@ export const current = queryGeneric({
   },
 });
 
-export const bootstrapCurrent = mutationGeneric({
+export const bootstrapCurrent = mutation({
   args: {},
   handler: async (ctx) => {
     const userId = await requireAuthUserId(ctx);
@@ -128,7 +126,7 @@ export const bootstrapCurrent = mutationGeneric({
   },
 });
 
-export const getById = queryGeneric({
+export const getById = query({
   args: { id: v.string() },
   handler: async (ctx, args) => {
     const profile = await ctx.db
@@ -140,7 +138,7 @@ export const getById = queryGeneric({
   },
 });
 
-export const getBySlug = queryGeneric({
+export const getBySlug = query({
   args: { slug: v.string() },
   handler: async (ctx, args) => {
     const profile = await ctx.db
@@ -152,14 +150,14 @@ export const getBySlug = queryGeneric({
   },
 });
 
-export const list = queryGeneric({
+export const list = query({
   args: {},
   handler: async (ctx) => {
     return await ctx.db.query('profiles').collect();
   },
 });
 
-export const updateCurrent = mutationGeneric({
+export const updateCurrent = mutation({
   args: {
     username: v.string(),
     avatar_url: v.union(v.string(), v.null()),
