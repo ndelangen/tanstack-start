@@ -1,16 +1,31 @@
 import { v } from 'convex/values';
+import { getAuthUserId } from '@convex-dev/auth/server';
 
 import { mutation, query } from './_generated/server';
+import type { Id } from './_generated/dataModel';
 
-import { nextNumberId } from './lib/ids';
 import { canAccessRuleset, isActiveGroupMember, requireAuthUserId } from './lib/policy';
 import { ensureObject, nowIso } from './lib/utils';
 import type { MutationCtx, QueryCtx } from './types';
 
-async function getRulesetById(ctx: QueryCtx | MutationCtx, id: number) {
+async function getRulesetById(ctx: QueryCtx | MutationCtx, id: Id<'rulesets'> | number) {
+  const byInternalId = await ctx.db.get(id as Id<'rulesets'>);
+  if (byInternalId) return byInternalId;
+  if (typeof id === 'number') {
+    return await ctx.db
+      .query('rulesets')
+      .withIndex('by_entity_id', (q) => q.eq('id', id))
+      .unique();
+  }
+  return null;
+}
+
+async function getFactionById(ctx: QueryCtx | MutationCtx, id: Id<'factions'> | string) {
+  const byInternalId = await ctx.db.get(id as Id<'factions'>);
+  if (byInternalId) return byInternalId;
   return await ctx.db
-    .query('rulesets')
-    .withIndex('by_entity_id', (q) => q.eq('id', id))
+    .query('factions')
+    .withIndex('by_entity_id', (q) => q.eq('id', String(id)))
     .unique();
 }
 
@@ -26,7 +41,7 @@ export const list = query({
 });
 
 export const get = query({
-  args: { id: v.number() },
+  args: { id: v.id('rulesets') },
   handler: async (ctx, args) => {
     const row = await getRulesetById(ctx, args.id);
     if (!row || row.is_deleted) throw new Error(`Ruleset with id ${args.id} not found`);
@@ -35,7 +50,7 @@ export const get = query({
 });
 
 export const factionIds = query({
-  args: { ruleset_id: v.number() },
+  args: { ruleset_id: v.union(v.id('rulesets'), v.number()) },
   handler: async (ctx, args) => {
     const links = await ctx.db
       .query('ruleset_factions')
@@ -46,26 +61,21 @@ export const factionIds = query({
 });
 
 export const factionDetails = query({
-  args: { ruleset_id: v.number() },
+  args: { ruleset_id: v.union(v.id('rulesets'), v.number()) },
   handler: async (ctx, args) => {
     const links = await ctx.db
       .query('ruleset_factions')
       .withIndex('by_ruleset', (q) => q.eq('ruleset_id', args.ruleset_id))
       .collect();
     const factions = await Promise.all(
-      links.map((link) =>
-        ctx.db
-          .query('factions')
-          .withIndex('by_entity_id', (q) => q.eq('id', link.faction_id))
-          .unique()
-      )
+      links.map((link) => getFactionById(ctx, link.faction_id))
     );
     return links.map((link, index) => {
       const faction = factions[index];
       const data = faction?.data;
       const dataObj = data != null ? ensureObject(data) : null;
-      const name = typeof dataObj?.name === 'string' ? dataObj.name : link.faction_id;
-      const urlSlug = typeof dataObj?.id === 'string' ? dataObj.id : link.faction_id;
+      const name = typeof dataObj?.name === 'string' ? dataObj.name : String(link.faction_id);
+      const urlSlug = typeof dataObj?.id === 'string' ? dataObj.id : String(link.faction_id);
       return {
         factionId: link.faction_id,
         name,
@@ -76,18 +86,18 @@ export const factionDetails = query({
 });
 
 export const canAccess = query({
-  args: { ruleset_id: v.number() },
+  args: { ruleset_id: v.union(v.id('rulesets'), v.number()) },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) return false;
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return false;
     const ruleset = await getRulesetById(ctx, args.ruleset_id);
     if (!ruleset) return false;
-    return await canAccessRuleset(ctx, ruleset, identity.subject);
+    return await canAccessRuleset(ctx, ruleset, userId);
   },
 });
 
 export const listByFaction = query({
-  args: { faction_id: v.string() },
+  args: { faction_id: v.union(v.id('factions'), v.string()) },
   handler: async (ctx, args) => {
     const links = await ctx.db
       .query('ruleset_factions')
@@ -101,7 +111,7 @@ export const listByFaction = query({
 export const create = mutation({
   args: {
     name: v.string(),
-    group_id: v.optional(v.union(v.string(), v.null())),
+    group_id: v.optional(v.union(v.id('groups'), v.null())),
     image_cover: v.optional(v.union(v.string(), v.null())),
   },
   handler: async (ctx, args) => {
@@ -119,9 +129,7 @@ export const create = mutation({
     if (duplicate.some((row) => !row.is_deleted)) throw new Error('Ruleset name already exists');
 
     const now = nowIso();
-    const id = await nextNumberId(ctx, 'rulesets');
     const _id = await ctx.db.insert('rulesets', {
-      id,
       name: args.name,
       owner_id: userId,
       group_id: args.group_id ?? null,
@@ -138,9 +146,9 @@ export const create = mutation({
 
 export const update = mutation({
   args: {
-    id: v.number(),
+    id: v.id('rulesets'),
     name: v.string(),
-    group_id: v.optional(v.union(v.string(), v.null())),
+    group_id: v.optional(v.union(v.id('groups'), v.null())),
     image_cover: v.optional(v.union(v.string(), v.null())),
   },
   handler: async (ctx, args) => {
@@ -160,14 +168,14 @@ export const update = mutation({
       .query('rulesets')
       .withIndex('by_name', (q) => q.eq('name', args.name))
       .collect();
-    if (duplicate.some((row) => row.id !== args.id && !row.is_deleted)) {
+    if (duplicate.some((row) => row._id !== args.id && !row.is_deleted)) {
       throw new Error('Ruleset name already exists');
     }
 
     const patch: {
       name: string;
       updated_at: string;
-      group_id?: string | null;
+      group_id?: Id<'groups'> | null;
       image_cover?: string | null;
     } = {
       name: args.name,
@@ -184,7 +192,7 @@ export const update = mutation({
 });
 
 export const softDelete = mutation({
-  args: { id: v.number() },
+  args: { id: v.id('rulesets') },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
     const ruleset = await getRulesetById(ctx, args.id);
@@ -201,7 +209,10 @@ export const softDelete = mutation({
 });
 
 export const addFaction = mutation({
-  args: { ruleset_id: v.number(), faction_id: v.string() },
+  args: {
+    ruleset_id: v.union(v.id('rulesets'), v.number()),
+    faction_id: v.union(v.id('factions'), v.string()),
+  },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
     const ruleset = await getRulesetById(ctx, args.ruleset_id);
@@ -210,10 +221,7 @@ export const addFaction = mutation({
     const allowed = await canAccessRuleset(ctx, ruleset, userId);
     if (!allowed) throw new Error('Not authorized');
 
-    const faction = await ctx.db
-      .query('factions')
-      .withIndex('by_entity_id', (q) => q.eq('id', args.faction_id))
-      .unique();
+    const faction = await getFactionById(ctx, args.faction_id);
     if (!faction || faction.is_deleted) throw new Error('Faction not found');
 
     const existing = await ctx.db
@@ -233,7 +241,10 @@ export const addFaction = mutation({
 });
 
 export const removeFaction = mutation({
-  args: { ruleset_id: v.number(), faction_id: v.string() },
+  args: {
+    ruleset_id: v.union(v.id('rulesets'), v.number()),
+    faction_id: v.union(v.id('factions'), v.string()),
+  },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
     const ruleset = await getRulesetById(ctx, args.ruleset_id);

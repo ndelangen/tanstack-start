@@ -27,9 +27,7 @@ import styles from './FaqDetail.module.css';
 
 export const Route = createFileRoute('/_app/rulesets/$id/faq/$faqId')({
   loader: async ({ context, params }) => {
-    const item = await context.queryClient.ensureQueryData(
-      faqItemDetailQueryOptions(Number.parseInt(params.faqId, 10))
-    );
+    const item = await context.queryClient.ensureQueryData(faqItemDetailQueryOptions(params.faqId));
     if (item) {
       await context.queryClient.ensureQueryData(profileDetailQueryOptions(item.asked_by));
     }
@@ -50,7 +48,7 @@ export const Route = createFileRoute('/_app/rulesets/$id/faq/$faqId')({
 function FaqDetailPage() {
   const { id, faqId } = Route.useParams();
   const navigate = useNavigate();
-  const faqItemId = Number.parseInt(faqId, 10);
+  const faqItemId = faqId;
   const faqItem = useFaqItem(faqItemId);
   const profile = useCurrentProfile();
   const askerId = faqItem.data?.asked_by;
@@ -65,7 +63,7 @@ function FaqDetailPage() {
   const deleteFaqAnswer = useDeleteFaqAnswer();
 
   const [editingQuestion, setEditingQuestion] = useState(false);
-  const [editingAnswerId, setEditingAnswerId] = useState<number | null>(null);
+  const [editingAnswerId, setEditingAnswerId] = useState<string | null>(null);
   const [editQuestionValue, setEditQuestionValue] = useState('');
   const [editAnswerValue, setEditAnswerValue] = useState('');
 
@@ -114,7 +112,7 @@ function FaqDetailPage() {
     setEditingAnswerId(a.id);
   };
 
-  const saveAnswer = (answerId: number) => {
+  const saveAnswer = (answerId: string) => {
     const trimmed = editAnswerValue.trim();
     const a = answers.find((x) => x.id === answerId);
     if (!a || !trimmed || trimmed === a.answer) {
@@ -127,7 +125,7 @@ function FaqDetailPage() {
     );
   };
 
-  const handleDeleteAnswer = (answerId: number) => {
+  const handleDeleteAnswer = (answerId: string) => {
     if (!window.confirm('Delete this answer?')) return;
     deleteFaqAnswer.mutate(answerId);
   };

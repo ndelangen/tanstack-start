@@ -1,49 +1,70 @@
 import { v } from 'convex/values';
 
 import { mutation, query } from './_generated/server';
+import type { Id } from './_generated/dataModel';
 
-import { nextNumberId } from './lib/ids';
 import { canAccessRuleset, requireAuthUserId } from './lib/policy';
 import { nowIso } from './lib/utils';
 import type { MutationCtx, QueryCtx } from './types';
 
-async function getRuleset(ctx: QueryCtx | MutationCtx, id: number) {
-  return await ctx.db
-    .query('rulesets')
-    .withIndex('by_entity_id', (q) => q.eq('id', id))
-    .unique();
+async function getRuleset(ctx: QueryCtx | MutationCtx, id: Id<'rulesets'> | number) {
+  const byInternalId = await ctx.db.get(id as Id<'rulesets'>);
+  if (byInternalId) return byInternalId;
+  if (typeof id === 'number') {
+    return await ctx.db
+      .query('rulesets')
+      .withIndex('by_entity_id', (q) => q.eq('id', id))
+      .unique();
+  }
+  return null;
 }
 
-async function getFaqItem(ctx: QueryCtx | MutationCtx, id: number) {
-  return await ctx.db
-    .query('faq_items')
-    .withIndex('by_entity_id', (q) => q.eq('id', id))
-    .unique();
+async function getFaqItem(ctx: QueryCtx | MutationCtx, id: Id<'faq_items'> | number) {
+  const byInternalId = await ctx.db.get(id as Id<'faq_items'>);
+  if (byInternalId) return byInternalId;
+  if (typeof id === 'number') {
+    return await ctx.db
+      .query('faq_items')
+      .withIndex('by_entity_id', (q) => q.eq('id', id))
+      .unique();
+  }
+  return null;
 }
 
-async function getFaqAnswer(ctx: QueryCtx | MutationCtx, id: number) {
-  return await ctx.db
-    .query('faq_answers')
-    .withIndex('by_entity_id', (q) => q.eq('id', id))
-    .unique();
+async function getFaqAnswer(ctx: QueryCtx | MutationCtx, id: Id<'faq_answers'> | number) {
+  const byInternalId = await ctx.db.get(id as Id<'faq_answers'>);
+  if (byInternalId) return byInternalId;
+  if (typeof id === 'number') {
+    return await ctx.db
+      .query('faq_answers')
+      .withIndex('by_entity_id', (q) => q.eq('id', id))
+      .unique();
+  }
+  return null;
 }
 
-async function profileSummary(ctx: QueryCtx | MutationCtx, id: string) {
+async function profileSummary(ctx: QueryCtx | MutationCtx, id: Id<'users'> | string) {
   const profile = await ctx.db
     .query('profiles')
-    .withIndex('by_entity_id', (q) => q.eq('id', id))
+    .withIndex('by_user_id', (q) => q.eq('user_id', id as Id<'users'>))
     .unique();
-  if (!profile) return null;
+  const legacyProfile =
+    profile ??
+    (await ctx.db
+      .query('profiles')
+      .withIndex('by_entity_id', (q) => q.eq('id', String(id)))
+      .unique());
+  if (!legacyProfile) return null;
   return {
-    id: profile.id,
-    slug: profile.slug,
-    username: profile.username ?? null,
-    avatar_url: profile.avatar_url ?? null,
+    id: legacyProfile._id,
+    slug: legacyProfile.slug,
+    username: legacyProfile.username ?? null,
+    avatar_url: legacyProfile.avatar_url ?? null,
   };
 }
 
 export const byRuleset = query({
-  args: { ruleset_id: v.number() },
+  args: { ruleset_id: v.union(v.id('rulesets'), v.number()) },
   handler: async (ctx, args) => {
     const items = await ctx.db
       .query('faq_items')
@@ -56,7 +77,7 @@ export const byRuleset = query({
       sorted.map((item) =>
         ctx.db
           .query('faq_answers')
-          .withIndex('by_faq_item_created', (q) => q.eq('faq_item_id', item.id))
+          .withIndex('by_faq_item_created', (q) => q.eq('faq_item_id', item._id))
           .collect()
       )
     );
@@ -71,13 +92,13 @@ export const byRuleset = query({
 });
 
 export const detail = query({
-  args: { id: v.number() },
+  args: { id: v.union(v.id('faq_items'), v.number()) },
   handler: async (ctx, args) => {
     const item = await getFaqItem(ctx, args.id);
     if (!item) throw new Error(`FAQ item ${args.id} not found`);
     const answers = await ctx.db
       .query('faq_answers')
-      .withIndex('by_faq_item_created', (q) => q.eq('faq_item_id', args.id))
+      .withIndex('by_faq_item_created', (q) => q.eq('faq_item_id', item._id))
       .collect();
     return {
       ...item,
@@ -87,7 +108,7 @@ export const detail = query({
 });
 
 export const askedBy = query({
-  args: { profile_id: v.string() },
+  args: { profile_id: v.union(v.id('users'), v.string()) },
   handler: async (ctx, args) => {
     const rows = await ctx.db
       .query('faq_items')
@@ -97,10 +118,11 @@ export const askedBy = query({
     return await Promise.all(
       sorted.map(async (item) => {
         const ruleset = await getRuleset(ctx, item.ruleset_id);
-        if (!ruleset) throw new Error(`Ruleset ${item.ruleset_id} missing for FAQ item ${item.id}`);
+        if (!ruleset)
+          throw new Error(`Ruleset ${item.ruleset_id} missing for FAQ item ${item._id}`);
         return {
           ...item,
-          ruleset: { id: ruleset.id, name: ruleset.name },
+          ruleset: { id: ruleset._id, name: ruleset.name },
         };
       })
     );
@@ -108,7 +130,7 @@ export const askedBy = query({
 });
 
 export const answeredBy = query({
-  args: { profile_id: v.string() },
+  args: { profile_id: v.union(v.id('users'), v.string()) },
   handler: async (ctx, args) => {
     const answers = await ctx.db
       .query('faq_answers')
@@ -119,13 +141,14 @@ export const answeredBy = query({
       sorted.map(async (answer) => {
         const item = await getFaqItem(ctx, answer.faq_item_id);
         if (!item)
-          throw new Error(`FAQ item ${answer.faq_item_id} missing for answer ${answer.id}`);
+          throw new Error(`FAQ item ${answer.faq_item_id} missing for answer ${answer._id}`);
         const ruleset = await getRuleset(ctx, item.ruleset_id);
-        if (!ruleset) throw new Error(`Ruleset ${item.ruleset_id} missing for FAQ item ${item.id}`);
+        if (!ruleset)
+          throw new Error(`Ruleset ${item.ruleset_id} missing for FAQ item ${item._id}`);
         return {
           ...answer,
           faq_item: {
-            id: item.id,
+            id: item._id,
             question: item.question,
             ruleset_id: item.ruleset_id,
             asked_by: item.asked_by,
@@ -133,7 +156,7 @@ export const answeredBy = query({
           },
           asker_profile: await profileSummary(ctx, item.asked_by),
           ruleset: {
-            id: ruleset.id,
+            id: ruleset._id,
             name: ruleset.name,
           },
         };
@@ -144,7 +167,7 @@ export const answeredBy = query({
 
 export const createItem = mutation({
   args: {
-    ruleset_id: v.number(),
+    ruleset_id: v.union(v.id('rulesets'), v.number()),
     question: v.string(),
     answer: v.optional(v.string()),
   },
@@ -154,9 +177,7 @@ export const createItem = mutation({
     if (!ruleset || ruleset.is_deleted) throw new Error('Ruleset not found');
 
     const now = nowIso();
-    const id = await nextNumberId(ctx, 'faq_items');
     const faqItemId = await ctx.db.insert('faq_items', {
-      id,
       ruleset_id: args.ruleset_id,
       question: args.question,
       asked_by: userId,
@@ -168,10 +189,8 @@ export const createItem = mutation({
     if (!row) throw new Error('Failed to create FAQ item');
 
     if (args.answer && args.answer.trim().length > 0) {
-      const answerId = await nextNumberId(ctx, 'faq_answers');
       await ctx.db.insert('faq_answers', {
-        id: answerId,
-        faq_item_id: row.id,
+        faq_item_id: row._id,
         answer: args.answer.trim(),
         answered_by: userId,
         created_at: nowIso(),
@@ -184,9 +203,9 @@ export const createItem = mutation({
 
 export const updateItem = mutation({
   args: {
-    id: v.number(),
+    id: v.union(v.id('faq_items'), v.number()),
     question: v.optional(v.string()),
-    accepted_answer_id: v.optional(v.union(v.number(), v.null())),
+    accepted_answer_id: v.optional(v.union(v.id('faq_answers'), v.null())),
   },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
@@ -198,7 +217,11 @@ export const updateItem = mutation({
     const allowed = await canAccessRuleset(ctx, ruleset, userId);
     if (item.asked_by !== userId || !allowed) throw new Error('Not authorized');
 
-    const patch: { updated_at: string; question?: string; accepted_answer_id?: number | null } = {
+    const patch: {
+      updated_at: string;
+      question?: string;
+      accepted_answer_id?: Id<'faq_answers'> | null;
+    } = {
       updated_at: nowIso(),
     };
     if (args.question !== undefined) patch.question = args.question;
@@ -213,8 +236,8 @@ export const updateItem = mutation({
 
 export const setAcceptedAnswer = mutation({
   args: {
-    faq_item_id: v.number(),
-    accepted_answer_id: v.union(v.number(), v.null()),
+    faq_item_id: v.union(v.id('faq_items'), v.number()),
+    accepted_answer_id: v.union(v.id('faq_answers'), v.null()),
   },
   handler: async (ctx, args) => {
     const item = await getFaqItem(ctx, args.faq_item_id);
@@ -236,7 +259,7 @@ export const setAcceptedAnswer = mutation({
 });
 
 export const deleteItem = mutation({
-  args: { id: v.number() },
+  args: { id: v.union(v.id('faq_items'), v.number()) },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
     const item = await getFaqItem(ctx, args.id);
@@ -249,7 +272,7 @@ export const deleteItem = mutation({
 
     const answers = await ctx.db
       .query('faq_answers')
-      .withIndex('by_faq_item_created', (q) => q.eq('faq_item_id', item.id))
+      .withIndex('by_faq_item_created', (q) => q.eq('faq_item_id', item._id))
       .collect();
     await Promise.all(answers.map((answer) => ctx.db.delete(answer._id)));
     await ctx.db.delete(item._id);
@@ -259,7 +282,7 @@ export const deleteItem = mutation({
 
 export const createAnswer = mutation({
   args: {
-    faq_item_id: v.number(),
+    faq_item_id: v.union(v.id('faq_items'), v.number()),
     answer: v.string(),
   },
   handler: async (ctx, args) => {
@@ -277,9 +300,7 @@ export const createAnswer = mutation({
       .unique();
     if (existing) throw new Error('You already answered this question');
 
-    const id = await nextNumberId(ctx, 'faq_answers');
     const _id = await ctx.db.insert('faq_answers', {
-      id,
       faq_item_id: args.faq_item_id,
       answer: args.answer,
       answered_by: userId,
@@ -292,7 +313,7 @@ export const createAnswer = mutation({
 });
 
 export const updateAnswer = mutation({
-  args: { id: v.number(), answer: v.string() },
+  args: { id: v.union(v.id('faq_answers'), v.number()), answer: v.string() },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
     const answer = await getFaqAnswer(ctx, args.id);
@@ -307,7 +328,7 @@ export const updateAnswer = mutation({
 });
 
 export const deleteAnswer = mutation({
-  args: { id: v.number() },
+  args: { id: v.union(v.id('faq_answers'), v.number()) },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
     const answer = await getFaqAnswer(ctx, args.id);

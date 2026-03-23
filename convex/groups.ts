@@ -6,12 +6,9 @@ import { requireAuthUserId } from './lib/policy';
 import { nowIso } from './lib/utils';
 
 export const getById = query({
-  args: { id: v.string() },
+  args: { id: v.id('groups') },
   handler: async (ctx, args) => {
-    const group = await ctx.db
-      .query('groups')
-      .withIndex('by_entity_id', (q) => q.eq('id', args.id))
-      .unique();
+    const group = await ctx.db.get(args.id);
     if (!group) throw new Error(`Group with id ${args.id} not found`);
     return group;
   },
@@ -25,7 +22,7 @@ export const list = query({
 });
 
 export const listByCreator = query({
-  args: { created_by: v.string() },
+  args: { created_by: v.id('users') },
   handler: async (ctx, args) => {
     return await ctx.db
       .query('groups')
@@ -45,9 +42,7 @@ export const create = mutation({
     if (existing) throw new Error('Group name already exists');
 
     const now = nowIso();
-    const id = crypto.randomUUID();
     const _id = await ctx.db.insert('groups', {
-      id,
       name: args.name,
       created_by: userId,
       created_at: now,
@@ -61,15 +56,12 @@ export const create = mutation({
 
 export const update = mutation({
   args: {
-    id: v.string(),
+    id: v.id('groups'),
     name: v.string(),
   },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
-    const group = await ctx.db
-      .query('groups')
-      .withIndex('by_entity_id', (q) => q.eq('id', args.id))
-      .unique();
+    const group = await ctx.db.get(args.id);
     if (!group) throw new Error(`Group with id ${args.id} not found`);
     if (group.created_by !== userId) throw new Error('Not authorized');
 
@@ -77,7 +69,7 @@ export const update = mutation({
       .query('groups')
       .withIndex('by_name', (q) => q.eq('name', args.name))
       .unique();
-    if (nameOwner && nameOwner.id !== args.id) throw new Error('Group name already exists');
+    if (nameOwner && nameOwner._id !== args.id) throw new Error('Group name already exists');
 
     await ctx.db.patch(group._id, { name: args.name });
     const updated = await ctx.db.get(group._id);
@@ -87,16 +79,13 @@ export const update = mutation({
 });
 
 export const remove = mutation({
-  args: { id: v.string() },
+  args: { id: v.id('groups') },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
-    const group = await ctx.db
-      .query('groups')
-      .withIndex('by_entity_id', (q) => q.eq('id', args.id))
-      .unique();
+    const group = await ctx.db.get(args.id);
     if (!group) throw new Error(`Group with id ${args.id} not found`);
     if (group.created_by !== userId) throw new Error('Not authorized');
-    await ctx.db.delete(group._id);
+    await ctx.db.delete(args.id);
     return args.id;
   },
 });

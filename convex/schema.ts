@@ -9,7 +9,8 @@ export default defineSchema({
     value: v.number(),
   }).index('by_key', ['key']),
   profiles: defineTable({
-    id: v.string(),
+    id: v.optional(v.string()),
+    user_id: v.optional(v.union(v.id('users'), v.string())),
     username: v.optional(v.string()),
     avatar_url: v.optional(v.string()),
     slug: v.string(),
@@ -17,37 +18,38 @@ export default defineSchema({
     updated_at: v.string(),
   })
     .index('by_entity_id', ['id'])
+    .index('by_user_id', ['user_id'])
     .index('by_slug', ['slug']),
   groups: defineTable({
-    id: v.string(),
+    id: v.optional(v.string()),
     name: v.string(),
     created_at: v.string(),
-    created_by: v.string(),
+    created_by: v.id('users'),
   })
     .index('by_entity_id', ['id'])
     .index('by_name', ['name'])
     .index('by_created_by', ['created_by']),
   group_members: defineTable({
-    group_id: v.string(),
-    user_id: v.string(),
+    group_id: v.union(v.id('groups'), v.string()),
+    user_id: v.union(v.id('users'), v.string()),
     status: v.union(v.literal('pending'), v.literal('active'), v.literal('removed')),
     requested_at: v.string(),
     approved_at: v.optional(v.union(v.string(), v.null())),
-    approved_by: v.optional(v.union(v.string(), v.null())),
+    approved_by: v.optional(v.union(v.id('users'), v.string(), v.null())),
   })
     .index('by_group_user', ['group_id', 'user_id'])
     .index('by_group', ['group_id'])
     .index('by_user', ['user_id'])
     .index('by_group_status', ['group_id', 'status']),
   factions: defineTable({
-    id: v.string(),
-    owner_id: v.string(),
+    id: v.optional(v.string()),
+    owner_id: v.union(v.id('users'), v.string()),
     data: v.any(),
     slug: v.string(),
     created_at: v.string(),
     updated_at: v.string(),
     is_deleted: v.boolean(),
-    group_id: v.optional(v.union(v.string(), v.null())),
+    group_id: v.optional(v.union(v.id('groups'), v.string(), v.null())),
   })
     .index('by_entity_id', ['id'])
     .index('by_slug', ['slug'])
@@ -56,12 +58,12 @@ export default defineSchema({
     .index('by_owner_deleted', ['owner_id', 'is_deleted'])
     .index('by_group_deleted', ['group_id', 'is_deleted']),
   rulesets: defineTable({
-    id: v.number(),
+    id: v.optional(v.number()),
     name: v.string(),
     created_at: v.string(),
     updated_at: v.string(),
-    owner_id: v.string(),
-    group_id: v.optional(v.union(v.string(), v.null())),
+    owner_id: v.union(v.id('users'), v.string()),
+    group_id: v.optional(v.union(v.id('groups'), v.string(), v.null())),
     is_deleted: v.boolean(),
     image_cover: v.optional(v.union(v.string(), v.null())),
   })
@@ -71,29 +73,29 @@ export default defineSchema({
     .index('by_group_deleted', ['group_id', 'is_deleted'])
     .index('by_deleted_name', ['is_deleted', 'name']),
   ruleset_factions: defineTable({
-    ruleset_id: v.number(),
-    faction_id: v.string(),
+    ruleset_id: v.union(v.id('rulesets'), v.number()),
+    faction_id: v.union(v.id('factions'), v.string()),
   })
     .index('by_ruleset', ['ruleset_id'])
     .index('by_faction', ['faction_id'])
     .index('by_ruleset_faction', ['ruleset_id', 'faction_id']),
   faq_items: defineTable({
-    id: v.number(),
-    ruleset_id: v.number(),
+    id: v.optional(v.number()),
+    ruleset_id: v.union(v.id('rulesets'), v.number()),
     question: v.string(),
-    asked_by: v.string(),
+    asked_by: v.union(v.id('users'), v.string()),
     created_at: v.string(),
     updated_at: v.string(),
-    accepted_answer_id: v.optional(v.union(v.number(), v.null())),
+    accepted_answer_id: v.optional(v.union(v.id('faq_answers'), v.number(), v.null())),
   })
     .index('by_entity_id', ['id'])
     .index('by_ruleset_created', ['ruleset_id', 'created_at'])
     .index('by_asked_by_created', ['asked_by', 'created_at']),
   faq_answers: defineTable({
-    id: v.number(),
-    faq_item_id: v.number(),
+    id: v.optional(v.number()),
+    faq_item_id: v.union(v.id('faq_items'), v.number()),
     answer: v.string(),
-    answered_by: v.string(),
+    answered_by: v.union(v.id('users'), v.string()),
     created_at: v.string(),
   })
     .index('by_entity_id', ['id'])

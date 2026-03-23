@@ -1,6 +1,7 @@
 import { getAuthUserId } from '@convex-dev/auth/server';
 
 import type { MutationCtx, QueryCtx } from '../_generated/server';
+import type { Id } from '../_generated/dataModel';
 
 type AnyCtx = QueryCtx | MutationCtx;
 
@@ -9,10 +10,14 @@ export async function requireAuthUserId(ctx: AnyCtx) {
   if (!userId) {
     throw new Error('Not authenticated');
   }
-  return String(userId);
+  return userId;
 }
 
-export async function isActiveGroupMember(ctx: AnyCtx, groupId: string, userId: string) {
+export async function isActiveGroupMember(
+  ctx: AnyCtx,
+  groupId: Id<'groups'> | string,
+  userId: Id<'users'> | string
+) {
   const membership = await ctx.db
     .query('group_members')
     .withIndex('by_group_user', (q) => q.eq('group_id', groupId).eq('user_id', userId))
@@ -23,11 +28,11 @@ export async function isActiveGroupMember(ctx: AnyCtx, groupId: string, userId: 
 export async function canAccessRuleset(
   ctx: AnyCtx,
   ruleset: {
-    owner_id: string;
-    group_id?: string | null;
+    owner_id: Id<'users'> | string;
+    group_id?: Id<'groups'> | string | null;
     is_deleted?: boolean;
   },
-  userId: string
+  userId: Id<'users'> | string
 ) {
   if (ruleset.is_deleted) return false;
   if (ruleset.owner_id === userId) return true;

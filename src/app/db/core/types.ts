@@ -2,6 +2,8 @@ export type GroupMemberStatus = 'pending' | 'active' | 'removed';
 
 export interface ProfileRow {
   id: string;
+  _id: string;
+  user_id: string;
   username: string | null;
   avatar_url: string | null;
   created_at: string;
@@ -11,12 +13,15 @@ export interface ProfileRow {
 
 export interface GroupRow {
   id: string;
+  _id: string;
   name: string;
   created_at: string;
   created_by: string;
 }
 
 export interface GroupMemberRow {
+  id: string;
+  _id: string;
   group_id: string;
   user_id: string;
   status: GroupMemberStatus;
@@ -27,6 +32,7 @@ export interface GroupMemberRow {
 
 export interface FactionRow {
   id: string;
+  _id: string;
   owner_id: string;
   data: unknown;
   created_at: string;
@@ -37,7 +43,8 @@ export interface FactionRow {
 }
 
 export interface RulesetRow {
-  id: number;
+  id: string;
+  _id: string;
   name: string;
   created_at: string;
   updated_at: string;
@@ -48,23 +55,27 @@ export interface RulesetRow {
 }
 
 export interface RulesetFactionRow {
-  ruleset_id: number;
+  id: string;
+  _id: string;
+  ruleset_id: string;
   faction_id: string;
 }
 
 export interface FaqItemRow {
-  id: number;
-  ruleset_id: number;
+  id: string;
+  _id: string;
+  ruleset_id: string;
   question: string;
   asked_by: string;
   created_at: string;
   updated_at: string;
-  accepted_answer_id: number | null;
+  accepted_answer_id: string | null;
 }
 
 export interface FaqAnswerRow {
-  id: number;
-  faq_item_id: number;
+  id: string;
+  _id: string;
+  faq_item_id: string;
   answer: string;
   answered_by: string;
   created_at: string;

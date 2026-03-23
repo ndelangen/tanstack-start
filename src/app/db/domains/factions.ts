@@ -15,6 +15,10 @@ export type FactionUpdate = Omit<TablesUpdate<'factions'>, 'data'> & {
   data?: Faction;
 };
 
+function withFactionId(entry: Omit<Tables<'factions'>, 'id'>): Tables<'factions'> {
+  return { ...entry, id: entry._id };
+}
+
 export const factionKeys = {
   all: ['factions'] as const,
   lists: () => [...factionKeys.all, 'list'] as const,
@@ -28,7 +32,7 @@ export function factionDetailQueryOptions(slug: string) {
     queryFn: async () => {
       const entry = await db.query<Tables<'factions'>>('factions:getBySlug', { slug });
       return {
-        ...entry,
+        ...withFactionId(entry),
         data: schema.parse(entry.data),
       };
     },
@@ -40,10 +44,13 @@ export function factionsListQueryOptions() {
     queryKey: factionKeys.list({ type: 'all' }),
     queryFn: async () => {
       const entries = await db.query<Tables<'factions'>[]>('factions:list', {});
-      return entries.map((entry) => ({
-        ...entry,
+      return entries.map((entry) => {
+        const withId = withFactionId(entry);
+        return {
+        ...withId,
         data: schema.parse(entry.data),
-      }));
+      };
+      });
     },
   });
 }
@@ -55,10 +62,13 @@ export function factionsByOwnerQueryOptions(ownerId: NonNullable<FactionEntry['o
       const entries = await db.query<Tables<'factions'>[]>('factions:listByOwner', {
         owner_id: ownerId,
       });
-      return entries.map((entry) => ({
-        ...entry,
+      return entries.map((entry) => {
+        const withId = withFactionId(entry);
+        return {
+        ...withId,
         data: schema.parse(entry.data),
-      }));
+      };
+      });
     },
   });
 }
@@ -70,10 +80,13 @@ export function factionsByGroupQueryOptions(groupId: NonNullable<FactionEntry['g
       const entries = await db.query<Tables<'factions'>[]>('factions:listByGroup', {
         group_id: groupId,
       });
-      return entries.map((entry) => ({
-        ...entry,
+      return entries.map((entry) => {
+        const withId = withFactionId(entry);
+        return {
+        ...withId,
         data: schema.parse(entry.data),
-      }));
+      };
+      });
     },
   });
 }
@@ -89,7 +102,7 @@ export function useFaction(slug: string, options?: { enabled?: boolean }) {
       enabled
         ? qc
             .getQueryData<FactionEntry[]>(factionKeys.list({ type: 'all' }))
-            ?.find((d) => d.data.id === slug)
+            ?.find((d) => d.slug === slug)
         : undefined,
   });
 }
@@ -135,14 +148,15 @@ export function useCreateFaction() {
         data: validatedData,
         group_id: groupId ?? null,
       });
+      const withId = withFactionId(entry);
       return {
-        ...entry,
+        ...withId,
         data: schema.parse(entry.data),
       };
     },
 
     onSuccess: (faction) => {
-      qc.setQueryData(factionKeys.detail(faction.data.id), faction);
+      qc.setQueryData(factionKeys.detail(faction.slug), faction);
       qc.invalidateQueries({ queryKey: factionKeys.lists() });
     },
   });
@@ -152,23 +166,31 @@ export function useUpdateFaction() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ input, id }: { input: Faction; id: string; previousUrlSlug?: string }) => {
+    mutationFn: async ({
+      input,
+      id,
+    }: {
+      input: Faction;
+      id: string;
+      previousUrlSlug?: string;
+    }) => {
       const validatedData = schema.parse(input);
       const entry = await db.mutation<Tables<'factions'>>('factions:update', {
         id,
         data: validatedData,
       });
+      const withId = withFactionId(entry);
       return {
-        ...entry,
+        ...withId,
         data: schema.parse(entry.data),
       };
     },
 
     onSuccess: (entry, variables) => {
-      if (variables.previousUrlSlug != null && variables.previousUrlSlug !== entry.data.id) {
+      if (variables.previousUrlSlug != null && variables.previousUrlSlug !== entry.slug) {
         qc.removeQueries({ queryKey: factionKeys.detail(variables.previousUrlSlug) });
       }
-      qc.setQueryData(factionKeys.detail(entry.data.id), entry);
+      qc.setQueryData(factionKeys.detail(entry.slug), entry);
       qc.invalidateQueries({ queryKey: factionKeys.lists() });
     },
   });

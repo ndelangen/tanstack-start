@@ -20,7 +20,20 @@ Define which user-related fields belong to Convex Auth tables vs app-level profi
     - `avatar_url`
     - `slug`
     - `created_at`, `updated_at`
-  - One profile per auth user (`profiles.id` maps to auth user id string).
+  - One profile per auth user (`profiles.user_id` maps to `Id<"users">`).
+
+## Identifier Conventions
+
+- Convex `_id` is the canonical internal identifier for domain entities (`profiles`, `groups`,
+  `factions`, `rulesets`, `faq_items`, `faq_answers`).
+- URL-facing lookups should use slug fields (for example `profiles.slug`, `factions.slug`) rather
+  than exposing internal `_id` semantics in presentation logic.
+- Relation fields should use Convex references (`v.id(...)`) rather than custom app-level ids:
+  - `group_members.group_id -> Id<"groups">`
+  - `ruleset_factions.ruleset_id -> Id<"rulesets">`
+  - `ruleset_factions.faction_id -> Id<"factions">`
+  - `faq_items.ruleset_id -> Id<"rulesets">`
+  - `faq_answers.faq_item_id -> Id<"faq_items">`
 
 ## Why `profiles` Exists
 

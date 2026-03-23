@@ -19,14 +19,18 @@ export type RulesetUpdate = Omit<TablesUpdate<'rulesets'>, 'name'> & {
   name?: Ruleset['name'];
 };
 
+function withRulesetId(entry: Omit<Tables<'rulesets'>, 'id'>): Tables<'rulesets'> {
+  return { ...entry, id: entry._id };
+}
+
 export const rulesetKeys = {
   all: ['rulesets'] as const,
   lists: () => [...rulesetKeys.all, 'list'] as const,
   list: (filters: object) => [...rulesetKeys.lists(), filters] as const,
-  detail: (id: number) => [...rulesetKeys.all, 'detail', id] as const,
-  factions: (rulesetId: number) => [...rulesetKeys.detail(rulesetId), 'factions'] as const,
+  detail: (id: string) => [...rulesetKeys.all, 'detail', id] as const,
+  factions: (rulesetId: string) => [...rulesetKeys.detail(rulesetId), 'factions'] as const,
   byFaction: (factionId: string) => [...rulesetKeys.all, 'byFaction', factionId] as const,
-  canAccess: (rulesetId: number) => [...rulesetKeys.all, 'canAccess', rulesetId] as const,
+  canAccess: (rulesetId: string) => [...rulesetKeys.all, 'canAccess', rulesetId] as const,
 };
 
 export function rulesetsListQueryOptions() {
@@ -35,34 +39,34 @@ export function rulesetsListQueryOptions() {
     queryFn: async () => {
       const entries = await db.query<Tables<'rulesets'>[]>('rulesets:list', {});
       return entries.map((entry) => ({
-        ...entry,
+        ...withRulesetId(entry),
         name: schema.parse({ name: entry.name }).name,
       }));
     },
   });
 }
 
-export function rulesetDetailQueryOptions(id: number) {
+export function rulesetDetailQueryOptions(id: string) {
   return queryOptions({
     queryKey: rulesetKeys.detail(id),
     queryFn: async () => {
       const entry = await db.query<Tables<'rulesets'>>('rulesets:get', { id });
       return {
-        ...entry,
+        ...withRulesetId(entry),
         name: schema.parse({ name: entry.name }).name,
       };
     },
   });
 }
 
-export function rulesetFactionsQueryOptions(rulesetId: number) {
+export function rulesetFactionsQueryOptions(rulesetId: string) {
   return queryOptions({
     queryKey: rulesetKeys.factions(rulesetId),
     queryFn: async () => await db.query<string[]>('rulesets:factionIds', { ruleset_id: rulesetId }),
   });
 }
 
-export function rulesetFactionsWithDetailsQueryOptions(rulesetId: number) {
+export function rulesetFactionsWithDetailsQueryOptions(rulesetId: string) {
   return queryOptions({
     queryKey: [...rulesetKeys.factions(rulesetId), 'details'] as const,
     queryFn: async () => {
@@ -82,14 +86,14 @@ export function rulesetFactionsWithDetailsQueryOptions(rulesetId: number) {
   });
 }
 
-export function canAccessRulesetQueryOptions(rulesetId: number) {
+export function canAccessRulesetQueryOptions(rulesetId: string) {
   return queryOptions({
     queryKey: rulesetKeys.canAccess(rulesetId),
     queryFn: async () => await db.query<boolean>('rulesets:canAccess', { ruleset_id: rulesetId }),
   });
 }
 
-export function useCanAccessRuleset(rulesetId: number) {
+export function useCanAccessRuleset(rulesetId: string) {
   return useQuery(canAccessRulesetQueryOptions(rulesetId));
 }
 
@@ -100,7 +104,7 @@ export function rulesetsByFactionQueryOptions(factionId: string) {
       const entries = await db.query<Tables<'rulesets'>[]>('rulesets:listByFaction', {
         faction_id: factionId,
       });
-      return entries.map((e) => ({ ...e, name: schema.parse({ name: e.name }).name }));
+      return entries.map((e) => ({ ...withRulesetId(e), name: schema.parse({ name: e.name }).name }));
     },
   });
 }
@@ -109,15 +113,15 @@ export function useRulesetsAll() {
   return useQuery(rulesetsListQueryOptions());
 }
 
-export function useRuleset(id: number) {
+export function useRuleset(id: string) {
   return useQuery(rulesetDetailQueryOptions(id));
 }
 
-export function useRulesetFactions(rulesetId: number) {
+export function useRulesetFactions(rulesetId: string) {
   return useQuery(rulesetFactionsQueryOptions(rulesetId));
 }
 
-export function useRulesetFactionsWithDetails(rulesetId: number) {
+export function useRulesetFactionsWithDetails(rulesetId: string) {
   return useQuery(rulesetFactionsWithDetailsQueryOptions(rulesetId));
 }
 
@@ -147,10 +151,10 @@ export function useCreateRuleset() {
         group_id: groupId ?? null,
         image_cover: imageCover ?? null,
       });
-      return { ...entry, name: validated.name };
+      return { ...withRulesetId(entry), name: validated.name };
     },
     onSuccess: (entry) => {
-      qc.setQueryData(rulesetKeys.detail(entry.id), entry);
+      qc.setQueryData(rulesetKeys.detail(entry._id), entry);
       qc.invalidateQueries({ queryKey: rulesetKeys.lists() });
     },
   });
@@ -167,7 +171,7 @@ export function useUpdateRuleset() {
       imageCover,
     }: {
       input: Ruleset;
-      id: number;
+      id: string;
       groupId?: string | null;
       imageCover?: string | null;
     }) => {
@@ -178,10 +182,10 @@ export function useUpdateRuleset() {
         group_id: groupId,
         image_cover: imageCover,
       });
-      return { ...entry, name: validated.name };
+      return { ...withRulesetId(entry), name: validated.name };
     },
     onSuccess: (entry) => {
-      qc.setQueryData(rulesetKeys.detail(entry.id), entry);
+      qc.setQueryData(rulesetKeys.detail(entry._id), entry);
       qc.invalidateQueries({ queryKey: rulesetKeys.lists() });
     },
   });
@@ -191,7 +195,7 @@ export function useDeleteRuleset() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: string) => {
       await db.mutation<void>('rulesets:softDelete', { id });
       return id;
     },
@@ -206,8 +210,8 @@ export function useAddFactionToRuleset() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ rulesetId, factionId }: { rulesetId: number; factionId: string }) =>
-      await db.mutation<{ ruleset_id: number; faction_id: string }>('rulesets:addFaction', {
+    mutationFn: async ({ rulesetId, factionId }: { rulesetId: string; factionId: string }) =>
+      await db.mutation<{ ruleset_id: string; faction_id: string }>('rulesets:addFaction', {
         ruleset_id: rulesetId,
         faction_id: factionId,
       }),
@@ -222,8 +226,8 @@ export function useRemoveFactionFromRuleset() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ rulesetId, factionId }: { rulesetId: number; factionId: string }) =>
-      await db.mutation<{ ruleset_id: number; faction_id: string }>('rulesets:removeFaction', {
+    mutationFn: async ({ rulesetId, factionId }: { rulesetId: string; factionId: string }) =>
+      await db.mutation<{ ruleset_id: string; faction_id: string }>('rulesets:removeFaction', {
         ruleset_id: rulesetId,
         faction_id: factionId,
       }),
