@@ -5,32 +5,30 @@
 ```mermaid
 flowchart TD
     User[User] --> Login["Login Page<br/>/auth/login"]
-    Login --> SupabaseAuth[Supabase Auth]
-    SupabaseAuth --> Session[Session Created]
+    Login --> ConvexAuth[Convex Auth]
+    ConvexAuth --> Session[Session Created]
     Session --> Mutations[Mutations Check Auth]
     Mutations --> DB[(Database)]
     
-    OAuth[OAuth Provider] --> OAuthCallback["/auth/oauth"]
-    OAuthCallback --> SupabaseAuth
+    OAuth[OAuth Provider] --> ConvexAuth
 ```
 
-Supabase Auth handles authentication. Mutations check auth before database operations.
+Convex Auth handles authentication. Domain mutations enforce authorization inside Convex functions.
 
-## Supabase Auth
+## Convex Auth
 
 **Client**: [`src/app/db/core/index.ts`](../src/app/db/core/index.ts)
 
 ```typescript
-export const auth = db.auth;
+export const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL!);
 ```
 
 ## Authentication in Mutations
 
-Check auth before mutations:
+Auth is enforced server-side in Convex mutations:
 
 ```typescript
-const user = await auth.getUser();
-if (!user.data.user?.id) throw new Error('Not authenticated');
+const userId = await requireAuthUserId(ctx);
 ```
 
 **Examples**: [`src/app/db/domains/factions.ts`](../src/app/db/domains/factions.ts), [`src/app/db/domains/groups.ts`](../src/app/db/domains/groups.ts)
@@ -40,13 +38,13 @@ if (!user.data.user?.id) throw new Error('Not authenticated');
 Routes in `src/app/routes/auth/`:
 
 - `login.tsx` → `/auth/login` - Login form
-- `oauth.tsx` → `/auth/oauth` - OAuth callback handler
+- `oauth.tsx` → `/auth/oauth` - Legacy compatibility redirect
 - `error.tsx` → `/auth/error` - Auth error page
 - `index.tsx` → `/auth` - Auth landing
 
 ## Profiles
 
-Profiles are automatically created when a user signs up via database trigger (`handle_new_user()` after INSERT on `auth.users`).
+Profiles are created on first authenticated bootstrap/update mutation in Convex.
 
 **Hooks**: `useCurrentProfile()`, `useProfile(id)`, `useUpdateCurrentProfile()`
 

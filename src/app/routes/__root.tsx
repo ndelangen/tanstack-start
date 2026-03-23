@@ -1,8 +1,11 @@
 // import { TanStackDevtools } from '@tanstack/react-devtools';
+
+import { ConvexAuthProvider } from '@convex-dev/auth/react';
 import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { createRootRouteWithContext, HeadContent, Link, Scripts } from '@tanstack/react-router';
 
+import { convex } from '@db/core';
 import { currentProfileQueryOptions } from '@db/profiles';
 import { queryClient } from '@app/queryClient';
 
@@ -69,8 +72,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <QueryClientProvider client={queryClient}>
-          {children}
-          {/* <TanStackDevtools
+          <ConvexAuthProvider client={convex}>
+            {children}
+            {/* <TanStackDevtools
             config={{
               position: 'bottom-right',
             }}
@@ -83,7 +87,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               ]
             }
           /> */}
-          <Scripts />
+            <Scripts />
+          </ConvexAuthProvider>
         </QueryClientProvider>
       </body>
     </html>

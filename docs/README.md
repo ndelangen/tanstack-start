@@ -23,10 +23,8 @@ npm run app:build         # Build for production
 npm run app:preview       # Preview production build locally
 
 # Database
-npm run db:types         # Generate TypeScript types from Supabase schema
-npm run db:schemas       # Sync Zod schemas to DB migrations
-npm run db:migration     # Create new migration
-npm run db:push          # Push migrations to Supabase
+npm run convex:dev       # Start Convex dev runtime
+npm run convex:deploy    # Deploy Convex functions/schema
 
 # Code quality
 npm run biome:check      # Lint and format
@@ -53,15 +51,11 @@ npm run capture          # Screenshots/PDFs (requires storybook-static from buil
    - Query hooks (`useDomain...`)
    - Mutation hooks (`useCreateDomain`, `useUpdateDomain`, etc.)
 
-3. Sync schema to DB:
+3. Add/update Convex schema & functions in `convex/`.
+4. Run/deploy Convex:
    ```bash
-   npm run db:schemas
-   npm run db:push
-   ```
-
-4. Generate types:
-   ```bash
-   npm run db:types
+   npm run convex:dev
+   npm run convex:deploy
    ```
 
 ### Adding a New Route
@@ -90,7 +84,8 @@ Dune card/faction rendering, Storybook, and static art live here. `generated/` h
 - [Architecture](./architecture.md) - Request flow, structure, tsconfig paths
 - [Data Layer](./data-layer.md) - Domain patterns, DB syncing, structure
 - [Routing](./routing.md) - Route configuration, file-based routing
-- [Authentication](./authentication.md) - Auth patterns, Supabase integration
+- [Authentication](./authentication.md) - Auth patterns, Convex Auth integration
+- [User Data Contract](./user-data-contract.md) - What belongs in `users` vs `profiles`
 - [State Management](./state-management.md) - TanStack Query, cache patterns
 - [Membership](./membership.md) - Group membership approval flow
 - [Deployment](./deployment.md) - Netlify deployment process

@@ -31,8 +31,11 @@ This ensures TanStack Router handles all routes on the client side.
 
 Set in Netlify dashboard or via CLI:
 
-- `VITE_SUPABASE_URL` - Supabase project URL
-- `VITE_SUPABASE_PUBLISHABLE_KEY` - Supabase anon/public key
+- `VITE_CONVEX_URL` - Convex deployment URL
+- `CONVEX_DEPLOYMENT` - Convex deployment name/slug (for CLI/dev tooling)
+- `SITE_URL` - Public app URL used for OAuth redirects
+- `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` - Google OAuth credentials
+- `AUTH_DISCORD_ID` / `AUTH_DISCORD_SECRET` - Discord OAuth credentials
 
 **Note**: Vite requires `VITE_` prefix for client-side environment variables.
 

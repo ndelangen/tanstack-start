@@ -10,11 +10,11 @@ flowchart TD
         Loader --> Component[Component]
         Component --> DomainHooks[Domain Hooks]
     end
-    Loader <-->|"db.from()"| Supabase[(Supabase)]
-    DomainHooks <-->|"TanStack Query"| Supabase
+    Loader <-->|"db.query()/db.mutation()"| Convex[(Convex)]
+    DomainHooks <-->|"TanStack Query"| Convex
 ```
 
-Loaders fetch directly via `db.from()`. Components use domain hooks (TanStack Query) for reactive/mutating data. Everything runs in the browser - no server rendering.
+Loaders fetch directly via Convex function calls. Components use domain hooks (TanStack Query) for reactive/mutating data. Everything runs in the browser - no server rendering.
 
 ## File-Based Routing
 
@@ -35,6 +35,6 @@ Configured in [`tsconfig.json`](../tsconfig.json):
 
 1. Route [`src/app/routes/index.tsx`](../src/app/routes/index.tsx) - loader fetches from DB
 2. Domain hook [`src/app/db/domains/factions.ts`](../src/app/db/domains/factions.ts) - `useFactionsAll()` wraps TanStack Query
-3. Database - Supabase PostgreSQL with Row Level Security
+3. Database - Convex document database with function-level authorization checks
 
 See [README](./README.md) for workflows.

@@ -21,9 +21,9 @@ Status transitions: `pending` → `active` (approved) or `removed` (rejected/rem
 - `active` - Approved, active member
 - `removed` - Rejected or removed
 
-## Database Trigger
+## Approval Metadata
 
-**Function**: `set_group_members_approval()` - sets `approved_by` and `approved_at` when status becomes `active`. Defined in `supabase/migrations/`.
+`approved_by` and `approved_at` are set in Convex membership mutations when status becomes `active`.
 
 ## Hooks
 
@@ -33,6 +33,6 @@ Status transitions: `pending` → `active` (approved) or `removed` (rejected/rem
 
 **Example**: [`src/app/db/domains/members.ts`](../src/app/db/domains/members.ts)
 
-## Row Level Security
+## Authorization
 
-RLS policies enforce who can request, view, and approve membership.
+Authorization is enforced by Convex policy helpers (`requireAuthUserId`, `isActiveGroupMember`) in `convex/lib/policy.ts`.

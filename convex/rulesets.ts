@@ -1,0 +1,245 @@
+import { mutationGeneric, queryGeneric } from 'convex/server';
+import { v } from 'convex/values';
+
+import { nextNumberId } from './lib/ids';
+import { canAccessRuleset, requireAuthUserId } from './lib/policy';
+import { ensureObject, nowIso } from './lib/utils';
+import type { MutationCtx, QueryCtx } from './types';
+
+async function getRulesetById(ctx: QueryCtx | MutationCtx, id: number) {
+  return await ctx.db
+    .query('rulesets')
+    .withIndex('by_entity_id', (q) => q.eq('id', id))
+    .unique();
+}
+
+export const list = queryGeneric({
+  args: {},
+  handler: async (ctx) => {
+    const rows = await ctx.db
+      .query('rulesets')
+      .withIndex('by_deleted_name', (q) => q.eq('is_deleted', false))
+      .collect();
+    return rows;
+  },
+});
+
+export const get = queryGeneric({
+  args: { id: v.number() },
+  handler: async (ctx, args) => {
+    const row = await getRulesetById(ctx, args.id);
+    if (!row || row.is_deleted) throw new Error(`Ruleset with id ${args.id} not found`);
+    return row;
+  },
+});
+
+export const factionIds = queryGeneric({
+  args: { ruleset_id: v.number() },
+  handler: async (ctx, args) => {
+    const links = await ctx.db
+      .query('ruleset_factions')
+      .withIndex('by_ruleset', (q) => q.eq('ruleset_id', args.ruleset_id))
+      .collect();
+    return links.map((link) => link.faction_id);
+  },
+});
+
+export const factionDetails = queryGeneric({
+  args: { ruleset_id: v.number() },
+  handler: async (ctx, args) => {
+    const links = await ctx.db
+      .query('ruleset_factions')
+      .withIndex('by_ruleset', (q) => q.eq('ruleset_id', args.ruleset_id))
+      .collect();
+    const factions = await Promise.all(
+      links.map((link) =>
+        ctx.db
+          .query('factions')
+          .withIndex('by_entity_id', (q) => q.eq('id', link.faction_id))
+          .unique()
+      )
+    );
+    return links.map((link, index) => {
+      const faction = factions[index];
+      const data = faction?.data;
+      const dataObj = data != null ? ensureObject(data) : null;
+      const name = typeof dataObj?.name === 'string' ? dataObj.name : link.faction_id;
+      const urlSlug = typeof dataObj?.id === 'string' ? dataObj.id : link.faction_id;
+      return {
+        factionId: link.faction_id,
+        name,
+        urlSlug,
+      };
+    });
+  },
+});
+
+export const canAccess = queryGeneric({
+  args: { ruleset_id: v.number() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity?.subject) return false;
+    const ruleset = await getRulesetById(ctx, args.ruleset_id);
+    if (!ruleset) return false;
+    return await canAccessRuleset(ctx, ruleset, identity.subject);
+  },
+});
+
+export const listByFaction = queryGeneric({
+  args: { faction_id: v.string() },
+  handler: async (ctx, args) => {
+    const links = await ctx.db
+      .query('ruleset_factions')
+      .withIndex('by_faction', (q) => q.eq('faction_id', args.faction_id))
+      .collect();
+    const rulesets = await Promise.all(links.map((link) => getRulesetById(ctx, link.ruleset_id)));
+    return rulesets.filter((row): row is NonNullable<typeof row> => row != null && !row.is_deleted);
+  },
+});
+
+export const create = mutationGeneric({
+  args: {
+    name: v.string(),
+    group_id: v.optional(v.union(v.string(), v.null())),
+    image_cover: v.optional(v.union(v.string(), v.null())),
+  },
+  handler: async (ctx, args) => {
+    const userId = await requireAuthUserId(ctx);
+
+    const duplicate = await ctx.db
+      .query('rulesets')
+      .withIndex('by_name', (q) => q.eq('name', args.name))
+      .collect();
+    if (duplicate.some((row) => !row.is_deleted)) throw new Error('Ruleset name already exists');
+
+    const now = nowIso();
+    const id = await nextNumberId(ctx, 'rulesets');
+    const _id = await ctx.db.insert('rulesets', {
+      id,
+      name: args.name,
+      owner_id: userId,
+      group_id: args.group_id ?? null,
+      image_cover: args.image_cover ?? null,
+      created_at: now,
+      updated_at: now,
+      is_deleted: false,
+    });
+    const created = await ctx.db.get(_id);
+    if (!created) throw new Error('Failed to create ruleset');
+    return created;
+  },
+});
+
+export const update = mutationGeneric({
+  args: {
+    id: v.number(),
+    name: v.string(),
+    group_id: v.optional(v.union(v.string(), v.null())),
+    image_cover: v.optional(v.union(v.string(), v.null())),
+  },
+  handler: async (ctx, args) => {
+    const userId = await requireAuthUserId(ctx);
+    const ruleset = await getRulesetById(ctx, args.id);
+    if (!ruleset || ruleset.is_deleted) throw new Error(`Ruleset with id ${args.id} not found`);
+
+    const permitted = await canAccessRuleset(ctx, ruleset, userId);
+    if (!permitted) throw new Error('Not authorized');
+
+    const duplicate = await ctx.db
+      .query('rulesets')
+      .withIndex('by_name', (q) => q.eq('name', args.name))
+      .collect();
+    if (duplicate.some((row) => row.id !== args.id && !row.is_deleted)) {
+      throw new Error('Ruleset name already exists');
+    }
+
+    const patch: {
+      name: string;
+      updated_at: string;
+      group_id?: string | null;
+      image_cover?: string | null;
+    } = {
+      name: args.name,
+      updated_at: nowIso(),
+    };
+    if (args.group_id !== undefined) patch.group_id = args.group_id;
+    if (args.image_cover !== undefined) patch.image_cover = args.image_cover;
+
+    await ctx.db.patch(ruleset._id, patch);
+    const updated = await ctx.db.get(ruleset._id);
+    if (!updated) throw new Error('Failed to update ruleset');
+    return updated;
+  },
+});
+
+export const softDelete = mutationGeneric({
+  args: { id: v.number() },
+  handler: async (ctx, args) => {
+    const userId = await requireAuthUserId(ctx);
+    const ruleset = await getRulesetById(ctx, args.id);
+    if (!ruleset) throw new Error(`Ruleset with id ${args.id} not found`);
+
+    const permitted = await canAccessRuleset(ctx, ruleset, userId);
+    if (!permitted) throw new Error('Not authorized');
+
+    await ctx.db.patch(ruleset._id, {
+      is_deleted: true,
+      updated_at: nowIso(),
+    });
+  },
+});
+
+export const addFaction = mutationGeneric({
+  args: { ruleset_id: v.number(), faction_id: v.string() },
+  handler: async (ctx, args) => {
+    const userId = await requireAuthUserId(ctx);
+    const ruleset = await getRulesetById(ctx, args.ruleset_id);
+    if (!ruleset || ruleset.is_deleted) throw new Error('Ruleset not found');
+
+    const allowed = await canAccessRuleset(ctx, ruleset, userId);
+    if (!allowed) throw new Error('Not authorized');
+
+    const faction = await ctx.db
+      .query('factions')
+      .withIndex('by_entity_id', (q) => q.eq('id', args.faction_id))
+      .unique();
+    if (!faction || faction.is_deleted) throw new Error('Faction not found');
+
+    const existing = await ctx.db
+      .query('ruleset_factions')
+      .withIndex('by_ruleset_faction', (q) =>
+        q.eq('ruleset_id', args.ruleset_id).eq('faction_id', args.faction_id)
+      )
+      .unique();
+    if (!existing) {
+      await ctx.db.insert('ruleset_factions', {
+        ruleset_id: args.ruleset_id,
+        faction_id: args.faction_id,
+      });
+    }
+    return args;
+  },
+});
+
+export const removeFaction = mutationGeneric({
+  args: { ruleset_id: v.number(), faction_id: v.string() },
+  handler: async (ctx, args) => {
+    const userId = await requireAuthUserId(ctx);
+    const ruleset = await getRulesetById(ctx, args.ruleset_id);
+    if (!ruleset || ruleset.is_deleted) throw new Error('Ruleset not found');
+
+    const allowed = await canAccessRuleset(ctx, ruleset, userId);
+    if (!allowed) throw new Error('Not authorized');
+
+    const existing = await ctx.db
+      .query('ruleset_factions')
+      .withIndex('by_ruleset_faction', (q) =>
+        q.eq('ruleset_id', args.ruleset_id).eq('faction_id', args.faction_id)
+      )
+      .unique();
+    if (existing) {
+      await ctx.db.delete(existing._id);
+    }
+    return args;
+  },
+});

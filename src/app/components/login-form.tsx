@@ -1,43 +1,50 @@
+import { useAuthActions } from '@convex-dev/auth/react';
 import { LogIn } from 'lucide-react';
 import { useState } from 'react';
 
-import { auth } from '@db/core';
 import { FormActions, FormButton } from '@app/components/form';
 import { Stack } from '@app/components/layout';
 
 export function LoginForm(props: React.ComponentPropsWithoutRef<'div'>) {
+  const { signIn } = useAuthActions();
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
 
-  const handleSocialLogin = async (e: React.FormEvent) => {
+  const handleSocialLogin = async (e: React.FormEvent, provider: 'discord' | 'google') => {
     e.preventDefault();
-    setIsLoading(true);
+    setLoadingProvider(provider);
     setError(null);
 
     try {
-      const { error } = await auth.signInWithOAuth({
-        provider: 'discord',
-      });
-
-      if (error) {
-        throw error;
-      }
+      await signIn(provider, { redirectTo: '/' });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-      setIsLoading(false);
+      setLoadingProvider(null);
     }
   };
 
   return (
     <div {...props}>
-      <Stack as="form" gap={3} onSubmit={handleSocialLogin}>
+      <Stack as="form" gap={3} onSubmit={(e) => handleSocialLogin(e, 'discord')}>
         <h2>Welcome!</h2>
         <p>Sign in to your account to continue</p>
         {error && <p role="alert">{error}</p>}
         <FormActions>
-          <FormButton type="submit" disabled={isLoading}>
+          <FormButton
+            type="button"
+            disabled={loadingProvider !== null}
+            onClick={(e) => handleSocialLogin(e, 'discord')}
+          >
             <LogIn size={16} aria-hidden />
-            <span>{isLoading ? 'Logging in...' : 'Continue with Discord'}</span>
+            <span>{loadingProvider === 'discord' ? 'Logging in...' : 'Continue with Discord'}</span>
+          </FormButton>
+          <FormButton
+            type="button"
+            disabled={loadingProvider !== null}
+            onClick={(e) => handleSocialLogin(e, 'google')}
+          >
+            <LogIn size={16} aria-hidden />
+            <span>{loadingProvider === 'google' ? 'Logging in...' : 'Continue with Google'}</span>
           </FormButton>
         </FormActions>
       </Stack>
