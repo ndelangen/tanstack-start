@@ -14,7 +14,8 @@ Convex agent skills for common tasks can be installed by running `npx convex ai-
 
 ## Validation Convention
 
-- Keep Convex `v` argument validators for boundary shape/type checks.
-- Use shared Zod schemas for semantic/business validation rules.
-- Parse shared Zod schemas in Convex handlers (`safeParse`) for authoritative enforcement.
-- Client-side parsing is for UX feedback only and must mirror server rules, not replace them.
+Follow the canonical validation guidance in [`docs/data-layer.md`](docs/data-layer.md):
+
+- Convex `v` validators for boundary shape/type checks.
+- Shared Zod schemas parsed in Convex handlers (`safeParse`) for authoritative semantic/business rules.
+- Client-side parsing only for UX feedback.

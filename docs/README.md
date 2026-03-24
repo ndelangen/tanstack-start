@@ -6,8 +6,8 @@ Quick reference for understanding and working with the codebase.
 
 **Starting a new feature?**
 1. Routes: `src/app/routes/` (file-based routing)
-2. Domain logic: `src/app/db/domains/` (data access hooks)
-3. Schemas: `src/data/` (Zod schemas)
+2. Domain logic: `src/app/<domain>/db.ts` (data access hooks)
+3. Schemas: `src/app/<domain>/validation.ts` and `src/game/schema/` (Zod schemas)
 4. Validation standard: [`docs/data-layer.md`](./data-layer.md) (Convex `v` + shared Zod)
 
 **Debugging?**
@@ -40,13 +40,13 @@ npm run capture          # Screenshots/PDFs (requires storybook-static from buil
 
 ### Adding a New Domain
 
-1. Create Zod schema in `src/data/domain-name.ts`:
+1. Create Zod schema in `src/app/domain-name/validation.ts` (or `src/game/schema/` for game-domain types):
    ```typescript
    import { z } from 'zod';
    export const schema = z.object({ ... });
    ```
 
-2. Create domain file in `src/app/db/domains/domain-name.ts`:
+2. Create domain db file in `src/app/domain-name/db.ts`:
    - Types (wrap DB types)
    - Query keys (hierarchical structure)
    - Query hooks (`useDomain...`)

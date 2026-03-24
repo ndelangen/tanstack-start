@@ -2,6 +2,18 @@
 
 Use these rules when the top-level workflow points to read amplification, denormalization, index rollout, reactive query cost, or invalidation-heavy writes.
 
+## Contents
+
+- Core Principle
+- Consistency Rule
+- 1. Push Filters To Storage (indexes, migration rule, redundant indexes)
+- 2. Minimize Data Sources (denormalization, fallback rule)
+- 3. Minimize Row Size (digest tables)
+- 4. Skip No-Op Writes
+- 5. Match Consistency To Read Patterns (high-read/low-write, high-read/high-write)
+- Convex-Specific Notes (reactive queries, point-in-time reads, triggers, aggregates, backfills)
+- Verification
+
 ## Core Principle
 
 Every byte read or written multiplies with concurrency.
@@ -47,18 +59,7 @@ export const listOpen = query({
 });
 ```
 
-```ts
-// Also bad: Convex .filter() does not push to storage either
-export const listOpen = query({
-  args: {},
-  handler: async (ctx) => {
-    return await ctx.db
-      .query("tasks")
-      .filter((q) => q.eq(q.field("status"), "open"))
-      .collect();
-  },
-});
-```
+Avoid query-chain `.filter(...)` entirely; it does not push predicates to storage.
 
 ```ts
 // Good: use an index so storage does the filtering

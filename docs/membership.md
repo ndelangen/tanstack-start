@@ -31,7 +31,7 @@ Status transitions: `pending` → `active` (approved) or `removed` (rejected/rem
 
 **Queries**: `useGroupMembers`, `useGroupMembersByStatus`, `useGroupMember`
 
-**Example**: [`src/app/db/domains/members.ts`](../src/app/db/domains/members.ts)
+**Example**: [`src/app/members/db.ts`](../src/app/members/db.ts)
 
 ## Authorization
 

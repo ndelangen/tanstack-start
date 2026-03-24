@@ -1,8 +1,8 @@
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
 import { groupInputSchema } from '@app/groups/validation';
 
-import { api } from '../../../../convex/_generated/api';
-import type { Doc } from '../../../../convex/_generated/dataModel';
+import { api } from '../../../convex/_generated/api';
+import type { Doc } from '../../../convex/_generated/dataModel';
 
 export type GroupRow = Doc<'groups'>;
 export type GroupEntry = GroupRow & { id: string };

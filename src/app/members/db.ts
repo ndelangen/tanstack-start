@@ -3,8 +3,8 @@ import { queryOptions } from '@tanstack/react-query';
 import { db } from '@db/core';
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
 
-import { api } from '../../../../convex/_generated/api';
-import type { Doc } from '../../../../convex/_generated/dataModel';
+import { api } from '../../../convex/_generated/api';
+import type { Doc } from '../../../convex/_generated/dataModel';
 
 export type GroupMemberRow = Doc<'group_members'>;
 export type GroupMemberEntry = GroupMemberRow & { id: string };

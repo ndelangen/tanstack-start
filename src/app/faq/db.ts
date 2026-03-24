@@ -4,8 +4,8 @@ import { db } from '@db/core';
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
 import { faqAnswerSchema, faqQuestionSchema } from '@app/faq/validation';
 
-import { api } from '../../../../convex/_generated/api';
-import type { Doc } from '../../../../convex/_generated/dataModel';
+import { api } from '../../../convex/_generated/api';
+import type { Doc } from '../../../convex/_generated/dataModel';
 
 export type FaqItemRow = Doc<'faq_items'>;
 export type FaqAnswerRow = Doc<'faq_answers'>;
@@ -266,7 +266,8 @@ export function useUpdateFaqItem() {
     mutateAsync: async ({ id, input }: { id: string; input: Partial<FaqItemUpdate> }) => {
       const entry = await mutation.mutateAsync({
         id,
-        question: input.question !== undefined ? faqQuestionSchema.parse(input.question) : undefined,
+        question:
+          input.question !== undefined ? faqQuestionSchema.parse(input.question) : undefined,
         accepted_answer_id: input.accepted_answer_id,
       });
       return { ...entry, id: entry._id };

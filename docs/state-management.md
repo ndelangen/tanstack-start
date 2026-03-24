@@ -30,7 +30,7 @@ export const domainKeys = {
 - `invalidateQueries({ queryKey: domainKeys.lists() })` → invalidates all lists
 - `invalidateQueries({ queryKey: domainKeys.all })` → invalidates everything
 
-**Example**: [`src/app/db/domains/factions.ts`](../src/app/db/domains/factions.ts)
+**Example**: [`src/app/factions/db.ts`](../src/app/factions/db.ts)
 
 ## Query Hooks
 
@@ -42,4 +42,4 @@ Custom hooks encapsulate query logic. Use `initialData` to populate from cache w
 
 **Delete**: `removeQueries(detail)`, then `invalidateQueries(lists)`
 
-**Example**: [`src/app/db/domains/factions.ts`](../src/app/db/domains/factions.ts)
+**Example**: [`src/app/factions/db.ts`](../src/app/factions/db.ts)

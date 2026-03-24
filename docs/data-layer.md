@@ -4,7 +4,7 @@
 
 ```mermaid
 flowchart TD
-    Schema[Zod Schema<br/>src/data/] --> DomainFile[Domain File<br/>src/app/db/domains/]
+    Schema[Zod Schema<br/>src/app/<domain>/validation.ts<br/>or src/game/schema/] --> DomainFile[Domain File<br/>src/app/<domain>/db.ts]
     DomainFile --> Types[Types]
     DomainFile --> QueryKeys[Query Keys]
     DomainFile --> Queries[Query Hooks]
@@ -51,7 +51,7 @@ export const domainKeys = {
 };
 ```
 
-**Example**: [`src/app/db/domains/factions.ts`](../src/app/db/domains/factions.ts)
+**Example**: [`src/app/factions/db.ts`](../src/app/factions/db.ts)
 
 ## Data Validation
 
@@ -122,6 +122,6 @@ Factions and rulesets use `is_deleted` flags instead of hard deletes:
 - Queries filter deleted rows in Convex query handlers
 - Delete mutation sets `is_deleted: true`
 
-**Example**: [`src/app/db/domains/factions.ts`](../src/app/db/domains/factions.ts)
+**Example**: [`src/app/factions/db.ts`](../src/app/factions/db.ts)
 
 Groups use hard delete (actual row removal).

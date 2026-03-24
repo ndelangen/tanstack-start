@@ -16,7 +16,7 @@
     "baseUrl": ".",
     "paths": {
       "@db/core": ["./src/app/db/core/index.ts"],
-      "@db/*": ["./src/app/db/domains/*"],
+      "@db/*": ["./src/app/*/db.ts"],
       "@app/*": ["./src/app/*"],
       "@data/*": ["./src/data/*"],
       "@game/*": ["./src/game/*"]

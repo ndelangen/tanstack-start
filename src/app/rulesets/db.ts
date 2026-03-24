@@ -4,8 +4,8 @@ import { db } from '@db/core';
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
 import { rulesetInputSchema } from '@app/rulesets/validation';
 
-import { api } from '../../../../convex/_generated/api';
-import type { Doc } from '../../../../convex/_generated/dataModel';
+import { api } from '../../../convex/_generated/api';
+import type { Doc } from '../../../convex/_generated/dataModel';
 
 export type Ruleset = { name: string };
 export type RulesetRow = Doc<'rulesets'>;

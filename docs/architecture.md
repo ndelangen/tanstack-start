@@ -14,7 +14,7 @@ flowchart TD
     DomainHooks <-->|"TanStack Query"| Convex
 ```
 
-Loaders fetch directly via Convex function calls. Components use domain hooks (TanStack Query) for reactive/mutating data. Everything runs in the browser - no server rendering.
+Loaders fetch directly via Convex function calls. Components use domain hooks (TanStack Query) for reactive/mutating data. The runtime is browser-first SPA, with TanStack Start prerender used for static output during builds.
 
 ## Validation Flow
 
@@ -35,7 +35,7 @@ Routes live in `src/app/routes/`. File structure maps to URLs (e.g. `index.tsx` 
 Configured in [`tsconfig.json`](../tsconfig.json):
 
 - `@db/core` → `src/app/db/core/index.ts` (DB client, types)
-- `@db/*` → `src/app/db/domains/*` (domain hooks)
+- `@db/*` → `src/app/*/db.ts` (domain hooks)
 - `@app/*` → `src/app/*` (app code)
 - `@data/*` → `src/data/*` (Zod schemas)
 
@@ -44,7 +44,7 @@ Configured in [`tsconfig.json`](../tsconfig.json):
 **Example: Loading factions on home page**
 
 1. Route [`src/app/routes/index.tsx`](../src/app/routes/index.tsx) - loader fetches from DB
-2. Domain hook [`src/app/db/domains/factions.ts`](../src/app/db/domains/factions.ts) - `useFactionsAll()` wraps TanStack Query
+2. Domain hook [`src/app/factions/db.ts`](../src/app/factions/db.ts) - `useFactionsAll()` wraps TanStack Query
 3. Database - Convex document database with function-level authorization checks
 
 See [README](./README.md) for workflows.

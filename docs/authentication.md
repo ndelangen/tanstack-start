@@ -31,7 +31,7 @@ Auth is enforced server-side in Convex mutations:
 const userId = await requireAuthUserId(ctx);
 ```
 
-**Examples**: [`src/app/db/domains/factions.ts`](../src/app/db/domains/factions.ts), [`src/app/db/domains/groups.ts`](../src/app/db/domains/groups.ts)
+**Examples**: [`src/app/factions/db.ts`](../src/app/factions/db.ts), [`src/app/groups/db.ts`](../src/app/groups/db.ts)
 
 ## Auth Routes
 
@@ -48,4 +48,4 @@ Profiles are created on first authenticated bootstrap/update mutation in Convex.
 
 **Hooks**: `useCurrentProfile()`, `useProfile(id)`, `useUpdateCurrentProfile()`
 
-**Example**: [`src/app/db/domains/profiles.ts`](../src/app/db/domains/profiles.ts)
+**Example**: [`src/app/profile/db.ts`](../src/app/profile/db.ts)

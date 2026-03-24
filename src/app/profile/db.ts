@@ -5,8 +5,8 @@ import { db } from '@db/core';
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
 import { type ProfileUserEditInput, profileUserEditFormSchema } from '@app/profile/validation';
 
-import { api } from '../../../../convex/_generated/api';
-import type { Doc } from '../../../../convex/_generated/dataModel';
+import { api } from '../../../convex/_generated/api';
+import type { Doc } from '../../../convex/_generated/dataModel';
 
 export type ProfileRow = Doc<'profiles'>;
 export type ProfileEntry = ProfileRow & { id: ProfileRow['user_id'] | ProfileRow['_id'] };

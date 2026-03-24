@@ -9,8 +9,8 @@ import {
   FactionStoredSchema,
 } from '@game/schema/faction';
 
-import { api } from '../../../../convex/_generated/api';
-import type { Doc } from '../../../../convex/_generated/dataModel';
+import { api } from '../../../convex/_generated/api';
+import type { Doc } from '../../../convex/_generated/dataModel';
 
 export type Faction = FactionInput;
 export type FactionData = FactionStored;
