@@ -47,9 +47,9 @@ export function factionsListQueryOptions() {
       return entries.map((entry) => {
         const withId = withFactionId(entry);
         return {
-        ...withId,
-        data: schema.parse(entry.data),
-      };
+          ...withId,
+          data: schema.parse(entry.data),
+        };
       });
     },
   });
@@ -65,9 +65,9 @@ export function factionsByOwnerQueryOptions(ownerId: NonNullable<FactionEntry['o
       return entries.map((entry) => {
         const withId = withFactionId(entry);
         return {
-        ...withId,
-        data: schema.parse(entry.data),
-      };
+          ...withId,
+          data: schema.parse(entry.data),
+        };
       });
     },
   });
@@ -83,9 +83,9 @@ export function factionsByGroupQueryOptions(groupId: NonNullable<FactionEntry['g
       return entries.map((entry) => {
         const withId = withFactionId(entry);
         return {
-        ...withId,
-        data: schema.parse(entry.data),
-      };
+          ...withId,
+          data: schema.parse(entry.data),
+        };
       });
     },
   });
@@ -166,14 +166,7 @@ export function useUpdateFaction() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      input,
-      id,
-    }: {
-      input: Faction;
-      id: string;
-      previousUrlSlug?: string;
-    }) => {
+    mutationFn: async ({ input, id }: { input: Faction; id: string; previousUrlSlug?: string }) => {
       const validatedData = schema.parse(input);
       const entry = await db.mutation<Tables<'factions'>>('factions:update', {
         id,

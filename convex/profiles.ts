@@ -41,7 +41,10 @@ async function createProfileIfMissing(ctx: MutationCtx, userId: Id<'users'>) {
     const fillUsername = existingByLegacyId.username ?? identityName ?? authUserName;
     const fillAvatar = existingByLegacyId.avatar_url ?? identityPictureUrl ?? authUserImage;
     let nextSlug = existingByLegacyId.slug;
-    if (fillUsername && (existingByLegacyId.slug === 'user' || existingByLegacyId.slug.length === 0)) {
+    if (
+      fillUsername &&
+      (existingByLegacyId.slug === 'user' || existingByLegacyId.slug.length === 0)
+    ) {
       const baseSlug = slugify(fillUsername);
       let candidate = baseSlug || 'user';
       let suffix = 1;
@@ -185,7 +188,7 @@ export const updateCurrent = mutation({
         .query('profiles')
         .withIndex('by_slug', (q) => q.eq('slug', nextSlug))
         .unique();
-        if (!slugOwner || String(slugOwner.user_id ?? slugOwner.id ?? '') === String(userId)) break;
+      if (!slugOwner || String(slugOwner.user_id ?? slugOwner.id ?? '') === String(userId)) break;
       suffix += 1;
       nextSlug = `${nextSlugBase || 'user'}-${suffix}`;
     }

@@ -760,6 +760,7 @@
 }
 
 .ttsRemoveButton {
+  /* biome-ignore lint/complexity/noImportantStyles: :shrug: */
   border-radius: 0 !important;
 }
 

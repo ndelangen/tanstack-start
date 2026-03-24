@@ -22,7 +22,8 @@ export function useGroup(id: NonNullable<GroupEntry['_id']>) {
 
   return useQuery({
     queryKey: groupKeys.detail(id),
-    queryFn: async () => withGroupId(await db.query<Omit<GroupEntry, 'id'>>('groups:getById', { id })),
+    queryFn: async () =>
+      withGroupId(await db.query<Omit<GroupEntry, 'id'>>('groups:getById', { id })),
     initialData: () =>
       qc.getQueryData<GroupEntry[]>(groupKeys.list({ type: 'all' }))?.find((d) => d._id === id),
   });
@@ -31,7 +32,8 @@ export function useGroup(id: NonNullable<GroupEntry['_id']>) {
 export function useGroupsAll() {
   return useQuery({
     queryKey: groupKeys.list({ type: 'all' }),
-    queryFn: async () => (await db.query<Omit<GroupEntry, 'id'>[]>('groups:list', {})).map(withGroupId),
+    queryFn: async () =>
+      (await db.query<Omit<GroupEntry, 'id'>[]>('groups:list', {})).map(withGroupId),
   });
 }
 
@@ -41,9 +43,9 @@ export function useGroupsByCreator(createdBy: NonNullable<GroupEntry['created_by
   return useQuery({
     queryKey: groupKeys.list({ createdBy }),
     queryFn: async () =>
-      (await db.query<Omit<GroupEntry, 'id'>[]>('groups:listByCreator', { created_by: createdBy })).map(
-        withGroupId
-      ),
+      (
+        await db.query<Omit<GroupEntry, 'id'>[]>('groups:listByCreator', { created_by: createdBy })
+      ).map(withGroupId),
     initialData: () =>
       qc
         .getQueryData<GroupEntry[]>(groupKeys.list({ type: 'all' }))
@@ -70,7 +72,9 @@ export function useUpdateGroup() {
 
   return useMutation({
     mutationFn: async ({ input, id }: { input: { name: string }; id: string }) =>
-      withGroupId(await db.mutation<Omit<GroupEntry, 'id'>>('groups:update', { id, name: input.name })),
+      withGroupId(
+        await db.mutation<Omit<GroupEntry, 'id'>>('groups:update', { id, name: input.name })
+      ),
 
     onSuccess: (entry) => {
       qc.setQueryData(groupKeys.detail(entry._id), entry);

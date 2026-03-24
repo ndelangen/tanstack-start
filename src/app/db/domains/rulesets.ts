@@ -104,7 +104,10 @@ export function rulesetsByFactionQueryOptions(factionId: string) {
       const entries = await db.query<Tables<'rulesets'>[]>('rulesets:listByFaction', {
         faction_id: factionId,
       });
-      return entries.map((e) => ({ ...withRulesetId(e), name: schema.parse({ name: e.name }).name }));
+      return entries.map((e) => ({
+        ...withRulesetId(e),
+        name: schema.parse({ name: e.name }).name,
+      }));
     },
   });
 }

@@ -67,9 +67,7 @@ export const factionDetails = query({
       .query('ruleset_factions')
       .withIndex('by_ruleset', (q) => q.eq('ruleset_id', args.ruleset_id))
       .collect();
-    const factions = await Promise.all(
-      links.map((link) => getFactionById(ctx, link.faction_id))
-    );
+    const factions = await Promise.all(links.map((link) => getFactionById(ctx, link.faction_id)));
     return links.map((link, index) => {
       const faction = factions[index];
       const data = faction?.data;

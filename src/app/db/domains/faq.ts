@@ -48,12 +48,13 @@ export function faqItemsByRulesetQueryOptions(rulesetId: string) {
     queryKey: faqKeys.byRuleset(rulesetId),
     queryFn: async () =>
       (
-        await db.query<(Omit<FaqItemWithDetails, 'id' | 'faq_answers'> & { faq_answers: Omit<FaqAnswerEntry, 'id'>[] })[]>(
-          'faq:byRuleset',
-          {
-            ruleset_id: rulesetId,
-          }
-        )
+        await db.query<
+          (Omit<FaqItemWithDetails, 'id' | 'faq_answers'> & {
+            faq_answers: Omit<FaqAnswerEntry, 'id'>[];
+          })[]
+        >('faq:byRuleset', {
+          ruleset_id: rulesetId,
+        })
       ).map((item) => ({
         ...withFaqItemId(item),
         faq_answers: item.faq_answers.map(withFaqAnswerId),
@@ -65,10 +66,9 @@ export function faqItemDetailQueryOptions(id: string) {
   return queryOptions({
     queryKey: faqKeys.detail(id),
     queryFn: async () => {
-      const item = await db.query<Omit<FaqItemEntry, 'id'> & { faq_answers: Omit<FaqAnswerEntry, 'id'>[] }>(
-        'faq:detail',
-        { id }
-      );
+      const item = await db.query<
+        Omit<FaqItemEntry, 'id'> & { faq_answers: Omit<FaqAnswerEntry, 'id'>[] }
+      >('faq:detail', { id });
       return {
         ...withFaqItemId(item),
         faq_answers: item.faq_answers.map(withFaqAnswerId),
@@ -93,10 +93,11 @@ export function faqItemsAskedByQueryOptions(profileId: string) {
   return queryOptions({
     queryKey: faqKeys.askedBy(profileId),
     queryFn: async () =>
-      (await db.query<(Omit<FaqItemAskedByWithRuleset, 'id'> & { ruleset: { id: string; name: string } })[]>(
-        'faq:askedBy',
-        { profile_id: profileId }
-      )).map(withFaqItemId),
+      (
+        await db.query<
+          (Omit<FaqItemAskedByWithRuleset, 'id'> & { ruleset: { id: string; name: string } })[]
+        >('faq:askedBy', { profile_id: profileId })
+      ).map(withFaqItemId),
   });
 }
 
@@ -162,11 +163,13 @@ export function useCreateFaqItem() {
       answer?: string;
     }) => {
       const validated = faqItemSchema.parse({ question });
-      return withFaqItemId(await db.mutation<Omit<FaqItemEntry, 'id'>>('faq:createItem', {
-        ruleset_id: rulesetId,
-        question: validated.question,
-        answer,
-      }));
+      return withFaqItemId(
+        await db.mutation<Omit<FaqItemEntry, 'id'>>('faq:createItem', {
+          ruleset_id: rulesetId,
+          question: validated.question,
+          answer,
+        })
+      );
     },
     onSuccess: (entry, variables) => {
       qc.invalidateQueries({ queryKey: faqKeys.byRuleset(entry.ruleset_id) });
@@ -250,10 +253,12 @@ export function useCreateFaqAnswer() {
   return useMutation({
     mutationFn: async ({ faqItemId, answer }: { faqItemId: string; answer: string }) => {
       const validated = faqAnswerSchema.parse({ answer });
-      return withFaqAnswerId(await db.mutation<Omit<FaqAnswerEntry, 'id'>>('faq:createAnswer', {
-        faq_item_id: faqItemId,
-        answer: validated.answer,
-      }));
+      return withFaqAnswerId(
+        await db.mutation<Omit<FaqAnswerEntry, 'id'>>('faq:createAnswer', {
+          faq_item_id: faqItemId,
+          answer: validated.answer,
+        })
+      );
     },
     onSuccess: (entry) => {
       qc.invalidateQueries({ queryKey: faqKeys.detail(entry.faq_item_id) });
@@ -269,10 +274,12 @@ export function useUpdateFaqAnswer() {
   return useMutation({
     mutationFn: async ({ id, answer }: { id: string; answer: string }) => {
       const validated = faqAnswerSchema.parse({ answer });
-      return withFaqAnswerId(await db.mutation<Omit<FaqAnswerEntry, 'id'>>('faq:updateAnswer', {
-        id,
-        answer: validated.answer,
-      }));
+      return withFaqAnswerId(
+        await db.mutation<Omit<FaqAnswerEntry, 'id'>>('faq:updateAnswer', {
+          id,
+          answer: validated.answer,
+        })
+      );
     },
     onSuccess: (entry) => {
       qc.invalidateQueries({ queryKey: faqKeys.detail(entry.faq_item_id) });

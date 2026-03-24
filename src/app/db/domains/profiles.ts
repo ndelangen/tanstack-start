@@ -72,7 +72,9 @@ export function currentProfileQueryOptions() {
         return null;
       }
 
-      return withProfileId(await db.mutation<Omit<ProfileEntry, 'id'>>('profiles:bootstrapCurrent', {}));
+      return withProfileId(
+        await db.mutation<Omit<ProfileEntry, 'id'>>('profiles:bootstrapCurrent', {})
+      );
     },
   });
 }
@@ -83,9 +85,7 @@ export function useProfile(id: NonNullable<ProfileEntry['_id']>) {
   return useQuery({
     ...profileDetailQueryOptions(id),
     initialData: () =>
-      qc
-        .getQueryData<ProfileEntry[]>(profileKeys.list({ type: 'all' }))
-        ?.find((d) => d._id === id),
+      qc.getQueryData<ProfileEntry[]>(profileKeys.list({ type: 'all' }))?.find((d) => d._id === id),
   });
 }
 

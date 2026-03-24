@@ -31,12 +31,13 @@ export function userGroupMembershipsQueryOptions(userId: string) {
   return queryOptions({
     queryKey: memberKeys.byUser(userId),
     queryFn: async () =>
-      (await db.query<(Omit<GroupMemberEntry, 'id'> & { groups: { id: string; name: string } | null })[]>(
-        'members:listByUserActiveWithGroups',
-        {
+      (
+        await db.query<
+          (Omit<GroupMemberEntry, 'id'> & { groups: { id: string; name: string } | null })[]
+        >('members:listByUserActiveWithGroups', {
           user_id: userId,
-        }
-      )).map((entry) => ({ ...withMembershipId(entry), groups: entry.groups })),
+        })
+      ).map((entry) => ({ ...withMembershipId(entry), groups: entry.groups })),
   });
 }
 
@@ -51,9 +52,11 @@ export function useGroupMembers(groupId: string) {
   return useQuery({
     queryKey: memberKeys.byGroup(groupId),
     queryFn: async () =>
-      (await db.query<Omit<GroupMemberEntry, 'id'>[]>('members:listByGroup', {
-        group_id: groupId,
-      })).map(withMembershipId),
+      (
+        await db.query<Omit<GroupMemberEntry, 'id'>[]>('members:listByGroup', {
+          group_id: groupId,
+        })
+      ).map(withMembershipId),
   });
 }
 
@@ -63,10 +66,12 @@ export function useGroupMembersByStatus(groupId: string, status: GroupMemberStat
   return useQuery({
     queryKey: memberKeys.byGroupAndStatus(groupId, status),
     queryFn: async () =>
-      (await db.query<Omit<GroupMemberEntry, 'id'>[]>('members:listByGroupAndStatus', {
-        group_id: groupId,
-        status,
-      })).map(withMembershipId),
+      (
+        await db.query<Omit<GroupMemberEntry, 'id'>[]>('members:listByGroupAndStatus', {
+          group_id: groupId,
+          status,
+        })
+      ).map(withMembershipId),
     initialData: () =>
       qc
         .getQueryData<GroupMemberEntry[]>(memberKeys.byGroup(groupId))
@@ -80,10 +85,12 @@ export function useGroupMember(groupId: string, userId: string) {
   return useQuery({
     queryKey: memberKeys.detail(groupId, userId),
     queryFn: async () =>
-      withMembershipId(await db.query<Omit<GroupMemberEntry, 'id'>>('members:get', {
-        group_id: groupId,
-        user_id: userId,
-      })),
+      withMembershipId(
+        await db.query<Omit<GroupMemberEntry, 'id'>>('members:get', {
+          group_id: groupId,
+          user_id: userId,
+        })
+      ),
     initialData: () =>
       qc
         .getQueryData<GroupMemberEntry[]>(memberKeys.byGroup(groupId))
@@ -96,9 +103,11 @@ export function useRequestGroupMembership() {
 
   return useMutation({
     mutationFn: async (groupId: string) =>
-      withMembershipId(await db.mutation<Omit<GroupMemberEntry, 'id'>>('members:request', {
-        group_id: groupId,
-      })),
+      withMembershipId(
+        await db.mutation<Omit<GroupMemberEntry, 'id'>>('members:request', {
+          group_id: groupId,
+        })
+      ),
 
     onSuccess: (entry) => {
       qc.setQueryData(memberKeys.detail(entry.group_id, entry.user_id), entry);
@@ -112,10 +121,12 @@ export function useApproveGroupMember() {
 
   return useMutation({
     mutationFn: async ({ groupId, userId }: { groupId: string; userId: string }) =>
-      withMembershipId(await db.mutation<Omit<GroupMemberEntry, 'id'>>('members:approve', {
-        group_id: groupId,
-        user_id: userId,
-      })),
+      withMembershipId(
+        await db.mutation<Omit<GroupMemberEntry, 'id'>>('members:approve', {
+          group_id: groupId,
+          user_id: userId,
+        })
+      ),
 
     onSuccess: (entry) => {
       qc.setQueryData(memberKeys.detail(entry.group_id, entry.user_id), entry);
@@ -129,10 +140,12 @@ export function useRejectGroupMember() {
 
   return useMutation({
     mutationFn: async ({ groupId, userId }: { groupId: string; userId: string }) =>
-      withMembershipId(await db.mutation<Omit<GroupMemberEntry, 'id'>>('members:reject', {
-        group_id: groupId,
-        user_id: userId,
-      })),
+      withMembershipId(
+        await db.mutation<Omit<GroupMemberEntry, 'id'>>('members:reject', {
+          group_id: groupId,
+          user_id: userId,
+        })
+      ),
 
     onSuccess: (entry) => {
       qc.setQueryData(memberKeys.detail(entry.group_id, entry.user_id), entry);
@@ -163,10 +176,12 @@ export function useAddGroupMember() {
 
   return useMutation({
     mutationFn: async ({ groupId, userId }: { groupId: string; userId: string }) =>
-      withMembershipId(await db.mutation<Omit<GroupMemberEntry, 'id'>>('members:add', {
-        group_id: groupId,
-        user_id: userId,
-      })),
+      withMembershipId(
+        await db.mutation<Omit<GroupMemberEntry, 'id'>>('members:add', {
+          group_id: groupId,
+          user_id: userId,
+        })
+      ),
 
     onSuccess: (entry) => {
       qc.setQueryData(memberKeys.detail(entry.group_id, entry.user_id), entry);

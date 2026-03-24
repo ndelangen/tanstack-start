@@ -98,9 +98,8 @@ function FactionDetailPage() {
     location.search && typeof location.search === 'object'
       ? (location.search as Record<string, unknown>)
       : null;
-  const sheetModeFromObject = searchObject && typeof searchObject.mode === 'string'
-    ? searchObject.mode
-    : null;
+  const sheetModeFromObject =
+    searchObject && typeof searchObject.mode === 'string' ? searchObject.mode : null;
   const sheetModeFromString = new URLSearchParams(
     typeof location.search === 'string' ? location.search : ''
   ).get('mode');
