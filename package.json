@@ -12,7 +12,7 @@
     "convex:dev": "convex dev",
     "convex:deploy": "convex deploy",
     "netlify": "bunx netlify",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit",
     "generate": "bun run ./scripts/generate.ts",
     "capture": "bun run ./scripts/capture.ts",
