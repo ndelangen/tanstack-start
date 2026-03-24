@@ -75,16 +75,16 @@ export const ALL = z.union([
 `
 );
 
-const files = await readdir(join(import.meta.dirname, '../src/game/faction'));
-const factions = Object.fromEntries(
-  await Promise.all(
-    files.map(async (file) => {
-      const { default: faction } = await import(`../src/game/faction/${file}`);
+// const files = await readdir(join(import.meta.dirname, '../src/game/faction'));
+// const factions = Object.fromEntries(
+//   await Promise.all(
+//     files.map(async (file) => {
+//       const { default: faction } = await import(`../src/game/faction/${file}`);
 
-      return [file.replace('.ts', ''), faction];
-    })
-  )
-);
+//       return [file.replace('.ts', ''), faction];
+//     })
+//   )
+// );
 
 const backs = generated
   .filter((f) => f.includes('/back/'))
@@ -140,7 +140,7 @@ await Bun.write(
   join(import.meta.dirname, '../generated', 'index.json'),
   JSON.stringify(
     sortKeysDeep({
-      factions,
+      // factions,
       backs,
       spice,
       spiceSpecial,
