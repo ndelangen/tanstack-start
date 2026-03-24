@@ -5,10 +5,15 @@ import { ConvexReactClient } from 'convex/react';
 const convexUrl = import.meta.env.VITE_CONVEX_URL!;
 export const convex = new ConvexReactClient(convexUrl);
 
+/** TanStack Start sets this while generating static HTML; no user session or reliable backend. */
+export function isTanStackStartPrerendering(): boolean {
+  return typeof process !== 'undefined' && process.env?.TSS_PRERENDERING === 'true';
+}
+
 let prerenderHttpClient: ConvexHttpClient | null = null;
 
 function convexBackendForDb(): ConvexReactClient | ConvexHttpClient {
-  if (typeof process !== 'undefined' && process.env && process.env.TSS_PRERENDERING === 'true') {
+  if (isTanStackStartPrerendering()) {
     if (!prerenderHttpClient) {
       prerenderHttpClient = new ConvexHttpClient(convexUrl, { logger: false });
     }

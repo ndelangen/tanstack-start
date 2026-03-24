@@ -5,8 +5,8 @@ import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { createRootRouteWithContext, HeadContent, Link, Scripts } from '@tanstack/react-router';
 
-import { convex } from '@db/core';
-import { currentProfileQueryOptions } from '@db/profiles';
+import { convex, isTanStackStartPrerendering } from '@db/core';
+import { currentProfileQueryOptions, type ProfileEntry } from '@db/profiles';
 import { queryClient } from '@app/queryClient';
 
 import '../styles/fonts.css';
@@ -19,7 +19,17 @@ interface RouterContext {
 }
 
 export const Route = createRootRouteWithContext<RouterContext>()({
-  loader: ({ context }) => context.queryClient.ensureQueryData(currentProfileQueryOptions()),
+  loader: async ({ context }) => {
+    if (isTanStackStartPrerendering()) {
+      await context.queryClient.prefetchQuery({
+        ...currentProfileQueryOptions(),
+        queryFn: async (): Promise<ProfileEntry | null> => null,
+        staleTime: Number.POSITIVE_INFINITY,
+      });
+      return;
+    }
+    await context.queryClient.ensureQueryData(currentProfileQueryOptions());
+  },
   head: () => ({
     meta: [
       {
