@@ -1,26 +1,24 @@
 import { queryOptions } from '@tanstack/react-query';
 
-import { db, type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
+import { db } from '@db/core';
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
 import { rulesetInputSchema } from '@app/rulesets/validation';
-import { schema as factionDataSchema } from '@data/factions';
 
 import { api } from '../../../../convex/_generated/api';
+import type { Doc } from '../../../../convex/_generated/dataModel';
 
 export type Ruleset = { name: string };
-export type RulesetEntry = Omit<Tables<'rulesets'>, 'name'> & {
+export type RulesetRow = Doc<'rulesets'>;
+export type RulesetEntry = Omit<RulesetRow, 'name'> & {
+  name: Ruleset['name'];
+  id: string;
+};
+export type RulesetInsert = Omit<RulesetEntry, 'name'> & {
   name: Ruleset['name'];
 };
-export type RulesetInsert = Omit<TablesInsert<'rulesets'>, 'name'> & {
-  name: Ruleset['name'];
-};
-export type RulesetUpdate = Omit<TablesUpdate<'rulesets'>, 'name'> & {
+export type RulesetUpdate = Omit<Partial<RulesetEntry>, 'name'> & {
   name?: Ruleset['name'];
 };
-
-function withRulesetId(entry: Omit<Tables<'rulesets'>, 'id'>): Tables<'rulesets'> {
-  return { ...entry, id: entry._id };
-}
 
 export const rulesetKeys = {
   all: ['rulesets'] as const,
@@ -36,9 +34,10 @@ export function rulesetsListQueryOptions() {
   return queryOptions({
     queryKey: rulesetKeys.list({ type: 'all' }),
     queryFn: async () => {
-      const entries = await db.query<Tables<'rulesets'>[]>(api.rulesets.list, {});
+      const entries = await db.query<RulesetRow[]>(api.rulesets.list, {});
       return entries.map((entry) => ({
-        ...withRulesetId(entry),
+        ...entry,
+        id: entry._id,
         name: rulesetInputSchema.parse({ name: entry.name }).name,
       }));
     },
@@ -49,9 +48,10 @@ export function rulesetDetailQueryOptions(id: string) {
   return queryOptions({
     queryKey: rulesetKeys.detail(id),
     queryFn: async () => {
-      const entry = await db.query<Tables<'rulesets'>>(api.rulesets.get, { id });
+      const entry = await db.query<RulesetRow>(api.rulesets.get, { id });
       return {
-        ...withRulesetId(entry),
+        ...entry,
+        id: entry._id,
         name: rulesetInputSchema.parse({ name: entry.name }).name,
       };
     },
@@ -74,14 +74,7 @@ export function rulesetFactionsWithDetailsQueryOptions(rulesetId: string) {
         api.rulesets.factionDetails,
         { ruleset_id: rulesetId }
       );
-      return entries.map((entry) => {
-        const parsed = factionDataSchema.safeParse({ slug: entry.urlSlug, name: entry.name });
-        return {
-          factionId: entry.factionId,
-          name: parsed.success ? parsed.data.name : entry.name,
-          urlSlug: parsed.success ? parsed.data.slug : entry.urlSlug,
-        };
-      });
+      return entries;
     },
   });
 }
@@ -105,30 +98,32 @@ export function rulesetsByFactionQueryOptions(factionId: string) {
   return queryOptions({
     queryKey: rulesetKeys.byFaction(factionId),
     queryFn: async () => {
-      const entries = await db.query<Tables<'rulesets'>[]>(api.rulesets.listByFaction, {
+      const entries = await db.query<RulesetRow[]>(api.rulesets.listByFaction, {
         faction_id: factionId,
       });
-      return entries.map((e) => ({
-        ...withRulesetId(e),
-        name: rulesetInputSchema.parse({ name: e.name }).name,
+      return entries.map((entry) => ({
+        ...entry,
+        id: entry._id,
+        name: rulesetInputSchema.parse({ name: entry.name }).name,
       }));
     },
   });
 }
 
 export function useRulesetsAll() {
-  const result = useLiveQuery<Tables<'rulesets'>[], Record<string, never>>(api.rulesets.list, {});
+  const result = useLiveQuery<RulesetRow[], Record<string, never>>(api.rulesets.list, {});
   return {
     ...result,
     data: result.data?.map((entry) => ({
-      ...withRulesetId(entry),
+      ...entry,
+      id: entry._id,
       name: rulesetInputSchema.parse({ name: entry.name }).name,
     })),
   };
 }
 
 export function useRuleset(id: string) {
-  const result = useLiveQuery<Tables<'rulesets'>, { id: string }>(
+  const result = useLiveQuery<RulesetRow, { id: string }>(
     api.rulesets.get,
     { id },
     { enabled: Boolean(id) }
@@ -137,7 +132,8 @@ export function useRuleset(id: string) {
     ...result,
     data: result.data
       ? {
-          ...withRulesetId(result.data),
+          ...result.data,
+          id: result.data._id,
           name: rulesetInputSchema.parse({ name: result.data.name }).name,
         }
       : undefined,
@@ -159,28 +155,22 @@ export function useRulesetFactionsWithDetails(rulesetId: string) {
   >(api.rulesets.factionDetails, { ruleset_id: rulesetId }, { enabled: Boolean(rulesetId) });
   return {
     ...result,
-    data: result.data?.map((entry) => {
-      const parsed = factionDataSchema.safeParse({ slug: entry.urlSlug, name: entry.name });
-      return {
-        factionId: entry.factionId,
-        name: parsed.success ? parsed.data.name : entry.name,
-        urlSlug: parsed.success ? parsed.data.slug : entry.urlSlug,
-      };
-    }),
+    data: result.data,
   };
 }
 
 export function useRulesetsByFaction(factionRowId: string | undefined) {
-  const result = useLiveQuery<Tables<'rulesets'>[], { faction_id: string }>(
+  const result = useLiveQuery<RulesetRow[], { faction_id: string }>(
     api.rulesets.listByFaction,
     { faction_id: factionRowId ?? '' },
     { enabled: Boolean(factionRowId) }
   );
   return {
     ...result,
-    data: result.data?.map((e) => ({
-      ...withRulesetId(e),
-      name: rulesetInputSchema.parse({ name: e.name }).name,
+    data: result.data?.map((entry) => ({
+      ...entry,
+      id: entry._id,
+      name: rulesetInputSchema.parse({ name: entry.name }).name,
     })),
   };
 }
@@ -188,25 +178,30 @@ export function useRulesetsByFaction(factionRowId: string | undefined) {
 export function useCreateRuleset() {
   const mutation = useLiveMutation<
     { name: string; group_id: string | null; image_cover: string | null },
-    Tables<'rulesets'>
+    RulesetRow
   >(api.rulesets.create);
   return {
     ...mutation,
     mutate: (
       variables: { input: Ruleset; groupId?: string | null; imageCover?: string | null },
       options?: {
-        onSuccess?: (entry: Tables<'rulesets'>) => void;
+        onSuccess?: (entry: RulesetEntry) => void;
         onError?: (error: Error) => void;
       }
     ) =>
       mutation.mutate(
         {
-          name: rulesetInputSchema.parse(variables.input).name,
+          name: rulesetInputSchema.parse({ name: variables.input.name }).name,
           group_id: variables.groupId ?? null,
           image_cover: variables.imageCover ?? null,
         },
         {
-          onSuccess: (entry) => options?.onSuccess?.({ ...withRulesetId(entry), name: entry.name }),
+          onSuccess: (entry) =>
+            options?.onSuccess?.({
+              ...entry,
+              id: entry._id,
+              name: entry.name,
+            }),
           onError: (error) => options?.onError?.(error),
         }
       ),
@@ -219,13 +214,13 @@ export function useCreateRuleset() {
       groupId?: string | null;
       imageCover?: string | null;
     }) => {
-      const validated = rulesetInputSchema.parse(input);
+      const validatedName = rulesetInputSchema.parse({ name: input.name }).name;
       const entry = await mutation.mutateAsync({
-        name: validated.name,
+        name: validatedName,
         group_id: groupId ?? null,
         image_cover: imageCover ?? null,
       });
-      return { ...withRulesetId(entry), name: validated.name };
+      return { ...entry, id: entry._id, name: validatedName };
     },
   };
 }
@@ -233,7 +228,7 @@ export function useCreateRuleset() {
 export function useUpdateRuleset() {
   const mutation = useLiveMutation<
     { id: string; name: string; group_id?: string | null; image_cover?: string | null },
-    Tables<'rulesets'>
+    RulesetRow
   >(api.rulesets.update);
   return {
     ...mutation,
@@ -245,19 +240,24 @@ export function useUpdateRuleset() {
         imageCover?: string | null;
       },
       options?: {
-        onSuccess?: (entry: Tables<'rulesets'>) => void;
+        onSuccess?: (entry: RulesetEntry) => void;
         onError?: (error: Error) => void;
       }
     ) =>
       mutation.mutate(
         {
           id: variables.id,
-          name: rulesetInputSchema.parse(variables.input).name,
+          name: rulesetInputSchema.parse({ name: variables.input.name }).name,
           group_id: variables.groupId,
           image_cover: variables.imageCover,
         },
         {
-          onSuccess: (entry) => options?.onSuccess?.({ ...withRulesetId(entry), name: entry.name }),
+          onSuccess: (entry) =>
+            options?.onSuccess?.({
+              ...entry,
+              id: entry._id,
+              name: entry.name,
+            }),
           onError: (error) => options?.onError?.(error),
         }
       ),
@@ -272,14 +272,14 @@ export function useUpdateRuleset() {
       groupId?: string | null;
       imageCover?: string | null;
     }) => {
-      const validated = rulesetInputSchema.parse(input);
+      const validatedName = rulesetInputSchema.parse({ name: input.name }).name;
       const entry = await mutation.mutateAsync({
         id,
-        name: validated.name,
+        name: validatedName,
         group_id: groupId,
         image_cover: imageCover,
       });
-      return { ...withRulesetId(entry), name: validated.name };
+      return { ...entry, id: entry._id, name: validatedName };
     },
   };
 }

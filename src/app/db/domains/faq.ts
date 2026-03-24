@@ -1,25 +1,20 @@
 import { queryOptions } from '@tanstack/react-query';
 
-import { db, type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
+import { db } from '@db/core';
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
 import { faqAnswerSchema, faqQuestionSchema } from '@app/faq/validation';
 
 import { api } from '../../../../convex/_generated/api';
+import type { Doc } from '../../../../convex/_generated/dataModel';
 
-export type FaqItemEntry = Tables<'faq_items'>;
-export type FaqItemInsert = TablesInsert<'faq_items'>;
-export type FaqItemUpdate = TablesUpdate<'faq_items'>;
-export type FaqAnswerEntry = Tables<'faq_answers'>;
-export type FaqAnswerInsert = TablesInsert<'faq_answers'>;
-export type FaqAnswerUpdate = TablesUpdate<'faq_answers'>;
-
-function withFaqItemId<T extends { _id: string }>(entry: T): T & { id: string } {
-  return { ...entry, id: entry._id };
-}
-
-function withFaqAnswerId<T extends { _id: string }>(entry: T): T & { id: string } {
-  return { ...entry, id: entry._id };
-}
+export type FaqItemRow = Doc<'faq_items'>;
+export type FaqAnswerRow = Doc<'faq_answers'>;
+export type FaqItemEntry = FaqItemRow & { id: string };
+export type FaqItemInsert = FaqItemEntry;
+export type FaqItemUpdate = Partial<FaqItemEntry>;
+export type FaqAnswerEntry = FaqAnswerRow & { id: string };
+export type FaqAnswerInsert = FaqAnswerEntry;
+export type FaqAnswerUpdate = Partial<FaqAnswerEntry>;
 
 export const faqKeys = {
   all: ['faq'] as const,
@@ -52,8 +47,9 @@ export function faqItemsByRulesetQueryOptions(rulesetId: string) {
           ruleset_id: rulesetId,
         })
       ).map((item) => ({
-        ...withFaqItemId(item),
-        faq_answers: item.faq_answers.map(withFaqAnswerId),
+        ...item,
+        id: item._id,
+        faq_answers: item.faq_answers.map((answer) => ({ ...answer, id: answer._id })),
       })),
   });
 }
@@ -66,8 +62,9 @@ export function faqItemDetailQueryOptions(id: string) {
         Omit<FaqItemEntry, 'id'> & { faq_answers: Omit<FaqAnswerEntry, 'id'>[] }
       >(api.faq.detail, { id });
       return {
-        ...withFaqItemId(item),
-        faq_answers: item.faq_answers.map(withFaqAnswerId),
+        ...item,
+        id: item._id,
+        faq_answers: item.faq_answers.map((answer) => ({ ...answer, id: answer._id })),
       };
     },
   });
@@ -83,8 +80,9 @@ export function useFaqItemsByRuleset(rulesetId: string) {
   return {
     ...result,
     data: result.data?.map((item) => ({
-      ...withFaqItemId(item),
-      faq_answers: item.faq_answers.map(withFaqAnswerId),
+      ...item,
+      id: item._id,
+      faq_answers: item.faq_answers.map((answer) => ({ ...answer, id: answer._id })),
     })),
   };
 }
@@ -98,8 +96,9 @@ export function useFaqItem(id: string) {
     ...result,
     data: result.data
       ? {
-          ...withFaqItemId(result.data),
-          faq_answers: result.data.faq_answers.map(withFaqAnswerId),
+          ...result.data,
+          id: result.data._id,
+          faq_answers: result.data.faq_answers.map((answer) => ({ ...answer, id: answer._id })),
         }
       : undefined,
   };
@@ -117,7 +116,7 @@ export function faqItemsAskedByQueryOptions(profileId: string) {
         await db.query<
           (Omit<FaqItemAskedByWithRuleset, 'id'> & { ruleset: { id: string; name: string } })[]
         >(api.faq.askedBy, { profile_id: profileId })
-      ).map(withFaqItemId),
+      ).map((entry) => ({ ...entry, id: entry._id })),
   });
 }
 
@@ -149,7 +148,8 @@ export function faqAnswersByUserQueryOptions(profileId: string) {
           })[]
         >(api.faq.answeredBy, { profile_id: profileId })
       ).map((answer) => ({
-        ...withFaqAnswerId(answer),
+        ...answer,
+        id: answer._id,
         faq_item: { ...answer.faq_item, id: answer.faq_item.id },
       })),
   });
@@ -166,7 +166,7 @@ export function useFaqItemsAskedBy(profileId: string | undefined) {
   );
   return {
     ...result,
-    data: result.data?.map(withFaqItemId),
+    data: result.data?.map((entry) => ({ ...entry, id: entry._id })),
   };
 }
 
@@ -184,7 +184,8 @@ export function useFaqAnswersByUser(profileId: string | undefined) {
   return {
     ...result,
     data: result.data?.map((answer) => ({
-      ...withFaqAnswerId(answer),
+      ...answer,
+      id: answer._id,
       faq_item: { ...answer.faq_item, id: answer.faq_item.id },
     })),
   };
@@ -206,12 +207,12 @@ export function useCreateFaqItem() {
           ruleset_id: variables.rulesetId,
           question: faqQuestionSchema.parse(variables.question),
           answer:
-            variables.answer !== undefined && variables.answer.trim().length > 0
-              ? faqAnswerSchema.parse(variables.answer)
-              : undefined,
+            variables.answer === undefined || variables.answer.trim().length === 0
+              ? undefined
+              : faqAnswerSchema.parse(variables.answer),
         },
         {
-          onSuccess: (entry) => options?.onSuccess?.(withFaqItemId(entry)),
+          onSuccess: (entry) => options?.onSuccess?.({ ...entry, id: entry._id }),
           onError: (error) => options?.onError?.(error),
         }
       ),
@@ -223,17 +224,17 @@ export function useCreateFaqItem() {
       rulesetId: string;
       question: string;
       answer?: string;
-    }) =>
-      withFaqItemId(
-        await mutation.mutateAsync({
-          ruleset_id: rulesetId,
-          question: faqQuestionSchema.parse(question),
-          answer:
-            answer !== undefined && answer.trim().length > 0
-              ? faqAnswerSchema.parse(answer)
-              : undefined,
-        })
-      ),
+    }) => {
+      const entry = await mutation.mutateAsync({
+        ruleset_id: rulesetId,
+        question: faqQuestionSchema.parse(question),
+        answer:
+          answer === undefined || answer.trim().length === 0
+            ? undefined
+            : faqAnswerSchema.parse(answer),
+      });
+      return { ...entry, id: entry._id };
+    },
   };
 }
 
@@ -258,19 +259,18 @@ export function useUpdateFaqItem() {
           accepted_answer_id: variables.input.accepted_answer_id,
         },
         {
-          onSuccess: (entry) => options?.onSuccess?.(withFaqItemId(entry)),
+          onSuccess: (entry) => options?.onSuccess?.({ ...entry, id: entry._id }),
           onError: (error) => options?.onError?.(error),
         }
       ),
-    mutateAsync: async ({ id, input }: { id: string; input: Partial<FaqItemUpdate> }) =>
-      withFaqItemId(
-        await mutation.mutateAsync({
-          id,
-          question:
-            input.question !== undefined ? faqQuestionSchema.parse(input.question) : undefined,
-          accepted_answer_id: input.accepted_answer_id,
-        })
-      ),
+    mutateAsync: async ({ id, input }: { id: string; input: Partial<FaqItemUpdate> }) => {
+      const entry = await mutation.mutateAsync({
+        id,
+        question: input.question !== undefined ? faqQuestionSchema.parse(input.question) : undefined,
+        accepted_answer_id: input.accepted_answer_id,
+      });
+      return { ...entry, id: entry._id };
+    },
   };
 }
 
@@ -288,7 +288,7 @@ export function useSetAcceptedAnswer() {
       mutation.mutate(
         { faq_item_id: variables.faqItemId, accepted_answer_id: variables.acceptedAnswerId },
         {
-          onSuccess: (entry) => options?.onSuccess?.(withFaqItemId(entry)),
+          onSuccess: (entry) => options?.onSuccess?.({ ...entry, id: entry._id }),
           onError: (error) => options?.onError?.(error),
         }
       ),
@@ -298,13 +298,13 @@ export function useSetAcceptedAnswer() {
     }: {
       faqItemId: string;
       acceptedAnswerId: string | null;
-    }) =>
-      withFaqItemId(
-        await mutation.mutateAsync({
-          faq_item_id: faqItemId,
-          accepted_answer_id: acceptedAnswerId,
-        })
-      ),
+    }) => {
+      const entry = await mutation.mutateAsync({
+        faq_item_id: faqItemId,
+        accepted_answer_id: acceptedAnswerId,
+      });
+      return { ...entry, id: entry._id };
+    },
   };
 }
 
@@ -350,17 +350,17 @@ export function useCreateFaqAnswer() {
           answer: faqAnswerSchema.parse(variables.answer),
         },
         {
-          onSuccess: (entry) => options?.onSuccess?.(withFaqAnswerId(entry)),
+          onSuccess: (entry) => options?.onSuccess?.({ ...entry, id: entry._id }),
           onError: (error) => options?.onError?.(error),
         }
       ),
-    mutateAsync: async ({ faqItemId, answer }: { faqItemId: string; answer: string }) =>
-      withFaqAnswerId(
-        await mutation.mutateAsync({
-          faq_item_id: faqItemId,
-          answer: faqAnswerSchema.parse(answer),
-        })
-      ),
+    mutateAsync: async ({ faqItemId, answer }: { faqItemId: string; answer: string }) => {
+      const entry = await mutation.mutateAsync({
+        faq_item_id: faqItemId,
+        answer: faqAnswerSchema.parse(answer),
+      });
+      return { ...entry, id: entry._id };
+    },
   };
 }
 
@@ -377,12 +377,14 @@ export function useUpdateFaqAnswer() {
       mutation.mutate(
         { id: variables.id, answer: faqAnswerSchema.parse(variables.answer) },
         {
-          onSuccess: (entry) => options?.onSuccess?.(withFaqAnswerId(entry)),
+          onSuccess: (entry) => options?.onSuccess?.({ ...entry, id: entry._id }),
           onError: (error) => options?.onError?.(error),
         }
       ),
-    mutateAsync: async ({ id, answer }: { id: string; answer: string }) =>
-      withFaqAnswerId(await mutation.mutateAsync({ id, answer: faqAnswerSchema.parse(answer) })),
+    mutateAsync: async ({ id, answer }: { id: string; answer: string }) => {
+      const entry = await mutation.mutateAsync({ id, answer: faqAnswerSchema.parse(answer) });
+      return { ...entry, id: entry._id };
+    },
   };
 }
 

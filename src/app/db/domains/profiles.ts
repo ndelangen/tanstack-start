@@ -1,19 +1,15 @@
 import { queryOptions } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 
-import { db, type Tables } from '@db/core';
+import { db } from '@db/core';
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
 import { type ProfileUserEditInput, profileUserEditFormSchema } from '@app/profile/validation';
 
 import { api } from '../../../../convex/_generated/api';
+import type { Doc } from '../../../../convex/_generated/dataModel';
 
-export type ProfileEntry = Tables<'profiles'>;
-
-function withProfileId(entry: Omit<ProfileEntry, 'id'>): ProfileEntry {
-  const resolvedId =
-    typeof entry.user_id === 'string' && entry.user_id.length > 0 ? entry.user_id : entry._id;
-  return { ...entry, id: resolvedId };
-}
+export type ProfileRow = Doc<'profiles'>;
+export type ProfileEntry = ProfileRow & { id: ProfileRow['user_id'] | ProfileRow['_id'] };
 
 const profileKeys = {
   all: ['profiles'] as const,
@@ -27,8 +23,12 @@ const profileKeys = {
 export function profileBySlugQueryOptions(slug: string) {
   return queryOptions({
     queryKey: profileKeys.detailBySlug(slug),
-    queryFn: async () =>
-      withProfileId(await db.query<Omit<ProfileEntry, 'id'>>(api.profiles.getBySlug, { slug })),
+    queryFn: async () => {
+      const entry = await db.query<ProfileRow>(api.profiles.getBySlug, { slug });
+      const resolvedId =
+        typeof entry.user_id === 'string' && entry.user_id.length > 0 ? entry.user_id : entry._id;
+      return { ...entry, id: resolvedId };
+    },
   });
 }
 
@@ -36,7 +36,11 @@ export function profilesListQueryOptions() {
   return queryOptions({
     queryKey: profileKeys.list({ type: 'all' }),
     queryFn: async () =>
-      (await db.query<Omit<ProfileEntry, 'id'>[]>(api.profiles.list, {})).map(withProfileId),
+      (await db.query<ProfileRow[]>(api.profiles.list, {})).map((entry) => {
+        const resolvedId =
+          typeof entry.user_id === 'string' && entry.user_id.length > 0 ? entry.user_id : entry._id;
+        return { ...entry, id: resolvedId };
+      }),
   });
 }
 
@@ -44,14 +48,25 @@ export function currentProfileQueryOptions() {
   return queryOptions({
     queryKey: profileKeys.current(),
     queryFn: async () => {
-      const currentRaw = await db.query<Omit<ProfileEntry, 'id'> | null>(api.profiles.current, {});
-      const current = currentRaw ? withProfileId(currentRaw) : null;
+      const currentRaw = await db.query<ProfileRow | null>(api.profiles.current, {});
+      const current = currentRaw
+        ? {
+            ...currentRaw,
+            id:
+              typeof currentRaw.user_id === 'string' && currentRaw.user_id.length > 0
+                ? currentRaw.user_id
+                : currentRaw._id,
+          }
+        : null;
       if (current) {
         const needsBackfill = current.slug === 'user' || !current.username || !current.avatar_url;
         if (needsBackfill) {
-          return withProfileId(
-            await db.mutation<Omit<ProfileEntry, 'id'>>(api.profiles.bootstrapCurrent, {})
-          );
+          const entry = await db.mutation<ProfileRow>(api.profiles.bootstrapCurrent, {});
+          const resolvedId =
+            typeof entry.user_id === 'string' && entry.user_id.length > 0
+              ? entry.user_id
+              : entry._id;
+          return { ...entry, id: resolvedId };
         }
         return current;
       }
@@ -61,58 +76,74 @@ export function currentProfileQueryOptions() {
         return null;
       }
 
-      return withProfileId(
-        await db.mutation<Omit<ProfileEntry, 'id'>>(api.profiles.bootstrapCurrent, {})
-      );
+      const entry = await db.mutation<ProfileRow>(api.profiles.bootstrapCurrent, {});
+      const resolvedId =
+        typeof entry.user_id === 'string' && entry.user_id.length > 0 ? entry.user_id : entry._id;
+      return { ...entry, id: resolvedId };
     },
   });
 }
 
-export function useProfile(id: NonNullable<ProfileEntry['_id']>, options?: { enabled?: boolean }) {
+export function useProfile(id: string, options?: { enabled?: boolean }) {
   const enabled = options?.enabled ?? true;
-  const result = useLiveQuery<
-    Omit<ProfileEntry, 'id'> | null,
-    { id: NonNullable<ProfileEntry['_id']> }
-  >(api.profiles.getById, { id }, { enabled: enabled && id != null && id !== '' });
+  const result = useLiveQuery<ProfileRow | null, { id: string }>(
+    api.profiles.getById,
+    { id },
+    { enabled: enabled && id != null && id !== '' }
+  );
   return {
     ...result,
-    data: result.data ? withProfileId(result.data) : undefined,
+    data: result.data
+      ? {
+          ...result.data,
+          id:
+            typeof result.data.user_id === 'string' && result.data.user_id.length > 0
+              ? result.data.user_id
+              : result.data._id,
+        }
+      : undefined,
   };
 }
 
 export function useProfileBySlug(slug: string) {
-  const result = useLiveQuery<Omit<ProfileEntry, 'id'> | null, { slug: string }>(
+  const result = useLiveQuery<ProfileRow | null, { slug: string }>(
     api.profiles.getBySlug,
     { slug },
     { enabled: slug.trim().length > 0 }
   );
   return {
     ...result,
-    data: result.data ? withProfileId(result.data) : undefined,
+    data: result.data
+      ? {
+          ...result.data,
+          id:
+            typeof result.data.user_id === 'string' && result.data.user_id.length > 0
+              ? result.data.user_id
+              : result.data._id,
+        }
+      : undefined,
   };
 }
 
 export function useProfilesAll() {
-  const result = useLiveQuery<Omit<ProfileEntry, 'id'>[], Record<string, never>>(
-    api.profiles.list,
-    {}
-  );
+  const result = useLiveQuery<ProfileRow[], Record<string, never>>(api.profiles.list, {});
   return {
     ...result,
-    data: result.data?.map(withProfileId),
+    data: result.data?.map((entry) => {
+      const resolvedId =
+        typeof entry.user_id === 'string' && entry.user_id.length > 0 ? entry.user_id : entry._id;
+      return { ...entry, id: resolvedId };
+    }),
   };
 }
 
 export function useCurrentProfile() {
-  const current = useLiveQuery<Omit<ProfileEntry, 'id'> | null, Record<string, never>>(
-    api.profiles.current,
-    {}
-  );
+  const current = useLiveQuery<ProfileRow | null, Record<string, never>>(api.profiles.current, {});
   const currentUserId = useLiveQuery<string | null, Record<string, never>>(
     api.profiles.currentUserId,
     {}
   );
-  const bootstrap = useLiveMutation<Record<string, never>, Omit<ProfileEntry, 'id'>>(
+  const bootstrap = useLiveMutation<Record<string, never>, ProfileRow>(
     api.profiles.bootstrapCurrent
   );
   const bootstrapStarted = useRef(false);
@@ -133,14 +164,26 @@ export function useCurrentProfile() {
   if (current.data) {
     return {
       ...current,
-      data: withProfileId(current.data),
+      data: {
+        ...current.data,
+        id:
+          typeof current.data.user_id === 'string' && current.data.user_id.length > 0
+            ? current.data.user_id
+            : current.data._id,
+      },
     };
   }
 
   if (bootstrap.data) {
     return {
       ...bootstrap,
-      data: withProfileId(bootstrap.data),
+      data: {
+        ...bootstrap.data,
+        id:
+          typeof bootstrap.data.user_id === 'string' && bootstrap.data.user_id.length > 0
+            ? bootstrap.data.user_id
+            : bootstrap.data._id,
+      },
       isLoading: bootstrap.isPending,
     };
   }
@@ -152,10 +195,9 @@ export function useCurrentProfile() {
 }
 
 export function useUpdateCurrentProfile() {
-  const mutate = useLiveMutation<
-    { username: string; avatar_url: string },
-    Omit<ProfileEntry, 'id'>
-  >(api.profiles.updateCurrent);
+  const mutate = useLiveMutation<{ username: string; avatar_url: string }, ProfileRow>(
+    api.profiles.updateCurrent
+  );
   const parseProfileInput = (input: ProfileUserEditInput) => {
     const parsed = profileUserEditFormSchema.safeParse(input);
     if (!parsed.success) {
@@ -182,7 +224,13 @@ export function useUpdateCurrentProfile() {
             avatar_url: parsed.avatar_url,
           },
           {
-            onSuccess: (entry) => options?.onSuccess?.(withProfileId(entry), variables),
+            onSuccess: (entry) => {
+              const resolvedId =
+                typeof entry.user_id === 'string' && entry.user_id.length > 0
+                  ? entry.user_id
+                  : entry._id;
+              options?.onSuccess?.({ ...entry, id: resolvedId }, variables);
+            },
             onError: (error) => options?.onError?.(error, variables),
           }
         );
@@ -199,7 +247,9 @@ export function useUpdateCurrentProfile() {
         username: parsed.username,
         avatar_url: parsed.avatar_url,
       });
-      return withProfileId(entry);
+      const resolvedId =
+        typeof entry.user_id === 'string' && entry.user_id.length > 0 ? entry.user_id : entry._id;
+      return { ...entry, id: resolvedId };
     },
   };
 }

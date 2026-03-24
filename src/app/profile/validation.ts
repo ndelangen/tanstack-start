@@ -56,3 +56,10 @@ export const profileUserEditFormSchema = z.strictObject({
 });
 
 export type ProfileUserEditInput = z.infer<typeof profileUserEditFormSchema>;
+
+/** Canonical profile semantic validation surface. */
+export const profileValidationSchemas = {
+  displayName: profileDisplayNameSchema,
+  avatarUrl: profileAvatarUrlSchema,
+  input: profileUserEditFormSchema,
+} as const;

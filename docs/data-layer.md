@@ -55,13 +55,13 @@ export const domainKeys = {
 
 ## Data Validation
 
-Zod schemas in `src/data/` validate at runtime:
+Shared domain Zod schemas in `src/app/<domain>/validation.ts` validate at runtime:
 
 - Before database operations (mutations)
 - After database reads (queries)
 - Type inference: `type Faction = z.infer<typeof schema>`
 
-**Example**: [`src/data/factions.ts`](../src/data/factions.ts)
+**Example**: [`src/game/schema/faction.ts`](../src/game/schema/faction.ts)
 
 ## Validation Standard
 

@@ -45,5 +45,3 @@ export const auth = {
     return { data: { user: userId ? { id: userId } : null } };
   },
 };
-
-export * from './types';

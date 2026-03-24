@@ -1,18 +1,16 @@
 import { queryOptions } from '@tanstack/react-query';
 
-import { db, type Enums, type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
+import { db } from '@db/core';
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
 
 import { api } from '../../../../convex/_generated/api';
+import type { Doc } from '../../../../convex/_generated/dataModel';
 
-export type GroupMemberEntry = Tables<'group_members'>;
-export type GroupMemberInsert = TablesInsert<'group_members'>;
-export type GroupMemberUpdate = TablesUpdate<'group_members'>;
-export type GroupMemberStatus = Enums<'group_member_status'>;
-
-function withMembershipId(entry: Omit<GroupMemberEntry, 'id'>): GroupMemberEntry {
-  return { ...entry, id: entry._id };
-}
+export type GroupMemberRow = Doc<'group_members'>;
+export type GroupMemberEntry = GroupMemberRow & { id: string };
+export type GroupMemberInsert = GroupMemberEntry;
+export type GroupMemberUpdate = Partial<GroupMemberEntry>;
+export type GroupMemberStatus = GroupMemberRow['status'];
 
 export const memberKeys = {
   all: ['group_members'] as const,
@@ -35,18 +33,19 @@ export function userGroupMembershipsQueryOptions(userId: string) {
     queryKey: memberKeys.byUser(userId),
     queryFn: async () =>
       (
-        await db.query<
-          (Omit<GroupMemberEntry, 'id'> & { groups: { id: string; name: string } | null })[]
-        >(api.members.listByUserActiveWithGroups, {
-          user_id: userId,
-        })
-      ).map((entry) => ({ ...withMembershipId(entry), groups: entry.groups })),
+        await db.query<(GroupMemberRow & { groups: { id: string; name: string } | null })[]>(
+          api.members.listByUserActiveWithGroups,
+          {
+            user_id: userId,
+          }
+        )
+      ).map((entry) => ({ ...entry, id: entry._id, groups: entry.groups })),
   });
 }
 
 export function useUserGroupMemberships(userId: string | undefined) {
   const result = useLiveQuery<
-    (Omit<GroupMemberEntry, 'id'> & { groups: { id: string; name: string } | null })[],
+    (GroupMemberRow & { groups: { id: string; name: string } | null })[],
     { user_id: string }
   >(
     api.members.listByUserActiveWithGroups,
@@ -55,49 +54,48 @@ export function useUserGroupMemberships(userId: string | undefined) {
   );
   return {
     ...result,
-    data: result.data?.map((entry) => ({ ...withMembershipId(entry), groups: entry.groups })),
+    data: result.data?.map((entry) => ({ ...entry, id: entry._id, groups: entry.groups })),
   };
 }
 
 export function useGroupMembers(groupId: string) {
-  const result = useLiveQuery<Omit<GroupMemberEntry, 'id'>[], { group_id: string }>(
+  const result = useLiveQuery<GroupMemberRow[], { group_id: string }>(
     api.members.listByGroup,
     { group_id: groupId },
     { enabled: Boolean(groupId) }
   );
   return {
     ...result,
-    data: result.data?.map(withMembershipId),
+    data: result.data?.map((entry) => ({ ...entry, id: entry._id })),
   };
 }
 
 export function useGroupMembersByStatus(groupId: string, status: GroupMemberStatus) {
-  const result = useLiveQuery<
-    Omit<GroupMemberEntry, 'id'>[],
-    { group_id: string; status: GroupMemberStatus }
-  >(api.members.listByGroupAndStatus, { group_id: groupId, status }, { enabled: Boolean(groupId) });
+  const result = useLiveQuery<GroupMemberRow[], { group_id: string; status: GroupMemberStatus }>(
+    api.members.listByGroupAndStatus,
+    { group_id: groupId, status },
+    { enabled: Boolean(groupId) }
+  );
   return {
     ...result,
-    data: result.data?.map(withMembershipId),
+    data: result.data?.map((entry) => ({ ...entry, id: entry._id })),
   };
 }
 
 export function useGroupMember(groupId: string, userId: string) {
-  const result = useLiveQuery<Omit<GroupMemberEntry, 'id'>, { group_id: string; user_id: string }>(
+  const result = useLiveQuery<GroupMemberRow, { group_id: string; user_id: string }>(
     api.members.get,
     { group_id: groupId, user_id: userId },
     { enabled: Boolean(groupId) && Boolean(userId) }
   );
   return {
     ...result,
-    data: result.data ? withMembershipId(result.data) : undefined,
+    data: result.data ? { ...result.data, id: result.data._id } : undefined,
   };
 }
 
 export function useRequestGroupMembership() {
-  const mutation = useLiveMutation<{ group_id: string }, Omit<GroupMemberEntry, 'id'>>(
-    api.members.request
-  );
+  const mutation = useLiveMutation<{ group_id: string }, GroupMemberRow>(api.members.request);
   return {
     ...mutation,
     mutate: (
@@ -107,20 +105,21 @@ export function useRequestGroupMembership() {
       mutation.mutate(
         { group_id: groupId },
         {
-          onSuccess: (entry) => options?.onSuccess?.(withMembershipId(entry)),
+          onSuccess: (entry) => options?.onSuccess?.({ ...entry, id: entry._id }),
           onError: (error) => options?.onError?.(error),
         }
       ),
-    mutateAsync: async (groupId: string) =>
-      withMembershipId(await mutation.mutateAsync({ group_id: groupId })),
+    mutateAsync: async (groupId: string) => {
+      const entry = await mutation.mutateAsync({ group_id: groupId });
+      return { ...entry, id: entry._id };
+    },
   };
 }
 
 export function useApproveGroupMember() {
-  const mutation = useLiveMutation<
-    { group_id: string; user_id: string },
-    Omit<GroupMemberEntry, 'id'>
-  >(api.members.approve);
+  const mutation = useLiveMutation<{ group_id: string; user_id: string }, GroupMemberRow>(
+    api.members.approve
+  );
   return {
     ...mutation,
     mutate: (
@@ -130,20 +129,21 @@ export function useApproveGroupMember() {
       mutation.mutate(
         { group_id: variables.groupId, user_id: variables.userId },
         {
-          onSuccess: (entry) => options?.onSuccess?.(withMembershipId(entry)),
+          onSuccess: (entry) => options?.onSuccess?.({ ...entry, id: entry._id }),
           onError: (error) => options?.onError?.(error),
         }
       ),
-    mutateAsync: async ({ groupId, userId }: { groupId: string; userId: string }) =>
-      withMembershipId(await mutation.mutateAsync({ group_id: groupId, user_id: userId })),
+    mutateAsync: async ({ groupId, userId }: { groupId: string; userId: string }) => {
+      const entry = await mutation.mutateAsync({ group_id: groupId, user_id: userId });
+      return { ...entry, id: entry._id };
+    },
   };
 }
 
 export function useRejectGroupMember() {
-  const mutation = useLiveMutation<
-    { group_id: string; user_id: string },
-    Omit<GroupMemberEntry, 'id'>
-  >(api.members.reject);
+  const mutation = useLiveMutation<{ group_id: string; user_id: string }, GroupMemberRow>(
+    api.members.reject
+  );
   return {
     ...mutation,
     mutate: (
@@ -153,12 +153,14 @@ export function useRejectGroupMember() {
       mutation.mutate(
         { group_id: variables.groupId, user_id: variables.userId },
         {
-          onSuccess: (entry) => options?.onSuccess?.(withMembershipId(entry)),
+          onSuccess: (entry) => options?.onSuccess?.({ ...entry, id: entry._id }),
           onError: (error) => options?.onError?.(error),
         }
       ),
-    mutateAsync: async ({ groupId, userId }: { groupId: string; userId: string }) =>
-      withMembershipId(await mutation.mutateAsync({ group_id: groupId, user_id: userId })),
+    mutateAsync: async ({ groupId, userId }: { groupId: string; userId: string }) => {
+      const entry = await mutation.mutateAsync({ group_id: groupId, user_id: userId });
+      return { ...entry, id: entry._id };
+    },
   };
 }
 
@@ -189,10 +191,9 @@ export function useRemoveGroupMember() {
 }
 
 export function useAddGroupMember() {
-  const mutation = useLiveMutation<
-    { group_id: string; user_id: string },
-    Omit<GroupMemberEntry, 'id'>
-  >(api.members.add);
+  const mutation = useLiveMutation<{ group_id: string; user_id: string }, GroupMemberRow>(
+    api.members.add
+  );
   return {
     ...mutation,
     mutate: (
@@ -202,11 +203,13 @@ export function useAddGroupMember() {
       mutation.mutate(
         { group_id: variables.groupId, user_id: variables.userId },
         {
-          onSuccess: (entry) => options?.onSuccess?.(withMembershipId(entry)),
+          onSuccess: (entry) => options?.onSuccess?.({ ...entry, id: entry._id }),
           onError: (error) => options?.onError?.(error),
         }
       ),
-    mutateAsync: async ({ groupId, userId }: { groupId: string; userId: string }) =>
-      withMembershipId(await mutation.mutateAsync({ group_id: groupId, user_id: userId })),
+    mutateAsync: async ({ groupId, userId }: { groupId: string; userId: string }) => {
+      const entry = await mutation.mutateAsync({ group_id: groupId, user_id: userId });
+      return { ...entry, id: entry._id };
+    },
   };
 }

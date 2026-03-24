@@ -1,26 +1,40 @@
 import { queryOptions } from '@tanstack/react-query';
 
-import { db, type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
+import { db } from '@db/core';
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
-import { inputSchema, schema } from '@data/factions';
-import type { FactionInput, FactionStored } from '@game/schema/faction';
+import {
+  type FactionInput,
+  FactionInputSchema,
+  type FactionStored,
+  FactionStoredSchema,
+} from '@game/schema/faction';
 
 import { api } from '../../../../convex/_generated/api';
+import type { Doc } from '../../../../convex/_generated/dataModel';
 
 export type Faction = FactionInput;
 export type FactionData = FactionStored;
-export type FactionEntry = Omit<Tables<'factions'>, 'data'> & {
+export type FactionRow = Doc<'factions'>;
+export type FactionEntry = Omit<FactionRow, 'data'> & {
+  data: FactionData;
+  id: string;
+};
+export type FactionInsert = Omit<FactionEntry, 'data'> & {
   data: FactionData;
 };
-export type FactionInsert = Omit<TablesInsert<'factions'>, 'data'> & {
-  data: FactionData;
-};
-export type FactionUpdate = Omit<TablesUpdate<'factions'>, 'data'> & {
+export type FactionUpdate = Omit<Partial<FactionEntry>, 'data'> & {
   data?: FactionData;
 };
 
-function withFactionId(entry: Omit<Tables<'factions'>, 'id'>): Tables<'factions'> {
+function withFactionId(entry: FactionRow): FactionEntry {
   return { ...entry, id: entry._id };
+}
+
+function toFactionEntry(entry: FactionRow): FactionEntry {
+  return {
+    ...withFactionId(entry),
+    data: FactionStoredSchema.parse(entry.data),
+  };
 }
 
 export const factionKeys = {
@@ -34,11 +48,8 @@ export function factionDetailQueryOptions(slug: string) {
   return queryOptions({
     queryKey: factionKeys.detail(slug),
     queryFn: async () => {
-      const entry = await db.query<Tables<'factions'>>(api.factions.getBySlug, { slug });
-      return {
-        ...withFactionId(entry),
-        data: schema.parse(entry.data),
-      };
+      const entry = await db.query<FactionRow>(api.factions.getBySlug, { slug });
+      return toFactionEntry(entry);
     },
   });
 }
@@ -47,117 +58,81 @@ export function factionsListQueryOptions() {
   return queryOptions({
     queryKey: factionKeys.list({ type: 'all' }),
     queryFn: async () => {
-      const entries = await db.query<Tables<'factions'>[]>(api.factions.list, {});
-      return entries.map((entry) => {
-        const withId = withFactionId(entry);
-        return {
-          ...withId,
-          data: schema.parse(entry.data),
-        };
-      });
+      const entries = await db.query<FactionRow[]>(api.factions.list, {});
+      return entries.map(toFactionEntry);
     },
   });
 }
 
-export function factionsByOwnerQueryOptions(ownerId: NonNullable<FactionEntry['owner_id']>) {
+export function factionsByOwnerQueryOptions(ownerId: string) {
   return queryOptions({
     queryKey: factionKeys.list({ owner: ownerId }),
     queryFn: async () => {
-      const entries = await db.query<Tables<'factions'>[]>(api.factions.listByOwner, {
-        owner_id: ownerId,
-      });
-      return entries.map((entry) => {
-        const withId = withFactionId(entry);
-        return {
-          ...withId,
-          data: schema.parse(entry.data),
-        };
-      });
+      const entries = await db.query<FactionRow[]>(api.factions.listByOwner, { owner_id: ownerId });
+      return entries.map(toFactionEntry);
     },
   });
 }
 
-export function factionsByGroupQueryOptions(groupId: NonNullable<FactionEntry['group_id']>) {
+export function factionsByGroupQueryOptions(groupId: string) {
   return queryOptions({
     queryKey: factionKeys.list({ group: groupId }),
     queryFn: async () => {
-      const entries = await db.query<Tables<'factions'>[]>(api.factions.listByGroup, {
+      const entries = await db.query<FactionRow[]>(api.factions.listByGroup, {
         group_id: groupId,
       });
-      return entries.map((entry) => {
-        const withId = withFactionId(entry);
-        return {
-          ...withId,
-          data: schema.parse(entry.data),
-        };
-      });
+      return entries.map(toFactionEntry);
     },
   });
 }
 
 export function useFaction(slug: string, options?: { enabled?: boolean }) {
   const enabled = options?.enabled ?? true;
-  const result = useLiveQuery<Tables<'factions'>, { slug: string }>(
+  const result = useLiveQuery<FactionRow, { slug: string }>(
     api.factions.getBySlug,
     { slug },
     { enabled: enabled && slug.length > 0 }
   );
   return {
     ...result,
-    data: result.data
-      ? {
-          ...withFactionId(result.data),
-          data: schema.parse(result.data.data),
-        }
-      : undefined,
+    data: result.data ? toFactionEntry(result.data) : undefined,
   };
 }
 
 export function useFactionsAll() {
-  const result = useLiveQuery<Tables<'factions'>[], Record<string, never>>(api.factions.list, {});
+  const result = useLiveQuery<FactionRow[], Record<string, never>>(api.factions.list, {});
   return {
     ...result,
-    data: result.data?.map((entry) => ({
-      ...withFactionId(entry),
-      data: schema.parse(entry.data),
-    })),
+    data: result.data?.map(toFactionEntry),
   };
 }
 
-export function useFactionsByOwner(ownerId: FactionEntry['owner_id'] | undefined) {
-  const result = useLiveQuery<
-    Tables<'factions'>[],
-    { owner_id: NonNullable<FactionEntry['owner_id']> }
-  >(
+export function useFactionsByOwner(ownerId: string | undefined) {
+  const result = useLiveQuery<FactionRow[], { owner_id: string }>(
     api.factions.listByOwner,
-    { owner_id: ownerId as NonNullable<FactionEntry['owner_id']> },
+    { owner_id: ownerId ?? '' },
     { enabled: Boolean(ownerId) }
   );
   return {
     ...result,
-    data: result.data?.map((entry) => ({
-      ...withFactionId(entry),
-      data: schema.parse(entry.data),
-    })),
+    data: result.data?.map(toFactionEntry),
   };
 }
 
-export function useFactionsByGroup(groupId: NonNullable<FactionEntry['group_id']>) {
-  const result = useLiveQuery<
-    Tables<'factions'>[],
-    { group_id: NonNullable<FactionEntry['group_id']> }
-  >(api.factions.listByGroup, { group_id: groupId }, { enabled: Boolean(groupId) });
+export function useFactionsByGroup(groupId: string) {
+  const result = useLiveQuery<FactionRow[], { group_id: string }>(
+    api.factions.listByGroup,
+    { group_id: groupId },
+    { enabled: Boolean(groupId) }
+  );
   return {
     ...result,
-    data: result.data?.map((entry) => ({
-      ...withFactionId(entry),
-      data: schema.parse(entry.data),
-    })),
+    data: result.data?.map(toFactionEntry),
   };
 }
 
 export function useCreateFaction() {
-  const mutation = useLiveMutation<{ data: Faction; group_id: string | null }, Tables<'factions'>>(
+  const mutation = useLiveMutation<{ data: Faction; group_id: string | null }, FactionRow>(
     api.factions.create
   );
 
@@ -169,37 +144,27 @@ export function useCreateFaction() {
     ) =>
       mutation.mutate(
         {
-          data: inputSchema.parse(variables.input),
+          data: FactionInputSchema.parse(variables.input),
           group_id: variables.groupId ?? null,
         },
         {
-          onSuccess: (entry) =>
-            options?.onSuccess?.({
-              ...withFactionId(entry),
-              data: schema.parse(entry.data),
-            }),
+          onSuccess: (entry) => options?.onSuccess?.(toFactionEntry(entry)),
           onError: (error) => options?.onError?.(error),
         }
       ),
     mutateAsync: async ({ input, groupId }: { input: Faction; groupId?: string | null }) => {
-      const validatedData = inputSchema.parse(input);
+      const validatedData = FactionInputSchema.parse(input);
       const entry = await mutation.mutateAsync({
         data: validatedData,
         group_id: groupId ?? null,
       });
-      const withId = withFactionId(entry);
-      return {
-        ...withId,
-        data: schema.parse(entry.data),
-      };
+      return toFactionEntry(entry);
     },
   };
 }
 
 export function useUpdateFaction() {
-  const mutation = useLiveMutation<{ id: string; data: Faction }, Tables<'factions'>>(
-    api.factions.update
-  );
+  const mutation = useLiveMutation<{ id: string; data: Faction }, FactionRow>(api.factions.update);
 
   return {
     ...mutation,
@@ -208,13 +173,9 @@ export function useUpdateFaction() {
       options?: { onSuccess?: (entry: FactionEntry) => void; onError?: (error: Error) => void }
     ) =>
       mutation.mutate(
-        { id: variables.id, data: inputSchema.parse(variables.input) },
+        { id: variables.id, data: FactionInputSchema.parse(variables.input) },
         {
-          onSuccess: (entry) =>
-            options?.onSuccess?.({
-              ...withFactionId(entry),
-              data: schema.parse(entry.data),
-            }),
+          onSuccess: (entry) => options?.onSuccess?.(toFactionEntry(entry)),
           onError: (error) => options?.onError?.(error),
         }
       ),
@@ -226,16 +187,12 @@ export function useUpdateFaction() {
       id: string;
       previousUrlSlug?: string;
     }) => {
-      const validatedData = inputSchema.parse(input);
+      const validatedData = FactionInputSchema.parse(input);
       const entry = await mutation.mutateAsync({
         id,
         data: validatedData,
       });
-      const withId = withFactionId(entry);
-      return {
-        ...withId,
-        data: schema.parse(entry.data),
-      };
+      return toFactionEntry(entry);
     },
   };
 }

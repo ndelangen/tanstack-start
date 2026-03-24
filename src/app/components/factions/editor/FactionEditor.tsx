@@ -20,9 +20,12 @@ import {
   FormTooltip,
   TypeSuggestPicker,
 } from '@app/components/form';
-import { inputSchema, schema } from '@data/factions';
 import { Token as FactionToken } from '@game/assets/faction/token/Token';
-import { FactionInputSchema, factionSlugBaseFromName } from '@game/schema/faction';
+import {
+  FactionInputSchema,
+  FactionStoredSchema,
+  factionSlugBaseFromName,
+} from '@game/schema/faction';
 
 import styles from './FactionEditor.module.css';
 import { FactionFormFields } from './FactionFormFields';
@@ -95,7 +98,7 @@ export function FactionEditor({
           { input: parsed.data },
           {
             onSuccess: (entry) => {
-              const saved = schema.parse(entry.data);
+              const saved = FactionStoredSchema.parse(entry.data);
               const { slug: _ignored, ...savedInput } = saved;
               initialValuesRef.current = structuredClone(savedInput);
               baselineRef.current = structuredClone(savedInput);
@@ -109,7 +112,7 @@ export function FactionEditor({
           { id: factionRowId, input: parsed.data },
           {
             onSuccess: (entry) => {
-              const saved = schema.parse(entry.data);
+              const saved = FactionStoredSchema.parse(entry.data);
               const { slug: _ignored, ...savedInput } = saved;
               initialValuesRef.current = structuredClone(savedInput);
               baselineRef.current = structuredClone(savedInput);
@@ -220,7 +223,7 @@ export function FactionEditor({
       return;
     }
     const { slug: _ignored, ...inputData } = entry.data;
-    const parsed = inputSchema.safeParse(inputData);
+    const parsed = FactionInputSchema.safeParse(inputData);
     if (!parsed.success) {
       setParseError(formatZodIssues(parsed.error));
       return;

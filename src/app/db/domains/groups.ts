@@ -1,16 +1,13 @@
-import { type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
 import { groupInputSchema } from '@app/groups/validation';
 
 import { api } from '../../../../convex/_generated/api';
+import type { Doc } from '../../../../convex/_generated/dataModel';
 
-export type GroupEntry = Tables<'groups'>;
-export type GroupInsert = TablesInsert<'groups'>;
-export type GroupUpdate = TablesUpdate<'groups'>;
-
-function withGroupId(entry: Omit<GroupEntry, 'id'>): GroupEntry {
-  return { ...entry, id: entry._id };
-}
+export type GroupRow = Doc<'groups'>;
+export type GroupEntry = GroupRow & { id: string };
+export type GroupInsert = GroupEntry;
+export type GroupUpdate = Partial<GroupEntry>;
 
 export const groupKeys = {
   all: ['groups'] as const,
@@ -19,40 +16,40 @@ export const groupKeys = {
   detail: (id: string) => [...groupKeys.all, 'detail', id] as const,
 };
 
-export function useGroup(id: NonNullable<GroupEntry['_id']>) {
-  const result = useLiveQuery<Omit<GroupEntry, 'id'>, { id: NonNullable<GroupEntry['_id']> }>(
+export function useGroup(id: string) {
+  const result = useLiveQuery<GroupRow, { id: string }>(
     api.groups.getById,
     { id },
-    { enabled: id != null }
+    { enabled: !!id }
   );
   return {
     ...result,
-    data: result.data ? withGroupId(result.data) : undefined,
+    data: result.data ? { ...result.data, id: result.data._id } : undefined,
   };
 }
 
 export function useGroupsAll() {
-  const result = useLiveQuery<Omit<GroupEntry, 'id'>[], Record<string, never>>(api.groups.list, {});
+  const result = useLiveQuery<GroupRow[], Record<string, never>>(api.groups.list, {});
   return {
     ...result,
-    data: result.data?.map(withGroupId),
+    data: result.data?.map((entry) => ({ ...entry, id: entry._id })),
   };
 }
 
-export function useGroupsByCreator(createdBy: NonNullable<GroupEntry['created_by']>) {
-  const result = useLiveQuery<
-    Omit<GroupEntry, 'id'>[],
-    { created_by: NonNullable<GroupEntry['created_by']> }
-  >(api.groups.listByCreator, { created_by: createdBy }, { enabled: createdBy != null });
+export function useGroupsByCreator(createdBy: string) {
+  const result = useLiveQuery<GroupRow[], { created_by: string }>(
+    api.groups.listByCreator,
+    { created_by: createdBy },
+    { enabled: !!createdBy }
+  );
   return {
     ...result,
-    data: result.data?.map(withGroupId),
+    data: result.data?.map((entry) => ({ ...entry, id: entry._id })),
   };
 }
 
 export function useCreateGroup() {
-  const mutation = useLiveMutation<{ name: string }, Omit<GroupEntry, 'id'>>(api.groups.create);
-  const parseInput = (input: { name: string }) => groupInputSchema.parse(input);
+  const mutation = useLiveMutation<{ name: string }, GroupRow>(api.groups.create);
 
   return {
     ...mutation,
@@ -61,22 +58,23 @@ export function useCreateGroup() {
       options?: { onSuccess?: (group: GroupEntry) => void; onError?: (error: Error) => void }
     ) =>
       mutation.mutate(
-        { name: parseInput(variables.input).name },
+        { name: groupInputSchema.parse(variables.input).name },
         {
-          onSuccess: (group) => options?.onSuccess?.(withGroupId(group)),
+          onSuccess: (group) => options?.onSuccess?.({ ...group, id: group._id }),
           onError: (error) => options?.onError?.(error),
         }
       ),
-    mutateAsync: async (variables: { input: { name: string } }) =>
-      withGroupId(await mutation.mutateAsync({ name: parseInput(variables.input).name })),
+    mutateAsync: async (variables: { input: { name: string } }) => {
+      const group = await mutation.mutateAsync({
+        name: groupInputSchema.parse(variables.input).name,
+      });
+      return { ...group, id: group._id };
+    },
   };
 }
 
 export function useUpdateGroup() {
-  const mutation = useLiveMutation<{ id: string; name: string }, Omit<GroupEntry, 'id'>>(
-    api.groups.update
-  );
-  const parseInput = (input: { name: string }) => groupInputSchema.parse(input);
+  const mutation = useLiveMutation<{ id: string; name: string }, GroupRow>(api.groups.update);
 
   return {
     ...mutation,
@@ -85,19 +83,19 @@ export function useUpdateGroup() {
       options?: { onSuccess?: (entry: GroupEntry) => void; onError?: (error: Error) => void }
     ) =>
       mutation.mutate(
-        { id: variables.id, name: parseInput(variables.input).name },
+        { id: variables.id, name: groupInputSchema.parse(variables.input).name },
         {
-          onSuccess: (entry) => options?.onSuccess?.(withGroupId(entry)),
+          onSuccess: (entry) => options?.onSuccess?.({ ...entry, id: entry._id }),
           onError: (error) => options?.onError?.(error),
         }
       ),
-    mutateAsync: async (variables: { input: { name: string }; id: string }) =>
-      withGroupId(
-        await mutation.mutateAsync({
-          id: variables.id,
-          name: parseInput(variables.input).name,
-        })
-      ),
+    mutateAsync: async (variables: { input: { name: string }; id: string }) => {
+      const group = await mutation.mutateAsync({
+        id: variables.id,
+        name: groupInputSchema.parse(variables.input).name,
+      });
+      return { ...group, id: group._id };
+    },
   };
 }
 

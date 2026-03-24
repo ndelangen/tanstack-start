@@ -1,13 +1,17 @@
 import { z } from 'zod';
 
-export const groupNameSchema = z
-  .string()
-  .trim()
-  .regex(/^[A-Za-z0-9]+$/, 'Group name may only contain letters and numbers')
-  .min(1, 'Group name is required');
+import { alphanumericNameSchema } from '@app/validation/names';
+
+export const groupNameSchema = alphanumericNameSchema('Group name');
 
 export const groupInputSchema = z.strictObject({
   name: groupNameSchema,
 });
 
 export type GroupInput = z.infer<typeof groupInputSchema>;
+
+/** Canonical group semantic validation surface. */
+export const groupValidationSchemas = {
+  name: groupNameSchema,
+  input: groupInputSchema,
+} as const;
