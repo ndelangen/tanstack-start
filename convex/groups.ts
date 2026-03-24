@@ -16,7 +16,7 @@ export const getById = query({
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query('groups').collect();
+    return await ctx.db.query('groups').take(500);
   },
 });
 
@@ -26,7 +26,7 @@ export const listByCreator = query({
     return await ctx.db
       .query('groups')
       .withIndex('by_created_by', (q) => q.eq('created_by', args.created_by))
-      .collect();
+      .take(500);
   },
 });
 

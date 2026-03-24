@@ -9,8 +9,8 @@ const statusValidator = v.union(v.literal('pending'), v.literal('active'), v.lit
 
 async function getMembership(
   ctx: QueryCtx | MutationCtx,
-  groupId: Id<'groups'> | string,
-  userId: Id<'users'> | string
+  groupId: Id<'groups'>,
+  userId: Id<'users'>
 ) {
   return await ctx.db
     .query('group_members')
@@ -18,13 +18,8 @@ async function getMembership(
     .unique();
 }
 
-async function loadGroup(ctx: QueryCtx | MutationCtx, groupId: Id<'groups'> | string) {
-  const byInternalId = await ctx.db.get(groupId as Id<'groups'>);
-  if (byInternalId) return byInternalId;
-  return await ctx.db
-    .query('groups')
-    .withIndex('by_entity_id', (q) => q.eq('id', String(groupId)))
-    .unique();
+async function loadGroup(ctx: QueryCtx | MutationCtx, groupId: Id<'groups'>) {
+  return await ctx.db.get(groupId);
 }
 
 export const listByUserActiveWithGroups = query({
@@ -32,10 +27,12 @@ export const listByUserActiveWithGroups = query({
   handler: async (ctx, args) => {
     const rows = await ctx.db
       .query('group_members')
-      .withIndex('by_user', (q) => q.eq('user_id', args.user_id))
-      .collect();
-    const active = rows.filter((row) => row.status === 'active');
-    const groups = await Promise.all(active.map((row) => loadGroup(ctx, row.group_id)));
+      .withIndex('by_user_status', (q) => q.eq('user_id', args.user_id).eq('status', 'active'))
+      .take(200);
+    const active = rows;
+    const groups = await Promise.all(
+      active.map((row) => loadGroup(ctx, row.group_id as Id<'groups'>))
+    );
     return active.map((row, index) => {
       const group = groups[index];
       return {
@@ -52,7 +49,7 @@ export const listByGroup = query({
     return await ctx.db
       .query('group_members')
       .withIndex('by_group', (q) => q.eq('group_id', args.group_id))
-      .collect();
+      .take(500);
   },
 });
 
@@ -64,7 +61,7 @@ export const listByGroupAndStatus = query({
       .withIndex('by_group_status', (q) =>
         q.eq('group_id', args.group_id).eq('status', args.status)
       )
-      .collect();
+      .take(500);
   },
 });
 
@@ -78,7 +75,7 @@ export const get = query({
 });
 
 export const request = mutation({
-  args: { group_id: v.union(v.id('groups'), v.string()) },
+  args: { group_id: v.id('groups') },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
     const group = await loadGroup(ctx, args.group_id);
@@ -113,8 +110,8 @@ export const request = mutation({
 
 export const approve = mutation({
   args: {
-    group_id: v.union(v.id('groups'), v.string()),
-    user_id: v.union(v.id('users'), v.string()),
+    group_id: v.id('groups'),
+    user_id: v.id('users'),
   },
   handler: async (ctx, args) => {
     const actorId = await requireAuthUserId(ctx);
@@ -136,8 +133,8 @@ export const approve = mutation({
 
 export const reject = mutation({
   args: {
-    group_id: v.union(v.id('groups'), v.string()),
-    user_id: v.union(v.id('users'), v.string()),
+    group_id: v.id('groups'),
+    user_id: v.id('users'),
   },
   handler: async (ctx, args) => {
     const actorId = await requireAuthUserId(ctx);
@@ -159,8 +156,8 @@ export const reject = mutation({
 
 export const remove = mutation({
   args: {
-    group_id: v.union(v.id('groups'), v.string()),
-    user_id: v.union(v.id('users'), v.string()),
+    group_id: v.id('groups'),
+    user_id: v.id('users'),
   },
   handler: async (ctx, args) => {
     const actorId = await requireAuthUserId(ctx);
@@ -180,8 +177,8 @@ export const remove = mutation({
 
 export const add = mutation({
   args: {
-    group_id: v.union(v.id('groups'), v.string()),
-    user_id: v.union(v.id('users'), v.string()),
+    group_id: v.id('groups'),
+    user_id: v.id('users'),
   },
   handler: async (ctx, args) => {
     const actorId = await requireAuthUserId(ctx);

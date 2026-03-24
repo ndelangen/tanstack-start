@@ -165,7 +165,7 @@ export const getBySlug = query({
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query('profiles').collect();
+    return await ctx.db.query('profiles').take(500);
   },
 });
 

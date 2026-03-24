@@ -33,30 +33,30 @@ export const getBySlug = query({
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const rows = await ctx.db.query('factions').collect();
-    return rows.filter((row) => !row.is_deleted);
+    return await ctx.db
+      .query('factions')
+      .withIndex('by_deleted', (q) => q.eq('is_deleted', false))
+      .take(500);
   },
 });
 
 export const listByOwner = query({
   args: { owner_id: v.id('users') },
   handler: async (ctx, args) => {
-    const rows = await ctx.db
+    return await ctx.db
       .query('factions')
-      .withIndex('by_owner_id', (q) => q.eq('owner_id', args.owner_id))
-      .collect();
-    return rows.filter((row) => !row.is_deleted);
+      .withIndex('by_owner_deleted', (q) => q.eq('owner_id', args.owner_id).eq('is_deleted', false))
+      .take(500);
   },
 });
 
 export const listByGroup = query({
   args: { group_id: v.id('groups') },
   handler: async (ctx, args) => {
-    const rows = await ctx.db
+    return await ctx.db
       .query('factions')
-      .withIndex('by_group_id', (q) => q.eq('group_id', args.group_id))
-      .collect();
-    return rows.filter((row) => !row.is_deleted);
+      .withIndex('by_group_deleted', (q) => q.eq('group_id', args.group_id).eq('is_deleted', false))
+      .take(500);
   },
 });
 

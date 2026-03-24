@@ -124,7 +124,7 @@ function RulesetDetailPage() {
               {deleteRuleset.isPending ? 'Deleting…' : 'Delete ruleset'}
             </FormButton>
             {deleteRuleset.isError && (
-              <span className={styles.error}>{deleteRuleset.error.message}</span>
+              <span className={styles.error}>{deleteRuleset.error?.message}</span>
             )}
           </FormActions>
         )}

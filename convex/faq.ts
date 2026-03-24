@@ -6,40 +6,16 @@ import { canAccessRuleset, requireAuthUserId } from './lib/policy';
 import { nowIso } from './lib/utils';
 import type { MutationCtx, QueryCtx } from './types';
 
-async function getRuleset(ctx: QueryCtx | MutationCtx, id: Id<'rulesets'> | number) {
-  const byInternalId = await ctx.db.get(id as Id<'rulesets'>);
-  if (byInternalId) return byInternalId;
-  if (typeof id === 'number') {
-    return await ctx.db
-      .query('rulesets')
-      .withIndex('by_entity_id', (q) => q.eq('id', id))
-      .unique();
-  }
-  return null;
+async function getRuleset(ctx: QueryCtx | MutationCtx, id: Id<'rulesets'>) {
+  return await ctx.db.get(id);
 }
 
-async function getFaqItem(ctx: QueryCtx | MutationCtx, id: Id<'faq_items'> | number) {
-  const byInternalId = await ctx.db.get(id as Id<'faq_items'>);
-  if (byInternalId) return byInternalId;
-  if (typeof id === 'number') {
-    return await ctx.db
-      .query('faq_items')
-      .withIndex('by_entity_id', (q) => q.eq('id', id))
-      .unique();
-  }
-  return null;
+async function getFaqItem(ctx: QueryCtx | MutationCtx, id: Id<'faq_items'>) {
+  return await ctx.db.get(id);
 }
 
-async function getFaqAnswer(ctx: QueryCtx | MutationCtx, id: Id<'faq_answers'> | number) {
-  const byInternalId = await ctx.db.get(id as Id<'faq_answers'>);
-  if (byInternalId) return byInternalId;
-  if (typeof id === 'number') {
-    return await ctx.db
-      .query('faq_answers')
-      .withIndex('by_entity_id', (q) => q.eq('id', id))
-      .unique();
-  }
-  return null;
+async function getFaqAnswer(ctx: QueryCtx | MutationCtx, id: Id<'faq_answers'>) {
+  return await ctx.db.get(id);
 }
 
 async function profileSummary(ctx: QueryCtx | MutationCtx, id: Id<'users'> | string) {
@@ -63,12 +39,12 @@ async function profileSummary(ctx: QueryCtx | MutationCtx, id: Id<'users'> | str
 }
 
 export const byRuleset = query({
-  args: { ruleset_id: v.union(v.id('rulesets'), v.number()) },
+  args: { ruleset_id: v.id('rulesets') },
   handler: async (ctx, args) => {
     const items = await ctx.db
       .query('faq_items')
       .withIndex('by_ruleset_created', (q) => q.eq('ruleset_id', args.ruleset_id))
-      .collect();
+      .take(200);
     const sorted = [...items].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
     if (sorted.length === 0) return [];
 
@@ -77,7 +53,7 @@ export const byRuleset = query({
         ctx.db
           .query('faq_answers')
           .withIndex('by_faq_item_created', (q) => q.eq('faq_item_id', item._id))
-          .collect()
+          .take(50)
       )
     );
     const askers = await Promise.all(sorted.map((item) => profileSummary(ctx, item.asked_by)));
@@ -91,14 +67,14 @@ export const byRuleset = query({
 });
 
 export const detail = query({
-  args: { id: v.union(v.id('faq_items'), v.number()) },
+  args: { id: v.id('faq_items') },
   handler: async (ctx, args) => {
     const item = await getFaqItem(ctx, args.id);
     if (!item) throw new Error(`FAQ item ${args.id} not found`);
     const answers = await ctx.db
       .query('faq_answers')
       .withIndex('by_faq_item_created', (q) => q.eq('faq_item_id', item._id))
-      .collect();
+      .take(200);
     return {
       ...item,
       faq_answers: answers,
@@ -107,12 +83,12 @@ export const detail = query({
 });
 
 export const askedBy = query({
-  args: { profile_id: v.union(v.id('users'), v.string()) },
+  args: { profile_id: v.id('users') },
   handler: async (ctx, args) => {
     const rows = await ctx.db
       .query('faq_items')
       .withIndex('by_asked_by_created', (q) => q.eq('asked_by', args.profile_id))
-      .collect();
+      .take(200);
     const sorted = [...rows].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
     return await Promise.all(
       sorted.map(async (item) => {
@@ -129,12 +105,12 @@ export const askedBy = query({
 });
 
 export const answeredBy = query({
-  args: { profile_id: v.union(v.id('users'), v.string()) },
+  args: { profile_id: v.id('users') },
   handler: async (ctx, args) => {
     const answers = await ctx.db
       .query('faq_answers')
       .withIndex('by_answered_by_created', (q) => q.eq('answered_by', args.profile_id))
-      .collect();
+      .take(200);
     const sorted = [...answers].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
     return await Promise.all(
       sorted.map(async (answer) => {
@@ -166,7 +142,7 @@ export const answeredBy = query({
 
 export const createItem = mutation({
   args: {
-    ruleset_id: v.union(v.id('rulesets'), v.number()),
+    ruleset_id: v.id('rulesets'),
     question: v.string(),
     answer: v.optional(v.string()),
   },
@@ -202,7 +178,7 @@ export const createItem = mutation({
 
 export const updateItem = mutation({
   args: {
-    id: v.union(v.id('faq_items'), v.number()),
+    id: v.id('faq_items'),
     question: v.optional(v.string()),
     accepted_answer_id: v.optional(v.union(v.id('faq_answers'), v.null())),
   },
@@ -235,7 +211,7 @@ export const updateItem = mutation({
 
 export const setAcceptedAnswer = mutation({
   args: {
-    faq_item_id: v.union(v.id('faq_items'), v.number()),
+    faq_item_id: v.id('faq_items'),
     accepted_answer_id: v.union(v.id('faq_answers'), v.null()),
   },
   handler: async (ctx, args) => {
@@ -258,7 +234,7 @@ export const setAcceptedAnswer = mutation({
 });
 
 export const deleteItem = mutation({
-  args: { id: v.union(v.id('faq_items'), v.number()) },
+  args: { id: v.id('faq_items') },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
     const item = await getFaqItem(ctx, args.id);
@@ -272,7 +248,7 @@ export const deleteItem = mutation({
     const answers = await ctx.db
       .query('faq_answers')
       .withIndex('by_faq_item_created', (q) => q.eq('faq_item_id', item._id))
-      .collect();
+      .take(500);
     await Promise.all(answers.map((answer) => ctx.db.delete(answer._id)));
     await ctx.db.delete(item._id);
     return { id: args.id, rulesetId: item.ruleset_id, askedBy: item.asked_by };
@@ -281,7 +257,7 @@ export const deleteItem = mutation({
 
 export const createAnswer = mutation({
   args: {
-    faq_item_id: v.union(v.id('faq_items'), v.number()),
+    faq_item_id: v.id('faq_items'),
     answer: v.string(),
   },
   handler: async (ctx, args) => {
@@ -312,7 +288,7 @@ export const createAnswer = mutation({
 });
 
 export const updateAnswer = mutation({
-  args: { id: v.union(v.id('faq_answers'), v.number()), answer: v.string() },
+  args: { id: v.id('faq_answers'), answer: v.string() },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
     const answer = await getFaqAnswer(ctx, args.id);
@@ -327,7 +303,7 @@ export const updateAnswer = mutation({
 });
 
 export const deleteAnswer = mutation({
-  args: { id: v.union(v.id('faq_answers'), v.number()) },
+  args: { id: v.id('faq_answers') },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
     const answer = await getFaqAnswer(ctx, args.id);

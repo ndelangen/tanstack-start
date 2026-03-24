@@ -1,6 +1,9 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: <environment variables are always defined> */
 import { ConvexHttpClient } from 'convex/browser';
 import { ConvexReactClient } from 'convex/react';
+import type { FunctionReference } from 'convex/server';
+
+import { api } from '../../../../convex/_generated/api';
 
 const convexUrl = import.meta.env.VITE_CONVEX_URL!;
 export const convex = new ConvexReactClient(convexUrl);
@@ -23,19 +26,22 @@ function convexBackendForDb(): ConvexReactClient | ConvexHttpClient {
 }
 
 export const db = {
-  query: async <T>(fn: string, args?: Record<string, unknown>): Promise<T> => {
+  query: async <T>(fn: FunctionReference<'query'>, args?: Record<string, unknown>): Promise<T> => {
     const backend = convexBackendForDb();
-    return (await backend.query(fn as never, args as never)) as T;
+    return (await backend.query(fn, args as never)) as T;
   },
-  mutation: async <T>(fn: string, args?: Record<string, unknown>): Promise<T> => {
+  mutation: async <T>(
+    fn: FunctionReference<'mutation'>,
+    args?: Record<string, unknown>
+  ): Promise<T> => {
     const backend = convexBackendForDb();
-    return (await backend.mutation(fn as never, args as never)) as T;
+    return (await backend.mutation(fn, args as never)) as T;
   },
 };
 
 export const auth = {
   getUser: async () => {
-    const userId = await db.query<string | null>('profiles:currentUserId', {});
+    const userId = await db.query<string | null>(api.profiles.currentUserId, {});
     return { data: { user: userId ? { id: userId } : null } };
   },
 };

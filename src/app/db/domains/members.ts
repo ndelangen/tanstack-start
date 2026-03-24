@@ -1,6 +1,9 @@
-import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryOptions } from '@tanstack/react-query';
 
 import { db, type Enums, type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
+import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
+
+import { api } from '../../../../convex/_generated/api';
 
 export type GroupMemberEntry = Tables<'group_members'>;
 export type GroupMemberInsert = TablesInsert<'group_members'>;
@@ -34,7 +37,7 @@ export function userGroupMembershipsQueryOptions(userId: string) {
       (
         await db.query<
           (Omit<GroupMemberEntry, 'id'> & { groups: { id: string; name: string } | null })[]
-        >('members:listByUserActiveWithGroups', {
+        >(api.members.listByUserActiveWithGroups, {
           user_id: userId,
         })
       ).map((entry) => ({ ...withMembershipId(entry), groups: entry.groups })),
@@ -42,150 +45,168 @@ export function userGroupMembershipsQueryOptions(userId: string) {
 }
 
 export function useUserGroupMemberships(userId: string | undefined) {
-  return useQuery({
-    ...userGroupMembershipsQueryOptions(userId ?? ''),
-    enabled: Boolean(userId),
-  });
+  const result = useLiveQuery<
+    (Omit<GroupMemberEntry, 'id'> & { groups: { id: string; name: string } | null })[],
+    { user_id: string }
+  >(
+    api.members.listByUserActiveWithGroups,
+    { user_id: userId ?? '' },
+    { enabled: Boolean(userId) }
+  );
+  return {
+    ...result,
+    data: result.data?.map((entry) => ({ ...withMembershipId(entry), groups: entry.groups })),
+  };
 }
 
 export function useGroupMembers(groupId: string) {
-  return useQuery({
-    queryKey: memberKeys.byGroup(groupId),
-    queryFn: async () =>
-      (
-        await db.query<Omit<GroupMemberEntry, 'id'>[]>('members:listByGroup', {
-          group_id: groupId,
-        })
-      ).map(withMembershipId),
-  });
+  const result = useLiveQuery<Omit<GroupMemberEntry, 'id'>[], { group_id: string }>(
+    api.members.listByGroup,
+    { group_id: groupId },
+    { enabled: Boolean(groupId) }
+  );
+  return {
+    ...result,
+    data: result.data?.map(withMembershipId),
+  };
 }
 
 export function useGroupMembersByStatus(groupId: string, status: GroupMemberStatus) {
-  const qc = useQueryClient();
-
-  return useQuery({
-    queryKey: memberKeys.byGroupAndStatus(groupId, status),
-    queryFn: async () =>
-      (
-        await db.query<Omit<GroupMemberEntry, 'id'>[]>('members:listByGroupAndStatus', {
-          group_id: groupId,
-          status,
-        })
-      ).map(withMembershipId),
-    initialData: () =>
-      qc
-        .getQueryData<GroupMemberEntry[]>(memberKeys.byGroup(groupId))
-        ?.filter((m) => m.status === status),
-  });
+  const result = useLiveQuery<
+    Omit<GroupMemberEntry, 'id'>[],
+    { group_id: string; status: GroupMemberStatus }
+  >(api.members.listByGroupAndStatus, { group_id: groupId, status }, { enabled: Boolean(groupId) });
+  return {
+    ...result,
+    data: result.data?.map(withMembershipId),
+  };
 }
 
 export function useGroupMember(groupId: string, userId: string) {
-  const qc = useQueryClient();
-
-  return useQuery({
-    queryKey: memberKeys.detail(groupId, userId),
-    queryFn: async () =>
-      withMembershipId(
-        await db.query<Omit<GroupMemberEntry, 'id'>>('members:get', {
-          group_id: groupId,
-          user_id: userId,
-        })
-      ),
-    initialData: () =>
-      qc
-        .getQueryData<GroupMemberEntry[]>(memberKeys.byGroup(groupId))
-        ?.find((m) => m.user_id === userId),
-  });
+  const result = useLiveQuery<Omit<GroupMemberEntry, 'id'>, { group_id: string; user_id: string }>(
+    api.members.get,
+    { group_id: groupId, user_id: userId },
+    { enabled: Boolean(groupId) && Boolean(userId) }
+  );
+  return {
+    ...result,
+    data: result.data ? withMembershipId(result.data) : undefined,
+  };
 }
 
 export function useRequestGroupMembership() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (groupId: string) =>
-      withMembershipId(
-        await db.mutation<Omit<GroupMemberEntry, 'id'>>('members:request', {
-          group_id: groupId,
-        })
+  const mutation = useLiveMutation<{ group_id: string }, Omit<GroupMemberEntry, 'id'>>(
+    api.members.request
+  );
+  return {
+    ...mutation,
+    mutate: (
+      groupId: string,
+      options?: { onSuccess?: (entry: GroupMemberEntry) => void; onError?: (error: Error) => void }
+    ) =>
+      mutation.mutate(
+        { group_id: groupId },
+        {
+          onSuccess: (entry) => options?.onSuccess?.(withMembershipId(entry)),
+          onError: (error) => options?.onError?.(error),
+        }
       ),
-
-    onSuccess: (entry) => {
-      qc.setQueryData(memberKeys.detail(entry.group_id, entry.user_id), entry);
-      qc.invalidateQueries({ queryKey: memberKeys.byGroup(entry.group_id) });
-    },
-  });
+    mutateAsync: async (groupId: string) =>
+      withMembershipId(await mutation.mutateAsync({ group_id: groupId })),
+  };
 }
 
 export function useApproveGroupMember() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ groupId, userId }: { groupId: string; userId: string }) =>
-      withMembershipId(
-        await db.mutation<Omit<GroupMemberEntry, 'id'>>('members:approve', {
-          group_id: groupId,
-          user_id: userId,
-        })
+  const mutation = useLiveMutation<
+    { group_id: string; user_id: string },
+    Omit<GroupMemberEntry, 'id'>
+  >(api.members.approve);
+  return {
+    ...mutation,
+    mutate: (
+      variables: { groupId: string; userId: string },
+      options?: { onSuccess?: (entry: GroupMemberEntry) => void; onError?: (error: Error) => void }
+    ) =>
+      mutation.mutate(
+        { group_id: variables.groupId, user_id: variables.userId },
+        {
+          onSuccess: (entry) => options?.onSuccess?.(withMembershipId(entry)),
+          onError: (error) => options?.onError?.(error),
+        }
       ),
-
-    onSuccess: (entry) => {
-      qc.setQueryData(memberKeys.detail(entry.group_id, entry.user_id), entry);
-      qc.invalidateQueries({ queryKey: memberKeys.byGroup(entry.group_id) });
-    },
-  });
+    mutateAsync: async ({ groupId, userId }: { groupId: string; userId: string }) =>
+      withMembershipId(await mutation.mutateAsync({ group_id: groupId, user_id: userId })),
+  };
 }
 
 export function useRejectGroupMember() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ groupId, userId }: { groupId: string; userId: string }) =>
-      withMembershipId(
-        await db.mutation<Omit<GroupMemberEntry, 'id'>>('members:reject', {
-          group_id: groupId,
-          user_id: userId,
-        })
+  const mutation = useLiveMutation<
+    { group_id: string; user_id: string },
+    Omit<GroupMemberEntry, 'id'>
+  >(api.members.reject);
+  return {
+    ...mutation,
+    mutate: (
+      variables: { groupId: string; userId: string },
+      options?: { onSuccess?: (entry: GroupMemberEntry) => void; onError?: (error: Error) => void }
+    ) =>
+      mutation.mutate(
+        { group_id: variables.groupId, user_id: variables.userId },
+        {
+          onSuccess: (entry) => options?.onSuccess?.(withMembershipId(entry)),
+          onError: (error) => options?.onError?.(error),
+        }
       ),
-
-    onSuccess: (entry) => {
-      qc.setQueryData(memberKeys.detail(entry.group_id, entry.user_id), entry);
-      qc.invalidateQueries({ queryKey: memberKeys.byGroup(entry.group_id) });
-    },
-  });
+    mutateAsync: async ({ groupId, userId }: { groupId: string; userId: string }) =>
+      withMembershipId(await mutation.mutateAsync({ group_id: groupId, user_id: userId })),
+  };
 }
 
 export function useRemoveGroupMember() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ groupId, userId }: { groupId: string; userId: string }) =>
-      await db.mutation<{ groupId: string; userId: string }>('members:remove', {
-        group_id: groupId,
-        user_id: userId,
-      }),
-
-    onSuccess: ({ groupId, userId }) => {
-      qc.removeQueries({ queryKey: memberKeys.detail(groupId, userId) });
-      qc.invalidateQueries({ queryKey: memberKeys.byGroup(groupId) });
-    },
-  });
+  const mutation = useLiveMutation<
+    { group_id: string; user_id: string },
+    { groupId: string; userId: string }
+  >(api.members.remove);
+  return {
+    ...mutation,
+    mutate: (
+      variables: { groupId: string; userId: string },
+      options?: {
+        onSuccess?: (entry: { groupId: string; userId: string }) => void;
+        onError?: (error: Error) => void;
+      }
+    ) =>
+      mutation.mutate(
+        { group_id: variables.groupId, user_id: variables.userId },
+        {
+          onSuccess: (entry) => options?.onSuccess?.(entry),
+          onError: (error) => options?.onError?.(error),
+        }
+      ),
+    mutateAsync: async ({ groupId, userId }: { groupId: string; userId: string }) =>
+      await mutation.mutateAsync({ group_id: groupId, user_id: userId }),
+  };
 }
 
 export function useAddGroupMember() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ groupId, userId }: { groupId: string; userId: string }) =>
-      withMembershipId(
-        await db.mutation<Omit<GroupMemberEntry, 'id'>>('members:add', {
-          group_id: groupId,
-          user_id: userId,
-        })
+  const mutation = useLiveMutation<
+    { group_id: string; user_id: string },
+    Omit<GroupMemberEntry, 'id'>
+  >(api.members.add);
+  return {
+    ...mutation,
+    mutate: (
+      variables: { groupId: string; userId: string },
+      options?: { onSuccess?: (entry: GroupMemberEntry) => void; onError?: (error: Error) => void }
+    ) =>
+      mutation.mutate(
+        { group_id: variables.groupId, user_id: variables.userId },
+        {
+          onSuccess: (entry) => options?.onSuccess?.(withMembershipId(entry)),
+          onError: (error) => options?.onError?.(error),
+        }
       ),
-
-    onSuccess: (entry) => {
-      qc.setQueryData(memberKeys.detail(entry.group_id, entry.user_id), entry);
-      qc.invalidateQueries({ queryKey: memberKeys.byGroup(entry.group_id) });
-    },
-  });
+    mutateAsync: async ({ groupId, userId }: { groupId: string; userId: string }) =>
+      withMembershipId(await mutation.mutateAsync({ group_id: groupId, user_id: userId })),
+  };
 }

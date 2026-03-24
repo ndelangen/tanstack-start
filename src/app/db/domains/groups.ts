@@ -1,6 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
+import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
 
-import { db, type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
+import { api } from '../../../../convex/_generated/api';
 
 export type GroupEntry = Tables<'groups'>;
 export type GroupInsert = TablesInsert<'groups'>;
@@ -18,80 +19,95 @@ export const groupKeys = {
 };
 
 export function useGroup(id: NonNullable<GroupEntry['_id']>) {
-  const qc = useQueryClient();
-
-  return useQuery({
-    queryKey: groupKeys.detail(id),
-    queryFn: async () =>
-      withGroupId(await db.query<Omit<GroupEntry, 'id'>>('groups:getById', { id })),
-    initialData: () =>
-      qc.getQueryData<GroupEntry[]>(groupKeys.list({ type: 'all' }))?.find((d) => d._id === id),
-  });
+  const result = useLiveQuery<Omit<GroupEntry, 'id'>, { id: NonNullable<GroupEntry['_id']> }>(
+    api.groups.getById,
+    { id },
+    { enabled: id != null }
+  );
+  return {
+    ...result,
+    data: result.data ? withGroupId(result.data) : undefined,
+  };
 }
 
 export function useGroupsAll() {
-  return useQuery({
-    queryKey: groupKeys.list({ type: 'all' }),
-    queryFn: async () =>
-      (await db.query<Omit<GroupEntry, 'id'>[]>('groups:list', {})).map(withGroupId),
-  });
+  const result = useLiveQuery<Omit<GroupEntry, 'id'>[], Record<string, never>>(api.groups.list, {});
+  return {
+    ...result,
+    data: result.data?.map(withGroupId),
+  };
 }
 
 export function useGroupsByCreator(createdBy: NonNullable<GroupEntry['created_by']>) {
-  const qc = useQueryClient();
-
-  return useQuery({
-    queryKey: groupKeys.list({ createdBy }),
-    queryFn: async () =>
-      (
-        await db.query<Omit<GroupEntry, 'id'>[]>('groups:listByCreator', { created_by: createdBy })
-      ).map(withGroupId),
-    initialData: () =>
-      qc
-        .getQueryData<GroupEntry[]>(groupKeys.list({ type: 'all' }))
-        ?.filter((d) => d.created_by === createdBy),
-  });
+  const result = useLiveQuery<
+    Omit<GroupEntry, 'id'>[],
+    { created_by: NonNullable<GroupEntry['created_by']> }
+  >(api.groups.listByCreator, { created_by: createdBy }, { enabled: createdBy != null });
+  return {
+    ...result,
+    data: result.data?.map(withGroupId),
+  };
 }
 
 export function useCreateGroup() {
-  const qc = useQueryClient();
+  const mutation = useLiveMutation<{ name: string }, Omit<GroupEntry, 'id'>>(api.groups.create);
 
-  return useMutation({
-    mutationFn: async ({ input }: { input: { name: string } }) =>
-      withGroupId(await db.mutation<Omit<GroupEntry, 'id'>>('groups:create', { name: input.name })),
-
-    onSuccess: (group) => {
-      qc.setQueryData(groupKeys.detail(group._id), group);
-      qc.invalidateQueries({ queryKey: groupKeys.lists() });
-    },
-  });
+  return {
+    ...mutation,
+    mutate: (
+      variables: { input: { name: string } },
+      options?: { onSuccess?: (group: GroupEntry) => void; onError?: (error: Error) => void }
+    ) =>
+      mutation.mutate(
+        { name: variables.input.name },
+        {
+          onSuccess: (group) => options?.onSuccess?.(withGroupId(group)),
+          onError: (error) => options?.onError?.(error),
+        }
+      ),
+    mutateAsync: async (variables: { input: { name: string } }) =>
+      withGroupId(await mutation.mutateAsync({ name: variables.input.name })),
+  };
 }
 
 export function useUpdateGroup() {
-  const qc = useQueryClient();
+  const mutation = useLiveMutation<{ id: string; name: string }, Omit<GroupEntry, 'id'>>(
+    api.groups.update
+  );
 
-  return useMutation({
-    mutationFn: async ({ input, id }: { input: { name: string }; id: string }) =>
-      withGroupId(
-        await db.mutation<Omit<GroupEntry, 'id'>>('groups:update', { id, name: input.name })
+  return {
+    ...mutation,
+    mutate: (
+      variables: { input: { name: string }; id: string },
+      options?: { onSuccess?: (entry: GroupEntry) => void; onError?: (error: Error) => void }
+    ) =>
+      mutation.mutate(
+        { id: variables.id, name: variables.input.name },
+        {
+          onSuccess: (entry) => options?.onSuccess?.(withGroupId(entry)),
+          onError: (error) => options?.onError?.(error),
+        }
       ),
-
-    onSuccess: (entry) => {
-      qc.setQueryData(groupKeys.detail(entry._id), entry);
-      qc.invalidateQueries({ queryKey: groupKeys.lists() });
-    },
-  });
+    mutateAsync: async (variables: { input: { name: string }; id: string }) =>
+      withGroupId(await mutation.mutateAsync({ id: variables.id, name: variables.input.name })),
+  };
 }
 
 export function useDeleteGroup() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string) => await db.mutation<string>('groups:remove', { id }),
-
-    onSuccess: (id) => {
-      qc.removeQueries({ queryKey: groupKeys.detail(id) });
-      qc.invalidateQueries({ queryKey: groupKeys.lists() });
-    },
-  });
+  const mutation = useLiveMutation<{ id: string }, string>(api.groups.remove);
+  return {
+    ...mutation,
+    mutate: (
+      id: string,
+      options?: { onSuccess?: (deletedId: string) => void; onError?: (error: Error) => void }
+    ) =>
+      mutation.mutate(
+        { id },
+        {
+          onSuccess: (deletedId) => options?.onSuccess?.(deletedId),
+          onError: (error) => options?.onError?.(error),
+        }
+      ),
+    mutateAsync: async (id: string) => await mutation.mutateAsync({ id }),
+  };
 }

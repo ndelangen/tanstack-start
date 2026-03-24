@@ -1,10 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Check, MessageSquarePlus, Pencil, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 
 import {
-  faqItemDetailQueryOptions,
   useCreateFaqAnswer,
   useDeleteFaqAnswer,
   useDeleteFaqItem,
@@ -12,7 +10,7 @@ import {
   useUpdateFaqAnswer,
   useUpdateFaqItem,
 } from '@db/faq';
-import { profileDetailQueryOptions, useCurrentProfile } from '@db/profiles';
+import { useCurrentProfile, useProfile } from '@db/profiles';
 import { Card } from '@app/components/card/Card';
 import {
   FormActions,
@@ -26,12 +24,7 @@ import { Stack } from '@app/components/layout';
 import styles from './FaqDetail.module.css';
 
 export const Route = createFileRoute('/_app/rulesets/$id/faq/$faqId')({
-  loader: async ({ context, params }) => {
-    const item = await context.queryClient.ensureQueryData(faqItemDetailQueryOptions(params.faqId));
-    if (item) {
-      await context.queryClient.ensureQueryData(profileDetailQueryOptions(item.asked_by));
-    }
-  },
+  loader: async () => {},
   component: FaqDetailPage,
   staticData: {
     PageHead: () => (
@@ -52,10 +45,7 @@ function FaqDetailPage() {
   const faqItem = useFaqItem(faqItemId);
   const profile = useCurrentProfile();
   const askerId = faqItem.data?.asked_by;
-  const askerProfile = useQuery({
-    ...profileDetailQueryOptions(askerId ?? ''),
-    enabled: !!askerId,
-  });
+  const askerProfile = useProfile(askerId ?? '', { enabled: !!askerId });
   const updateFaqItem = useUpdateFaqItem();
   const deleteFaqItem = useDeleteFaqItem();
   const createFaqAnswer = useCreateFaqAnswer();
@@ -171,7 +161,7 @@ function FaqDetailPage() {
                   </FormButton>
                 </FormTooltip>
                 {updateFaqItem.isError && (
-                  <span className={styles.error}>{updateFaqItem.error.message}</span>
+                  <span className={styles.error}>{updateFaqItem.error?.message}</span>
                 )}
               </FormActions>
             </Stack>
@@ -237,7 +227,7 @@ function FaqDetailPage() {
                     </FormButton>
                   </FormTooltip>
                   {deleteFaqItem.isError && (
-                    <span className={styles.error}>{deleteFaqItem.error.message}</span>
+                    <span className={styles.error}>{deleteFaqItem.error?.message}</span>
                   )}
                 </FormActions>
               )}
@@ -262,7 +252,7 @@ function FaqDetailPage() {
           >
             <FormField
               hint="Add your answer (1 per person—you can edit it later)"
-              error={createFaqAnswer.isError ? createFaqAnswer.error.message : undefined}
+              error={createFaqAnswer.isError ? createFaqAnswer.error?.message : undefined}
             >
               <MultilineTextField
                 name="answer"
@@ -331,7 +321,7 @@ function FaqDetailPage() {
                           </FormButton>
                         </FormTooltip>
                         {updateFaqAnswer.isError && (
-                          <span className={styles.error}>{updateFaqAnswer.error.message}</span>
+                          <span className={styles.error}>{updateFaqAnswer.error?.message}</span>
                         )}
                       </FormActions>
                     </Stack>

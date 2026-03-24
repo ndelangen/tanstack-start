@@ -40,6 +40,7 @@ export default defineSchema({
     .index('by_group_user', ['group_id', 'user_id'])
     .index('by_group', ['group_id'])
     .index('by_user', ['user_id'])
+    .index('by_user_status', ['user_id', 'status'])
     .index('by_group_status', ['group_id', 'status']),
   factions: defineTable({
     id: v.optional(v.string()),
@@ -52,6 +53,7 @@ export default defineSchema({
     group_id: v.optional(v.union(v.id('groups'), v.string(), v.null())),
   })
     .index('by_entity_id', ['id'])
+    .index('by_deleted', ['is_deleted'])
     .index('by_slug', ['slug'])
     .index('by_owner_id', ['owner_id'])
     .index('by_group_id', ['group_id'])
@@ -73,7 +75,7 @@ export default defineSchema({
     .index('by_group_deleted', ['group_id', 'is_deleted'])
     .index('by_deleted_name', ['is_deleted', 'name']),
   ruleset_factions: defineTable({
-    ruleset_id: v.union(v.id('rulesets'), v.number()),
+    ruleset_id: v.id('rulesets'),
     faction_id: v.union(v.id('factions'), v.string()),
   })
     .index('by_ruleset', ['ruleset_id'])
@@ -81,19 +83,19 @@ export default defineSchema({
     .index('by_ruleset_faction', ['ruleset_id', 'faction_id']),
   faq_items: defineTable({
     id: v.optional(v.number()),
-    ruleset_id: v.union(v.id('rulesets'), v.number()),
+    ruleset_id: v.id('rulesets'),
     question: v.string(),
     asked_by: v.union(v.id('users'), v.string()),
     created_at: v.string(),
     updated_at: v.string(),
-    accepted_answer_id: v.optional(v.union(v.id('faq_answers'), v.number(), v.null())),
+    accepted_answer_id: v.optional(v.union(v.id('faq_answers'), v.null())),
   })
     .index('by_entity_id', ['id'])
     .index('by_ruleset_created', ['ruleset_id', 'created_at'])
     .index('by_asked_by_created', ['asked_by', 'created_at']),
   faq_answers: defineTable({
     id: v.optional(v.number()),
-    faq_item_id: v.union(v.id('faq_items'), v.number()),
+    faq_item_id: v.id('faq_items'),
     answer: v.string(),
     answered_by: v.union(v.id('users'), v.string()),
     created_at: v.string(),

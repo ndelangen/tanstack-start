@@ -1,7 +1,10 @@
-import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryOptions } from '@tanstack/react-query';
 import { z } from 'zod';
 
 import { db, type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
+import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
+
+import { api } from '../../../../convex/_generated/api';
 
 const faqItemSchema = z.object({
   question: z.string().min(1),
@@ -52,7 +55,7 @@ export function faqItemsByRulesetQueryOptions(rulesetId: string) {
           (Omit<FaqItemWithDetails, 'id' | 'faq_answers'> & {
             faq_answers: Omit<FaqAnswerEntry, 'id'>[];
           })[]
-        >('faq:byRuleset', {
+        >(api.faq.byRuleset, {
           ruleset_id: rulesetId,
         })
       ).map((item) => ({
@@ -68,7 +71,7 @@ export function faqItemDetailQueryOptions(id: string) {
     queryFn: async () => {
       const item = await db.query<
         Omit<FaqItemEntry, 'id'> & { faq_answers: Omit<FaqAnswerEntry, 'id'>[] }
-      >('faq:detail', { id });
+      >(api.faq.detail, { id });
       return {
         ...withFaqItemId(item),
         faq_answers: item.faq_answers.map(withFaqAnswerId),
@@ -78,11 +81,35 @@ export function faqItemDetailQueryOptions(id: string) {
 }
 
 export function useFaqItemsByRuleset(rulesetId: string) {
-  return useQuery(faqItemsByRulesetQueryOptions(rulesetId));
+  const result = useLiveQuery<
+    (Omit<FaqItemWithDetails, 'id' | 'faq_answers'> & {
+      faq_answers: Omit<FaqAnswerEntry, 'id'>[];
+    })[],
+    { ruleset_id: string }
+  >(api.faq.byRuleset, { ruleset_id: rulesetId }, { enabled: Boolean(rulesetId) });
+  return {
+    ...result,
+    data: result.data?.map((item) => ({
+      ...withFaqItemId(item),
+      faq_answers: item.faq_answers.map(withFaqAnswerId),
+    })),
+  };
 }
 
 export function useFaqItem(id: string) {
-  return useQuery(faqItemDetailQueryOptions(id));
+  const result = useLiveQuery<
+    Omit<FaqItemEntry, 'id'> & { faq_answers: Omit<FaqAnswerEntry, 'id'>[] },
+    { id: string }
+  >(api.faq.detail, { id }, { enabled: Boolean(id) });
+  return {
+    ...result,
+    data: result.data
+      ? {
+          ...withFaqItemId(result.data),
+          faq_answers: result.data.faq_answers.map(withFaqAnswerId),
+        }
+      : undefined,
+  };
 }
 
 export type FaqItemAskedByWithRuleset = FaqItemEntry & {
@@ -96,7 +123,7 @@ export function faqItemsAskedByQueryOptions(profileId: string) {
       (
         await db.query<
           (Omit<FaqItemAskedByWithRuleset, 'id'> & { ruleset: { id: string; name: string } })[]
-        >('faq:askedBy', { profile_id: profileId })
+        >(api.faq.askedBy, { profile_id: profileId })
       ).map(withFaqItemId),
   });
 }
@@ -127,7 +154,7 @@ export function faqAnswersByUserQueryOptions(profileId: string) {
           (Omit<FaqAnswerWithParent, 'id' | 'faq_item'> & {
             faq_item: Omit<FaqAnswerWithParent['faq_item'], 'id'> & { id: string };
           })[]
-        >('faq:answeredBy', { profile_id: profileId })
+        >(api.faq.answeredBy, { profile_id: profileId })
       ).map((answer) => ({
         ...withFaqAnswerId(answer),
         faq_item: { ...answer.faq_item, id: answer.faq_item.id },
@@ -136,24 +163,63 @@ export function faqAnswersByUserQueryOptions(profileId: string) {
 }
 
 export function useFaqItemsAskedBy(profileId: string | undefined) {
-  return useQuery({
-    ...faqItemsAskedByQueryOptions(profileId ?? ''),
-    enabled: profileId != null && profileId !== '',
-  });
+  const result = useLiveQuery<
+    (Omit<FaqItemAskedByWithRuleset, 'id'> & { ruleset: { id: string; name: string } })[],
+    { profile_id: string }
+  >(
+    api.faq.askedBy,
+    { profile_id: profileId ?? '' },
+    { enabled: profileId != null && profileId !== '' }
+  );
+  return {
+    ...result,
+    data: result.data?.map(withFaqItemId),
+  };
 }
 
 export function useFaqAnswersByUser(profileId: string | undefined) {
-  return useQuery({
-    ...faqAnswersByUserQueryOptions(profileId ?? ''),
-    enabled: profileId != null && profileId !== '',
-  });
+  const result = useLiveQuery<
+    (Omit<FaqAnswerWithParent, 'id' | 'faq_item'> & {
+      faq_item: Omit<FaqAnswerWithParent['faq_item'], 'id'> & { id: string };
+    })[],
+    { profile_id: string }
+  >(
+    api.faq.answeredBy,
+    { profile_id: profileId ?? '' },
+    { enabled: profileId != null && profileId !== '' }
+  );
+  return {
+    ...result,
+    data: result.data?.map((answer) => ({
+      ...withFaqAnswerId(answer),
+      faq_item: { ...answer.faq_item, id: answer.faq_item.id },
+    })),
+  };
 }
 
 export function useCreateFaqItem() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
+  const mutation = useLiveMutation<
+    { ruleset_id: string; question: string; answer?: string },
+    Omit<FaqItemEntry, 'id'>
+  >(api.faq.createItem);
+  return {
+    ...mutation,
+    mutate: (
+      variables: { rulesetId: string; question: string; answer?: string },
+      options?: { onSuccess?: (entry: FaqItemEntry) => void; onError?: (error: Error) => void }
+    ) =>
+      mutation.mutate(
+        {
+          ruleset_id: variables.rulesetId,
+          question: faqItemSchema.parse({ question: variables.question }).question,
+          answer: variables.answer,
+        },
+        {
+          onSuccess: (entry) => options?.onSuccess?.(withFaqItemId(entry)),
+          onError: (error) => options?.onError?.(error),
+        }
+      ),
+    mutateAsync: async ({
       rulesetId,
       question,
       answer,
@@ -161,53 +227,69 @@ export function useCreateFaqItem() {
       rulesetId: string;
       question: string;
       answer?: string;
-    }) => {
-      const validated = faqItemSchema.parse({ question });
-      return withFaqItemId(
-        await db.mutation<Omit<FaqItemEntry, 'id'>>('faq:createItem', {
+    }) =>
+      withFaqItemId(
+        await mutation.mutateAsync({
           ruleset_id: rulesetId,
-          question: validated.question,
+          question: faqItemSchema.parse({ question }).question,
           answer,
         })
-      );
-    },
-    onSuccess: (entry, variables) => {
-      qc.invalidateQueries({ queryKey: faqKeys.byRuleset(entry.ruleset_id) });
-      qc.invalidateQueries({ queryKey: faqKeys.detail(entry._id) });
-      qc.invalidateQueries({ queryKey: faqKeys.all });
-      qc.invalidateQueries({ queryKey: faqKeys.askedBy(entry.asked_by) });
-      if (variables.answer?.trim()) {
-        qc.invalidateQueries({ queryKey: faqKeys.answeredBy(entry.asked_by) });
-      }
-    },
-  });
+      ),
+  };
 }
 
 export function useUpdateFaqItem() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, input }: { id: string; input: Partial<FaqItemUpdate> }) =>
+  const mutation = useLiveMutation<
+    { id: string; question?: string; accepted_answer_id?: string | null },
+    Omit<FaqItemEntry, 'id'>
+  >(api.faq.updateItem);
+  return {
+    ...mutation,
+    mutate: (
+      variables: { id: string; input: Partial<FaqItemUpdate> },
+      options?: { onSuccess?: (entry: FaqItemEntry) => void; onError?: (error: Error) => void }
+    ) =>
+      mutation.mutate(
+        {
+          id: variables.id,
+          question: variables.input.question,
+          accepted_answer_id: variables.input.accepted_answer_id ?? undefined,
+        },
+        {
+          onSuccess: (entry) => options?.onSuccess?.(withFaqItemId(entry)),
+          onError: (error) => options?.onError?.(error),
+        }
+      ),
+    mutateAsync: async ({ id, input }: { id: string; input: Partial<FaqItemUpdate> }) =>
       withFaqItemId(
-        await db.mutation<Omit<FaqItemEntry, 'id'>>('faq:updateItem', {
+        await mutation.mutateAsync({
           id,
           question: input.question,
           accepted_answer_id: input.accepted_answer_id ?? undefined,
         })
       ),
-    onSuccess: (entry) => {
-      qc.invalidateQueries({ queryKey: faqKeys.byRuleset(entry.ruleset_id) });
-      qc.invalidateQueries({ queryKey: faqKeys.detail(entry._id) });
-      qc.invalidateQueries({ queryKey: faqKeys.askedBy(entry.asked_by) });
-    },
-  });
+  };
 }
 
 export function useSetAcceptedAnswer() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
+  const mutation = useLiveMutation<
+    { faq_item_id: string; accepted_answer_id: string | null },
+    Omit<FaqItemEntry, 'id'>
+  >(api.faq.setAcceptedAnswer);
+  return {
+    ...mutation,
+    mutate: (
+      variables: { faqItemId: string; acceptedAnswerId: string | null },
+      options?: { onSuccess?: (entry: FaqItemEntry) => void; onError?: (error: Error) => void }
+    ) =>
+      mutation.mutate(
+        { faq_item_id: variables.faqItemId, accepted_answer_id: variables.acceptedAnswerId },
+        {
+          onSuccess: (entry) => options?.onSuccess?.(withFaqItemId(entry)),
+          onError: (error) => options?.onError?.(error),
+        }
+      ),
+    mutateAsync: async ({
       faqItemId,
       acceptedAnswerId,
     }: {
@@ -215,99 +297,115 @@ export function useSetAcceptedAnswer() {
       acceptedAnswerId: string | null;
     }) =>
       withFaqItemId(
-        await db.mutation<Omit<FaqItemEntry, 'id'>>('faq:setAcceptedAnswer', {
+        await mutation.mutateAsync({
           faq_item_id: faqItemId,
           accepted_answer_id: acceptedAnswerId,
         })
       ),
-    onSuccess: (entry) => {
-      qc.invalidateQueries({ queryKey: faqKeys.byRuleset(entry.ruleset_id) });
-      qc.invalidateQueries({ queryKey: faqKeys.detail(entry._id) });
-      qc.invalidateQueries({ queryKey: faqKeys.all });
-    },
-  });
+  };
 }
 
 export function useDeleteFaqItem() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string) =>
-      await db.mutation<{ id: string; rulesetId?: string; askedBy?: string }>('faq:deleteItem', {
-        id,
-      }),
-    onSuccess: ({ rulesetId, askedBy }) => {
-      if (rulesetId != null) {
-        qc.invalidateQueries({ queryKey: faqKeys.byRuleset(rulesetId) });
+  const mutation = useLiveMutation<
+    { id: string },
+    { id: string; rulesetId?: string; askedBy?: string }
+  >(api.faq.deleteItem);
+  return {
+    ...mutation,
+    mutate: (
+      id: string,
+      options?: {
+        onSuccess?: (entry: { id: string; rulesetId?: string; askedBy?: string }) => void;
+        onError?: (error: Error) => void;
       }
-      if (askedBy != null) {
-        qc.invalidateQueries({ queryKey: faqKeys.askedBy(askedBy) });
-      }
-    },
-  });
+    ) =>
+      mutation.mutate(
+        { id },
+        {
+          onSuccess: (entry) => options?.onSuccess?.(entry),
+          onError: (error) => options?.onError?.(error),
+        }
+      ),
+    mutateAsync: async (id: string) => await mutation.mutateAsync({ id }),
+  };
 }
 
 export function useCreateFaqAnswer() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ faqItemId, answer }: { faqItemId: string; answer: string }) => {
-      const validated = faqAnswerSchema.parse({ answer });
-      return withFaqAnswerId(
-        await db.mutation<Omit<FaqAnswerEntry, 'id'>>('faq:createAnswer', {
+  const mutation = useLiveMutation<
+    { faq_item_id: string; answer: string },
+    Omit<FaqAnswerEntry, 'id'>
+  >(api.faq.createAnswer);
+  return {
+    ...mutation,
+    mutate: (
+      variables: { faqItemId: string; answer: string },
+      options?: { onSuccess?: (entry: FaqAnswerEntry) => void; onError?: (error: Error) => void }
+    ) =>
+      mutation.mutate(
+        {
+          faq_item_id: variables.faqItemId,
+          answer: faqAnswerSchema.parse({ answer: variables.answer }).answer,
+        },
+        {
+          onSuccess: (entry) => options?.onSuccess?.(withFaqAnswerId(entry)),
+          onError: (error) => options?.onError?.(error),
+        }
+      ),
+    mutateAsync: async ({ faqItemId, answer }: { faqItemId: string; answer: string }) =>
+      withFaqAnswerId(
+        await mutation.mutateAsync({
           faq_item_id: faqItemId,
-          answer: validated.answer,
+          answer: faqAnswerSchema.parse({ answer }).answer,
         })
-      );
-    },
-    onSuccess: (entry) => {
-      qc.invalidateQueries({ queryKey: faqKeys.detail(entry.faq_item_id) });
-      qc.invalidateQueries({ queryKey: faqKeys.all });
-      qc.invalidateQueries({ queryKey: faqKeys.answeredBy(entry.answered_by) });
-    },
-  });
+      ),
+  };
 }
 
 export function useUpdateFaqAnswer() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, answer }: { id: string; answer: string }) => {
-      const validated = faqAnswerSchema.parse({ answer });
-      return withFaqAnswerId(
-        await db.mutation<Omit<FaqAnswerEntry, 'id'>>('faq:updateAnswer', {
-          id,
-          answer: validated.answer,
-        })
-      );
-    },
-    onSuccess: (entry) => {
-      qc.invalidateQueries({ queryKey: faqKeys.detail(entry.faq_item_id) });
-      qc.invalidateQueries({ queryKey: faqKeys.all });
-      qc.invalidateQueries({ queryKey: faqKeys.answeredBy(entry.answered_by) });
-    },
-  });
+  const mutation = useLiveMutation<{ id: string; answer: string }, Omit<FaqAnswerEntry, 'id'>>(
+    api.faq.updateAnswer
+  );
+  return {
+    ...mutation,
+    mutate: (
+      variables: { id: string; answer: string },
+      options?: { onSuccess?: (entry: FaqAnswerEntry) => void; onError?: (error: Error) => void }
+    ) =>
+      mutation.mutate(
+        { id: variables.id, answer: faqAnswerSchema.parse({ answer: variables.answer }).answer },
+        {
+          onSuccess: (entry) => options?.onSuccess?.(withFaqAnswerId(entry)),
+          onError: (error) => options?.onError?.(error),
+        }
+      ),
+    mutateAsync: async ({ id, answer }: { id: string; answer: string }) =>
+      withFaqAnswerId(
+        await mutation.mutateAsync({ id, answer: faqAnswerSchema.parse({ answer }).answer })
+      ),
+  };
 }
 
 export function useDeleteFaqAnswer() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string) =>
-      await db.mutation<{ id: string; faqItemId?: string; answeredBy?: string }>(
-        'faq:deleteAnswer',
+  const mutation = useLiveMutation<
+    { id: string },
+    { id: string; faqItemId?: string; answeredBy?: string }
+  >(api.faq.deleteAnswer);
+  return {
+    ...mutation,
+    mutate: (
+      id: string,
+      options?: {
+        onSuccess?: (entry: { id: string; faqItemId?: string; answeredBy?: string }) => void;
+        onError?: (error: Error) => void;
+      }
+    ) =>
+      mutation.mutate(
+        { id },
         {
-          id,
+          onSuccess: (entry) => options?.onSuccess?.(entry),
+          onError: (error) => options?.onError?.(error),
         }
       ),
-    onSuccess: ({ faqItemId, answeredBy }) => {
-      if (faqItemId != null) {
-        qc.invalidateQueries({ queryKey: faqKeys.detail(faqItemId) });
-        qc.invalidateQueries({ queryKey: faqKeys.all });
-      }
-      if (answeredBy != null) {
-        qc.invalidateQueries({ queryKey: faqKeys.answeredBy(answeredBy) });
-      }
-    },
-  });
+    mutateAsync: async (id: string) => await mutation.mutateAsync({ id }),
+  };
 }

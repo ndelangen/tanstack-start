@@ -111,7 +111,7 @@ function FaqCreatePage() {
               {createFaqItem.isPending ? 'Asking…' : 'Ask'}
             </FormButton>
             {createFaqItem.isError && (
-              <span className={styles.error}>{createFaqItem.error.message}</span>
+              <span className={styles.error}>{createFaqItem.error?.message}</span>
             )}
           </FormActions>
         </Stack>
