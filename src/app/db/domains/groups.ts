@@ -1,5 +1,6 @@
 import { type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
+import { groupInputSchema } from '@app/groups/validation';
 
 import { api } from '../../../../convex/_generated/api';
 
@@ -51,6 +52,7 @@ export function useGroupsByCreator(createdBy: NonNullable<GroupEntry['created_by
 
 export function useCreateGroup() {
   const mutation = useLiveMutation<{ name: string }, Omit<GroupEntry, 'id'>>(api.groups.create);
+  const parseInput = (input: { name: string }) => groupInputSchema.parse(input);
 
   return {
     ...mutation,
@@ -59,14 +61,14 @@ export function useCreateGroup() {
       options?: { onSuccess?: (group: GroupEntry) => void; onError?: (error: Error) => void }
     ) =>
       mutation.mutate(
-        { name: variables.input.name },
+        { name: parseInput(variables.input).name },
         {
           onSuccess: (group) => options?.onSuccess?.(withGroupId(group)),
           onError: (error) => options?.onError?.(error),
         }
       ),
     mutateAsync: async (variables: { input: { name: string } }) =>
-      withGroupId(await mutation.mutateAsync({ name: variables.input.name })),
+      withGroupId(await mutation.mutateAsync({ name: parseInput(variables.input).name })),
   };
 }
 
@@ -74,6 +76,7 @@ export function useUpdateGroup() {
   const mutation = useLiveMutation<{ id: string; name: string }, Omit<GroupEntry, 'id'>>(
     api.groups.update
   );
+  const parseInput = (input: { name: string }) => groupInputSchema.parse(input);
 
   return {
     ...mutation,
@@ -82,14 +85,19 @@ export function useUpdateGroup() {
       options?: { onSuccess?: (entry: GroupEntry) => void; onError?: (error: Error) => void }
     ) =>
       mutation.mutate(
-        { id: variables.id, name: variables.input.name },
+        { id: variables.id, name: parseInput(variables.input).name },
         {
           onSuccess: (entry) => options?.onSuccess?.(withGroupId(entry)),
           onError: (error) => options?.onError?.(error),
         }
       ),
     mutateAsync: async (variables: { input: { name: string }; id: string }) =>
-      withGroupId(await mutation.mutateAsync({ id: variables.id, name: variables.input.name })),
+      withGroupId(
+        await mutation.mutateAsync({
+          id: variables.id,
+          name: parseInput(variables.input).name,
+        })
+      ),
   };
 }
 

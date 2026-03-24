@@ -16,6 +16,16 @@ flowchart TD
 
 Loaders fetch directly via Convex function calls. Components use domain hooks (TanStack Query) for reactive/mutating data. Everything runs in the browser - no server rendering.
 
+## Validation Flow
+
+For mutation inputs, validation happens in three stages:
+
+1. Optional client-side parse (UX feedback only).
+2. Convex function boundary validation via `v.*` argument validators.
+3. Convex handler semantic validation via shared Zod `safeParse` (authoritative).
+
+This keeps input types strict at the API edge and business rules centralized in shared schemas.
+
 ## File-Based Routing
 
 Routes live in `src/app/routes/`. File structure maps to URLs (e.g. `index.tsx` → `/`, `auth/login.tsx` → `/auth/login`). Route tree auto-generates: [`src/app/routeTree.gen.ts`](../src/app/routeTree.gen.ts)

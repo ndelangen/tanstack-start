@@ -1,17 +1,13 @@
 import { queryOptions } from '@tanstack/react-query';
-import { z } from 'zod';
 
 import { db, type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
+import { rulesetInputSchema } from '@app/rulesets/validation';
 import { schema as factionDataSchema } from '@data/factions';
 
 import { api } from '../../../../convex/_generated/api';
 
-const schema = z.object({
-  name: z.string().min(1),
-});
-
-export type Ruleset = z.infer<typeof schema>;
+export type Ruleset = { name: string };
 export type RulesetEntry = Omit<Tables<'rulesets'>, 'name'> & {
   name: Ruleset['name'];
 };
@@ -43,7 +39,7 @@ export function rulesetsListQueryOptions() {
       const entries = await db.query<Tables<'rulesets'>[]>(api.rulesets.list, {});
       return entries.map((entry) => ({
         ...withRulesetId(entry),
-        name: schema.parse({ name: entry.name }).name,
+        name: rulesetInputSchema.parse({ name: entry.name }).name,
       }));
     },
   });
@@ -56,7 +52,7 @@ export function rulesetDetailQueryOptions(id: string) {
       const entry = await db.query<Tables<'rulesets'>>(api.rulesets.get, { id });
       return {
         ...withRulesetId(entry),
-        name: schema.parse({ name: entry.name }).name,
+        name: rulesetInputSchema.parse({ name: entry.name }).name,
       };
     },
   });
@@ -114,7 +110,7 @@ export function rulesetsByFactionQueryOptions(factionId: string) {
       });
       return entries.map((e) => ({
         ...withRulesetId(e),
-        name: schema.parse({ name: e.name }).name,
+        name: rulesetInputSchema.parse({ name: e.name }).name,
       }));
     },
   });
@@ -126,7 +122,7 @@ export function useRulesetsAll() {
     ...result,
     data: result.data?.map((entry) => ({
       ...withRulesetId(entry),
-      name: schema.parse({ name: entry.name }).name,
+      name: rulesetInputSchema.parse({ name: entry.name }).name,
     })),
   };
 }
@@ -142,7 +138,7 @@ export function useRuleset(id: string) {
     data: result.data
       ? {
           ...withRulesetId(result.data),
-          name: schema.parse({ name: result.data.name }).name,
+          name: rulesetInputSchema.parse({ name: result.data.name }).name,
         }
       : undefined,
   };
@@ -184,7 +180,7 @@ export function useRulesetsByFaction(factionRowId: string | undefined) {
     ...result,
     data: result.data?.map((e) => ({
       ...withRulesetId(e),
-      name: schema.parse({ name: e.name }).name,
+      name: rulesetInputSchema.parse({ name: e.name }).name,
     })),
   };
 }
@@ -205,7 +201,7 @@ export function useCreateRuleset() {
     ) =>
       mutation.mutate(
         {
-          name: schema.parse(variables.input).name,
+          name: rulesetInputSchema.parse(variables.input).name,
           group_id: variables.groupId ?? null,
           image_cover: variables.imageCover ?? null,
         },
@@ -223,7 +219,7 @@ export function useCreateRuleset() {
       groupId?: string | null;
       imageCover?: string | null;
     }) => {
-      const validated = schema.parse(input);
+      const validated = rulesetInputSchema.parse(input);
       const entry = await mutation.mutateAsync({
         name: validated.name,
         group_id: groupId ?? null,
@@ -256,7 +252,7 @@ export function useUpdateRuleset() {
       mutation.mutate(
         {
           id: variables.id,
-          name: schema.parse(variables.input).name,
+          name: rulesetInputSchema.parse(variables.input).name,
           group_id: variables.groupId,
           image_cover: variables.imageCover,
         },
@@ -276,7 +272,7 @@ export function useUpdateRuleset() {
       groupId?: string | null;
       imageCover?: string | null;
     }) => {
-      const validated = schema.parse(input);
+      const validated = rulesetInputSchema.parse(input);
       const entry = await mutation.mutateAsync({
         id,
         name: validated.name,

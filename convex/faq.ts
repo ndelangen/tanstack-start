@@ -1,4 +1,5 @@
 import { v } from 'convex/values';
+import { faqAnswerSchema, faqQuestionSchema } from '../src/app/faq/validation';
 
 import type { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
@@ -144,11 +145,17 @@ export const createItem = mutation({
     const userId = await requireAuthUserId(ctx);
     const ruleset = await getRuleset(ctx, args.ruleset_id);
     if (!ruleset || ruleset.is_deleted) throw new Error('Ruleset not found');
+    const parsedQuestion = faqQuestionSchema.safeParse(args.question);
+    if (!parsedQuestion.success) {
+      const msg = parsedQuestion.error.issues.map((i) => i.message).join(' ');
+      throw new Error(msg || 'Invalid FAQ input');
+    }
+    const normalizedQuestion = parsedQuestion.data;
 
     const now = nowIso();
     const faqItemId = await ctx.db.insert('faq_items', {
       ruleset_id: args.ruleset_id,
-      question: args.question,
+      question: normalizedQuestion,
       asked_by: userId,
       created_at: now,
       updated_at: now,
@@ -157,10 +164,16 @@ export const createItem = mutation({
     const row = await ctx.db.get(faqItemId);
     if (!row) throw new Error('Failed to create FAQ item');
 
-    if (args.answer && args.answer.trim().length > 0) {
+    const normalizedInitialAnswer = args.answer?.trim();
+    if (normalizedInitialAnswer && normalizedInitialAnswer.length > 0) {
+      const parsedAnswer = faqAnswerSchema.safeParse(normalizedInitialAnswer);
+      if (!parsedAnswer.success) {
+        const msg = parsedAnswer.error.issues.map((i) => i.message).join(' ');
+        throw new Error(msg || 'Invalid FAQ input');
+      }
       await ctx.db.insert('faq_answers', {
         faq_item_id: row._id,
-        answer: args.answer.trim(),
+        answer: parsedAnswer.data,
         answered_by: userId,
         created_at: nowIso(),
       });
@@ -193,7 +206,14 @@ export const updateItem = mutation({
     } = {
       updated_at: nowIso(),
     };
-    if (args.question !== undefined) patch.question = args.question;
+    if (args.question !== undefined) {
+      const parsedQuestion = faqQuestionSchema.safeParse(args.question);
+      if (!parsedQuestion.success) {
+        const msg = parsedQuestion.error.issues.map((i) => i.message).join(' ');
+        throw new Error(msg || 'Invalid FAQ input');
+      }
+      patch.question = parsedQuestion.data;
+    }
     if (args.accepted_answer_id !== undefined) patch.accepted_answer_id = args.accepted_answer_id;
 
     await ctx.db.patch(item._id, patch);
@@ -256,6 +276,11 @@ export const createAnswer = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
+    const parsedAnswer = faqAnswerSchema.safeParse(args.answer);
+    if (!parsedAnswer.success) {
+      const msg = parsedAnswer.error.issues.map((i) => i.message).join(' ');
+      throw new Error(msg || 'Invalid FAQ input');
+    }
     const item = await getFaqItem(ctx, args.faq_item_id);
     if (!item) throw new Error('FAQ item not found');
     const ruleset = await getRuleset(ctx, item.ruleset_id);
@@ -271,7 +296,7 @@ export const createAnswer = mutation({
 
     const _id = await ctx.db.insert('faq_answers', {
       faq_item_id: args.faq_item_id,
-      answer: args.answer,
+      answer: parsedAnswer.data,
       answered_by: userId,
       created_at: nowIso(),
     });
@@ -285,11 +310,16 @@ export const updateAnswer = mutation({
   args: { id: v.id('faq_answers'), answer: v.string() },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
+    const parsedAnswer = faqAnswerSchema.safeParse(args.answer);
+    if (!parsedAnswer.success) {
+      const msg = parsedAnswer.error.issues.map((i) => i.message).join(' ');
+      throw new Error(msg || 'Invalid FAQ input');
+    }
     const answer = await getFaqAnswer(ctx, args.id);
     if (!answer) throw new Error(`FAQ answer ${args.id} not found`);
     if (answer.answered_by !== userId) throw new Error('Not authorized');
 
-    await ctx.db.patch(answer._id, { answer: args.answer });
+    await ctx.db.patch(answer._id, { answer: parsedAnswer.data });
     const updated = await ctx.db.get(answer._id);
     if (!updated) throw new Error(`FAQ answer ${args.id} not found`);
     return updated;

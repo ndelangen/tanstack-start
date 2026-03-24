@@ -1,17 +1,10 @@
 import { queryOptions } from '@tanstack/react-query';
-import { z } from 'zod';
 
 import { db, type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
+import { faqAnswerSchema, faqQuestionSchema } from '@app/faq/validation';
 
 import { api } from '../../../../convex/_generated/api';
-
-const faqItemSchema = z.object({
-  question: z.string().min(1),
-});
-const faqAnswerSchema = z.object({
-  answer: z.string().min(1),
-});
 
 export type FaqItemEntry = Tables<'faq_items'>;
 export type FaqItemInsert = TablesInsert<'faq_items'>;
@@ -211,8 +204,11 @@ export function useCreateFaqItem() {
       mutation.mutate(
         {
           ruleset_id: variables.rulesetId,
-          question: faqItemSchema.parse({ question: variables.question }).question,
-          answer: variables.answer,
+          question: faqQuestionSchema.parse(variables.question),
+          answer:
+            variables.answer !== undefined && variables.answer.trim().length > 0
+              ? faqAnswerSchema.parse(variables.answer)
+              : undefined,
         },
         {
           onSuccess: (entry) => options?.onSuccess?.(withFaqItemId(entry)),
@@ -231,8 +227,8 @@ export function useCreateFaqItem() {
       withFaqItemId(
         await mutation.mutateAsync({
           ruleset_id: rulesetId,
-          question: faqItemSchema.parse({ question }).question,
-          answer,
+          question: faqQuestionSchema.parse(question),
+          answer: answer !== undefined && answer.trim().length > 0 ? faqAnswerSchema.parse(answer) : undefined,
         })
       ),
   };
@@ -252,7 +248,10 @@ export function useUpdateFaqItem() {
       mutation.mutate(
         {
           id: variables.id,
-          question: variables.input.question,
+          question:
+            variables.input.question !== undefined
+              ? faqQuestionSchema.parse(variables.input.question)
+              : undefined,
           accepted_answer_id: variables.input.accepted_answer_id,
         },
         {
@@ -264,7 +263,7 @@ export function useUpdateFaqItem() {
       withFaqItemId(
         await mutation.mutateAsync({
           id,
-          question: input.question,
+          question: input.question !== undefined ? faqQuestionSchema.parse(input.question) : undefined,
           accepted_answer_id: input.accepted_answer_id,
         })
       ),
@@ -344,7 +343,7 @@ export function useCreateFaqAnswer() {
       mutation.mutate(
         {
           faq_item_id: variables.faqItemId,
-          answer: faqAnswerSchema.parse({ answer: variables.answer }).answer,
+          answer: faqAnswerSchema.parse(variables.answer),
         },
         {
           onSuccess: (entry) => options?.onSuccess?.(withFaqAnswerId(entry)),
@@ -355,7 +354,7 @@ export function useCreateFaqAnswer() {
       withFaqAnswerId(
         await mutation.mutateAsync({
           faq_item_id: faqItemId,
-          answer: faqAnswerSchema.parse({ answer }).answer,
+          answer: faqAnswerSchema.parse(answer),
         })
       ),
   };
@@ -372,7 +371,7 @@ export function useUpdateFaqAnswer() {
       options?: { onSuccess?: (entry: FaqAnswerEntry) => void; onError?: (error: Error) => void }
     ) =>
       mutation.mutate(
-        { id: variables.id, answer: faqAnswerSchema.parse({ answer: variables.answer }).answer },
+        { id: variables.id, answer: faqAnswerSchema.parse(variables.answer) },
         {
           onSuccess: (entry) => options?.onSuccess?.(withFaqAnswerId(entry)),
           onError: (error) => options?.onError?.(error),
@@ -380,7 +379,7 @@ export function useUpdateFaqAnswer() {
       ),
     mutateAsync: async ({ id, answer }: { id: string; answer: string }) =>
       withFaqAnswerId(
-        await mutation.mutateAsync({ id, answer: faqAnswerSchema.parse({ answer }).answer })
+        await mutation.mutateAsync({ id, answer: faqAnswerSchema.parse(answer) })
       ),
   };
 }

@@ -1,4 +1,5 @@
 import { v } from 'convex/values';
+import { groupInputSchema } from '../src/app/groups/validation';
 
 import { mutation, query } from './_generated/server';
 import { requireAuthUserId } from './lib/policy';
@@ -34,15 +35,21 @@ export const create = mutation({
   args: { name: v.string() },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
+    const parsed = groupInputSchema.safeParse({ name: args.name });
+    if (!parsed.success) {
+      const msg = parsed.error.issues.map((i) => i.message).join(' ');
+      throw new Error(msg || 'Invalid group input');
+    }
+    const normalizedName = parsed.data.name;
     const existing = await ctx.db
       .query('groups')
-      .withIndex('by_name', (q) => q.eq('name', args.name))
+      .withIndex('by_name', (q) => q.eq('name', normalizedName))
       .unique();
     if (existing) throw new Error('Group name already exists');
 
     const now = nowIso();
     const _id = await ctx.db.insert('groups', {
-      name: args.name,
+      name: normalizedName,
       created_by: userId,
       created_at: now,
     });
@@ -60,17 +67,23 @@ export const update = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
+    const parsed = groupInputSchema.safeParse({ name: args.name });
+    if (!parsed.success) {
+      const msg = parsed.error.issues.map((i) => i.message).join(' ');
+      throw new Error(msg || 'Invalid group input');
+    }
+    const normalizedName = parsed.data.name;
     const group = await ctx.db.get(args.id);
     if (!group) throw new Error(`Group with id ${args.id} not found`);
     if (group.created_by !== userId) throw new Error('Not authorized');
 
     const nameOwner = await ctx.db
       .query('groups')
-      .withIndex('by_name', (q) => q.eq('name', args.name))
+      .withIndex('by_name', (q) => q.eq('name', normalizedName))
       .unique();
     if (nameOwner && nameOwner._id !== args.id) throw new Error('Group name already exists');
 
-    await ctx.db.patch(group._id, { name: args.name });
+    await ctx.db.patch(group._id, { name: normalizedName });
     const updated = await ctx.db.get(group._id);
     if (!updated) throw new Error('Failed to update group');
     return updated;

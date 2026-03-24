@@ -63,6 +63,58 @@ Zod schemas in `src/data/` validate at runtime:
 
 **Example**: [`src/data/factions.ts`](../src/data/factions.ts)
 
+## Validation Standard
+
+Use a two-layer validation model for all mutations:
+
+1. **Boundary validation (Convex `v`)** for argument shape/type.
+2. **Semantic validation (shared Zod)** for business rules.
+
+Both client and server should parse the same Zod schema, but server parsing is authoritative.
+Client parsing is for UX only and must not be treated as security.
+
+### Enforcement Order
+
+1. Normalize raw inputs (trim, map optional fields, etc.).
+2. Run `safeParse` using shared Zod schema.
+3. On parse failure, map issues to a stable, user-facing error message.
+4. Continue mutation logic only with parsed data.
+
+### Convex Mutation Pattern
+
+```typescript
+export const updateSomething = mutation({
+  args: {
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const parsed = someSharedSchema.safeParse({
+      name: args.name,
+    });
+    if (!parsed.success) {
+      const msg = parsed.error.issues.map((i) => i.message).join(' ');
+      throw new Error(msg || 'Invalid input');
+    }
+
+    const input = parsed.data;
+    // mutation logic using validated `input`
+  },
+});
+```
+
+### Adoption Checklist
+
+- Find duplicated manual checks in Convex handlers.
+- Move those rules into shared Zod schemas.
+- Parse the same schema in client and server.
+- Keep Convex `v` validators at function boundaries.
+- Keep validation error messages stable and user-friendly.
+
+### Current Exemplars
+
+- Shared profile semantic schema: [`src/app/profile/validation.ts`](../src/app/profile/validation.ts)
+- Server-authoritative parse in mutation: [`convex/profiles.ts`](../convex/profiles.ts)
+
 ## Soft Delete Pattern
 
 Factions and rulesets use `is_deleted` flags instead of hard deletes:

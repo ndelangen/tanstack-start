@@ -8,6 +8,7 @@ Quick reference for understanding and working with the codebase.
 1. Routes: `src/app/routes/` (file-based routing)
 2. Domain logic: `src/app/db/domains/` (data access hooks)
 3. Schemas: `src/data/` (Zod schemas)
+4. Validation standard: [`docs/data-layer.md`](./data-layer.md) (Convex `v` + shared Zod)
 
 **Debugging?**
 - Router: [`src/app/router.tsx`](../src/app/router.tsx)

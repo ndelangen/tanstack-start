@@ -1,5 +1,6 @@
 import { getAuthUserId } from '@convex-dev/auth/server';
 import { v } from 'convex/values';
+import { rulesetInputSchema } from '../src/app/rulesets/validation';
 
 import type { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
@@ -99,6 +100,12 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
+    const parsed = rulesetInputSchema.safeParse({ name: args.name });
+    if (!parsed.success) {
+      const msg = parsed.error.issues.map((i) => i.message).join(' ');
+      throw new Error(msg || 'Invalid ruleset input');
+    }
+    const normalizedName = parsed.data.name;
 
     if (args.group_id) {
       const canUseGroup = await isActiveGroupMember(ctx, args.group_id, userId);
@@ -107,13 +114,13 @@ export const create = mutation({
 
     const duplicate = await ctx.db
       .query('rulesets')
-      .withIndex('by_name', (q) => q.eq('name', args.name))
+      .withIndex('by_name', (q) => q.eq('name', normalizedName))
       .take(25);
     if (duplicate.some((row) => !row.is_deleted)) throw new Error('Ruleset name already exists');
 
     const now = nowIso();
     const _id = await ctx.db.insert('rulesets', {
-      name: args.name,
+      name: normalizedName,
       owner_id: userId,
       group_id: args.group_id,
       image_cover: args.image_cover,
@@ -136,6 +143,12 @@ export const update = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
+    const parsed = rulesetInputSchema.safeParse({ name: args.name });
+    if (!parsed.success) {
+      const msg = parsed.error.issues.map((i) => i.message).join(' ');
+      throw new Error(msg || 'Invalid ruleset input');
+    }
+    const normalizedName = parsed.data.name;
     const ruleset = await getRulesetById(ctx, args.id);
     if (!ruleset || ruleset.is_deleted) throw new Error(`Ruleset with id ${args.id} not found`);
 
@@ -149,7 +162,7 @@ export const update = mutation({
 
     const duplicate = await ctx.db
       .query('rulesets')
-      .withIndex('by_name', (q) => q.eq('name', args.name))
+      .withIndex('by_name', (q) => q.eq('name', normalizedName))
       .take(25);
     if (duplicate.some((row) => row._id !== args.id && !row.is_deleted)) {
       throw new Error('Ruleset name already exists');
@@ -161,7 +174,7 @@ export const update = mutation({
       group_id?: Id<'groups'> | null;
       image_cover?: string | null;
     } = {
-      name: args.name,
+      name: normalizedName,
       updated_at: nowIso(),
     };
     if (args.group_id !== undefined) patch.group_id = args.group_id;
