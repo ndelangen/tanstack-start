@@ -18,23 +18,17 @@ async function getFaqAnswer(ctx: QueryCtx | MutationCtx, id: Id<'faq_answers'>) 
   return await ctx.db.get(id);
 }
 
-async function profileSummary(ctx: QueryCtx | MutationCtx, id: Id<'users'> | string) {
+async function profileSummary(ctx: QueryCtx | MutationCtx, id: Id<'users'>) {
   const profile = await ctx.db
     .query('profiles')
-    .withIndex('by_user_id', (q) => q.eq('user_id', id as Id<'users'>))
+    .withIndex('by_user_id', (q) => q.eq('user_id', id))
     .unique();
-  const legacyProfile =
-    profile ??
-    (await ctx.db
-      .query('profiles')
-      .withIndex('by_entity_id', (q) => q.eq('id', String(id)))
-      .unique());
-  if (!legacyProfile) return null;
+  if (!profile) return null;
   return {
-    id: legacyProfile._id,
-    slug: legacyProfile.slug,
-    username: legacyProfile.username ?? null,
-    avatar_url: legacyProfile.avatar_url ?? null,
+    id: profile._id,
+    slug: profile.slug,
+    username: profile.username ?? null,
+    avatar_url: profile.avatar_url ?? null,
   };
 }
 

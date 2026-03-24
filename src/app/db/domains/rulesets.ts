@@ -191,7 +191,7 @@ export function useRulesetsByFaction(factionRowId: string | undefined) {
 
 export function useCreateRuleset() {
   const mutation = useLiveMutation<
-    { name: string; group_id?: string | null; image_cover?: string | null },
+    { name: string; group_id: string | null; image_cover: string | null },
     Tables<'rulesets'>
   >(api.rulesets.create);
   return {

@@ -253,7 +253,7 @@ export function useUpdateFaqItem() {
         {
           id: variables.id,
           question: variables.input.question,
-          accepted_answer_id: variables.input.accepted_answer_id ?? undefined,
+          accepted_answer_id: variables.input.accepted_answer_id,
         },
         {
           onSuccess: (entry) => options?.onSuccess?.(withFaqItemId(entry)),
@@ -265,7 +265,7 @@ export function useUpdateFaqItem() {
         await mutation.mutateAsync({
           id,
           question: input.question,
-          accepted_answer_id: input.accepted_answer_id ?? undefined,
+          accepted_answer_id: input.accepted_answer_id,
         })
       ),
   };

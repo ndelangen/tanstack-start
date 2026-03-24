@@ -52,9 +52,7 @@ export const factionDetails = query({
       .query('ruleset_factions')
       .withIndex('by_ruleset', (q) => q.eq('ruleset_id', args.ruleset_id))
       .take(500);
-    const factions = await Promise.all(
-      links.map((link) => getFactionById(ctx, link.faction_id as Id<'factions'>))
-    );
+    const factions = await Promise.all(links.map((link) => getFactionById(ctx, link.faction_id)));
     return links.map((link, index) => {
       const faction = factions[index];
       const data = faction?.data;
@@ -88,9 +86,7 @@ export const listByFaction = query({
       .query('ruleset_factions')
       .withIndex('by_faction', (q) => q.eq('faction_id', args.faction_id))
       .take(500);
-    const rulesets = await Promise.all(
-      links.map((link) => getRulesetById(ctx, link.ruleset_id))
-    );
+    const rulesets = await Promise.all(links.map((link) => getRulesetById(ctx, link.ruleset_id)));
     return rulesets.filter((row): row is NonNullable<typeof row> => row != null && !row.is_deleted);
   },
 });
@@ -98,8 +94,8 @@ export const listByFaction = query({
 export const create = mutation({
   args: {
     name: v.string(),
-    group_id: v.optional(v.union(v.id('groups'), v.null())),
-    image_cover: v.optional(v.union(v.string(), v.null())),
+    group_id: v.union(v.id('groups'), v.null()),
+    image_cover: v.union(v.string(), v.null()),
   },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
@@ -119,8 +115,8 @@ export const create = mutation({
     const _id = await ctx.db.insert('rulesets', {
       name: args.name,
       owner_id: userId,
-      group_id: args.group_id ?? null,
-      image_cover: args.image_cover ?? null,
+      group_id: args.group_id,
+      image_cover: args.image_cover,
       created_at: now,
       updated_at: now,
       is_deleted: false,

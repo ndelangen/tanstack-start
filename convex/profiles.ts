@@ -30,20 +30,11 @@ async function createProfileIfMissing(ctx: MutationCtx, userId: Id<'users'>) {
     .query('profiles')
     .withIndex('by_user_id', (q) => q.eq('user_id', userId))
     .unique();
-  const existingByLegacyId =
-    existing ??
-    (await ctx.db
-      .query('profiles')
-      .withIndex('by_entity_id', (q) => q.eq('id', String(userId)))
-      .unique());
-  if (existingByLegacyId) {
-    const fillUsername = existingByLegacyId.username ?? identityName ?? authUserName;
-    const fillAvatar = existingByLegacyId.avatar_url ?? identityPictureUrl ?? authUserImage;
-    let nextSlug = existingByLegacyId.slug;
-    if (
-      fillUsername &&
-      (existingByLegacyId.slug === 'user' || existingByLegacyId.slug.length === 0)
-    ) {
+  if (existing) {
+    const fillUsername = existing.username ?? identityName ?? authUserName;
+    const fillAvatar = existing.avatar_url ?? identityPictureUrl ?? authUserImage;
+    let nextSlug = existing.slug;
+    if (fillUsername && (existing.slug === 'user' || existing.slug.length === 0)) {
       const baseSlug = slugify(fillUsername);
       let candidate = baseSlug || 'user';
       let suffix = 1;
@@ -52,7 +43,7 @@ async function createProfileIfMissing(ctx: MutationCtx, userId: Id<'users'>) {
           .query('profiles')
           .withIndex('by_slug', (q) => q.eq('slug', candidate))
           .unique();
-        if (!slugOwner || String(slugOwner.user_id ?? slugOwner.id ?? '') === String(userId)) break;
+        if (!slugOwner || slugOwner.user_id === userId) break;
         suffix += 1;
         candidate = `${baseSlug || 'user'}-${suffix}`;
       }
@@ -60,23 +51,23 @@ async function createProfileIfMissing(ctx: MutationCtx, userId: Id<'users'>) {
     }
 
     if (
-      fillUsername !== existingByLegacyId.username ||
-      fillAvatar !== existingByLegacyId.avatar_url ||
-      nextSlug !== existingByLegacyId.slug
+      fillUsername !== existing.username ||
+      fillAvatar !== existing.avatar_url ||
+      nextSlug !== existing.slug
     ) {
-      await ctx.db.patch(existingByLegacyId._id, {
+      await ctx.db.patch(existing._id, {
         user_id: userId,
-        username: fillUsername ?? undefined,
-        avatar_url: fillAvatar ?? undefined,
+        username: fillUsername ?? null,
+        avatar_url: fillAvatar ?? null,
         slug: nextSlug,
         updated_at: nowIso(),
       });
-      const refreshed = await ctx.db.get(existingByLegacyId._id);
+      const refreshed = await ctx.db.get(existing._id);
       if (refreshed) {
         return refreshed;
       }
     }
-    return existingByLegacyId;
+    return existing;
   }
 
   const username = identityName ?? authUserName;
@@ -96,8 +87,8 @@ async function createProfileIfMissing(ctx: MutationCtx, userId: Id<'users'>) {
   const now = nowIso();
   const _id = await ctx.db.insert('profiles', {
     user_id: userId,
-    username: username ?? undefined,
-    avatar_url: avatarUrl ?? undefined,
+    username: username ?? null,
+    avatar_url: avatarUrl ?? null,
     slug,
     created_at: now,
     updated_at: now,
@@ -118,16 +109,10 @@ export const current = query({
   handler: async (ctx) => {
     const authUserId = await getAuthUserId(ctx);
     if (!authUserId) return null;
-    const profileByUserId = await ctx.db
+    return await ctx.db
       .query('profiles')
       .withIndex('by_user_id', (q) => q.eq('user_id', authUserId))
       .unique();
-    if (profileByUserId) return profileByUserId;
-    const profileByLegacyId = await ctx.db
-      .query('profiles')
-      .withIndex('by_entity_id', (q) => q.eq('id', String(authUserId)))
-      .unique();
-    return profileByLegacyId ?? null;
   },
 });
 
@@ -187,14 +172,14 @@ export const updateCurrent = mutation({
         .query('profiles')
         .withIndex('by_slug', (q) => q.eq('slug', nextSlug))
         .unique();
-      if (!slugOwner || String(slugOwner.user_id ?? slugOwner.id ?? '') === String(userId)) break;
+      if (!slugOwner || slugOwner.user_id === userId) break;
       suffix += 1;
       nextSlug = `${nextSlugBase || 'user'}-${suffix}`;
     }
 
     await ctx.db.patch(profile._id, {
       username: args.username,
-      avatar_url: args.avatar_url ?? undefined,
+      avatar_url: args.avatar_url,
       slug: nextSlug,
       updated_at: nowIso(),
     });

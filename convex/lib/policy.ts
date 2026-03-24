@@ -13,11 +13,7 @@ export async function requireAuthUserId(ctx: AnyCtx) {
   return userId;
 }
 
-export async function isActiveGroupMember(
-  ctx: AnyCtx,
-  groupId: Id<'groups'> | string,
-  userId: Id<'users'> | string
-) {
+export async function isActiveGroupMember(ctx: AnyCtx, groupId: Id<'groups'>, userId: Id<'users'>) {
   const membership = await ctx.db
     .query('group_members')
     .withIndex('by_group_user', (q) => q.eq('group_id', groupId).eq('user_id', userId))
@@ -28,11 +24,11 @@ export async function isActiveGroupMember(
 export async function canAccessRuleset(
   ctx: AnyCtx,
   ruleset: {
-    owner_id: Id<'users'> | string;
-    group_id?: Id<'groups'> | string | null;
+    owner_id: Id<'users'>;
+    group_id: Id<'groups'> | null;
     is_deleted?: boolean;
   },
-  userId: Id<'users'> | string
+  userId: Id<'users'>
 ) {
   if (ruleset.is_deleted) return false;
   if (ruleset.owner_id === userId) return true;

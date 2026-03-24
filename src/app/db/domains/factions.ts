@@ -156,7 +156,7 @@ export function useFactionsByGroup(groupId: NonNullable<FactionEntry['group_id']
 }
 
 export function useCreateFaction() {
-  const mutation = useLiveMutation<{ data: Faction; group_id?: string | null }, Tables<'factions'>>(
+  const mutation = useLiveMutation<{ data: Faction; group_id: string | null }, Tables<'factions'>>(
     api.factions.create
   );
 

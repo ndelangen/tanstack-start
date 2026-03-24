@@ -12,13 +12,8 @@ export type ProfileInsert = TablesInsert<'profiles'>;
 export type ProfileUpdate = TablesUpdate<'profiles'>;
 
 function withProfileId(entry: Omit<ProfileEntry, 'id'>): ProfileEntry {
-  const legacyId = (entry as { id?: unknown }).id;
   const resolvedId =
-    typeof entry.user_id === 'string' && entry.user_id.length > 0
-      ? entry.user_id
-      : typeof legacyId === 'string' && legacyId.length > 0
-        ? legacyId
-        : entry._id;
+    typeof entry.user_id === 'string' && entry.user_id.length > 0 ? entry.user_id : entry._id;
   return { ...entry, id: resolvedId };
 }
 

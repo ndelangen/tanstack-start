@@ -30,9 +30,7 @@ export const listByUserActiveWithGroups = query({
       .withIndex('by_user_status', (q) => q.eq('user_id', args.user_id).eq('status', 'active'))
       .take(200);
     const active = rows;
-    const groups = await Promise.all(
-      active.map((row) => loadGroup(ctx, row.group_id as Id<'groups'>))
-    );
+    const groups = await Promise.all(active.map((row) => loadGroup(ctx, row.group_id)));
     return active.map((row, index) => {
       const group = groups[index];
       return {

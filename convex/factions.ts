@@ -63,7 +63,7 @@ export const listByGroup = query({
 export const create = mutation({
   args: {
     data: v.any(),
-    group_id: v.optional(v.union(v.id('groups'), v.null())),
+    group_id: v.union(v.id('groups'), v.null()),
   },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
@@ -87,7 +87,7 @@ export const create = mutation({
       owner_id: userId,
       data,
       slug,
-      group_id: args.group_id ?? null,
+      group_id: args.group_id,
       created_at: now,
       updated_at: now,
       is_deleted: false,
