@@ -1,19 +1,22 @@
 import { v } from 'convex/values';
 
-import { FactionSchema } from '../src/game/schema/faction';
+import { FactionInputSchema } from '../src/game/schema/faction';
 import { mutation, query } from './_generated/server';
 import { isActiveGroupMember, requireAuthUserId } from './lib/policy';
 import { nowIso, slugify } from './lib/utils';
 
-function parseFactionData(input: unknown) {
-  const parsed = FactionSchema.safeParse(input);
+function normalizeFactionData(input: unknown) {
+  const parsed = FactionInputSchema.safeParse(input);
   if (!parsed.success) {
     const firstIssue = parsed.error.issues[0];
     const issuePath = firstIssue?.path.join('.') ?? 'data';
     const issueMessage = firstIssue?.message ?? 'Invalid faction data';
     throw new Error(`Invalid faction data at ${issuePath}: ${issueMessage}`);
   }
-  return parsed.data;
+  return {
+    ...parsed.data,
+    slug: slugify(parsed.data.name),
+  };
 }
 
 export const getBySlug = query({
@@ -72,8 +75,8 @@ export const create = mutation({
       if (!canUseGroup) throw new Error('Not authorized for group');
     }
 
-    const data = parseFactionData(args.data);
-    const slug = slugify(data.id);
+    const data = normalizeFactionData(args.data);
+    const slug = data.slug;
     const existing = await ctx.db
       .query('factions')
       .withIndex('by_slug', (q) => q.eq('slug', slug))
@@ -109,8 +112,8 @@ export const update = mutation({
     if (!row || row.is_deleted) throw new Error(`Faction with id ${args.id} not found`);
     if (row.owner_id !== userId) throw new Error('Not authorized');
 
-    const data = parseFactionData(args.data);
-    const slug = slugify(data.id);
+    const data = normalizeFactionData(args.data);
+    const slug = data.slug;
     const slugOwner = await ctx.db
       .query('factions')
       .withIndex('by_slug', (q) => q.eq('slug', slug))

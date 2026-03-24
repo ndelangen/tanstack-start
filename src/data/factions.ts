@@ -1,4 +1,5 @@
-import { FactionSchema } from '@game/schema/faction';
+import { FactionInputSchema, FactionStoredSchema } from '@game/schema/faction';
 
 /** Stored JSON for `factions.data`. */
-export const schema = FactionSchema;
+export const schema = FactionStoredSchema;
+export const inputSchema = FactionInputSchema;

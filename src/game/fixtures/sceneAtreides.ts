@@ -1,10 +1,8 @@
-import type { z } from 'zod';
+import type { FactionStored } from '@game/schema/faction';
 
-import type { FactionSchema } from '@game/schema/faction';
-
-/** Valid `FactionSchema` sample for Scene and similar stories. */
+/** Valid `FactionStored` sample for Scene and similar stories. */
 export default {
-  id: 'atreides',
+  slug: 'atreides',
   name: 'Atreides',
   logo: '/vector/logo/atreides.svg',
   colors: ['Green', 'Teal', 'Brown', 'Yellow'],
@@ -69,4 +67,4 @@ export default {
       text: 'Fate',
     },
   },
-} satisfies z.infer<typeof FactionSchema>;
+} satisfies FactionStored;

@@ -50,7 +50,7 @@ import {
 } from '@app/components/form';
 import { HexColorPicker } from '@app/components/form/HexColorPicker';
 import { DECAL, GENERIC, ICON, LEADERS, LOGO, TROOP, TROOP_MODIFIER } from '@game/data/generated';
-import { factionSlugBaseFromName, TTSColor } from '@game/schema/faction';
+import { TTSColor } from '@game/schema/faction';
 
 import { AssetAutocomplete as TypeSuggestPicker } from './AssetAutocomplete';
 import { BackgroundColorSlot as ColorPicker } from './BackgroundColorSlot';
@@ -758,18 +758,14 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
                   id="faction-name"
                   value={field.state.value}
                   onBlur={field.handleBlur}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    field.handleChange(v);
-                    form.setFieldValue('id', factionSlugBaseFromName(v));
-                  }}
+                  onChange={(e) => field.handleChange(e.target.value)}
                 />
               </FormField>
               <p className={styles.ttsHint}>
-                The display name sets your faction&apos;s public id, which appears in the shareable
-                URL. If you rename an existing faction, that id (and the URL) can change, so older
-                links may break—including bookmarks, pasted links, and references in Tabletop
-                Simulator.
+                The display name sets your faction&apos;s public slug, which appears in the
+                shareable URL. If you rename an existing faction, that slug (and the URL) can
+                change, so older links may break—including bookmarks, pasted links, and references
+                in Tabletop Simulator.
               </p>
             </>
           )}

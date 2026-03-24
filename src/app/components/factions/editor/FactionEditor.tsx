@@ -20,9 +20,9 @@ import {
   FormTooltip,
   TypeSuggestPicker,
 } from '@app/components/form';
-import { schema } from '@data/factions';
+import { inputSchema, schema } from '@data/factions';
 import { Token as FactionToken } from '@game/assets/faction/token/Token';
-import { FactionSchema } from '@game/schema/faction';
+import { FactionInputSchema, factionSlugBaseFromName } from '@game/schema/faction';
 
 import styles from './FactionEditor.module.css';
 import { FactionFormFields } from './FactionFormFields';
@@ -40,7 +40,7 @@ export interface FactionEditorProps {
   factionRowId?: string;
   initialFaction: Faction;
   onCancel: () => void;
-  /** Called with public faction id (`data.id`, URL slug) after save. */
+  /** Called with public faction slug (`data.slug`, URL slug) after save. */
   onSaved?: (slug: string) => void;
 }
 
@@ -84,7 +84,7 @@ export function FactionEditor({
     defaultValues: initialValuesRef.current,
     onSubmit: async ({ value }) => {
       setParseError(null);
-      const parsed = FactionSchema.safeParse(value);
+      const parsed = FactionInputSchema.safeParse(value);
       if (!parsed.success) {
         setParseError(formatZodIssues(parsed.error));
         return;
@@ -96,23 +96,25 @@ export function FactionEditor({
           {
             onSuccess: (entry) => {
               const saved = schema.parse(entry.data);
-              initialValuesRef.current = structuredClone(saved);
-              baselineRef.current = structuredClone(saved);
-              form.reset(structuredClone(saved));
-              onSaved?.(saved.id);
+              const { slug: _ignored, ...savedInput } = saved;
+              initialValuesRef.current = structuredClone(savedInput);
+              baselineRef.current = structuredClone(savedInput);
+              form.reset(structuredClone(savedInput));
+              onSaved?.(saved.slug);
             },
           }
         );
       } else if (factionRowId) {
         updateFaction.mutate(
-          { id: factionRowId, input: parsed.data, previousUrlSlug: baselineRef.current.id },
+          { id: factionRowId, input: parsed.data },
           {
             onSuccess: (entry) => {
               const saved = schema.parse(entry.data);
-              initialValuesRef.current = structuredClone(saved);
-              baselineRef.current = structuredClone(saved);
-              form.reset(structuredClone(saved));
-              onSaved?.(saved.id);
+              const { slug: _ignored, ...savedInput } = saved;
+              initialValuesRef.current = structuredClone(savedInput);
+              baselineRef.current = structuredClone(savedInput);
+              form.reset(structuredClone(savedInput));
+              onSaved?.(saved.slug);
             },
           }
         );
@@ -129,7 +131,7 @@ export function FactionEditor({
     if (!factionRowId || mode !== 'edit') return;
     if (!window.confirm('Delete this faction? It will be hidden from lists.')) return;
     deleteFaction.mutate(
-      { id: factionRowId, urlSlug: baselineRef.current.id },
+      { id: factionRowId },
       {
         onSuccess: () => onCancel(),
       }
@@ -158,9 +160,9 @@ export function FactionEditor({
   const factionLoadOptions = useMemo(
     () =>
       (factions.data ?? [])
-        .filter((entry) => entry.data.id !== form.state.values.id)
+        .filter((entry) => entry.data.slug !== factionSlugBaseFromName(form.state.values.name))
         .map((entry) => entry.id),
-    [factions.data, form.state.values.id]
+    [factions.data, form.state.values.name]
   );
 
   const formatOwnerLabel = (entry: FactionEntry) =>
@@ -170,7 +172,7 @@ export function FactionEditor({
   const factionOptionLabel = (rowId: string) => {
     const entry = factionsById.get(rowId);
     if (!entry) return rowId;
-    return `${entry.data.name} (${entry.data.id})`;
+    return `${entry.data.name} (${entry.data.slug})`;
   };
   const factionOptionSearchText = (rowId: string) => {
     const entry = factionsById.get(rowId);
@@ -178,7 +180,7 @@ export function FactionEditor({
     return [
       rowId,
       entry.data.name,
-      entry.data.id,
+      entry.data.slug,
       formatOwnerLabel(entry),
       formatGroupLabel(entry),
     ].join(' ');
@@ -196,7 +198,7 @@ export function FactionEditor({
           <span className={styles.loadFactionOptionMeta}>
             Owner: {formatOwnerLabel(entry)} · Group: {formatGroupLabel(entry)}
           </span>
-          <span className={styles.loadFactionOptionMeta}>Token: {entry.data.id}</span>
+          <span className={styles.loadFactionOptionMeta}>Slug: {entry.data.slug}</span>
         </span>
       </div>
     );
@@ -205,7 +207,8 @@ export function FactionEditor({
     setLoadFactionId(rowId);
     const entry = factionsById.get(rowId);
     if (!entry) return;
-    const isNoopLoad = entry.data.id === form.state.values.id;
+    const currentSlug = factionSlugBaseFromName(form.state.values.name);
+    const isNoopLoad = entry.data.slug === currentSlug;
     if (isNoopLoad) {
       window.alert('The selected faction is already loaded.');
       return;
@@ -216,7 +219,8 @@ export function FactionEditor({
     if (!confirmed) {
       return;
     }
-    const parsed = FactionSchema.safeParse(entry.data);
+    const { slug: _ignored, ...inputData } = entry.data;
+    const parsed = inputSchema.safeParse(inputData);
     if (!parsed.success) {
       setParseError(formatZodIssues(parsed.error));
       return;
@@ -344,12 +348,12 @@ export function FactionEditor({
           <p className={styles.previewHint}>
             Sheet updates as you edit (unsaved). Save and share the faction URL when ready.
           </p>
-          <form.Subscribe selector={(s: { values: Faction }) => s.values.id}>
+          <form.Subscribe selector={(s: { values: Faction }) => s.values.name}>
             {(slug) => (
               <p className={styles.previewHint}>
                 <Link
                   to="/factions/$factionId/sheet"
-                  params={{ factionId: slug }}
+                  params={{ factionId: factionSlugBaseFromName(slug) }}
                   search={{ mode: 'live' }}
                   target="_blank"
                   rel="noreferrer"

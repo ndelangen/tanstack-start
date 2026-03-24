@@ -1,7 +1,7 @@
 import { useLayoutEffect, useState } from 'react';
 
 import type { Faction } from '@db/factions';
-import { FactionSchema } from '@game/schema/faction';
+import { FactionInputSchema } from '@game/schema/faction';
 
 /** v1 postMessage envelope from parent window → sheet iframe. */
 export type FactionSheetSetMessageV1 = {
@@ -43,7 +43,7 @@ export function useFactionSheetPostMessage(enabled: boolean) {
       if (data.v !== 1 || data.type !== 'faction:sheet:set') {
         return;
       }
-      const parsed = FactionSchema.safeParse(data.payload);
+      const parsed = FactionInputSchema.safeParse(data.payload);
       if (parsed.success) {
         setFaction(parsed.data);
       }

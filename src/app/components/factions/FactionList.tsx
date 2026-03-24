@@ -35,7 +35,7 @@ function FactionListItem({ faction }: { faction: FactionEntry }) {
   return (
     <BlockLink
       to="/factions/$factionId"
-      params={{ factionId: faction.data.id }}
+      params={{ factionId: faction.data.slug }}
       className={styles.card}
     >
       <div className={styles.coverSlot}>

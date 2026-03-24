@@ -121,7 +121,7 @@ function GroupFactions({ groupId, groupName }: { groupId: string; groupName: str
       <ul>
         {factions.data.map((faction) => (
           <li key={faction.id}>
-            <Link to="/factions/$factionId" params={{ factionId: faction.data.id }}>
+            <Link to="/factions/$factionId" params={{ factionId: faction.data.slug }}>
               {faction.data.name}
             </Link>
           </li>

@@ -1,21 +1,22 @@
 import { queryOptions } from '@tanstack/react-query';
-import { z } from 'zod';
 
 import { db, type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
-import { schema } from '@data/factions';
+import { inputSchema, schema } from '@data/factions';
+import type { FactionInput, FactionStored } from '@game/schema/faction';
 
 import { api } from '../../../../convex/_generated/api';
 
-export type Faction = z.infer<typeof schema>;
+export type Faction = FactionInput;
+export type FactionData = FactionStored;
 export type FactionEntry = Omit<Tables<'factions'>, 'data'> & {
-  data: Faction;
+  data: FactionData;
 };
 export type FactionInsert = Omit<TablesInsert<'factions'>, 'data'> & {
-  data: Faction;
+  data: FactionData;
 };
 export type FactionUpdate = Omit<TablesUpdate<'factions'>, 'data'> & {
-  data?: Faction;
+  data?: FactionData;
 };
 
 function withFactionId(entry: Omit<Tables<'factions'>, 'id'>): Tables<'factions'> {
@@ -168,7 +169,7 @@ export function useCreateFaction() {
     ) =>
       mutation.mutate(
         {
-          data: schema.parse(variables.input),
+          data: inputSchema.parse(variables.input),
           group_id: variables.groupId ?? null,
         },
         {
@@ -181,7 +182,7 @@ export function useCreateFaction() {
         }
       ),
     mutateAsync: async ({ input, groupId }: { input: Faction; groupId?: string | null }) => {
-      const validatedData = schema.parse(input);
+      const validatedData = inputSchema.parse(input);
       const entry = await mutation.mutateAsync({
         data: validatedData,
         group_id: groupId ?? null,
@@ -207,7 +208,7 @@ export function useUpdateFaction() {
       options?: { onSuccess?: (entry: FactionEntry) => void; onError?: (error: Error) => void }
     ) =>
       mutation.mutate(
-        { id: variables.id, data: schema.parse(variables.input) },
+        { id: variables.id, data: inputSchema.parse(variables.input) },
         {
           onSuccess: (entry) =>
             options?.onSuccess?.({
@@ -225,7 +226,7 @@ export function useUpdateFaction() {
       id: string;
       previousUrlSlug?: string;
     }) => {
-      const validatedData = schema.parse(input);
+      const validatedData = inputSchema.parse(input);
       const entry = await mutation.mutateAsync({
         id,
         data: validatedData,

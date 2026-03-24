@@ -37,12 +37,14 @@ function FactionEditPage() {
     return null;
   }
 
+  const { slug: _ignored, ...initialFactionInput } = faction.data.data;
+
   return (
     <FactionEditor
       key={faction.data.id}
       mode="edit"
       factionRowId={faction.data.id}
-      initialFaction={faction.data.data}
+      initialFaction={initialFactionInput}
       onCancel={() => navigate({ to: '/factions/$factionId', params: { factionId } })}
       onSaved={(newSlug) => {
         if (newSlug !== factionId) {

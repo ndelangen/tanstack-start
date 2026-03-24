@@ -79,11 +79,11 @@ export function rulesetFactionsWithDetailsQueryOptions(rulesetId: string) {
         { ruleset_id: rulesetId }
       );
       return entries.map((entry) => {
-        const parsed = factionDataSchema.safeParse({ id: entry.urlSlug, name: entry.name });
+        const parsed = factionDataSchema.safeParse({ slug: entry.urlSlug, name: entry.name });
         return {
           factionId: entry.factionId,
           name: parsed.success ? parsed.data.name : entry.name,
-          urlSlug: parsed.success ? parsed.data.id : entry.urlSlug,
+          urlSlug: parsed.success ? parsed.data.slug : entry.urlSlug,
         };
       });
     },
@@ -164,11 +164,11 @@ export function useRulesetFactionsWithDetails(rulesetId: string) {
   return {
     ...result,
     data: result.data?.map((entry) => {
-      const parsed = factionDataSchema.safeParse({ id: entry.urlSlug, name: entry.name });
+      const parsed = factionDataSchema.safeParse({ slug: entry.urlSlug, name: entry.name });
       return {
         factionId: entry.factionId,
         name: parsed.success ? parsed.data.name : entry.name,
-        urlSlug: parsed.success ? parsed.data.id : entry.urlSlug,
+        urlSlug: parsed.success ? parsed.data.slug : entry.urlSlug,
       };
     }),
   };

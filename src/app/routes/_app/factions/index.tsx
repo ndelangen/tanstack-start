@@ -46,7 +46,7 @@ function FactionsPage() {
   const fuse = useMemo(
     () =>
       new Fuse(list, {
-        keys: ['data.name', 'data.id'],
+        keys: ['data.name', 'data.slug'],
         threshold: 0.35,
       }),
     [list]
@@ -76,7 +76,7 @@ function FactionsPage() {
               className={styles.searchInput}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by name or id…"
+              placeholder="Search by name or slug…"
               aria-label="Search factions"
             />
           </div>

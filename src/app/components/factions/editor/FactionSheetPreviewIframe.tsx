@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
 import type { Faction } from '@db/factions';
 import { page } from '@game/data/sizes';
-import { FactionSchema } from '@game/schema/faction';
+import { FactionInputSchema, factionSlugBaseFromName } from '@game/schema/faction';
 
 import styles from './FactionEditor.module.css';
 
@@ -17,7 +17,7 @@ function sendFactionToIframe(iframe: HTMLIFrameElement | null, faction: Faction)
   if (!win) {
     return;
   }
-  const parsed = FactionSchema.safeParse(faction);
+  const parsed = FactionInputSchema.safeParse(faction);
   if (!parsed.success) {
     return;
   }
@@ -32,7 +32,7 @@ export function FactionSheetPreviewIframe({ faction }: { faction: Faction }) {
   const factionRef = useRef(faction);
   factionRef.current = faction;
 
-  const slug = faction.id;
+  const slug = factionSlugBaseFromName(faction.name);
   const iframeSrc = `/factions/${encodeURIComponent(slug)}/sheet?mode=live`;
 
   const factionSnapshot = useMemo(() => JSON.stringify(faction), [faction]);

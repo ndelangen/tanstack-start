@@ -1,9 +1,8 @@
 import { Fragment } from 'react/jsx-runtime';
-import type z from 'zod';
 
 import { Fan } from '../../components/block/Fan';
 import { card as cardSize } from '../../data/sizes';
-import { FactionPreview, type FactionSchema } from '../../schema/faction';
+import { FactionPreview, type FactionStored } from '../../schema/faction';
 import { AllianceCard } from '../faction/alliance/Alliance';
 import { LeaderToken } from '../faction/leader/Leader';
 import { FactionSheetPage1, FactionSheetPage2 } from '../faction/sheet/Sheet';
@@ -12,7 +11,7 @@ import { TraitorCard } from '../faction/traitor/Traitor';
 import { TroopToken } from '../faction/troop/Troop';
 import styles from './Scene.module.css';
 
-export function Scene(input: z.infer<typeof FactionSchema>) {
+export function Scene(input: FactionStored) {
   const leaders = FactionPreview.leaders.parse(input);
   const traitors = FactionPreview.traitors.parse(input);
   const troops = FactionPreview.troops.parse(input);
