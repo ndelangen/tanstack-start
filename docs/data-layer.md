@@ -11,43 +11,20 @@ flowchart TD
     DomainFile --> Mutations[Mutation Hooks]
     Queries --> TanStackQuery[TanStack Query]
     Mutations --> TanStackQuery
-    TanStackQuery --> Supabase[(Supabase DB)]
+    TanStackQuery --> Convex[(Convex)]
 ```
 
 Each domain file follows this structure: types → query keys → queries → mutations.
 
-## DB Syncing
+## Convex Schema
 
-Zod schemas in `src/data/` sync to database migrations.
-
-**Command**: `npm run db:schemas`
-
-**How it works**:
-1. Scans `src/data/*.ts` for exported `schema` (ZodObject)
-2. Converts to JSON Schema
-3. Compares with existing migrations
-4. Generates new migration if schema changed: `supabase/migrations/TIMESTAMP_domain_data_validation.sql`
-5. Creates CHECK constraint using `pg_jsonschema` extension
-
-For some tables (see `RELAX_STRING_ENUMS` in the script), string `enum` lists from Zod are written as plain `type: string` in the CHECK so migrations stay small; Zod in the app still enforces exact asset paths. After that, redundant `anyOf` / `oneOf` branches (e.g. duplicate `string` arms or `string` ∪ `string`+`format`) are collapsed so the CHECK stays readable.
-
-**Script**: [`scripts/db-sync-data-schema.ts`](../scripts/db-sync-data-schema.ts)
-
-**Workflow**:
-```bash
-# After changing a schema in src/data/
-npm run db:schemas    # Generate migration
-npm run db:push       # Apply to Supabase
-npm run db:types      # Regenerate TypeScript types
-```
+Convex schema and indexes are defined in [`convex/schema.ts`](../convex/schema.ts). Domain-level validation still uses Zod schemas in `src/data/`.
 
 ## Basic DB Structure
 
 **Tables**: factions, groups, group_members, profiles
 
-**Pattern**: Domain data in JSONB `data` column, validated with Zod. Factions use soft delete; groups use hard delete.
-
-**Type generation**: `npm run db:types` generates [`src/app/db/core/types.ts`](../src/app/db/core/types.ts) from Supabase schema.
+**Pattern**: Domain data is stored in Convex documents, validated with Zod in domain hooks and with function validators in Convex functions. Factions and rulesets use soft delete; groups use hard delete.
 
 ## Domain File Pattern
 
@@ -88,10 +65,10 @@ Zod schemas in `src/data/` validate at runtime:
 
 ## Soft Delete Pattern
 
-Factions use `is_deleted` flag instead of hard deletes:
+Factions and rulesets use `is_deleted` flags instead of hard deletes:
 
-- Queries filter: `.eq('is_deleted', false)`
-- Delete mutation sets flag: `.update({ is_deleted: true })`
+- Queries filter deleted rows in Convex query handlers
+- Delete mutation sets `is_deleted: true`
 
 **Example**: [`src/app/db/domains/factions.ts`](../src/app/db/domains/factions.ts)
 

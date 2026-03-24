@@ -1,11 +1,5 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 import { defineMain } from '@storybook/react-vite/node';
 import { mergeConfig } from 'vite';
-import tsconfigPaths from 'vite-tsconfig-paths';
-
-const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineMain({
   stories: [
@@ -55,15 +49,8 @@ export default defineMain({
   ],
   async viteFinal(config) {
     return mergeConfig(config, {
-      plugins: [
-        tsconfigPaths({
-          projects: [path.resolve(dirname, '../tsconfig.json')],
-        }),
-      ],
       resolve: {
-        alias: {
-          '@game': path.resolve(dirname, '../src/game'),
-        },
+        ...({ tsconfigPaths: true } as Record<string, unknown>),
       },
     });
   },

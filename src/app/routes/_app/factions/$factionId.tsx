@@ -94,7 +94,16 @@ function FactionDetailPage() {
   const location = useLocation();
   const matches = useMatches();
   const isSheet = location.pathname.endsWith('/sheet');
-  const sheetMode = new URLSearchParams(location.search).get('mode') ?? 'db';
+  const searchObject =
+    location.search && typeof location.search === 'object'
+      ? (location.search as Record<string, unknown>)
+      : null;
+  const sheetModeFromObject =
+    searchObject && typeof searchObject.mode === 'string' ? searchObject.mode : null;
+  const sheetModeFromString = new URLSearchParams(
+    typeof location.search === 'string' ? location.search : ''
+  ).get('mode');
+  const sheetMode = sheetModeFromObject ?? sheetModeFromString ?? 'db';
   const isLiveSheet = isSheet && sheetMode === 'live';
 
   const faction = useFaction(factionId, { enabled: !isLiveSheet });
@@ -138,7 +147,7 @@ function FactionDetailPage() {
       )}
 
       <p>
-        <Link to="/factions/$factionId/sheet" params={{ factionId }}>
+        <Link to="/factions/$factionId/sheet" params={{ factionId }} search={{ mode: 'db' }}>
           Printable faction sheet
         </Link>{' '}
         (opens without site chrome; use the browser print dialog for PDF)

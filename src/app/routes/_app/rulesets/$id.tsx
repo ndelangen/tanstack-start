@@ -22,7 +22,7 @@ export const Route = createFileRoute('/_app/rulesets/$id')({
     return typeof q === 'string' ? { q } : {};
   },
   loader: async ({ context, params }) => {
-    const rulesetId = Number.parseInt(params.id, 10);
+    const rulesetId = params.id;
     try {
       const ruleset = await context.queryClient.ensureQueryData(
         rulesetDetailQueryOptions(rulesetId)
@@ -57,13 +57,13 @@ function RulesetDetailPage() {
   const loaderData = Route.useLoaderData();
   const navigate = useNavigate();
   const matches = useMatches();
-  const rulesetId = Number.parseInt(id, 10);
+  const rulesetId = id;
   const hasFaqChildRoute = matches.some((m) => m.pathname.includes('/faq/'));
   const ruleset = useRuleset(rulesetId);
   const profile = useCurrentProfile();
   const deleteRuleset = useDeleteRuleset();
-  const factions = useRulesetFactionsWithDetails(ruleset.data?.id ?? 0);
-  const faqItems = useFaqItemsByRuleset(ruleset.data?.id ?? 0);
+  const factions = useRulesetFactionsWithDetails(ruleset.data?._id ?? '');
+  const faqItems = useFaqItemsByRuleset(ruleset.data?._id ?? '');
 
   const showAskForm = !!profile?.data?.id;
 
@@ -157,7 +157,7 @@ function RulesetDetailPage() {
           )}
           <FaqList
             items={faqItems.data ?? []}
-            rulesetId={String(r.id)}
+            rulesetId={r._id}
             searchQuery={search.q ?? ''}
             onSearchChange={handleFaqSearchChange}
           />

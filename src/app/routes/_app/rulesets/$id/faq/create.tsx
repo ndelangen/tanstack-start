@@ -17,7 +17,7 @@ import styles from '../../RulesetDetail.module.css';
 
 export const Route = createFileRoute('/_app/rulesets/$id/faq/create')({
   loader: async ({ context, params }) => {
-    const rulesetId = Number.parseInt(params.id, 10);
+    const rulesetId = params.id;
     await context.queryClient.ensureQueryData(rulesetDetailQueryOptions(rulesetId));
     await context.queryClient.ensureQueryData(faqItemsByRulesetQueryOptions(rulesetId));
   },
@@ -37,7 +37,7 @@ export const Route = createFileRoute('/_app/rulesets/$id/faq/create')({
 function FaqCreatePage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const rulesetId = Number.parseInt(id, 10);
+  const rulesetId = id;
   const ruleset = useRuleset(rulesetId);
   const profile = useCurrentProfile();
   const createFaqItem = useCreateFaqItem();
@@ -87,7 +87,7 @@ function FaqCreatePage() {
                   formEl.reset();
                   navigate({
                     to: '/rulesets/$id/faq/$faqId',
-                    params: { id, faqId: String(entry.id) },
+                    params: { id, faqId: String(entry._id) },
                   });
                 },
               }

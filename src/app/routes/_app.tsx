@@ -1,8 +1,8 @@
 import { createFileRoute, Outlet, useLocation, useMatches } from '@tanstack/react-router';
 import React from 'react';
 
-import { isFactionSheetBarePath } from '@app/lib/factionSheetRoute';
 import { Page } from '@app/components/page/Page';
+import { isFactionSheetBarePath } from '@app/lib/factionSheetRoute';
 
 export const Route = createFileRoute('/_app')({
   component: AppLayout,

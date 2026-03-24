@@ -133,6 +133,8 @@ export const FactionSchema = z.strictObject({
     .optional(),
 });
 
+export type FactionData = z.infer<typeof FactionSchema>;
+
 function toHash(input: Record<string, unknown>) {
   return SHA256(JSON.stringify(input)).toString().slice(0, 16);
 }
