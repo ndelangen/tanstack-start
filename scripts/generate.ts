@@ -1,4 +1,3 @@
-import { readdir } from 'node:fs/promises';
 import { basename, join, relative } from 'node:path';
 
 import { recursiveReaddirFiles } from 'recursive-readdir-files';
