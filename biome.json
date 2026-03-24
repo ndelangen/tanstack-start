@@ -14,7 +14,8 @@
       "!**/.netlify",
       "!**/supabase/.temp",
       "!**/routeTree.gen.ts",
-      "!**/*.gen.ts"
+      "!**/*.gen.ts",
+      "!**/*.md"
     ]
   },
   "formatter": {

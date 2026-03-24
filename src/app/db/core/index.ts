@@ -8,11 +8,7 @@ export const convex = new ConvexReactClient(convexUrl);
 let prerenderHttpClient: ConvexHttpClient | null = null;
 
 function convexBackendForDb(): ConvexReactClient | ConvexHttpClient {
-  if (
-    typeof process !== 'undefined' &&
-    process.env &&
-    process.env.TSS_PRERENDERING === 'true'
-  ) {
+  if (typeof process !== 'undefined' && process.env && process.env.TSS_PRERENDERING === 'true') {
     if (!prerenderHttpClient) {
       prerenderHttpClient = new ConvexHttpClient(convexUrl, { logger: false });
     }

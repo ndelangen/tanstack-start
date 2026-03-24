@@ -1,9 +1,8 @@
 import { getAuthUserId } from '@convex-dev/auth/server';
 import { v } from 'convex/values';
 
-import { mutation, query, type MutationCtx } from './_generated/server';
 import type { Id } from './_generated/dataModel';
-
+import { type MutationCtx, mutation, query } from './_generated/server';
 import { requireAuthUserId } from './lib/policy';
 import { nowIso, slugify } from './lib/utils';
 

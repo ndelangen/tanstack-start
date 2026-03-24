@@ -1,8 +1,7 @@
 import { v } from 'convex/values';
 
-import { mutation, query } from './_generated/server';
-
 import { FactionSchema } from '../src/game/schema/faction';
+import { mutation, query } from './_generated/server';
 import { isActiveGroupMember, requireAuthUserId } from './lib/policy';
 import { nowIso, slugify } from './lib/utils';
 
