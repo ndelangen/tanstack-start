@@ -1,4 +1,5 @@
 // import { devtools } from '@tanstack/devtools-vite';
+import os from 'node:os';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import viteReact from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
@@ -16,8 +17,16 @@ const config = defineConfig({
     // devtools(),
     tanstackStart({
       srcDirectory: './src/app',
+      prerender: {
+        concurrency: Math.max(1, os.cpus().length),
+      },
       spa: {
         enabled: true,
+        prerender: {
+          headers: {
+            Connection: 'close',
+          },
+        },
       },
     }),
     viteReact(),
