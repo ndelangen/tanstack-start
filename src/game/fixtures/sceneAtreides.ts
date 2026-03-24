@@ -6,10 +6,10 @@ import type { FactionSchema } from '@game/schema/faction';
 export default {
   id: 'atreides',
   name: 'Atreides',
-  logo: 'vector/logo/atreides.svg',
+  logo: '/vector/logo/atreides.svg',
   colors: ['Green', 'Teal', 'Brown', 'Yellow'],
   background: {
-    image: 'image/texture/021.jpg',
+    image: '/image/texture/021.jpg',
     colors: ['#ffff00', '#0000ff'],
     opacity: 1,
     strength: 0.5,
@@ -17,33 +17,33 @@ export default {
   themeColor: '#008000',
   hero: {
     name: 'Duke Leto Atreides',
-    image: 'image/leader/official/paul.jpg',
+    image: '/image/leader/official/paul.jpg',
   },
   leaders: [
     {
       name: 'Dr. Yueh',
       strength: '1',
-      image: 'image/leader/official/dryeuh.png',
+      image: '/image/leader/official/dryeuh.png',
     },
     {
       name: 'Duncan Idaho',
       strength: '2',
-      image: 'image/leader/official/duncan.png',
+      image: '/image/leader/official/duncan.png',
     },
     {
       name: 'Gurney Halleck',
       strength: '4',
-      image: 'image/leader/official/gurney.png',
+      image: '/image/leader/official/gurney.png',
     },
     {
       name: 'Thufir Hawat',
       strength: '5',
-      image: 'image/leader/official/thufir.png',
+      image: '/image/leader/official/thufir.png',
     },
     {
       name: 'Lady Jessica',
       strength: '5',
-      image: 'image/leader/official/jessica.png',
+      image: '/image/leader/official/jessica.png',
     },
   ],
   decals: [],
@@ -51,7 +51,7 @@ export default {
   troops: [
     {
       name: 'Normal troop',
-      image: 'vector/troop/atreides.svg',
+      image: '/vector/troop/atreides.svg',
       description: 'Normal troop',
       count: 20,
     },
