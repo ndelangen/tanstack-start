@@ -1,5 +1,6 @@
 import { getAuthUserId } from '@convex-dev/auth/server';
 import { v } from 'convex/values';
+import { profileUserEditFormSchema } from '../src/app/profile/validation';
 
 import type { Id } from './_generated/dataModel';
 import { type MutationCtx, mutation, query } from './_generated/server';
@@ -33,22 +34,7 @@ async function createProfileIfMissing(ctx: MutationCtx, userId: Id<'users'>) {
   if (existing) {
     const fillUsername = existing.username ?? identityName ?? authUserName;
     const fillAvatar = existing.avatar_url ?? identityPictureUrl ?? authUserImage;
-    let nextSlug = existing.slug;
-    if (fillUsername && (existing.slug === 'user' || existing.slug.length === 0)) {
-      const baseSlug = slugify(fillUsername);
-      let candidate = baseSlug || 'user';
-      let suffix = 1;
-      while (true) {
-        const slugOwner = await ctx.db
-          .query('profiles')
-          .withIndex('by_slug', (q) => q.eq('slug', candidate))
-          .unique();
-        if (!slugOwner || slugOwner.user_id === userId) break;
-        suffix += 1;
-        candidate = `${baseSlug || 'user'}-${suffix}`;
-      }
-      nextSlug = candidate;
-    }
+    const nextSlug = existing.slug;
 
     if (
       fillUsername !== existing.username ||
@@ -70,10 +56,18 @@ async function createProfileIfMissing(ctx: MutationCtx, userId: Id<'users'>) {
     return existing;
   }
 
-  const username = identityName ?? authUserName;
+  const username =
+    identityName && identityName.trim().length > 0
+      ? identityName.trim()
+      : authUserName && authUserName.trim().length > 0
+        ? authUserName.trim()
+        : 'nameless';
   const avatarUrl = identityPictureUrl ?? authUserImage;
-  const baseSlug = slugify(username ?? 'user');
-  let slug = baseSlug || 'user';
+  const baseSlug = slugify(username);
+  if (baseSlug.length === 0) {
+    throw new Error('Failed to generate slug from display name');
+  }
+  let slug = baseSlug;
   let suffix = 1;
   while (
     await ctx.db
@@ -82,7 +76,7 @@ async function createProfileIfMissing(ctx: MutationCtx, userId: Id<'users'>) {
       .unique()
   ) {
     suffix += 1;
-    slug = `${baseSlug || 'user'}-${suffix}`;
+    slug = `${baseSlug}-${suffix}`;
   }
   const now = nowIso();
   const _id = await ctx.db.insert('profiles', {
@@ -164,8 +158,22 @@ export const updateCurrent = mutation({
     const profile = await createProfileIfMissing(ctx, userId);
     if (!profile) throw new Error('Profile not found');
 
-    const nextSlugBase = slugify(args.username || 'user');
-    let nextSlug = nextSlugBase || 'user';
+    const parsed = profileUserEditFormSchema.safeParse({
+      username: args.username,
+      avatar_url: args.avatar_url ?? '',
+    });
+    if (!parsed.success) {
+      const msg = parsed.error.issues.map((i) => i.message).join(' ');
+      throw new Error(msg || 'Invalid profile input');
+    }
+    const normalizedUsername = parsed.data.username;
+    const normalizedAvatarUrl = parsed.data.avatar_url;
+
+    const nextSlugBase = slugify(normalizedUsername);
+    if (nextSlugBase.length === 0) {
+      throw new Error('Failed to generate slug from display name');
+    }
+    let nextSlug = nextSlugBase;
     let suffix = 1;
     while (true) {
       const slugOwner = await ctx.db
@@ -174,12 +182,12 @@ export const updateCurrent = mutation({
         .unique();
       if (!slugOwner || slugOwner.user_id === userId) break;
       suffix += 1;
-      nextSlug = `${nextSlugBase || 'user'}-${suffix}`;
+      nextSlug = `${nextSlugBase}-${suffix}`;
     }
 
     await ctx.db.patch(profile._id, {
-      username: args.username,
-      avatar_url: args.avatar_url,
+      username: normalizedUsername,
+      avatar_url: normalizedAvatarUrl,
       slug: nextSlug,
       updated_at: nowIso(),
     });

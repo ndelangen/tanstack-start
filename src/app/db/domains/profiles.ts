@@ -1,15 +1,13 @@
 import { queryOptions } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 
-import { db, type Tables, type TablesInsert, type TablesUpdate } from '@db/core';
+import { db, type Tables } from '@db/core';
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
 import { type ProfileUserEditInput, profileUserEditFormSchema } from '@app/profile/validation';
 
 import { api } from '../../../../convex/_generated/api';
 
 export type ProfileEntry = Tables<'profiles'>;
-export type ProfileInsert = TablesInsert<'profiles'>;
-export type ProfileUpdate = TablesUpdate<'profiles'>;
 
 function withProfileId(entry: Omit<ProfileEntry, 'id'>): ProfileEntry {
   const resolvedId =
@@ -17,7 +15,7 @@ function withProfileId(entry: Omit<ProfileEntry, 'id'>): ProfileEntry {
   return { ...entry, id: resolvedId };
 }
 
-export const profileKeys = {
+const profileKeys = {
   all: ['profiles'] as const,
   lists: () => [...profileKeys.all, 'list'] as const,
   list: (filters: object) => [...profileKeys.lists(), filters] as const,
@@ -25,14 +23,6 @@ export const profileKeys = {
   detailBySlug: (slug: string) => [...profileKeys.all, 'detailBySlug', slug] as const,
   current: () => [...profileKeys.all, 'current'] as const,
 };
-
-export function profileDetailQueryOptions(id: NonNullable<ProfileEntry['_id']>) {
-  return queryOptions({
-    queryKey: profileKeys.detail(id),
-    queryFn: async () =>
-      withProfileId(await db.query<Omit<ProfileEntry, 'id'>>(api.profiles.getById, { id })),
-  });
-}
 
 export function profileBySlugQueryOptions(slug: string) {
   return queryOptions({
@@ -162,10 +152,17 @@ export function useCurrentProfile() {
 }
 
 export function useUpdateCurrentProfile() {
-  const mutate = useLiveMutation<
-    { username: string; avatar_url: string | null },
-    Omit<ProfileEntry, 'id'>
-  >(api.profiles.updateCurrent);
+  const mutate = useLiveMutation<{ username: string; avatar_url: string }, Omit<ProfileEntry, 'id'>>(
+    api.profiles.updateCurrent
+  );
+  const parseProfileInput = (input: ProfileUserEditInput) => {
+    const parsed = profileUserEditFormSchema.safeParse(input);
+    if (!parsed.success) {
+      const msg = parsed.error.issues.map((i) => i.message).join(' ');
+      throw new Error(msg || 'Invalid profile input');
+    }
+    return parsed.data;
+  };
 
   return {
     ...mutate,
@@ -175,26 +172,28 @@ export function useUpdateCurrentProfile() {
         onSuccess?: (entry: ProfileEntry, vars: { input: ProfileUserEditInput }) => void;
         onError?: (error: Error, vars: { input: ProfileUserEditInput }) => void;
       }
-    ) =>
-      mutate.mutate(
-        {
-          username: variables.input.username,
-          avatar_url: variables.input.avatar_url,
-        },
-        {
-          onSuccess: (entry) => options?.onSuccess?.(withProfileId(entry), variables),
-          onError: (error) => options?.onError?.(error, variables),
-        }
-      ),
-    mutateAsync: async (variables: { input: ProfileUserEditInput }) => {
-      const parsed = profileUserEditFormSchema.safeParse(variables.input);
-      if (!parsed.success) {
-        const msg = parsed.error.issues.map((i) => i.message).join(' ');
-        throw new Error(msg || 'Invalid profile input');
+    ) => {
+      try {
+        const parsed = parseProfileInput(variables.input);
+        mutate.mutate(
+          {
+            username: parsed.username,
+            avatar_url: parsed.avatar_url,
+          },
+          {
+            onSuccess: (entry) => options?.onSuccess?.(withProfileId(entry), variables),
+            onError: (error) => options?.onError?.(error, variables),
+          }
+        );
+      } catch (error) {
+        options?.onError?.(error instanceof Error ? error : new Error('Invalid profile input'), variables);
       }
+    },
+    mutateAsync: async (variables: { input: ProfileUserEditInput }) => {
+      const parsed = parseProfileInput(variables.input);
       const entry = await mutate.mutateAsync({
-        username: parsed.data.username,
-        avatar_url: parsed.data.avatar_url,
+        username: parsed.username,
+        avatar_url: parsed.avatar_url,
       });
       return withProfileId(entry);
     },

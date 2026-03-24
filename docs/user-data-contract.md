@@ -50,7 +50,7 @@ Define which user-related fields belong to Convex Auth tables vs app-level profi
   - `username` from identity/auth user
   - `avatar_url` from identity/auth user image
   - `slug` from username via `slugify`, uniqueness checked on `profiles.by_slug`
-- `updateCurrent` lets users edit `username` and `avatar_url`; username changes recompute slug.
+- `updateCurrent` lets users edit `username` and `avatar_url`; username changes recompute slug, and both display name and avatar URL are required.
 
 ## Query Rules
 

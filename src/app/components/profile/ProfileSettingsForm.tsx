@@ -22,7 +22,7 @@ function ProfileSettingsFormFields({ initial }: { initial: ProfileEntry }) {
   const [username, setUsername] = useState(initial.username ?? '');
   const [avatarUrl, setAvatarUrl] = useState(initial.avatar_url ?? '');
 
-  const basePreview = profileSlugBaseFromName(username || 'user');
+  const basePreview = profileSlugBaseFromName(username);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,7 +104,7 @@ function ProfileSettingsFormFields({ initial }: { initial: ProfileEntry }) {
             />
           </FormField>
           <p className={formStyles.hint}>
-            Must be a full <code>https://</code> URL. Leave empty to clear.
+            Must be a full <code>https://</code> URL. Avatar URL is required.
           </p>
 
           {mutationError && (
