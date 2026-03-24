@@ -1,7 +1,7 @@
 import { getAuthUserId } from '@convex-dev/auth/server';
 import { v } from 'convex/values';
-import { rulesetInputSchema } from '../src/app/rulesets/validation';
 
+import { rulesetInputSchema } from '../src/app/rulesets/validation';
 import type { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { canAccessRuleset, isActiveGroupMember, requireAuthUserId } from './lib/policy';

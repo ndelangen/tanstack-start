@@ -152,9 +152,10 @@ export function useCurrentProfile() {
 }
 
 export function useUpdateCurrentProfile() {
-  const mutate = useLiveMutation<{ username: string; avatar_url: string }, Omit<ProfileEntry, 'id'>>(
-    api.profiles.updateCurrent
-  );
+  const mutate = useLiveMutation<
+    { username: string; avatar_url: string },
+    Omit<ProfileEntry, 'id'>
+  >(api.profiles.updateCurrent);
   const parseProfileInput = (input: ProfileUserEditInput) => {
     const parsed = profileUserEditFormSchema.safeParse(input);
     if (!parsed.success) {
@@ -186,7 +187,10 @@ export function useUpdateCurrentProfile() {
           }
         );
       } catch (error) {
-        options?.onError?.(error instanceof Error ? error : new Error('Invalid profile input'), variables);
+        options?.onError?.(
+          error instanceof Error ? error : new Error('Invalid profile input'),
+          variables
+        );
       }
     },
     mutateAsync: async (variables: { input: ProfileUserEditInput }) => {

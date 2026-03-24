@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
-import { groupInputSchema } from '../src/app/groups/validation';
 
+import { groupInputSchema } from '../src/app/groups/validation';
 import { mutation, query } from './_generated/server';
 import { requireAuthUserId } from './lib/policy';
 import { nowIso } from './lib/utils';

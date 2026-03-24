@@ -1,7 +1,7 @@
 import { getAuthUserId } from '@convex-dev/auth/server';
 import { v } from 'convex/values';
-import { profileUserEditFormSchema } from '../src/app/profile/validation';
 
+import { profileUserEditFormSchema } from '../src/app/profile/validation';
 import type { Id } from './_generated/dataModel';
 import { type MutationCtx, mutation, query } from './_generated/server';
 import { requireAuthUserId } from './lib/policy';

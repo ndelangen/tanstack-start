@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
-import { faqAnswerSchema, faqQuestionSchema } from '../src/app/faq/validation';
 
+import { faqAnswerSchema, faqQuestionSchema } from '../src/app/faq/validation';
 import type { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { canAccessRuleset, requireAuthUserId } from './lib/policy';

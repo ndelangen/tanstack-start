@@ -228,7 +228,10 @@ export function useCreateFaqItem() {
         await mutation.mutateAsync({
           ruleset_id: rulesetId,
           question: faqQuestionSchema.parse(question),
-          answer: answer !== undefined && answer.trim().length > 0 ? faqAnswerSchema.parse(answer) : undefined,
+          answer:
+            answer !== undefined && answer.trim().length > 0
+              ? faqAnswerSchema.parse(answer)
+              : undefined,
         })
       ),
   };
@@ -263,7 +266,8 @@ export function useUpdateFaqItem() {
       withFaqItemId(
         await mutation.mutateAsync({
           id,
-          question: input.question !== undefined ? faqQuestionSchema.parse(input.question) : undefined,
+          question:
+            input.question !== undefined ? faqQuestionSchema.parse(input.question) : undefined,
           accepted_answer_id: input.accepted_answer_id,
         })
       ),
@@ -378,9 +382,7 @@ export function useUpdateFaqAnswer() {
         }
       ),
     mutateAsync: async ({ id, answer }: { id: string; answer: string }) =>
-      withFaqAnswerId(
-        await mutation.mutateAsync({ id, answer: faqAnswerSchema.parse(answer) })
-      ),
+      withFaqAnswerId(await mutation.mutateAsync({ id, answer: faqAnswerSchema.parse(answer) })),
   };
 }
 
