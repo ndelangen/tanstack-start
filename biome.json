@@ -15,6 +15,7 @@
       "!**/supabase/.temp",
       "!**/routeTree.gen.ts",
       "!**/*.gen.ts",
+      "!**/convex/_generated/**",
       "!**/*.md"
     ]
   },
