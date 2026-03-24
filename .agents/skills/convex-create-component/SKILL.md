@@ -5,6 +5,8 @@ description: Design and build Convex components with clear boundaries, isolated 
 
 # Convex Create Component
 
+For Convex API/schema/auth rules, read `convex/_generated/ai/guidelines.md` first.
+
 Create reusable Convex components with clear boundaries and a small app-facing API.
 
 ## When to Use

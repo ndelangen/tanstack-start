@@ -5,6 +5,8 @@ description: Plan and execute Convex schema migrations safely, including adding 
 
 # Convex Migration Helper
 
+For Convex API/schema/auth rules, read `convex/_generated/ai/guidelines.md` first.
+
 Safely migrate Convex schemas and data when making breaking changes.
 
 ## When to Use

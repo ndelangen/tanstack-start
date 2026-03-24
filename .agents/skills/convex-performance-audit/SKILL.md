@@ -5,6 +5,8 @@ description: Audit and optimize Convex application performance, covering hot pat
 
 # Convex Performance Audit
 
+For Convex API/schema/auth rules, read `convex/_generated/ai/guidelines.md` first.
+
 Diagnose and fix performance problems in Convex applications, one problem class at a time.
 
 ## When to Use

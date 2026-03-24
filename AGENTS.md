@@ -5,3 +5,9 @@ When working on Convex code, **always read `convex/_generated/ai/guidelines.md` 
 
 Convex agent skills for common tasks can be installed by running `npx convex ai-files install`.
 <!-- convex-ai-end -->
+
+## Project Quick Context
+
+- Start with [`docs/README.md`](docs/README.md) for architecture and workflow links.
+- Stack: TanStack Router/Query, Convex, Vite, and Storybook.
+- Non-obvious workflow: `npm run generate` refreshes generated game data outputs.

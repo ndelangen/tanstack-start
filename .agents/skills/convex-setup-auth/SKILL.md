@@ -5,6 +5,8 @@ description: Set up Convex authentication with proper user management, identity 
 
 # Convex Authentication Setup
 
+For Convex API/schema/auth rules, read `convex/_generated/ai/guidelines.md` first.
+
 Implement secure authentication in Convex with user management and access control.
 
 ## When to Use

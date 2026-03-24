@@ -1,0 +1,11 @@
+---
+description: Convex file guidance for generated rules
+globs: convex/**
+alwaysApply: false
+---
+
+# Convex File Guidance
+
+Before editing files under `convex/**`, read `convex/_generated/ai/guidelines.md`.
+
+Treat `convex/_generated/ai/guidelines.md` as authoritative for Convex API usage, validators, auth patterns, and function registration.
