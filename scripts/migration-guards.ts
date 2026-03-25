@@ -67,7 +67,7 @@ function cmdFor(functionName: string, args: unknown, useProd: boolean): string {
 
 function runCmd(command: string) {
   const proc = Bun.spawnSync({
-    cmd: ['zsh', '-lc', command],
+    cmd: ['bash', '-lc', command],
     stdout: 'pipe',
     stderr: 'pipe',
   });
