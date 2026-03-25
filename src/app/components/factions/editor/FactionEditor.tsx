@@ -1,7 +1,7 @@
 import { useForm } from '@tanstack/react-form';
 import { Link } from '@tanstack/react-router';
-import { Copy, RotateCcw, Save, Trash2, X } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { Check, Copy, RotateCcw, Save, Trash2, UserMinus, Users, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   type Faction,
@@ -9,10 +9,12 @@ import {
   useCreateFaction,
   useDeleteFaction,
   useFactionsAll,
+  useSetFactionGroup,
   useUpdateFaction,
 } from '@db/factions';
 import { useGroupsAll } from '@db/groups';
-import { useProfilesAll } from '@db/profiles';
+import { useUserGroupMemberships } from '@db/members';
+import { useCurrentProfile, useProfilesAll } from '@db/profiles';
 import {
   FormActions,
   FormButton,
@@ -59,15 +61,24 @@ export function FactionEditor({
   const [parseError, setParseError] = useState<string | null>(null);
   const [loadPopoverOpen, setLoadPopoverOpen] = useState(false);
   const [loadFactionId, setLoadFactionId] = useState('');
+  const [groupPopoverOpen, setGroupPopoverOpen] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState('');
 
   const createFaction = useCreateFaction();
   const updateFaction = useUpdateFaction();
   const deleteFaction = useDeleteFaction();
+  const setFactionGroup = useSetFactionGroup();
   const factions = useFactionsAll();
   const profiles = useProfilesAll();
   const groups = useGroupsAll();
+  const currentProfile = useCurrentProfile();
+  const memberships = useUserGroupMemberships(currentProfile.data?.id);
 
-  const saving = createFaction.isPending || updateFaction.isPending || deleteFaction.isPending;
+  const saving =
+    createFaction.isPending ||
+    updateFaction.isPending ||
+    deleteFaction.isPending ||
+    setFactionGroup.isPending;
   const loadMetaPending = factions.isPending || profiles.isPending || groups.isPending;
 
   const form = useForm<
@@ -145,6 +156,16 @@ export function FactionEditor({
     () => new Map((factions.data ?? []).map((entry) => [entry.id, entry])),
     [factions.data]
   );
+  const currentFactionEntry = factionRowId ? factionsById.get(factionRowId) : undefined;
+  const currentFactionGroupId = currentFactionEntry?.group_id ?? null;
+  const isFactionOwner = currentFactionEntry?.owner_id === currentProfile.data?.id;
+  const currentGroupEntry = currentFactionGroupId
+    ? groups.data?.find((entry) => entry.id === currentFactionGroupId)
+    : undefined;
+  const memberGroupIds = useMemo(
+    () => new Set((memberships.data ?? []).map((entry) => String(entry.group_id))),
+    [memberships.data]
+  );
   const profileNameById = useMemo(() => {
     const map = new Map<string, string>();
     for (const profile of profiles.data ?? []) {
@@ -167,6 +188,12 @@ export function FactionEditor({
         .map((entry) => entry.id),
     [factions.data, form.state.values.name]
   );
+  const groupOptions = useMemo(() => (groups.data ?? []).map((entry) => entry.id), [groups.data]);
+
+  useEffect(() => {
+    if (!groupPopoverOpen) return;
+    setSelectedGroupId(currentFactionGroupId ?? '');
+  }, [groupPopoverOpen, currentFactionGroupId]);
 
   const formatOwnerLabel = (entry: FactionEntry) =>
     profileNameById.get(entry.owner_id) ?? entry.owner_id ?? 'Unknown owner';
@@ -235,10 +262,69 @@ export function FactionEditor({
     form.reset(loaded);
     setLoadPopoverOpen(false);
   };
+  const groupOptionLabel = (groupId: string) => {
+    const group = groups.data?.find((entry) => entry.id === groupId);
+    return group ? `${group.name} (${group.slug})` : groupId;
+  };
+  const groupOptionSearchText = (groupId: string) => {
+    const group = groups.data?.find((entry) => entry.id === groupId);
+    if (!group) return groupId;
+    return [groupId, group.name, group.slug].join(' ');
+  };
+  const renderGroupOption = (groupId: string) => {
+    const group = groups.data?.find((entry) => entry.id === groupId);
+    if (!group) return groupId;
+    const isMember = memberGroupIds.has(group.id);
+    return (
+      <div className={styles.groupOptionRow}>
+        <span className={styles.groupOptionName}>{group.name}</span>
+        <span className={styles.groupOptionMeta}>
+          Slug: {group.slug} · {isMember ? 'Member' : 'Not a member'}
+        </span>
+      </div>
+    );
+  };
+  const handleAssignGroup = () => {
+    if (!factionRowId || mode !== 'edit') return;
+    const nextGroupId = selectedGroupId || null;
+    if (nextGroupId === currentFactionGroupId) {
+      window.alert('This faction is already assigned to that group.');
+      return;
+    }
+    if (nextGroupId && !memberGroupIds.has(nextGroupId)) {
+      window.alert('You can only assign a faction to groups you are an active member of.');
+      return;
+    }
+    setFactionGroup.mutate(
+      { id: factionRowId, groupId: nextGroupId },
+      {
+        onSuccess: () => {
+          setGroupPopoverOpen(false);
+        },
+      }
+    );
+  };
+  const handleRemoveGroup = () => {
+    if (!factionRowId || mode !== 'edit') return;
+    if (currentFactionGroupId == null) return;
+    setFactionGroup.mutate(
+      { id: factionRowId, groupId: null },
+      {
+        onSuccess: () => {
+          setSelectedGroupId('');
+          setGroupPopoverOpen(false);
+        },
+      }
+    );
+  };
 
   const mutationError =
-    createFaction.isError || updateFaction.isError || deleteFaction.isError
-      ? (createFaction.error ?? updateFaction.error ?? deleteFaction.error)?.message
+    createFaction.isError ||
+    updateFaction.isError ||
+    deleteFaction.isError ||
+    setFactionGroup.isError
+      ? (createFaction.error ?? updateFaction.error ?? deleteFaction.error ?? setFactionGroup.error)
+          ?.message
       : null;
 
   return (
@@ -299,6 +385,101 @@ export function FactionEditor({
               )}
             </div>
           </FormPopover>
+          {mode === 'edit' && factionRowId && isFactionOwner && currentFactionGroupId == null && (
+            <FormPopover
+              open={groupPopoverOpen}
+              onOpenChange={setGroupPopoverOpen}
+              align="start"
+              side="bottom"
+              trigger={
+                <FormButton
+                  type="button"
+                  variant="secondary"
+                  iconOnly
+                  aria-label="Assign group"
+                  disabled={saving || groups.isPending || memberships.isPending}
+                >
+                  <Users size={16} aria-hidden />
+                </FormButton>
+              }
+            >
+              <div className={styles.loadFactionPopover}>
+                <p className={styles.loadFactionTitle}>Assign Group</p>
+                <p className={styles.loadFactionHint}>
+                  Groups are used to allow group members to edit this faction.
+                </p>
+                <p className={styles.loadFactionHint}>
+                  You can create groups on your{' '}
+                  {currentProfile.data?.slug ? (
+                    <Link to="/profiles/$slug" params={{ slug: currentProfile.data.slug }}>
+                      profile page
+                    </Link>
+                  ) : (
+                    'profile page'
+                  )}
+                  .
+                </p>
+                <p className={styles.loadFactionHint}>
+                  Current group:{' '}
+                  {currentFactionGroupId
+                    ? (groups.data?.find((entry) => entry.id === currentFactionGroupId)?.name ??
+                      currentFactionGroupId)
+                    : 'No group'}
+                </p>
+                {groups.isPending ? (
+                  <p className={styles.loadFactionHint}>Loading groups...</p>
+                ) : groupOptions.length === 0 ? (
+                  <p className={styles.loadFactionHint}>No groups are available yet.</p>
+                ) : (
+                  <>
+                    <TypeSuggestPicker
+                      id="faction-group"
+                      label="Search groups"
+                      value={selectedGroupId}
+                      onChange={setSelectedGroupId}
+                      options={groupOptions}
+                      optionToLabel={groupOptionLabel}
+                      optionToSearchText={groupOptionSearchText}
+                      renderOption={renderGroupOption}
+                      placeholder="Type group name or slug..."
+                    />
+                    <FormActions>
+                      <FormTooltip content="Set selected group">
+                        <FormButton
+                          type="button"
+                          iconOnly
+                          aria-label="Set selected group"
+                          onClick={handleAssignGroup}
+                          disabled={
+                            saving ||
+                            memberships.isPending ||
+                            selectedGroupId.length === 0 ||
+                            selectedGroupId === currentFactionGroupId
+                          }
+                        >
+                          <Check size={16} aria-hidden />
+                        </FormButton>
+                      </FormTooltip>
+                    </FormActions>
+                  </>
+                )}
+              </div>
+            </FormPopover>
+          )}
+          {mode === 'edit' && factionRowId && isFactionOwner && currentFactionGroupId != null && (
+            <FormTooltip content="Remove group from faction">
+              <FormButton
+                type="button"
+                variant="danger"
+                iconOnly
+                aria-label="Remove group from faction"
+                disabled={saving}
+                onClick={handleRemoveGroup}
+              >
+                <UserMinus size={16} aria-hidden />
+              </FormButton>
+            </FormTooltip>
+          )}
           <FormTooltip content="Reset unsaved edits">
             <FormButton
               type="button"
@@ -338,6 +519,18 @@ export function FactionEditor({
             </FormTooltip>
           )}
         </FormActions>
+        {mode === 'edit' && currentFactionGroupId != null && (
+          <div className={styles.toolbarGroupAccess}>
+            <span className={styles.groupStatusLabel}>Group acces:</span>{' '}
+            {currentGroupEntry?.slug ? (
+              <Link to="/groups/$groupSlug" params={{ groupSlug: currentGroupEntry.slug }}>
+                {currentGroupEntry.name}
+              </Link>
+            ) : (
+              <span>{currentGroupEntry?.name ?? currentFactionGroupId}</span>
+            )}
+          </div>
+        )}
       </div>
 
       {(parseError || mutationError) && (

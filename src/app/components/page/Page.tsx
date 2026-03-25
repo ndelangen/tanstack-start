@@ -64,7 +64,6 @@ const update = () => {
 export function Page({ head, content }: PageProps) {
   const tiny = !head;
   const location = useLocation();
-  const profile = useCurrentProfile();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
