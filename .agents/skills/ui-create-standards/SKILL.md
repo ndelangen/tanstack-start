@@ -1,9 +1,9 @@
 ---
 name: ui-create-standards
-description: Build new UI using existing components and repo design standards. Use when adding or changing UI, creating components, refactoring views, or making layout/styling decisions. Enforce reuse-first, flex+gap layout, no margin-based component spacing, Storybook stories for new generic components, and ask focused questions when extraction/generalization is unclear.
+description: Design and implement UI with strict reuse-first, composition-first standards and hard-stop guardrails. Use when adding or refactoring UI, creating shared components, deciding layout/styling approaches, or when consistency with existing patterns matters.
 ---
 
-# UI Create Standards
+# Grill-Driven UI Standards
 
 ## When To Use
 
@@ -14,124 +14,123 @@ Use this skill whenever work includes:
 - Styling/layout changes
 - New generic or shared UI components
 
-## Non-Negotiable Rules
+## Quick Start
 
-1. Reuse existing components first.
-2. Follow repo component hierarchy and ownership rules from [docs/technical/ui-component-hierarchy.md](../../../docs/technical/ui-component-hierarchy.md).
-3. Avoid `margin` in components by default; use layout wrappers with flex and `gap`.
-4. New generic components must ship with `*.stories.tsx`.
-5. If uncertain about best generalization/extraction, ask the user a focused question before finalizing.
+1. Read and apply [docs/technical/ui-design-decisions.md](../../../docs/technical/ui-design-decisions.md) before proposing implementation details.
+2. Start with a short grill: ask targeted questions and provide your recommended answer for each.
+3. Perform reuse-first discovery across `ui`, `form`, feature components, and nearby routes.
+4. Apply hard-stop gates before custom CSS, new component APIs, or pattern deviation.
+5. Build with small composable components and reusable layout primitives first.
+6. Add Storybook stories for all new generic components.
 
-## Reuse-First Workflow (Strict)
+## Grill-Me Loop (Required Before Finalizing)
 
-### Step 1: Discover existing building blocks
+Interview the plan relentlessly until ambiguity is removed. For each question, provide your recommended answer.
 
-Before creating anything new, check:
+Required question set (adapt as needed):
 
-- `src/app/components/ui` for primitives
-- `src/app/components/form` for composed controls
+- Which existing primitives/composed controls can solve this with small extension?
+- Should this be feature-local or shared (`ui`/`form`)?
+- What API keeps the component generic and composable, not monolithic?
+- Which layout primitive should own spacing and alignment?
+- Can we avoid custom CSS by composing existing classes/components?
+- Which nearby pattern should this follow for consistency?
+
+If a question can be answered by exploring the codebase, explore first, then continue grilling.
+
+## Hard-Stop Guardrails (Non-Negotiable)
+
+Stop and ask the user before proceeding when any condition is true:
+
+1. You are about to introduce custom CSS but existing primitives/layout wrappers may suffice.
+2. You are about to create a new shared component/API before exhausting extension/composition of existing components.
+3. You are about to ship a UI pattern that differs from nearby established patterns without explicit user direction.
+4. You are about to create a large, multi-responsibility component instead of composing smaller parts.
+
+Do not continue implementation until the user confirms the exception.
+
+## Reuse-First Workflow
+
+### 1) Discover existing building blocks first
+
+Check these areas before creating anything new:
+
+- `src/app/components/ui`
+- `src/app/components/form`
 - Relevant feature components under `src/app/components/**`
 - Existing route patterns under `src/app/routes/_app/**`
 
-If an existing component can work with small extension (`props`, `className`, composition), extend it instead of creating a new component.
+If existing components can solve the need with small extension (`props`, `className`, composition), extend instead of adding a new component.
 
-### Step 2: Decide where code belongs
+### 2) Place code in the correct layer
 
-- **Primitive**: generic, low-level UI (`ui/**`)
+- **Primitive**: generic low-level UI (`ui/**`)
 - **Form control**: composed input/control patterns (`form/**`)
 - **Feature component**: domain-specific (`components/<feature>/**` or route-local)
 
-Respect dependency direction:
+Dependency direction is strict:
 
-- `ui` may import only `ui` + shared tokens
-- `form` may import `ui` + shared tokens
-- features/routes may import `form` and `ui`
-- Never import upward (e.g. `ui` importing `form` or features)
+- `ui` imports only `ui` + shared tokens
+- `form` imports `ui` + shared tokens
+- features/routes import `form` and `ui`
+- never import upward (`ui` must not import `form` or features)
 
-### Step 3: Implement with composition
+### 3) Compose, do not over-build
 
 - Prefer composing existing primitives in TSX.
-- Do not use CSS `composes`.
-- Keep CSS module ownership local to its TSX owner.
+- Avoid custom CSS when possible.
+- Never use CSS `composes`.
+- Keep CSS module ownership local to the TSX owner.
 - Do not import another component's CSS module directly.
 
-## Layout And Spacing Rules
+## Layout and Styling Rules
 
-### Default policy
+- Prefer reusable layout components/wrappers for spacing and alignment orchestration.
+- Prefer flexbox + `gap` for one-dimensional layouts.
+- Prefer CSS Grid for two-dimensional layouts.
+- Avoid `margin` for routine component spacing; keep spacing decisions in parent layout containers.
+- Use custom CSS only when composition cannot satisfy requirements and user has approved via hard-stop.
 
-- Do not use `margin` for normal component spacing.
-- Use reusable layout wrappers and flexbox + `gap`.
-- Keep spacing orchestration in parent layout containers, not leaf controls.
+## Generic Component and Storybook Requirements
 
-### Allowed exceptions
-
-Use margin only when truly required (e.g. unavoidable third-party integration constraints). If used, document why in the implementation notes.
-
-## Action Intent And Variant Mapping
-
-Use semantic intent first, then select variant.
-
-- **Primary positive actions** (`Create`, `Start`, `Add`, `Save`, `Confirm`) use green confirm styling by default.
-  - `IconButton`: use `variant="confirm"` (or omit `variant`; default is confirm in [IconButton.tsx](../../../src/app/components/ui/IconButton.tsx)).
-  - `FormButton`: use default/`variant="primary"`.
-- **Neutral or auxiliary actions** (secondary options, optional tools) use `secondary` or `nav`.
-- **Destructive actions** (`Delete`, `Remove`, irreversible mutations) use `critical`/`danger`.
-
-Confirm styling maps to green button tokens in [Button.module.css](../../../src/app/components/ui/Button.module.css).
-
-### Toolbar rule
-
-In toolbars with multiple actions, the single primary positive action must use green confirm styling unless product requirements explicitly say otherwise.
-
-## Storybook Requirements For Generic Components
-
-When adding a new generic component, also add/update `*.stories.tsx` in the same area.
+For every new generic component, add `*.stories.tsx` in the same area.
 
 Minimum story coverage:
 
 1. Default state
-2. Key variants (size/intent/visual modes)
-3. Interactive states when relevant (disabled/loading/error/selected, etc.)
-4. Composition example showing expected usage in a layout wrapper
+2. Key variants
+3. Relevant interactive states
+4. Composition example in a reusable layout wrapper
 
-If component behavior is non-obvious, include concise story args/docs to clarify intended use.
+Stories are required for both developer validation and AI discoverability of intended usage.
 
-## Extraction And Generalization Policy
+## Size and Composition Constraint
 
-When writing new UI, proactively check whether repeated or reusable structure should be extracted.
+Avoid extremely large components. Prefer splitting into smaller composable units when:
 
-Extract when:
+- A component has multiple responsibilities
+- Repeated sub-structures appear
+- API becomes broad or confusing
+- Testing/reasoning gets harder at the current size
 
-- Pattern appears in multiple features/routes
-- API can stay small and coherent
-- It reduces duplication without adding indirection confusion
+## Canonical Reference
 
-Do not extract when:
+Consult and enforce decisions from:
 
-- Usage is single, highly domain-specific, or unstable
-- A generic API would be unclear or overly broad
+[docs/technical/ui-design-decisions.md](../../../docs/technical/ui-design-decisions.md)
 
-If uncertain, ask the user 1 focused question about intended reuse scope before committing to an abstraction.
+Follow hierarchy, dependency, and CSS ownership rules in:
 
-## Clarifying-Question Triggers
+[docs/technical/ui-component-hierarchy.md](../../../docs/technical/ui-component-hierarchy.md)
 
-Ask the user when any of these are unclear:
+## Final Checklist
 
-- Should this remain feature-specific or become a shared generic component?
-- Which API surface is preferred for reuse (`props` shape, variants, composition model)?
-- Should this new pattern become a `ui` primitive, `form` control, or feature component?
-
-## Final Validation Checklist
-
-- [ ] Reuse-first search completed before adding new component
-- [ ] Component layer placement matches dependency direction
-- [ ] No CSS `composes` introduced
-- [ ] No cross-owned CSS module imports introduced
-- [ ] No new margin-based spacing in components (unless explicitly justified)
-- [ ] Layout spacing handled with flex + `gap` via reusable layout wrappers
-- [ ] Primary positive actions use green confirm styling (`IconButton.confirm` / `FormButton.primary`)
-- [ ] Toolbar hierarchy has one clear primary action with confirm styling
-- [ ] Any non-green primary positive action includes explicit rationale or user approval
-- [ ] New generic component has `*.stories.tsx` with required coverage
-- [ ] Extraction/generalization choices are explicit; user asked if uncertain
-
+- [ ] Grill questions asked (with recommended answers) where ambiguity existed
+- [ ] Reuse-first discovery completed before creating anything new
+- [ ] Hard-stop gates enforced for CSS/component/pattern exceptions
+- [ ] Layer placement follows `ui` -> `form` -> features dependency direction
+- [ ] Layout uses reusable wrappers with flex+`gap` and/or grid
+- [ ] No margin-led spacing orchestration (unless approved exception)
+- [ ] No CSS `composes` and no cross-owned CSS imports
+- [ ] Generic components include Storybook stories with composition examples
+- [ ] Component boundaries remain small and composable
