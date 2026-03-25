@@ -1,4 +1,4 @@
-import preview from '../../../../../.storybook/preview';
+import preview from '@storybook/preview';
 import { FactionSheet } from './Sheet';
 
 const meta = preview.meta({

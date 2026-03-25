@@ -23,7 +23,7 @@ This document records durable UI decisions for consistency across features.
 ## DD-001: Reuse existing shared components first
 - Status: accepted
 - Context: UI drift and duplication increase when new components are created before surveying existing primitives.
-- Rule: Always check `src/app/components/ui`, `src/app/components/form`, relevant feature components, and nearby route patterns before creating new UI components.
+- Rule: Always check `src/app/components/generic/ui`, `src/app/components/generic/form`, `src/app/components/generic/layout`, and `src/app/components/generic/surfaces` before creating new UI components.
 - Examples:
   - Extend with `props`, `className`, or composition before introducing a new shared component.
   - Keep feature-local code local unless the pattern clearly repeats.
@@ -34,12 +34,12 @@ This document records durable UI decisions for consistency across features.
 
 ## DD-002: Component layering and dependency direction
 - Status: accepted
-- Context: Layer violations (`ui` importing feature/form code) create tight coupling and brittle reuse.
-- Rule: Preserve direction `ui` -> `form` -> `features/routes`. Never import upward.
+- Context: Layer violations (`generic` importing domain code) create tight coupling and brittle reuse.
+- Rule: Preserve direction `generic/ui` -> `generic/form` -> `generic/layout|generic/surfaces` -> `features/routes`. Never import upward.
 - Examples:
-  - `ui/**` imports only `ui` and shared tokens.
-  - `form/**` can import `ui` and shared tokens.
-  - Features/routes can import `form` and `ui`.
+  - `generic/ui/**` imports only `generic/ui` and shared tokens.
+  - `generic/form/**` can import `generic/ui` and shared tokens.
+  - Features/routes can import `generic/**`.
 - Exceptions:
   - None by default; treat violations as architecture exceptions requiring explicit approval.
 - Changed on: 2026-03-25
@@ -120,4 +120,27 @@ This document records durable UI decisions for consistency across features.
   - Keep each component focused on a single concern.
 - Exceptions:
   - Short-lived feature-local components may stay combined temporarily if extraction adds noise; revisit if reuse emerges.
+- Changed on: 2026-03-25
+
+## DD-010: Component placement is generic-first but domain-honest
+- Status: accepted
+- Context: Shared components were difficult to discover and domain-specific code was occasionally exposed as generic API.
+- Rule: Place components under `src/app/components/generic/**` only when they are reusable across multiple pages/features and have no domain coupling. Otherwise place them under a domain folder (`factions`, `faq`, `profile`, `auth`, etc).
+- Examples:
+  - Reusable controls/layout/surfaces belong to `generic/ui`, `generic/form`, `generic/layout`, `generic/surfaces`.
+  - Faction editor widgets stay under `factions/editor` and are imported directly from that domain.
+- Exceptions:
+  - None by default. Duplicate wrappers and parallel import paths for the same shared component are not allowed.
+- Changed on: 2026-03-25
+
+## DD-011: One shared component, one canonical path
+- Status: accepted
+- Context: Parallel paths (`components/ui` plus `components/generic/ui`) made shared components hard to discover and caused duplicate usage patterns.
+- Rule: Shared components must exist only under `src/app/components/generic/**` and be imported via `@app/components/generic/...`.
+- Examples:
+  - `Button` and `IconButton` live in `generic/ui`.
+  - `TextField` and `FormButton` live in `generic/form`.
+  - `Card`, `Page`, and `Block` live in `generic/surfaces`.
+- Exceptions:
+  - None by default.
 - Changed on: 2026-03-25

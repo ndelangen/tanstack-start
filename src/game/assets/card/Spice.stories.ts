@@ -1,4 +1,4 @@
-import preview from '../../../../.storybook/preview';
+import preview from '@storybook/preview';
 import { SpiceCard } from './Spice';
 
 const meta = preview.meta({

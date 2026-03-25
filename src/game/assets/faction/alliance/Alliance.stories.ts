@@ -1,4 +1,4 @@
-import preview from '../../../../../.storybook/preview';
+import preview from '@storybook/preview';
 import { AllianceCard } from './Alliance';
 
 const meta = preview.meta({

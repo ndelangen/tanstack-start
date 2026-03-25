@@ -4,11 +4,10 @@ import { Pipette } from 'lucide-react';
 import type { ComponentPropsWithoutRef } from 'react';
 import { HexColorPicker as ColorfulHexPicker } from 'react-colorful';
 
-import { FormTooltip } from '@app/components/form/FormTooltip';
-import { PrefixedField } from '@app/components/form/PrefixedField';
-import { Input } from '@app/components/ui/Input';
-
+import { Input } from '../ui/Input';
+import { FormTooltip } from './FormTooltip';
 import styles from './HexColorPicker.module.css';
+import { PrefixedField } from './PrefixedField';
 
 export function normalizePickerHex(hex: string): string {
   if (/^#[0-9a-f]{6}$/i.test(hex)) return hex.toLowerCase();

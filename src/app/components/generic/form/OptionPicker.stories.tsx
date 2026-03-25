@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import preview from '../../../../.storybook/preview';
+import preview from '@storybook/preview';
 import { OptionPicker } from './OptionPicker';
 
 const meta = preview.meta({

@@ -3,8 +3,8 @@ import { Plus } from 'lucide-react';
 import { useState } from 'react';
 
 import { useCreateRuleset } from '@db/rulesets';
-import { FormActions, FormButton, FormField, TextField } from '@app/components/form';
-import { Stack } from '@app/components/layout';
+import { FormActions, FormButton, FormField, TextField } from '@app/components/generic/form';
+import { Stack } from '@app/components/generic/layout';
 
 export const Route = createFileRoute('/_app/rulesets/create')({
   component: CreateRulesetPage,

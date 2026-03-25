@@ -15,13 +15,7 @@ import {
 import { useGroupsAll } from '@db/groups';
 import { useUserGroupMemberships } from '@db/members';
 import { useCurrentProfile, useProfilesAll } from '@db/profiles';
-import {
-  FormActions,
-  FormButton,
-  FormPopover,
-  FormTooltip,
-  TypeSuggestPicker,
-} from '@app/components/form';
+import { FormActions, FormButton, FormPopover, FormTooltip } from '@app/components/generic/form';
 import { Token as FactionToken } from '@game/assets/faction/token/Token';
 import {
   FactionInputSchema,
@@ -29,6 +23,7 @@ import {
   factionSlugBaseFromName,
 } from '@game/schema/faction';
 
+import { AssetAutocomplete as TypeSuggestPicker } from './AssetAutocomplete';
 import styles from './FactionEditor.module.css';
 import { FactionFormFields } from './FactionFormFields';
 import { FactionSheetPreviewIframe } from './FactionSheetPreviewIframe';

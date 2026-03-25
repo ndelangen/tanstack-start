@@ -1,5 +1,3 @@
-export { AssetAutocomplete as TypeSuggestPicker } from '../factions/editor/AssetAutocomplete';
-export { BackgroundColorSlot as ColorPicker } from '../factions/editor/BackgroundColorSlot';
 export { FormActions } from './FormActions';
 export { FormButton } from './FormButton';
 export { FormField } from './FormField';

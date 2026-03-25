@@ -1,4 +1,4 @@
-import preview from '../../../../.storybook/preview';
+import preview from '@storybook/preview';
 import { TextField } from './TextField';
 
 const meta = preview.meta({

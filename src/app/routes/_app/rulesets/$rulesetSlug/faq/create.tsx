@@ -3,15 +3,15 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { faqItemsByRulesetQueryOptions, useCreateFaqItem } from '@db/faq';
 import { useCurrentProfile } from '@db/profiles';
 import { rulesetBySlugQueryOptions, useRulesetBySlug } from '@db/rulesets';
-import { Card } from '@app/components/card/Card';
 import {
   FormActions,
   FormButton,
   FormField,
   MultilineTextField,
   TextField,
-} from '@app/components/form';
-import { Stack } from '@app/components/layout';
+} from '@app/components/generic/form';
+import { Stack } from '@app/components/generic/layout';
+import { Card } from '@app/components/generic/surfaces/Card';
 
 import styles from '../../RulesetDetail.module.css';
 

@@ -1,17 +1,17 @@
 import { useState } from 'react';
 
-import preview from '../../../../.storybook/preview';
-import { AssetAutocomplete as TypeSuggestPicker } from '../factions/editor/AssetAutocomplete';
+import preview from '@storybook/preview';
+import { AssetAutocomplete } from './AssetAutocomplete';
 
 const meta = preview.meta({
-  component: TypeSuggestPicker,
+  component: AssetAutocomplete,
 });
 
 export const Default = meta.story({
-  render: function TypeSuggestPickerDemo() {
+  render: function AssetAutocompleteDemo() {
     const [value, setValue] = useState('alpha');
     return (
-      <TypeSuggestPicker
+      <AssetAutocomplete
         label="Suggest"
         value={value}
         onChange={setValue}

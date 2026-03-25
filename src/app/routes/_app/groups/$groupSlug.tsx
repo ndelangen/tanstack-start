@@ -10,9 +10,9 @@ import {
   useCurrentProfile,
   useProfilesAll,
 } from '@db/profiles';
-import { Card } from '@app/components/card/Card';
-import { FormButton, FormTooltip } from '@app/components/form';
-import { Stack } from '@app/components/layout';
+import { FormButton, FormTooltip } from '@app/components/generic/form';
+import { Stack } from '@app/components/generic/layout';
+import { Card } from '@app/components/generic/surfaces/Card';
 
 export const Route = createFileRoute('/_app/groups/$groupSlug')({
   loader: async ({ context, params }) => {

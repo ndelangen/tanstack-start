@@ -1,6 +1,6 @@
 import sceneAtreides from '@game/fixtures/sceneAtreides';
 
-import preview from '../../../../.storybook/preview';
+import preview from '@storybook/preview';
 import { Scene } from './Scene';
 
 const meta = preview.meta({

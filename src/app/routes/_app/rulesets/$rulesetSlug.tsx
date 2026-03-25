@@ -12,10 +12,10 @@ import {
   useRulesetBySlug,
   useRulesetFactionsWithDetails,
 } from '@db/rulesets';
-import { BlockCover } from '@app/components/block';
-import { Card } from '@app/components/card/Card';
 import { FaqList } from '@app/components/faq/FaqList';
-import { FormActions, FormButton, FormTooltip } from '@app/components/form';
+import { FormActions, FormButton, FormTooltip } from '@app/components/generic/form';
+import { BlockCover } from '@app/components/generic/surfaces';
+import { Card } from '@app/components/generic/surfaces/Card';
 
 import styles from './RulesetDetail.module.css';
 

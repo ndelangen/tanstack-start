@@ -2,7 +2,6 @@ import { Link, type LinkComponentProps } from '@tanstack/react-router';
 import clsx from 'clsx';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 
-import btnStyles from './Button.module.css';
 import styles from './IconButton.module.css';
 
 export type IconButtonVariant = 'nav' | 'secondary' | 'confirm' | 'critical';
@@ -21,16 +20,19 @@ type IconButtonAsButton = IconButtonShared &
   };
 
 export type IconButtonProps = IconButtonAsLink | IconButtonAsButton;
+export type IconButtonLinkProps = Omit<IconButtonAsLink, 'children'> & {
+  children: ReactNode;
+};
 
 function iconButtonClassNames(variant: IconButtonVariant): string {
-  const base = [btnStyles.button, btnStyles.buttonIconOnly];
+  const base = [styles.button, styles.buttonIconOnly];
   switch (variant) {
     case 'nav':
       return clsx(...base, styles.nav);
     case 'secondary':
-      return clsx(...base, btnStyles.buttonSecondary, styles.linkPlain);
+      return clsx(...base, styles.buttonSecondary, styles.linkPlain);
     case 'critical':
-      return clsx(...base, btnStyles.buttonDanger, styles.linkPlain);
+      return clsx(...base, styles.buttonDanger, styles.linkPlain);
     case 'confirm':
       return clsx(...base, styles.linkPlain);
   }
@@ -64,4 +66,8 @@ export function IconButton({ variant = 'confirm', className, children, ...rest }
       {children}
     </button>
   );
+}
+
+export function IconButtonLink(props: IconButtonLinkProps) {
+  return <IconButton {...props} />;
 }

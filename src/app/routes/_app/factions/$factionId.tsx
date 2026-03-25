@@ -6,7 +6,7 @@ import { useGroup } from '@db/groups';
 import { useGroupMembers, useRequestGroupMembership, useUserGroupMemberships } from '@db/members';
 import { currentProfileQueryOptions, useCurrentProfile, useProfilesAll } from '@db/profiles';
 import { rulesetsByFactionQueryOptions, useRulesetsByFaction } from '@db/rulesets';
-import { FormButton, FormTooltip } from '@app/components/form';
+import { FormButton, FormTooltip } from '@app/components/generic/form';
 
 export const Route = createFileRoute('/_app/factions/$factionId')({
   loader: async ({ context, params, location }) => {

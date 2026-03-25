@@ -43,12 +43,12 @@ import {
   FormTabs,
   FormTooltip,
   FormUnitToolbar,
+  HexColorPicker,
   MultilineTextField,
   OptionPicker,
   PrefixedField,
   TextField,
-} from '@app/components/form';
-import { HexColorPicker } from '@app/components/form/HexColorPicker';
+} from '@app/components/generic/form';
 import { DECAL, GENERIC, ICON, LEADERS, LOGO, TROOP, TROOP_MODIFIER } from '@game/data/generated';
 import { TTSColor } from '@game/schema/faction';
 

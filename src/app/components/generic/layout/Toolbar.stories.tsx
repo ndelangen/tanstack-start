@@ -1,4 +1,4 @@
-import preview from '../../../../.storybook/preview';
+import preview from '@storybook/preview';
 import { Toolbar } from './Toolbar';
 
 const meta = preview.meta({

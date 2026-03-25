@@ -2,8 +2,8 @@ import { useAuthActions } from '@convex-dev/auth/react';
 import { LogIn } from 'lucide-react';
 import { useState } from 'react';
 
-import { FormActions, FormButton } from '@app/components/form';
-import { Stack } from '@app/components/layout';
+import { FormActions, FormButton } from '@app/components/generic/form';
+import { Stack } from '@app/components/generic/layout';
 
 export function LoginForm(props: React.ComponentPropsWithoutRef<'div'>) {
   const { signIn } = useAuthActions();

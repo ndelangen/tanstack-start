@@ -1,4 +1,4 @@
-import preview from '../../../../.storybook/preview';
+import preview from '@storybook/preview';
 import { FactionSynopsis } from './FactionSynopsis';
 
 const meta = preview.meta({

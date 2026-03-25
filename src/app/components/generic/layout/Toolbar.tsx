@@ -9,15 +9,17 @@ import {
 
 import styles from './Toolbar.module.css';
 
-function Left({ children }: PropsWithChildren) {
+export type ToolbarSlotProps = PropsWithChildren;
+
+function Left({ children }: ToolbarSlotProps) {
   return <>{children}</>;
 }
 
-function Center({ children }: PropsWithChildren) {
+function Center({ children }: ToolbarSlotProps) {
   return <>{children}</>;
 }
 
-function Right({ children }: PropsWithChildren) {
+function Right({ children }: ToolbarSlotProps) {
   return <>{children}</>;
 }
 
@@ -38,7 +40,7 @@ const ToolbarBase = ({ className, children, ...rest }: ToolbarProps) => {
   let right: ReactNode = null;
 
   Children.forEach(children, (child) => {
-    if (!isValidElement<PropsWithChildren>(child)) {
+    if (!isValidElement<ToolbarSlotProps>(child)) {
       return;
     }
 

@@ -1,4 +1,4 @@
-import preview from '../../../../.storybook/preview';
+import preview from '@storybook/preview';
 import { Book } from '../utils/Book';
 import * as rulebook from './Pages.stories';
 

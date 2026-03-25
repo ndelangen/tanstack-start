@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 
-import preview from '../../../../.storybook/preview';
+import preview from '@storybook/preview';
 import { Title } from './Title';
 
 const meta = preview.meta({

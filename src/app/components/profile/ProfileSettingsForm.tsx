@@ -3,11 +3,17 @@ import { ArrowLeft, Save, User } from 'lucide-react';
 import { useState } from 'react';
 
 import { type ProfileEntry, useCurrentProfile, useUpdateCurrentProfile } from '@db/profiles';
-import { Card } from '@app/components/card/Card';
-import { FormActions, FormButton, FormField, FormTooltip, TextField } from '@app/components/form';
-import formStyles from '@app/components/form/Form.module.css';
-import { Stack } from '@app/components/layout';
-import { IconButton } from '@app/components/ui';
+import {
+  FormActions,
+  FormButton,
+  FormField,
+  FormTooltip,
+  TextField,
+} from '@app/components/generic/form';
+import formStyles from '@app/components/generic/form/Form.module.css';
+import { Stack } from '@app/components/generic/layout';
+import { Card } from '@app/components/generic/surfaces/Card';
+import { IconButton } from '@app/components/generic/ui';
 import { profileSlugBaseFromName } from '@app/profile/validation';
 
 import layoutStyles from './ProfilePageLayout.module.css';

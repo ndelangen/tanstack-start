@@ -13,8 +13,8 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 
-import { FormField } from '@app/components/form/FormField';
-import { Input } from '@app/components/ui/Input';
+import { FormField } from '@app/components/generic/form';
+import { Input } from '@app/components/generic/ui/Input';
 
 import styles from './FactionEditor.module.css';
 

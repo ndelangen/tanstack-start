@@ -14,6 +14,7 @@
       }
     ],
     "paths": {
+      "@storybook/preview": ["./.storybook/preview.tsx"],
       "@db/core": ["./src/app/db/core/index.ts"],
       "@db/*": ["./src/app/*/db.ts"],
       "@app/*": ["./src/app/*"],

@@ -14,7 +14,6 @@ import {
 } from '@db/faq';
 import { useCurrentProfile } from '@db/profiles';
 import { rulesetBySlugQueryOptions } from '@db/rulesets';
-import { Card } from '@app/components/card/Card';
 import { Answer } from '@app/components/faq/Answer';
 import {
   FormActions,
@@ -22,8 +21,9 @@ import {
   FormField,
   FormTooltip,
   MultilineTextField,
-} from '@app/components/form';
-import { Stack } from '@app/components/layout';
+} from '@app/components/generic/form';
+import { Stack } from '@app/components/generic/layout';
+import { Card } from '@app/components/generic/surfaces/Card';
 
 import styles from '../../$id/faq/FaqDetail.module.css';
 

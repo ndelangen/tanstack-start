@@ -1,4 +1,4 @@
-import preview from '../../../../.storybook/preview';
+import preview from '@storybook/preview';
 import { Textarea } from './Input';
 
 const meta = preview.meta({

@@ -1,4 +1,4 @@
-import preview from '../../../../../.storybook/preview';
+import preview from '@storybook/preview';
 import { LeaderToken } from './Leader';
 
 const meta = preview.meta({

@@ -1,10 +1,7 @@
 import { Plus, Trash2 } from 'lucide-react';
 
 import type { Faction } from '@db/factions';
-import { FormButton } from '@app/components/form/FormButton';
-import { FormTooltip } from '@app/components/form/FormTooltip';
-import { HexColorPicker } from '@app/components/form/HexColorPicker';
-import { TextField } from '@app/components/form/TextField';
+import { FormButton, FormTooltip, HexColorPicker, TextField } from '@app/components/generic/form';
 
 import styles from './FactionEditor.module.css';
 

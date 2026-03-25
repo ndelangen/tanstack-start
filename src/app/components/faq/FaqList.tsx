@@ -3,7 +3,7 @@ import Fuse from 'fuse.js';
 import { useMemo } from 'react';
 
 import type { FaqItemWithDetails } from '@db/faq';
-import { Stack } from '@app/components/layout';
+import { Stack } from '@app/components/generic/layout';
 import { formatRelativeDate } from '@app/utils/formatRelativeDate';
 
 import { FaqItemList, FaqItemListRow } from './FaqItemList';
