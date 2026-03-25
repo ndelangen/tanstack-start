@@ -85,6 +85,92 @@ async function sleep(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+type MigrationStatus = {
+  name: string;
+  state: string;
+  isDone: boolean;
+  processed: number;
+  error?: string;
+};
+
+function parseStatuses(raw: string): MigrationStatus[] {
+  try {
+    return z
+      .array(
+        z.object({
+          name: z.string(),
+          state: z.string(),
+          isDone: z.boolean(),
+          processed: z.number(),
+          error: z.string().optional(),
+        })
+      )
+      .parse(JSON.parse(raw));
+  } catch {
+    return [];
+  }
+}
+
+function formatStatusForLog(statuses: MigrationStatus[]) {
+  if (statuses.length === 0) return 'unavailable';
+  return statuses
+    .map(
+      (s) =>
+        `${s.name}[state=${s.state},done=${String(s.isDone)},processed=${s.processed}${s.error ? `,error=${s.error}` : ''}]`
+    )
+    .join('; ');
+}
+
+async function ensureRequiredMigrationsReady({
+  idsToRun,
+  required,
+  timeoutMs,
+  intervalMs,
+  useProd,
+  modeLabel,
+}: {
+  idsToRun: string[];
+  required: string[];
+  timeoutMs: number;
+  intervalMs: number;
+  useProd: boolean;
+  modeLabel: string;
+}) {
+  const manifest = await loadManifest();
+  if (manifest.entries.length === 0) throw new Error('No entries defined in migration-guards.json');
+
+  runCmd(cmdFor('migrations:runRequired', { ids: idsToRun }, useProd));
+  const deadline = Date.now() + timeoutMs;
+  let lastStatusRaw = '';
+
+  while (Date.now() < deadline) {
+    try {
+      runCmd(cmdFor('migrations:assertReadyForNarrow', { required }, useProd));
+      runCmd(cmdFor('migrations:syncMigrationRuns', { ids: required }, useProd));
+      console.log(JSON.stringify({ ok: true, mode: modeLabel, required, idsToRun }));
+      return;
+    } catch {
+      try {
+        lastStatusRaw = runCmd(cmdFor('migrations:getStatus', { ids: required }, useProd));
+      } catch {
+        // Ignore status fetch failures while polling and continue until timeout.
+      }
+      await sleep(intervalMs);
+    }
+  }
+
+  const statuses = parseStatuses(lastStatusRaw);
+  const retryCommand = `bun run ./scripts/migration-guards.ts ${modeLabel} ${timeoutMs} ${intervalMs}${useProd ? ' --prod' : ''}`;
+  throw new Error(
+    [
+      `Timed out waiting for required migrations after ${timeoutMs}ms (${modeLabel}).`,
+      `Required IDs: ${required.join(', ') || 'none'}`,
+      `Last known statuses: ${formatStatusForLog(statuses)}`,
+      `Retry: ${retryCommand}`,
+    ].join('\n')
+  );
+}
+
 async function deployMode(timeoutMs: number, intervalMs: number, useProd: boolean) {
   const manifest = await loadManifest();
   const idsToRun = deploySet(manifest.entries);
@@ -97,19 +183,36 @@ async function deployMode(timeoutMs: number, intervalMs: number, useProd: boolea
     throw new Error('No required migration IDs found for narrow guards');
   }
 
-  runCmd(cmdFor('migrations:runRequired', { ids: idsToRun }, useProd));
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    try {
-      runCmd(cmdFor('migrations:assertReadyForNarrow', { required }, useProd));
-      runCmd(cmdFor('migrations:syncMigrationRuns', { ids: required }, useProd));
-      console.log(JSON.stringify({ ok: true, required, idsToRun }));
-      return;
-    } catch {
-      await sleep(intervalMs);
-    }
+  await ensureRequiredMigrationsReady({
+    idsToRun,
+    required,
+    timeoutMs,
+    intervalMs,
+    useProd,
+    modeLabel: 'deploy',
+  });
+}
+
+async function devStrictMode(timeoutMs: number, intervalMs: number) {
+  const manifest = await loadManifest();
+  const idsToRun = deploySet(manifest.entries);
+  const required = requiredForAnyNarrow(manifest.entries);
+
+  if (idsToRun.length === 0) {
+    throw new Error('No widen migrations defined in migration-guards.json');
   }
-  throw new Error(`Timed out waiting for migrations to complete after ${timeoutMs}ms`);
+  if (required.length === 0) {
+    throw new Error('No required migration IDs found for narrow guards');
+  }
+
+  await ensureRequiredMigrationsReady({
+    idsToRun,
+    required,
+    timeoutMs,
+    intervalMs,
+    useProd: false,
+    modeLabel: 'dev-strict',
+  });
 }
 
 async function narrowCheckMode(useProd: boolean) {
@@ -128,6 +231,8 @@ if (mode === 'deploy') {
   await deployMode(timeoutMs, intervalMs, useProd);
 } else if (mode === 'narrow-check') {
   await narrowCheckMode(useProd);
+} else if (mode === 'dev-strict') {
+  await devStrictMode(timeoutMs, intervalMs);
 } else {
   throw new Error(`Unknown mode: ${mode}`);
 }

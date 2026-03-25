@@ -80,6 +80,30 @@ For current slug demos:
 3. Deploy fails if migration status is failed/incomplete/timeout.
 4. Narrow PR can merge only if PR guard can pass `bun run migrations:narrow-check`.
 
+## Strict dev startup contract
+
+Convex dev startup is fail-closed on required migrations to prevent long-lived local environments from drifting.
+
+- `bun run convex:dev` now runs `bun run migrations:dev-strict` before starting Convex dev runtime.
+- `dev-strict` behavior:
+  - reads `convex/migration-guards.json`,
+  - runs required migrations (`migrations:runRequired`) for local/dev deployment,
+  - polls `migrations:assertReadyForNarrow`,
+  - syncs snapshots via `migrations:syncMigrationRuns`,
+  - exits non-zero if readiness is not reached before timeout.
+
+### Failure modes and diagnostics
+
+- **Timeout:** migration work not complete before timeout window.
+- **Auth/deployment mismatch:** local environment points at wrong Convex deployment or lacks credentials.
+- **Manifest mismatch:** required IDs in the manifest are missing or invalid.
+
+On failure, the command prints:
+
+- required migration IDs,
+- last known migration statuses,
+- exact retry command.
+
 ## PR and release checklist (required for breaking migrations)
 
 - [ ] Widen phase implemented and deployed first
@@ -100,6 +124,12 @@ bun run scripts/migration-guards.ts deploy 2700000 5000 --prod
 
 # Check narrow prerequisites only
 bun run scripts/migration-guards.ts narrow-check --prod
+
+# Strict local/dev startup preflight (non-prod)
+bun run scripts/migration-guards.ts dev-strict 300000 2000
+
+# Alias used by convex:dev and for manual local catch-up
+bun run migrations:run-local-required
 
 # Raw status (optional)
 npx convex run migrations:getStatus '{"ids":["groups_slug_v1","rulesets_slug_v1"]}' --prod
