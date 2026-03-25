@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -46,3 +48,36 @@ jobs:
 
       - name: Build Storybook
         run: bun run build-storybook
+
+      - name: Detect schema narrowing for slug fields
+        id: narrow_check
+        run: |
+          BASE_REF="origin/${{ github.base_ref }}"
+          DIFF="$(git diff --unified=0 "$BASE_REF"...HEAD -- convex/schema.ts)"
+          if echo "$DIFF" | rg -q "^-\\s*slug:\\s*v\\.optional\\(v\\.string\\(\\)\\)" && \
+             echo "$DIFF" | rg -q "^\\+\\s*slug:\\s*v\\.string\\(\\)"; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Enforce static narrow guard contract
+        if: steps.narrow_check.outputs.changed == 'true'
+        run: |
+          bun -e '
+          const manifest = await Bun.file("convex/migration-guards.json").json();
+          const entries = Array.isArray(manifest.entries) ? manifest.entries : [];
+          if (entries.length === 0) throw new Error("migration-guards.json has no entries");
+          const ids = new Set(entries.map((e) => e.id));
+          const narrowEntries = entries.filter((e) => e.phase === "narrow");
+          if (narrowEntries.length === 0) throw new Error("At least one narrow entry is required when schema narrowing is detected");
+          for (const entry of entries) {
+            if (entry.phase !== "widen" && entry.phase !== "narrow") {
+              throw new Error(`Invalid phase for ${entry.id}`);
+            }
+            for (const req of entry.requires ?? []) {
+              if (!ids.has(req)) throw new Error(`Missing required migration id: ${req}`);
+            }
+          }
+          '
+          echo "PR static guard passed. Runtime migration readiness is enforced in deploy-main (main branch) with environment-scoped secrets."

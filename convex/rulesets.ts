@@ -5,7 +5,7 @@ import { rulesetInputSchema } from '../src/app/rulesets/validation';
 import type { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { canAccessRuleset, isActiveGroupMember, requireAuthUserId } from './lib/policy';
-import { ensureObject, nowIso } from './lib/utils';
+import { ensureObject, nowIso, slugify } from './lib/utils';
 import type { MutationCtx, QueryCtx } from './types';
 
 async function getRulesetById(ctx: QueryCtx | MutationCtx, id: Id<'rulesets'>) {
@@ -14,6 +14,27 @@ async function getRulesetById(ctx: QueryCtx | MutationCtx, id: Id<'rulesets'>) {
 
 async function getFactionById(ctx: QueryCtx | MutationCtx, id: Id<'factions'>) {
   return await ctx.db.get(id);
+}
+
+async function resolveUniqueRulesetSlug(
+  ctx: QueryCtx | MutationCtx,
+  name: string,
+  excludeId?: Id<'rulesets'>
+) {
+  const baseSlug = slugify(name) || 'ruleset';
+  let slug = baseSlug;
+  let suffix = 1;
+  while (true) {
+    const existing = await ctx.db
+      .query('rulesets')
+      .withIndex('by_slug', (q) => q.eq('slug', slug))
+      .unique();
+    if (!existing || (excludeId && existing._id === excludeId)) {
+      return slug;
+    }
+    suffix += 1;
+    slug = `${baseSlug}-${suffix}`;
+  }
 }
 
 export const list = query({
@@ -124,8 +145,10 @@ export const create = mutation({
     if (duplicate.some((row) => !row.is_deleted)) throw new Error('Ruleset name already exists');
 
     const now = nowIso();
+    const slug = await resolveUniqueRulesetSlug(ctx, normalizedName);
     const _id = await ctx.db.insert('rulesets', {
       name: normalizedName,
+      slug,
       owner_id: userId,
       group_id: args.group_id,
       image_cover: args.image_cover,
@@ -175,11 +198,13 @@ export const update = mutation({
 
     const patch: {
       name: string;
+      slug: string;
       updated_at: string;
       group_id?: Id<'groups'> | null;
       image_cover?: string | null;
     } = {
       name: normalizedName,
+      slug: await resolveUniqueRulesetSlug(ctx, normalizedName, args.id),
       updated_at: nowIso(),
     };
     if (args.group_id !== undefined) patch.group_id = args.group_id;

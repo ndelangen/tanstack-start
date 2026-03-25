@@ -13,7 +13,6 @@
         }
       }
     ],
-    "baseUrl": ".",
     "paths": {
       "@db/core": ["./src/app/db/core/index.ts"],
       "@db/*": ["./src/app/*/db.ts"],

@@ -90,3 +90,4 @@ Dune card/faction rendering, Storybook, and static art live here. `generated/` h
 - [State Management](./state-management.md) - TanStack Query, cache patterns
 - [Membership](./membership.md) - Group membership approval flow
 - [Deployment](./deployment.md) - Netlify deployment process
+- [Convex Migrations](./convex-migrations.md) - Required widen/migrate/verify/narrow runbook + CI/deploy guards

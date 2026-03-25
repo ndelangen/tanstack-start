@@ -20,10 +20,12 @@ export default defineSchema({
     .index('by_slug', ['slug']),
   groups: defineTable({
     name: v.string(),
+    slug: v.optional(v.string()),
     created_at: v.string(),
     created_by: v.id('users'),
   })
     .index('by_name', ['name'])
+    .index('by_slug', ['slug'])
     .index('by_created_by', ['created_by']),
   group_members: defineTable({
     group_id: v.id('groups'),
@@ -55,6 +57,7 @@ export default defineSchema({
     .index('by_group_deleted', ['group_id', 'is_deleted']),
   rulesets: defineTable({
     name: v.string(),
+    slug: v.optional(v.string()),
     created_at: v.string(),
     updated_at: v.string(),
     owner_id: v.id('users'),
@@ -63,9 +66,28 @@ export default defineSchema({
     image_cover: v.union(v.string(), v.null()),
   })
     .index('by_name', ['name'])
+    .index('by_slug', ['slug'])
     .index('by_owner_deleted', ['owner_id', 'is_deleted'])
     .index('by_group_deleted', ['group_id', 'is_deleted'])
     .index('by_deleted_name', ['is_deleted', 'name']),
+  migration_runs: defineTable({
+    migration_id: v.string(),
+    state: v.union(
+      v.literal('inProgress'),
+      v.literal('success'),
+      v.literal('failed'),
+      v.literal('canceled'),
+      v.literal('unknown')
+    ),
+    is_done: v.boolean(),
+    processed: v.number(),
+    latest_start: v.number(),
+    latest_end: v.optional(v.number()),
+    error: v.optional(v.string()),
+    updated_at: v.string(),
+  })
+    .index('by_migration_id', ['migration_id'])
+    .index('by_state', ['state']),
   ruleset_factions: defineTable({
     ruleset_id: v.id('rulesets'),
     faction_id: v.id('factions'),
