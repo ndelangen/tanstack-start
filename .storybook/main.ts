@@ -43,16 +43,24 @@ export default defineMain({
     },
   ],
   async viteFinal(config) {
+    const hasTanstackName = (value: unknown): boolean => {
+      if (value == null || typeof value !== 'object' || !('name' in value)) {
+        return false;
+      }
+      const maybeName = (value as { name?: unknown }).name;
+      return typeof maybeName === 'string' && maybeName.toLowerCase().includes('tanstack');
+    };
+
     config.plugins = (
       config.plugins?.map((plugin) => {
         try {
           if (Array.isArray(plugin)) {
-            return plugin.filter((p) => p.name.toLowerCase().includes('tanstack') === false);
+            return plugin.filter((p) => !hasTanstackName(p));
           }
           if (!plugin) {
             return false;
           }
-          if (plugin.name.toLowerCase().includes('tanstack')) {
+          if (hasTanstackName(plugin)) {
             return false;
           }
           return plugin;

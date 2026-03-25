@@ -1,8 +1,8 @@
 import clsx from 'clsx';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 
-import { inputFieldClassNames } from '../ui/Input';
 import styles from './Form.module.css';
+import { textFieldClassNames } from './TextField';
 
 export interface PrefixedFieldProps extends Pick<ComponentPropsWithoutRef<'div'>, 'className'> {
   prefix?: ReactNode;
@@ -25,7 +25,7 @@ export function PrefixedField({
   return (
     <div
       className={clsx(
-        inputFieldClassNames({ variant: 'input', padded: false }),
+        textFieldClassNames({ variant: 'input', padded: false }),
         styles.prefixedInput,
         className
       )}

@@ -12,3 +12,11 @@ export const Default = meta.story({
     rows: 4,
   },
 });
+
+export const Padded = meta.story({
+  args: {
+    padded: true,
+    placeholder: 'With padding',
+    rows: 3,
+  },
+});

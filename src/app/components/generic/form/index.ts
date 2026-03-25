@@ -17,4 +17,10 @@ export {
   PrefixedField,
   type PrefixedFieldProps,
 } from './PrefixedField';
-export { TextField } from './TextField';
+export {
+  TextField,
+  textFieldClassNames,
+  type TextFieldProps,
+  type TextFieldVariant,
+} from './TextField';
+export { type MultilineTextFieldProps } from './MultilineTextField';

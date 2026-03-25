@@ -3,8 +3,8 @@ import clsx from 'clsx';
 import { Check, ChevronDown } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import { inputFieldClassNames } from '../ui/Input';
 import styles from './Form.module.css';
+import { textFieldClassNames } from './TextField';
 
 export interface OptionPickerOption {
   value: string;
@@ -32,7 +32,7 @@ export function OptionPicker({
     <Select.Root value={value} onValueChange={onValueChange}>
       <Select.Trigger
         className={clsx(
-          inputFieldClassNames({ variant: 'input', padded: false }),
+          textFieldClassNames({ variant: 'input', padded: false }),
           styles.selectTrigger,
           triggerClassName
         )}
