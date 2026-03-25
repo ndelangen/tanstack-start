@@ -45,6 +45,7 @@ function FaqCreatePage() {
   if (!ruleset.data) {
     return null;
   }
+  const rulesetSlug = ruleset.data.slug;
 
   if (!profile?.data?.id) {
     return (
@@ -85,14 +86,10 @@ function FaqCreatePage() {
               {
                 onSuccess: (entry) => {
                   formEl.reset();
-                  if (!ruleset.data?.slug || !entry.slug) {
-                    navigate({ to: '/rulesets/$id', params: { id } });
-                    return;
-                  }
                   navigate({
                     to: '/rulesets/$rulesetSlug/faq/$questionSlug',
                     params: {
-                      rulesetSlug: ruleset.data.slug,
+                      rulesetSlug,
                       questionSlug: entry.slug,
                     },
                   });

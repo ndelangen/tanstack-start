@@ -40,10 +40,6 @@ async function profileSummary(ctx: QueryCtx | MutationCtx, id: Id<'users'>) {
   };
 }
 
-function isMissingSlug(value: unknown): boolean {
-  return typeof value !== 'string' || value.trim().length === 0;
-}
-
 async function assertAcceptedAnswerBelongsToItem(
   ctx: QueryCtx | MutationCtx,
   faqItemId: Id<'faq_items'>,
@@ -165,7 +161,7 @@ export const detailByRulesetSlugAndQuestionSlug = query({
       ...item,
       ruleset: {
         id: ruleset._id,
-        slug: ruleset.slug ?? null,
+        slug: ruleset.slug,
         name: ruleset.name,
       },
       asker_profile: askerProfile,
@@ -192,7 +188,7 @@ export const askedBy = query({
           throw new Error(`Ruleset ${item.ruleset_id} missing for FAQ item ${item._id}`);
         return {
           ...item,
-          ruleset: { id: ruleset._id, name: ruleset.name, slug: ruleset.slug ?? null },
+          ruleset: { id: ruleset._id, name: ruleset.name, slug: ruleset.slug },
         };
       })
     );
@@ -219,7 +215,7 @@ export const answeredBy = query({
           ...answer,
           faq_item: {
             id: item._id,
-            slug: isMissingSlug(item.slug) ? null : item.slug,
+            slug: item.slug,
             question: item.question,
             ruleset_id: item.ruleset_id,
             asked_by: item.asked_by,
@@ -229,7 +225,7 @@ export const answeredBy = query({
           ruleset: {
             id: ruleset._id,
             name: ruleset.name,
-            slug: ruleset.slug ?? null,
+            slug: ruleset.slug,
           },
         };
       })

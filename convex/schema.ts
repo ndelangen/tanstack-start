@@ -20,7 +20,7 @@ export default defineSchema({
     .index('by_slug', ['slug']),
   groups: defineTable({
     name: v.string(),
-    slug: v.optional(v.string()),
+    slug: v.string(),
     created_at: v.string(),
     created_by: v.id('users'),
   })
@@ -57,7 +57,7 @@ export default defineSchema({
     .index('by_group_deleted', ['group_id', 'is_deleted']),
   rulesets: defineTable({
     name: v.string(),
-    slug: v.optional(v.string()),
+    slug: v.string(),
     created_at: v.string(),
     updated_at: v.string(),
     owner_id: v.id('users'),
@@ -97,7 +97,7 @@ export default defineSchema({
     .index('by_ruleset_faction', ['ruleset_id', 'faction_id']),
   faq_items: defineTable({
     ruleset_id: v.id('rulesets'),
-    slug: v.optional(v.string()),
+    slug: v.string(),
     question: v.string(),
     asked_by: v.id('users'),
     created_at: v.string(),

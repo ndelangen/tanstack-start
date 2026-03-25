@@ -87,7 +87,7 @@ export function faqItemDetailByRulesetAndSlugQueryOptions(
             username: string | null;
             avatar_url: string | null;
           } | null;
-          ruleset: { id: string; slug: string | null; name: string };
+          ruleset: { id: string; slug: string; name: string };
           faq_answers: (Omit<FaqAnswerEntry, 'id'> & {
             answerer_profile: {
               id: string;
@@ -154,7 +154,7 @@ export function useFaqItemByRulesetAndSlug(rulesetSlug: string, questionSlug: st
         username: string | null;
         avatar_url: string | null;
       } | null;
-      ruleset: { id: string; slug: string | null; name: string };
+      ruleset: { id: string; slug: string; name: string };
       faq_answers: (Omit<FaqAnswerEntry, 'id'> & {
         answerer_profile: {
           id: string;
@@ -184,7 +184,7 @@ export function useFaqItemByRulesetAndSlug(rulesetSlug: string, questionSlug: st
 }
 
 export type FaqItemAskedByWithRuleset = FaqItemEntry & {
-  ruleset: { id: string; name: string; slug: string | null };
+  ruleset: { id: string; name: string; slug: string };
 };
 
 export function faqItemsAskedByQueryOptions(profileId: string) {
@@ -193,7 +193,9 @@ export function faqItemsAskedByQueryOptions(profileId: string) {
     queryFn: async () =>
       (
         await db.query<
-          (Omit<FaqItemAskedByWithRuleset, 'id'> & { ruleset: { id: string; name: string } })[]
+          (Omit<FaqItemAskedByWithRuleset, 'id'> & {
+            ruleset: { id: string; name: string; slug: string };
+          })[]
         >(api.faq.askedBy, { profile_id: profileId })
       ).map((entry) => ({ ...entry, id: entry._id })),
   });
@@ -202,7 +204,7 @@ export function faqItemsAskedByQueryOptions(profileId: string) {
 export type FaqAnswerWithParent = FaqAnswerEntry & {
   faq_item: {
     id: string;
-    slug: string | null;
+    slug: string;
     question: string;
     ruleset_id: string;
     asked_by: string;
@@ -214,7 +216,7 @@ export type FaqAnswerWithParent = FaqAnswerEntry & {
     username: string | null;
     avatar_url: string | null;
   } | null;
-  ruleset: { id: string; name: string; slug: string | null };
+  ruleset: { id: string; name: string; slug: string };
 };
 
 export function faqAnswersByUserQueryOptions(profileId: string) {
@@ -237,7 +239,9 @@ export function faqAnswersByUserQueryOptions(profileId: string) {
 
 export function useFaqItemsAskedBy(profileId: string | undefined) {
   const result = useLiveQuery<
-    (Omit<FaqItemAskedByWithRuleset, 'id'> & { ruleset: { id: string; name: string } })[],
+    (Omit<FaqItemAskedByWithRuleset, 'id'> & {
+      ruleset: { id: string; name: string; slug: string };
+    })[],
     { profile_id: string }
   >(
     api.faq.askedBy,

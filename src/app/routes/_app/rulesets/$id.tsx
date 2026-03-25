@@ -157,7 +157,7 @@ function RulesetDetailPage() {
           )}
           <FaqList
             items={faqItems.data ?? []}
-            rulesetSlug={r.slug ?? ''}
+            rulesetSlug={r.slug}
             searchQuery={search.q ?? ''}
             onSearchChange={handleFaqSearchChange}
           />

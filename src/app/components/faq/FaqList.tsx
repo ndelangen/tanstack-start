@@ -67,16 +67,12 @@ export function FaqList({
 
             return (
               <FaqItemListRow key={item.id}>
-                {item.slug && rulesetSlug ? (
-                  <Link
-                    to="/rulesets/$rulesetSlug/faq/$questionSlug"
-                    params={{ rulesetSlug, questionSlug: item.slug }}
-                  >
-                    <span className={styles.question}>{item.question}</span>
-                  </Link>
-                ) : (
+                <Link
+                  to="/rulesets/$rulesetSlug/faq/$questionSlug"
+                  params={{ rulesetSlug, questionSlug: item.slug }}
+                >
                   <span className={styles.question}>{item.question}</span>
-                )}
+                </Link>
                 <div className={styles.meta}>
                   <span className={styles.badges}>
                     <span

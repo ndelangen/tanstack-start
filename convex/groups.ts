@@ -148,33 +148,3 @@ export const remove = mutation({
   },
 });
 
-export const backfillMissingSlugs = mutation({
-  args: { limit: v.optional(v.number()) },
-  handler: async (ctx, args) => {
-    await requireAuthUserId(ctx);
-    const limit = Math.max(1, Math.min(Math.floor(args.limit ?? 200), 500));
-    const rows = await ctx.db.query('groups').take(500);
-    let updated = 0;
-
-    for (const row of rows) {
-      const hasSlug =
-        typeof (row as { slug?: unknown }).slug === 'string' &&
-        ((row as { slug?: string }).slug?.trim().length ?? 0) > 0;
-      if (hasSlug || updated >= limit) {
-        continue;
-      }
-      const slug = await resolveUniqueGroupSlug(ctx, row.name, row._id);
-      await ctx.db.patch(row._id, { slug });
-      updated += 1;
-    }
-
-    const remainingInBatch = rows.some((row) => {
-      const hasSlug =
-        typeof (row as { slug?: unknown }).slug === 'string' &&
-        ((row as { slug?: string }).slug?.trim().length ?? 0) > 0;
-      return !hasSlug;
-    });
-
-    return { scanned: rows.length, updated, remainingInBatch };
-  },
-});
