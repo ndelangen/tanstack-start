@@ -85,9 +85,16 @@ function FaqCreatePage() {
               {
                 onSuccess: (entry) => {
                   formEl.reset();
+                  if (!ruleset.data?.slug || !entry.slug) {
+                    navigate({ to: '/rulesets/$id', params: { id } });
+                    return;
+                  }
                   navigate({
-                    to: '/rulesets/$id/faq/$faqId',
-                    params: { id, faqId: String(entry._id) },
+                    to: '/rulesets/$rulesetSlug/faq/$questionSlug',
+                    params: {
+                      rulesetSlug: ruleset.data.slug,
+                      questionSlug: entry.slug,
+                    },
                   });
                 },
               }

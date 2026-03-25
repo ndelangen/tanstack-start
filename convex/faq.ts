@@ -11,6 +11,13 @@ async function getRuleset(ctx: QueryCtx | MutationCtx, id: Id<'rulesets'>) {
   return await ctx.db.get(id);
 }
 
+async function getRulesetBySlug(ctx: QueryCtx | MutationCtx, slug: string) {
+  return await ctx.db
+    .query('rulesets')
+    .withIndex('by_slug', (q) => q.eq('slug', slug))
+    .unique();
+}
+
 async function getFaqItem(ctx: QueryCtx | MutationCtx, id: Id<'faq_items'>) {
   return await ctx.db.get(id);
 }
@@ -31,6 +38,41 @@ async function profileSummary(ctx: QueryCtx | MutationCtx, id: Id<'users'>) {
     username: profile.username ?? null,
     avatar_url: profile.avatar_url ?? null,
   };
+}
+
+function isMissingSlug(value: unknown): boolean {
+  return typeof value !== 'string' || value.trim().length === 0;
+}
+
+async function allocateNextFaqItemSlug(
+  ctx: MutationCtx,
+  rulesetId: Id<'rulesets'>
+): Promise<string> {
+  const counterKey = `faq_item_slug:${rulesetId}`;
+  let counter = await ctx.db
+    .query('counters')
+    .withIndex('by_key', (q) => q.eq('key', counterKey))
+    .unique();
+
+  if (!counter) {
+    const inserted = await ctx.db.insert('counters', { key: counterKey, value: 0 });
+    counter = await ctx.db.get(inserted);
+    if (!counter) throw new Error(`Failed to initialize FAQ slug counter for ruleset ${rulesetId}`);
+  }
+
+  let candidate = counter.value + 1;
+  while (true) {
+    const slug = String(candidate);
+    const existing = await ctx.db
+      .query('faq_items')
+      .withIndex('by_ruleset_slug', (q) => q.eq('ruleset_id', rulesetId).eq('slug', slug))
+      .unique();
+    if (!existing) {
+      await ctx.db.patch(counter._id, { value: candidate });
+      return slug;
+    }
+    candidate += 1;
+  }
 }
 
 export const byRuleset = query({
@@ -77,6 +119,51 @@ export const detail = query({
   },
 });
 
+export const detailByRulesetSlugAndQuestionSlug = query({
+  args: {
+    ruleset_slug: v.string(),
+    question_slug: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const ruleset = await getRulesetBySlug(ctx, args.ruleset_slug);
+    if (!ruleset || ruleset.is_deleted) {
+      throw new Error(`Ruleset with slug ${args.ruleset_slug} not found`);
+    }
+    const item = await ctx.db
+      .query('faq_items')
+      .withIndex('by_ruleset_slug', (q) =>
+        q.eq('ruleset_id', ruleset._id).eq('slug', args.question_slug)
+      )
+      .unique();
+    if (!item) {
+      throw new Error(
+        `FAQ item with slug ${args.question_slug} not found in ruleset ${args.ruleset_slug}`
+      );
+    }
+    const answers = await ctx.db
+      .query('faq_answers')
+      .withIndex('by_faq_item_created', (q) => q.eq('faq_item_id', item._id))
+      .take(200);
+    const answerers = await Promise.all(
+      answers.map((answer) => profileSummary(ctx, answer.answered_by))
+    );
+    const askerProfile = await profileSummary(ctx, item.asked_by);
+    return {
+      ...item,
+      ruleset: {
+        id: ruleset._id,
+        slug: ruleset.slug ?? null,
+        name: ruleset.name,
+      },
+      asker_profile: askerProfile,
+      faq_answers: answers.map((answer, index) => ({
+        ...answer,
+        answerer_profile: answerers[index],
+      })),
+    };
+  },
+});
+
 export const askedBy = query({
   args: { profile_id: v.id('users') },
   handler: async (ctx, args) => {
@@ -92,7 +179,7 @@ export const askedBy = query({
           throw new Error(`Ruleset ${item.ruleset_id} missing for FAQ item ${item._id}`);
         return {
           ...item,
-          ruleset: { id: ruleset._id, name: ruleset.name },
+          ruleset: { id: ruleset._id, name: ruleset.name, slug: ruleset.slug ?? null },
         };
       })
     );
@@ -119,6 +206,7 @@ export const answeredBy = query({
           ...answer,
           faq_item: {
             id: item._id,
+            slug: isMissingSlug(item.slug) ? null : item.slug,
             question: item.question,
             ruleset_id: item.ruleset_id,
             asked_by: item.asked_by,
@@ -128,6 +216,7 @@ export const answeredBy = query({
           ruleset: {
             id: ruleset._id,
             name: ruleset.name,
+            slug: ruleset.slug ?? null,
           },
         };
       })
@@ -153,8 +242,10 @@ export const createItem = mutation({
     const normalizedQuestion = parsedQuestion.data;
 
     const now = nowIso();
+    const slug = await allocateNextFaqItemSlug(ctx, args.ruleset_id);
     const faqItemId = await ctx.db.insert('faq_items', {
       ruleset_id: args.ruleset_id,
+      slug,
       question: normalizedQuestion,
       asked_by: userId,
       created_at: now,

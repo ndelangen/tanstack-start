@@ -12,7 +12,7 @@ import styles from './FaqList.module.css';
 
 interface FaqListProps {
   items: FaqItemWithDetails[];
-  rulesetId: string;
+  rulesetSlug: string;
   searchQuery: string;
   onSearchChange: (value: string) => void;
   placeholder?: string;
@@ -20,7 +20,7 @@ interface FaqListProps {
 
 export function FaqList({
   items,
-  rulesetId,
+  rulesetSlug,
   searchQuery,
   onSearchChange,
   placeholder = 'Search questions…',
@@ -67,12 +67,16 @@ export function FaqList({
 
             return (
               <FaqItemListRow key={item.id}>
-                <Link
-                  to="/rulesets/$id/faq/$faqId"
-                  params={{ id: rulesetId, faqId: String(item.id) }}
-                >
+                {item.slug && rulesetSlug ? (
+                  <Link
+                    to="/rulesets/$rulesetSlug/faq/$questionSlug"
+                    params={{ rulesetSlug, questionSlug: item.slug }}
+                  >
+                    <span className={styles.question}>{item.question}</span>
+                  </Link>
+                ) : (
                   <span className={styles.question}>{item.question}</span>
-                </Link>
+                )}
                 <div className={styles.meta}>
                   <span className={styles.badges}>
                     <span className={hasAnswers ? styles.badgeAnswered : styles.badgeUnanswered}>

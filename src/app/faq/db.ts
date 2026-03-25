@@ -20,6 +20,8 @@ export const faqKeys = {
   all: ['faq'] as const,
   byRuleset: (rulesetId: string) => [...faqKeys.all, 'ruleset', rulesetId] as const,
   detail: (id: string) => [...faqKeys.all, 'detail', id] as const,
+  detailByRulesetAndSlug: (rulesetSlug: string, questionSlug: string) =>
+    [...faqKeys.all, 'detailByRulesetAndSlug', rulesetSlug, questionSlug] as const,
   askedBy: (profileId: string) => [...faqKeys.all, 'askedBy', profileId] as const,
   answeredBy: (profileId: string) => [...faqKeys.all, 'answeredBy', profileId] as const,
 };
@@ -70,6 +72,45 @@ export function faqItemDetailQueryOptions(id: string) {
   });
 }
 
+export function faqItemDetailByRulesetAndSlugQueryOptions(
+  rulesetSlug: string,
+  questionSlug: string
+) {
+  return queryOptions({
+    queryKey: faqKeys.detailByRulesetAndSlug(rulesetSlug, questionSlug),
+    queryFn: async () => {
+      const item = await db.query<
+        Omit<FaqItemEntry, 'id' | 'faq_answers'> & {
+          asker_profile: {
+            id: string;
+            slug: string;
+            username: string | null;
+            avatar_url: string | null;
+          } | null;
+          ruleset: { id: string; slug: string | null; name: string };
+          faq_answers: (Omit<FaqAnswerEntry, 'id'> & {
+            answerer_profile: {
+              id: string;
+              slug: string;
+              username: string | null;
+              avatar_url: string | null;
+            } | null;
+          })[];
+        }
+      >(api.faq.detailByRulesetSlugAndQuestionSlug, {
+        ruleset_slug: rulesetSlug,
+        question_slug: questionSlug,
+      });
+      return {
+        ...item,
+        id: item._id,
+        ruleset: { ...item.ruleset, id: item.ruleset.id },
+        faq_answers: item.faq_answers.map((answer) => ({ ...answer, id: answer._id })),
+      };
+    },
+  });
+}
+
 export function useFaqItemsByRuleset(rulesetId: string) {
   const result = useLiveQuery<
     (Omit<FaqItemWithDetails, 'id' | 'faq_answers'> & {
@@ -104,8 +145,46 @@ export function useFaqItem(id: string) {
   };
 }
 
+export function useFaqItemByRulesetAndSlug(rulesetSlug: string, questionSlug: string) {
+  const result = useLiveQuery<
+    Omit<FaqItemEntry, 'id' | 'faq_answers'> & {
+      asker_profile: {
+        id: string;
+        slug: string;
+        username: string | null;
+        avatar_url: string | null;
+      } | null;
+      ruleset: { id: string; slug: string | null; name: string };
+      faq_answers: (Omit<FaqAnswerEntry, 'id'> & {
+        answerer_profile: {
+          id: string;
+          slug: string;
+          username: string | null;
+          avatar_url: string | null;
+        } | null;
+      })[];
+    },
+    { ruleset_slug: string; question_slug: string }
+  >(
+    api.faq.detailByRulesetSlugAndQuestionSlug,
+    { ruleset_slug: rulesetSlug, question_slug: questionSlug },
+    { enabled: Boolean(rulesetSlug) && Boolean(questionSlug) }
+  );
+  return {
+    ...result,
+    data: result.data
+      ? {
+          ...result.data,
+          id: result.data._id,
+          ruleset: { ...result.data.ruleset, id: result.data.ruleset.id },
+          faq_answers: result.data.faq_answers.map((answer) => ({ ...answer, id: answer._id })),
+        }
+      : undefined,
+  };
+}
+
 export type FaqItemAskedByWithRuleset = FaqItemEntry & {
-  ruleset: { id: string; name: string };
+  ruleset: { id: string; name: string; slug: string | null };
 };
 
 export function faqItemsAskedByQueryOptions(profileId: string) {
@@ -123,6 +202,7 @@ export function faqItemsAskedByQueryOptions(profileId: string) {
 export type FaqAnswerWithParent = FaqAnswerEntry & {
   faq_item: {
     id: string;
+    slug: string | null;
     question: string;
     ruleset_id: string;
     asked_by: string;
@@ -134,7 +214,7 @@ export type FaqAnswerWithParent = FaqAnswerEntry & {
     username: string | null;
     avatar_url: string | null;
   } | null;
-  ruleset: { id: string; name: string };
+  ruleset: { id: string; name: string; slug: string | null };
 };
 
 export function faqAnswersByUserQueryOptions(profileId: string) {

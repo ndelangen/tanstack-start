@@ -56,6 +56,18 @@ export const get = query({
   },
 });
 
+export const getBySlug = query({
+  args: { slug: v.string() },
+  handler: async (ctx, args) => {
+    const row = await ctx.db
+      .query('rulesets')
+      .withIndex('by_slug', (q) => q.eq('slug', args.slug))
+      .unique();
+    if (!row || row.is_deleted) throw new Error(`Ruleset with slug ${args.slug} not found`);
+    return row;
+  },
+});
+
 export const factionIds = query({
   args: { ruleset_id: v.id('rulesets') },
   handler: async (ctx, args) => {

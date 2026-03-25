@@ -13,6 +13,7 @@ type MigrationRef = FunctionReference<'mutation', 'internal'>;
 const MIGRATION_IDS: Record<string, MigrationRef> = {
   groups_slug_v1: internal.migrations.groups_slug_v1,
   rulesets_slug_v1: internal.migrations.rulesets_slug_v1,
+  faq_item_slug_v1: internal.migrations.faq_item_slug_v1,
 };
 
 type MigrationId = keyof typeof MIGRATION_IDS;
@@ -73,6 +74,36 @@ function missingSlug(value: unknown): boolean {
   return typeof value !== 'string' || value.trim().length === 0;
 }
 
+async function allocateNextFaqItemSlug(
+  ctx: MutationCtx,
+  rulesetId: Id<'rulesets'>
+): Promise<string> {
+  const counterKey = `faq_item_slug:${rulesetId}`;
+  let counter = await ctx.db
+    .query('counters')
+    .withIndex('by_key', (q) => q.eq('key', counterKey))
+    .unique();
+
+  if (!counter) {
+    const inserted = await ctx.db.insert('counters', { key: counterKey, value: 0 });
+    counter = { _id: inserted, _creationTime: 0, key: counterKey, value: 0 };
+  }
+
+  let candidate = counter.value + 1;
+  while (true) {
+    const slug = String(candidate);
+    const existing = await ctx.db
+      .query('faq_items')
+      .withIndex('by_ruleset_slug', (q) => q.eq('ruleset_id', rulesetId).eq('slug', slug))
+      .unique();
+    if (!existing) {
+      await ctx.db.patch(counter._id, { value: candidate });
+      return slug;
+    }
+    candidate += 1;
+  }
+}
+
 function toMigrationId(name: string): string {
   const parts = name.split(':');
   return parts[parts.length - 1] ?? name;
@@ -98,11 +129,22 @@ export const rulesets_slug_v1 = migrations.define({
   },
 });
 
+export const faq_item_slug_v1 = migrations.define({
+  table: 'faq_items',
+  batchSize: 50,
+  migrateOne: async (ctx, row) => {
+    if (!missingSlug((row as { slug?: unknown }).slug)) return;
+    const slug = await allocateNextFaqItemSlug(ctx, row.ruleset_id);
+    return { slug };
+  },
+});
+
 export const run = migrations.runner();
 
 export const runDeployMigrations = migrations.runner([
   internal.migrations.groups_slug_v1,
   internal.migrations.rulesets_slug_v1,
+  internal.migrations.faq_item_slug_v1,
 ]);
 
 export const runRequired = mutation({
