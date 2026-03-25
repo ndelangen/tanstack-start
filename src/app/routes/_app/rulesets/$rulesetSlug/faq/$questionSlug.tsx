@@ -111,7 +111,6 @@ function FaqDetailPage() {
   }
 
   const faqItemId = item.id;
-  const rulesetId = item.ruleset.id;
   const isQuestionOwner = profile?.data?.id === item.asked_by;
   const hasUserAnswered = answers.some((a) => a.answered_by === profile?.data?.id);
   const showAddAnswerForm = !!profile?.data?.id && !hasUserAnswered;
@@ -123,7 +122,7 @@ function FaqDetailPage() {
   const handleDeleteQuestion = () => {
     if (!window.confirm('Delete this question and all its answers? This cannot be undone.')) return;
     deleteFaqItem.mutate(faqItemId, {
-      onSuccess: () => navigate({ to: '/rulesets/$id', params: { id: rulesetId } }),
+      onSuccess: () => navigate({ to: '/rulesets/$rulesetSlug', params: { rulesetSlug } }),
     });
   };
 
@@ -171,7 +170,11 @@ function FaqDetailPage() {
 
   return (
     <>
-      <Link to="/rulesets/$id" params={{ id: rulesetId }} className={styles.backLink}>
+      <Link
+        to="/rulesets/$rulesetSlug"
+        params={{ rulesetSlug: item.ruleset.slug }}
+        className={styles.backLink}
+      >
         Back to ruleset
       </Link>
 

@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 
 import { faqItemsByRulesetQueryOptions, useCreateFaqItem } from '@db/faq';
 import { useCurrentProfile } from '@db/profiles';
-import { rulesetDetailQueryOptions, useRuleset } from '@db/rulesets';
+import { rulesetBySlugQueryOptions, useRulesetBySlug } from '@db/rulesets';
 import { Card } from '@app/components/card/Card';
 import {
   FormActions,
@@ -15,11 +15,12 @@ import { Stack } from '@app/components/layout';
 
 import styles from '../../RulesetDetail.module.css';
 
-export const Route = createFileRoute('/_app/rulesets/$id/faq/create')({
+export const Route = createFileRoute('/_app/rulesets/$rulesetSlug/faq/create')({
   loader: async ({ context, params }) => {
-    const rulesetId = params.id;
-    await context.queryClient.ensureQueryData(rulesetDetailQueryOptions(rulesetId));
-    await context.queryClient.ensureQueryData(faqItemsByRulesetQueryOptions(rulesetId));
+    const ruleset = await context.queryClient.ensureQueryData(
+      rulesetBySlugQueryOptions(params.rulesetSlug)
+    );
+    await context.queryClient.ensureQueryData(faqItemsByRulesetQueryOptions(ruleset.id));
   },
   component: FaqCreatePage,
   staticData: {
@@ -35,17 +36,16 @@ export const Route = createFileRoute('/_app/rulesets/$id/faq/create')({
 });
 
 function FaqCreatePage() {
-  const { id } = Route.useParams();
+  const { rulesetSlug } = Route.useParams();
   const navigate = useNavigate();
-  const rulesetId = id;
-  const ruleset = useRuleset(rulesetId);
+  const ruleset = useRulesetBySlug(rulesetSlug);
   const profile = useCurrentProfile();
   const createFaqItem = useCreateFaqItem();
 
   if (!ruleset.data) {
     return null;
   }
-  const rulesetSlug = ruleset.data.slug;
+  const rulesetId = ruleset.data._id;
 
   if (!profile?.data?.id) {
     return (
@@ -54,7 +54,7 @@ function FaqCreatePage() {
           <Link to="/auth/login">Log in</Link> to ask a question.
         </p>
         <p>
-          <Link to="/rulesets/$id" params={{ id }}>
+          <Link to="/rulesets/$rulesetSlug" params={{ rulesetSlug }}>
             Back to ruleset
           </Link>
         </p>
@@ -64,7 +64,11 @@ function FaqCreatePage() {
 
   return (
     <>
-      <Link to="/rulesets/$id" params={{ id }} style={{ display: 'block', marginBottom: '1rem' }}>
+      <Link
+        to="/rulesets/$rulesetSlug"
+        params={{ rulesetSlug }}
+        style={{ display: 'block', marginBottom: '1rem' }}
+      >
         Back to ruleset
       </Link>
       <Card>
@@ -104,11 +108,11 @@ function FaqCreatePage() {
               name="question"
               required
               minLength={1}
-              placeholder="Your question…"
+              placeholder="Your question..."
             />
           </FormField>
-          <FormField label="Your answer (optional—you can add or edit it later)">
-            <MultilineTextField name="answer" rows={3} placeholder="Optional answer…" />
+          <FormField label="Your answer (optional-you can add or edit it later)">
+            <MultilineTextField name="answer" rows={3} placeholder="Optional answer..." />
           </FormField>
           <FormActions>
             <FormButton type="submit" disabled={createFaqItem.isPending}>

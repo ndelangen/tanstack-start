@@ -39,7 +39,10 @@ function CreateRulesetPage() {
             { input: { name: nextName } },
             {
               onSuccess: (entry) => {
-                navigate({ to: '/rulesets/$id', params: { id: String(entry.id) } });
+                navigate({
+                  to: '/rulesets/$rulesetSlug',
+                  params: { rulesetSlug: entry.slug },
+                });
               },
             }
           );

@@ -4,12 +4,8 @@ import { mergeConfig } from 'vite';
 export default defineMain({
   stories: [
     {
-      directory: '../src/app/components/ui',
-      titlePrefix: 'App/UI',
-    },
-    {
-      directory: '../src/app/components/form',
-      titlePrefix: 'App/Form',
+      directory: '../src/app/components',
+      titlePrefix: 'App',
     },
     {
       directory: '../src/game/assets/faction',

@@ -32,8 +32,8 @@ function RulesetsPage() {
           {rulesets.data.map((r) => (
             <BlockLink
               key={r.id}
-              to="/rulesets/$id"
-              params={{ id: String(r.id) }}
+              to="/rulesets/$rulesetSlug"
+              params={{ rulesetSlug: r.slug }}
               className={styles.card}
             >
               <div className={styles.coverSlot}>
