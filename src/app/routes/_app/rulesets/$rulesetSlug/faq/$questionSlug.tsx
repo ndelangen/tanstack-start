@@ -8,11 +8,13 @@ import {
   useDeleteFaqAnswer,
   useDeleteFaqItem,
   useFaqItemByRulesetAndSlug,
+  useSetAcceptedAnswer,
   useUpdateFaqAnswer,
   useUpdateFaqItem,
 } from '@db/faq';
 import { useCurrentProfile } from '@db/profiles';
 import { rulesetBySlugQueryOptions } from '@db/rulesets';
+import { Answer } from '@app/components/faq/Answer';
 import { Card } from '@app/components/card/Card';
 import {
   FormActions,
@@ -61,6 +63,7 @@ function FaqDetailPage() {
   const createFaqAnswer = useCreateFaqAnswer();
   const updateFaqAnswer = useUpdateFaqAnswer();
   const deleteFaqAnswer = useDeleteFaqAnswer();
+  const setAcceptedAnswer = useSetAcceptedAnswer();
 
   const [editingQuestion, setEditingQuestion] = useState(false);
   const [editingAnswerId, setEditingAnswerId] = useState<string | null>(null);
@@ -69,6 +72,12 @@ function FaqDetailPage() {
 
   const item = faqItem.data;
   const answers = Array.isArray(item?.faq_answers) ? item.faq_answers : [];
+  const orderedAnswers =
+    item?.accepted_answer_id == null
+      ? answers
+      : [...answers].sort((a, b) =>
+          a.id === item.accepted_answer_id ? -1 : b.id === item.accepted_answer_id ? 1 : 0
+        );
 
   useEffect(() => {
     if (!item) return;
@@ -319,13 +328,19 @@ function FaqDetailPage() {
           <p className={styles.hintBlock}>You&apos;ve answered. You can edit your answer below.</p>
         )}
 
-        {answers.length > 0 ? (
-          <ul className={styles.answerList}>
-            {answers.map((a) => {
+        {orderedAnswers.length > 0 ? (
+          <Answer.List className={styles.answerList}>
+            {orderedAnswers.map((a) => {
               const isEditing = editingAnswerId === a.id;
               const isUserAnswer = a.answered_by === profile?.data?.id;
+              const isAccepted = item.accepted_answer_id === a.id;
               return (
-                <li key={a.id} id={`faq-answer-${a.id}`} className={styles.answerItem}>
+                <Answer.Item
+                  key={a.id}
+                  id={`faq-answer-${a.id}`}
+                  className={styles.answerItem}
+                  isAccepted={isAccepted}
+                >
                   {isEditing ? (
                     <Stack gap={3}>
                       <FormField label="Edit your answer">
@@ -365,6 +380,7 @@ function FaqDetailPage() {
                     </Stack>
                   ) : (
                     <>
+                      {isAccepted && <span className={styles.answerMeta}>Accepted answer</span>}
                       {isUserAnswer && (
                         <span className={styles.answerMeta}>
                           Your answer-you can edit or delete it
@@ -379,9 +395,45 @@ function FaqDetailPage() {
                       )}
                       <div className={styles.answerContent}>
                         {a.answer}
-                        {item.accepted_answer_id === a.id && ' (accepted)'}
                       </div>
                       <div className={styles.answerActions}>
+                        {isQuestionOwner && !isAccepted && (
+                          <FormTooltip content="Mark as accepted answer">
+                            <FormButton
+                              type="button"
+                              iconOnly
+                              aria-label="Mark as accepted answer"
+                              onClick={() =>
+                                setAcceptedAnswer.mutate({
+                                  faqItemId,
+                                  acceptedAnswerId: a.id,
+                                })
+                              }
+                              disabled={setAcceptedAnswer.isPending}
+                            >
+                              <Check size={16} aria-hidden />
+                            </FormButton>
+                          </FormTooltip>
+                        )}
+                        {isQuestionOwner && isAccepted && (
+                          <FormTooltip content="Unmark accepted answer">
+                            <FormButton
+                              type="button"
+                              variant="secondary"
+                              iconOnly
+                              aria-label="Unmark accepted answer"
+                              onClick={() =>
+                                setAcceptedAnswer.mutate({
+                                  faqItemId,
+                                  acceptedAnswerId: null,
+                                })
+                              }
+                              disabled={setAcceptedAnswer.isPending}
+                            >
+                              <X size={16} aria-hidden />
+                            </FormButton>
+                          </FormTooltip>
+                        )}
                         {canEditAnswer(a) && (
                           <FormTooltip content="Edit your answer">
                             <FormButton
@@ -411,10 +463,10 @@ function FaqDetailPage() {
                       </div>
                     </>
                   )}
-                </li>
+                </Answer.Item>
               );
             })}
-          </ul>
+          </Answer.List>
         ) : (
           <p>No answers yet.</p>
         )}

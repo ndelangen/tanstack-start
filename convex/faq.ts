@@ -44,6 +44,19 @@ function isMissingSlug(value: unknown): boolean {
   return typeof value !== 'string' || value.trim().length === 0;
 }
 
+async function assertAcceptedAnswerBelongsToItem(
+  ctx: QueryCtx | MutationCtx,
+  faqItemId: Id<'faq_items'>,
+  acceptedAnswerId: Id<'faq_answers'> | null
+) {
+  if (acceptedAnswerId === null) return;
+  const accepted = await getFaqAnswer(ctx, acceptedAnswerId);
+  if (!accepted) throw new Error(`FAQ answer ${acceptedAnswerId} not found`);
+  if (accepted.faq_item_id !== faqItemId) {
+    throw new Error('Accepted answer must belong to this question');
+  }
+}
+
 async function allocateNextFaqItemSlug(
   ctx: MutationCtx,
   rulesetId: Id<'rulesets'>
@@ -305,7 +318,10 @@ export const updateItem = mutation({
       }
       patch.question = parsedQuestion.data;
     }
-    if (args.accepted_answer_id !== undefined) patch.accepted_answer_id = args.accepted_answer_id;
+    if (args.accepted_answer_id !== undefined) {
+      await assertAcceptedAnswerBelongsToItem(ctx, item._id, args.accepted_answer_id);
+      patch.accepted_answer_id = args.accepted_answer_id;
+    }
 
     await ctx.db.patch(item._id, patch);
     const updated = await ctx.db.get(item._id);
@@ -327,6 +343,8 @@ export const setAcceptedAnswer = mutation({
     if (!ruleset || ruleset.is_deleted) throw new Error('Ruleset not found');
     const allowed = await canAccessRuleset(ctx, ruleset, userId);
     if (item.asked_by !== userId || !allowed) throw new Error('Not authorized');
+
+    await assertAcceptedAnswerBelongsToItem(ctx, item._id, args.accepted_answer_id);
 
     await ctx.db.patch(item._id, {
       accepted_answer_id: args.accepted_answer_id,
@@ -428,6 +446,13 @@ export const deleteAnswer = mutation({
     if (!item) throw new Error(`FAQ item ${answer.faq_item_id} not found`);
     if (answer.answered_by !== userId && item.asked_by !== userId) {
       throw new Error('Not authorized');
+    }
+
+    if (item.accepted_answer_id === answer._id) {
+      await ctx.db.patch(item._id, {
+        accepted_answer_id: null,
+        updated_at: nowIso(),
+      });
     }
 
     await ctx.db.delete(answer._id);
