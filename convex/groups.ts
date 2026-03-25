@@ -1,9 +1,9 @@
 import { v } from 'convex/values';
 
 import { groupInputSchema } from '../src/app/groups/validation';
+import type { Id } from './_generated/dataModel';
 import type { MutationCtx, QueryCtx } from './_generated/server';
 import { mutation, query } from './_generated/server';
-import type { Id } from './_generated/dataModel';
 import { requireAuthUserId } from './lib/policy';
 import { nowIso, slugify } from './lib/utils';
 

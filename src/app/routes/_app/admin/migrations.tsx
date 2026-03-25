@@ -2,14 +2,14 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { RefreshCw } from 'lucide-react';
 
 import { useCurrentProfile } from '@db/profiles';
+import { Card } from '@app/components/card/Card';
+import { FormActions, FormButton, FormTooltip } from '@app/components/form';
+import { Stack } from '@app/components/layout';
 import {
   useMigrationRunSnapshots,
   useMigrationStatuses,
   useSyncMigrationRuns,
 } from '@app/migrations/db';
-import { Card } from '@app/components/card/Card';
-import { FormActions, FormButton, FormTooltip } from '@app/components/form';
-import { Stack } from '@app/components/layout';
 
 export const Route = createFileRoute('/_app/admin/migrations')({
   component: AdminMigrationsPage,
