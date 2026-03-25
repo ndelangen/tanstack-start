@@ -1,4 +1,5 @@
 import { Migrations } from '@convex-dev/migrations';
+import type { FunctionReference } from 'convex/server';
 import { v } from 'convex/values';
 
 import { components, internal } from './_generated/api';
@@ -7,10 +8,12 @@ import { internalMutation, mutation, query } from './_generated/server';
 import { nowIso, slugify } from './lib/utils';
 import type { MutationCtx, QueryCtx } from './types';
 
-const MIGRATION_IDS = {
+type MigrationRef = FunctionReference<'mutation', 'internal'>;
+
+const MIGRATION_IDS: Record<string, MigrationRef> = {
   groups_slug_v1: internal.migrations.groups_slug_v1,
   rulesets_slug_v1: internal.migrations.rulesets_slug_v1,
-} as const;
+};
 
 type MigrationId = keyof typeof MIGRATION_IDS;
 
@@ -57,7 +60,7 @@ async function resolveUniqueRulesetSlug(
   }
 }
 
-function migrationRefsFor(ids: string[]) {
+function migrationRefsFor(ids: string[]): MigrationRef[] {
   return ids.map((id) => {
     if (!(id in MIGRATION_IDS)) {
       throw new Error(`Unknown migration id: ${id}`);
