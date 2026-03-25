@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import clsx from 'clsx';
-import { ArrowLeft, Pencil } from 'lucide-react';
+import { ArrowLeft, Pencil, UserPlus } from 'lucide-react';
 
 import { factionsByOwnerQueryOptions, useFactionsByOwner } from '@db/factions';
 import {
@@ -106,6 +106,13 @@ function ProfileDetailPage() {
             <FormTooltip content="Edit profile">
               <IconButton variant="secondary" to="/profiles/settings" aria-label="Edit profile">
                 <Pencil size={16} aria-hidden />
+              </IconButton>
+            </FormTooltip>
+          ) : null}
+          {isSelf ? (
+            <FormTooltip content="Start group">
+              <IconButton variant="confirm" to="/groups/create" aria-label="Start group">
+                <UserPlus size={16} aria-hidden />
               </IconButton>
             </FormTooltip>
           ) : null}

@@ -50,23 +50,38 @@ export function useGroupsByCreator(createdBy: string) {
 
 export function useCreateGroup() {
   const mutation = useLiveMutation<{ name: string }, GroupRow>(api.groups.create);
+  const parseGroupInput = (input: { name: string }) => {
+    const parsed = groupInputSchema.safeParse(input);
+    if (!parsed.success) {
+      const msg = parsed.error.issues.map((i) => i.message).join(' ');
+      throw new Error(msg || 'Invalid group input');
+    }
+    return parsed.data;
+  };
 
   return {
     ...mutation,
     mutate: (
       variables: { input: { name: string } },
       options?: { onSuccess?: (group: GroupEntry) => void; onError?: (error: Error) => void }
-    ) =>
-      mutation.mutate(
-        { name: groupInputSchema.parse(variables.input).name },
-        {
-          onSuccess: (group) => options?.onSuccess?.({ ...group, id: group._id }),
-          onError: (error) => options?.onError?.(error),
-        }
-      ),
+    ) => {
+      try {
+        const parsed = parseGroupInput(variables.input);
+        mutation.mutate(
+          { name: parsed.name },
+          {
+            onSuccess: (group) => options?.onSuccess?.({ ...group, id: group._id }),
+            onError: (error) => options?.onError?.(error),
+          }
+        );
+      } catch (error) {
+        options?.onError?.(error instanceof Error ? error : new Error('Invalid group input'));
+      }
+    },
     mutateAsync: async (variables: { input: { name: string } }) => {
+      const parsed = parseGroupInput(variables.input);
       const group = await mutation.mutateAsync({
-        name: groupInputSchema.parse(variables.input).name,
+        name: parsed.name,
       });
       return { ...group, id: group._id };
     },

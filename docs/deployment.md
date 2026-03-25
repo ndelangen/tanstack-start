@@ -54,10 +54,11 @@ Keep the same values in Netlify only if you still plan to run manual Netlify bui
 On every push to `main`:
 1. `bun install --frozen-lockfile`
 2. `bun run convex:deploy`
-3. `bun run app:build`
-4. Deploy `dist/client` to Netlify using API token + site id
+3. `bun run migrations:deploy` (auto-run + await required Convex migrations)
+4. `bun run app:build`
+5. Deploy `dist/client` to Netlify using API token + site id
 
-The Netlify publish step runs only if Convex deploy and build succeed.
+The Netlify publish step runs only if Convex deploy, migration verification, and build succeed.
 
 ## Netlify One-Time Setup
 
@@ -79,6 +80,21 @@ flowchart LR
     Build --> NetlifyDeploy[Deploy dist/client]
     NetlifyDeploy --> Live[Live Site]
 ```
+
+## Convex Breaking Migrations (Required)
+
+For any migration that can invalidate existing Convex documents, follow the required runbook:
+
+- [`docs/convex-migrations.md`](./convex-migrations.md)
+
+Required high-level sequence:
+
+1. Widen schema and deploy compatibility reads/writes.
+2. Auto-run bounded production backfill in deploy workflow.
+3. Verify zero unmigrated rows remain (CI/deploy guard).
+4. Narrow schema and remove temporary fallback/migration code.
+
+Do not deploy the narrowing schema before verification is complete.
 
 ## Go-Live Smoke Test
 
