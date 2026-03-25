@@ -19,13 +19,15 @@ Quick reference for understanding and working with the codebase.
 
 ```bash
 # Development
-npm run app:dev           # Start dev server (port 3000)
+npm run app:dev           # Dev server (port 3000)
+npm run app:dev:raw       # Alias of app:dev
 npm run app:build         # Build for production
 npm run app:preview       # Preview production build locally
 
 # Database
-npm run convex:dev       # Start Convex dev runtime
+npm run convex:dev       # Strict Convex dev start: migration sync + Convex runtime
 npm run convex:deploy    # Deploy Convex functions/schema
+npm run migrations:run-local-required # Force local required migration catch-up
 
 # Code quality
 npm run biome:check      # Lint and format
@@ -91,3 +93,5 @@ Dune card/faction rendering, Storybook, and static art live here. `generated/` h
 - [Membership](./membership.md) - Group membership approval flow
 - [Deployment](./deployment.md) - Netlify deployment process
 - [Convex Migrations](./convex-migrations.md) - Required widen/migrate/verify/narrow runbook + CI/deploy guards
+- [UI Component Hierarchy](./technical/ui-component-hierarchy.md) - Composition layers, dependency direction, CSS ownership
+- [UI Design Decisions](./technical/ui-design-decisions.md) - Accepted UI semantics and consistency defaults

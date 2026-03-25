@@ -62,12 +62,19 @@ export function ProfileFaqQuestionsAsked({ items }: { items: FaqItemAskedByWithR
             <span aria-hidden>·</span>
             <time dateTime={item.created_at}>{formatRelativeDate(item.created_at)}</time>
           </div>
-          <Link
-            to="/rulesets/$id/faq/$faqId"
-            params={{ id: String(item.ruleset_id), faqId: String(item.id) }}
-          >
+          {item.ruleset.slug && item.slug ? (
+            <Link
+              to="/rulesets/$rulesetSlug/faq/$questionSlug"
+              params={{
+                rulesetSlug: item.ruleset.slug,
+                questionSlug: item.slug,
+              }}
+            >
+              <span className={faqStyles.question}>{item.question}</span>
+            </Link>
+          ) : (
             <span className={faqStyles.question}>{item.question}</span>
-          </Link>
+          )}
         </FaqItemListRow>
       ))}
     </FaqItemList>
@@ -112,15 +119,19 @@ export function ProfileFaqAnswersGiven({
 
             <p className={faqStyles.parentQuestion}>{row.faq_item.question}</p>
 
-            <Link
-              to="/rulesets/$id/faq/$faqId"
-              params={{
-                id: String(row.faq_item.ruleset_id),
-                faqId: String(row.faq_item.id),
-              }}
-            >
+            {row.ruleset.slug && row.faq_item.slug ? (
+              <Link
+                to="/rulesets/$rulesetSlug/faq/$questionSlug"
+                params={{
+                  rulesetSlug: row.ruleset.slug,
+                  questionSlug: row.faq_item.slug,
+                }}
+              >
+                <p className={faqStyles.answerPreview}>{truncate(row.answer)}</p>
+              </Link>
+            ) : (
               <p className={faqStyles.answerPreview}>{truncate(row.answer)}</p>
-            </Link>
+            )}
 
             <div className={styles.answerFooter}>
               {isPicked ? (

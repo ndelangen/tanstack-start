@@ -25,6 +25,7 @@ export const rulesetKeys = {
   lists: () => [...rulesetKeys.all, 'list'] as const,
   list: (filters: object) => [...rulesetKeys.lists(), filters] as const,
   detail: (id: string) => [...rulesetKeys.all, 'detail', id] as const,
+  detailBySlug: (slug: string) => [...rulesetKeys.all, 'detailBySlug', slug] as const,
   factions: (rulesetId: string) => [...rulesetKeys.detail(rulesetId), 'factions'] as const,
   byFaction: (factionId: string) => [...rulesetKeys.all, 'byFaction', factionId] as const,
   canAccess: (rulesetId: string) => [...rulesetKeys.all, 'canAccess', rulesetId] as const,
@@ -49,6 +50,20 @@ export function rulesetDetailQueryOptions(id: string) {
     queryKey: rulesetKeys.detail(id),
     queryFn: async () => {
       const entry = await db.query<RulesetRow>(api.rulesets.get, { id });
+      return {
+        ...entry,
+        id: entry._id,
+        name: rulesetInputSchema.parse({ name: entry.name }).name,
+      };
+    },
+  });
+}
+
+export function rulesetBySlugQueryOptions(slug: string) {
+  return queryOptions({
+    queryKey: rulesetKeys.detailBySlug(slug),
+    queryFn: async () => {
+      const entry = await db.query<RulesetRow>(api.rulesets.getBySlug, { slug });
       return {
         ...entry,
         id: entry._id,
@@ -127,6 +142,24 @@ export function useRuleset(id: string) {
     api.rulesets.get,
     { id },
     { enabled: Boolean(id) }
+  );
+  return {
+    ...result,
+    data: result.data
+      ? {
+          ...result.data,
+          id: result.data._id,
+          name: rulesetInputSchema.parse({ name: result.data.name }).name,
+        }
+      : undefined,
+  };
+}
+
+export function useRulesetBySlug(slug: string) {
+  const result = useLiveQuery<RulesetRow, { slug: string }>(
+    api.rulesets.getBySlug,
+    { slug },
+    { enabled: Boolean(slug) }
   );
   return {
     ...result,

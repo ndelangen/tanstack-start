@@ -11,6 +11,11 @@
       "requires": []
     },
     {
+      "id": "faq_item_slug_v1",
+      "phase": "widen",
+      "requires": []
+    },
+    {
       "id": "groups_slug_narrow",
       "phase": "narrow",
       "requires": ["groups_slug_v1"]
@@ -19,6 +24,11 @@
       "id": "rulesets_slug_narrow",
       "phase": "narrow",
       "requires": ["rulesets_slug_v1"]
+    },
+    {
+      "id": "faq_item_slug_narrow",
+      "phase": "narrow",
+      "requires": ["faq_item_slug_v1"]
     }
   ]
 }

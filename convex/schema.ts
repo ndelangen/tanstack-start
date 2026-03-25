@@ -97,6 +97,7 @@ export default defineSchema({
     .index('by_ruleset_faction', ['ruleset_id', 'faction_id']),
   faq_items: defineTable({
     ruleset_id: v.id('rulesets'),
+    slug: v.optional(v.string()),
     question: v.string(),
     asked_by: v.id('users'),
     created_at: v.string(),
@@ -104,6 +105,7 @@ export default defineSchema({
     accepted_answer_id: v.union(v.id('faq_answers'), v.null()),
   })
     .index('by_ruleset_created', ['ruleset_id', 'created_at'])
+    .index('by_ruleset_slug', ['ruleset_id', 'slug'])
     .index('by_asked_by_created', ['asked_by', 'created_at']),
   faq_answers: defineTable({
     faq_item_id: v.id('faq_items'),

@@ -1,17 +1,21 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Check, MessageSquarePlus, Pencil, Trash2, X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
+  faqItemDetailByRulesetAndSlugQueryOptions,
   useCreateFaqAnswer,
   useDeleteFaqAnswer,
   useDeleteFaqItem,
-  useFaqItem,
+  useFaqItemByRulesetAndSlug,
+  useSetAcceptedAnswer,
   useUpdateFaqAnswer,
   useUpdateFaqItem,
 } from '@db/faq';
-import { useCurrentProfile, useProfile } from '@db/profiles';
+import { useCurrentProfile } from '@db/profiles';
+import { rulesetBySlugQueryOptions } from '@db/rulesets';
 import { Card } from '@app/components/card/Card';
+import { Answer } from '@app/components/faq/Answer';
 import {
   FormActions,
   FormButton,
@@ -21,10 +25,20 @@ import {
 } from '@app/components/form';
 import { Stack } from '@app/components/layout';
 
-import styles from './FaqDetail.module.css';
+import styles from '../../$id/faq/FaqDetail.module.css';
 
-export const Route = createFileRoute('/_app/rulesets/$id/faq/$faqId')({
-  loader: async () => {},
+export const Route = createFileRoute('/_app/rulesets/$rulesetSlug/faq/$questionSlug')({
+  loader: async ({ context, params }) => {
+    try {
+      await context.queryClient.ensureQueryData(rulesetBySlugQueryOptions(params.rulesetSlug));
+      await context.queryClient.ensureQueryData(
+        faqItemDetailByRulesetAndSlugQueryOptions(params.rulesetSlug, params.questionSlug)
+      );
+      return { notFound: false };
+    } catch {
+      return { notFound: true };
+    }
+  },
   component: FaqDetailPage,
   staticData: {
     PageHead: () => (
@@ -39,30 +53,65 @@ export const Route = createFileRoute('/_app/rulesets/$id/faq/$faqId')({
 });
 
 function FaqDetailPage() {
-  const { id, faqId } = Route.useParams();
+  const { rulesetSlug, questionSlug } = Route.useParams();
+  const loaderData = Route.useLoaderData();
   const navigate = useNavigate();
-  const faqItemId = faqId;
-  const faqItem = useFaqItem(faqItemId);
+  const faqItem = useFaqItemByRulesetAndSlug(rulesetSlug, questionSlug);
   const profile = useCurrentProfile();
-  const askerId = faqItem.data?.asked_by;
-  const askerProfile = useProfile(askerId ?? '', { enabled: !!askerId });
   const updateFaqItem = useUpdateFaqItem();
   const deleteFaqItem = useDeleteFaqItem();
   const createFaqAnswer = useCreateFaqAnswer();
   const updateFaqAnswer = useUpdateFaqAnswer();
   const deleteFaqAnswer = useDeleteFaqAnswer();
+  const setAcceptedAnswer = useSetAcceptedAnswer();
 
   const [editingQuestion, setEditingQuestion] = useState(false);
   const [editingAnswerId, setEditingAnswerId] = useState<string | null>(null);
   const [editQuestionValue, setEditQuestionValue] = useState('');
   const [editAnswerValue, setEditAnswerValue] = useState('');
 
-  if (!faqItem.data) {
+  const item = faqItem.data;
+  const answers = Array.isArray(item?.faq_answers) ? item.faq_answers : [];
+  const orderedAnswers =
+    item?.accepted_answer_id == null
+      ? answers
+      : [...answers].sort((a, b) =>
+          a.id === item.accepted_answer_id ? -1 : b.id === item.accepted_answer_id ? 1 : 0
+        );
+
+  useEffect(() => {
+    if (!item) return;
+    const scrollToHash = () => {
+      const targetSlug = window.location.hash.slice(1).trim();
+      if (!targetSlug) return;
+      const answer = answers.find((row) => row.answerer_profile?.slug === targetSlug);
+      if (!answer) return;
+      const node = document.getElementById(`faq-answer-${answer.id}`);
+      node?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    scrollToHash();
+    window.addEventListener('hashchange', scrollToHash);
+    return () => window.removeEventListener('hashchange', scrollToHash);
+  }, [item, answers]);
+
+  if (loaderData?.notFound) {
+    return (
+      <Card>
+        <h2>Question not found</h2>
+        <p>This FAQ question does not exist in this ruleset.</p>
+        <p>
+          <Link to="/rulesets">Back to rulesets</Link>
+        </p>
+      </Card>
+    );
+  }
+
+  if (!item) {
     return null;
   }
 
-  const item = faqItem.data;
-  const answers = Array.isArray(item.faq_answers) ? item.faq_answers : [];
+  const faqItemId = item.id;
+  const rulesetId = item.ruleset.id;
   const isQuestionOwner = profile?.data?.id === item.asked_by;
   const hasUserAnswered = answers.some((a) => a.answered_by === profile?.data?.id);
   const showAddAnswerForm = !!profile?.data?.id && !hasUserAnswered;
@@ -74,7 +123,7 @@ function FaqDetailPage() {
   const handleDeleteQuestion = () => {
     if (!window.confirm('Delete this question and all its answers? This cannot be undone.')) return;
     deleteFaqItem.mutate(faqItemId, {
-      onSuccess: () => navigate({ to: '/rulesets/$id', params: { id } }),
+      onSuccess: () => navigate({ to: '/rulesets/$id', params: { id: rulesetId } }),
     });
   };
 
@@ -122,7 +171,7 @@ function FaqDetailPage() {
 
   return (
     <>
-      <Link to="/rulesets/$id" params={{ id }} className={styles.backLink}>
+      <Link to="/rulesets/$id" params={{ id: rulesetId }} className={styles.backLink}>
         Back to ruleset
       </Link>
 
@@ -168,21 +217,21 @@ function FaqDetailPage() {
           ) : (
             <>
               <div className={styles.questionHeader}>
-                {askerProfile.data && (
+                {item.asker_profile && (
                   <Link
                     to="/profiles/$slug"
-                    params={{ slug: askerProfile.data.slug }}
+                    params={{ slug: item.asker_profile.slug }}
                     style={{ flexShrink: 0 }}
                   >
-                    {askerProfile.data.avatar_url ? (
+                    {item.asker_profile.avatar_url ? (
                       <img
-                        src={askerProfile.data.avatar_url}
-                        alt={askerProfile.data.username ?? 'Avatar'}
+                        src={item.asker_profile.avatar_url}
+                        alt={item.asker_profile.username ?? 'Avatar'}
                         className={styles.avatar}
                       />
                     ) : (
                       <span className={styles.avatarPlaceholder}>
-                        {askerProfile.data.username
+                        {item.asker_profile.username
                           ?.slice(0, 2)
                           .toUpperCase()
                           .replace(/[^A-Z]/g, '') ?? '?'}
@@ -192,11 +241,11 @@ function FaqDetailPage() {
                 )}
                 <div>
                   <h2 className={styles.questionTitle}>{item.question}</h2>
-                  {askerProfile.data && (
+                  {item.asker_profile && (
                     <span className={styles.askedBy}>
                       Asked by{' '}
-                      <Link to="/profiles/$slug" params={{ slug: askerProfile.data.slug }}>
-                        {askerProfile.data.username ?? 'Unknown'}
+                      <Link to="/profiles/$slug" params={{ slug: item.asker_profile.slug }}>
+                        {item.asker_profile.username ?? 'Unknown'}
                       </Link>
                     </span>
                   )}
@@ -251,7 +300,7 @@ function FaqDetailPage() {
             }}
           >
             <FormField
-              hint="Add your answer (1 per person—you can edit it later)"
+              hint="Add your answer (1 per person-you can edit it later)"
               error={createFaqAnswer.isError ? createFaqAnswer.error?.message : undefined}
             >
               <MultilineTextField
@@ -259,7 +308,7 @@ function FaqDetailPage() {
                 rows={3}
                 required
                 minLength={1}
-                placeholder="Your answer…"
+                placeholder="Your answer..."
               />
             </FormField>
             <FormActions>
@@ -281,13 +330,19 @@ function FaqDetailPage() {
           <p className={styles.hintBlock}>You&apos;ve answered. You can edit your answer below.</p>
         )}
 
-        {answers.length > 0 ? (
-          <ul className={styles.answerList}>
-            {answers.map((a) => {
+        {orderedAnswers.length > 0 ? (
+          <Answer.List className={styles.answerList}>
+            {orderedAnswers.map((a) => {
               const isEditing = editingAnswerId === a.id;
               const isUserAnswer = a.answered_by === profile?.data?.id;
+              const isAccepted = item.accepted_answer_id === a.id;
               return (
-                <li key={a.id} className={styles.answerItem}>
+                <Answer.Item
+                  key={a.id}
+                  id={`faq-answer-${a.id}`}
+                  className={styles.answerItem}
+                  isAccepted={isAccepted}
+                >
                   {isEditing ? (
                     <Stack gap={3}>
                       <FormField label="Edit your answer">
@@ -327,16 +382,58 @@ function FaqDetailPage() {
                     </Stack>
                   ) : (
                     <>
+                      {isAccepted && <span className={styles.answerMeta}>Accepted answer</span>}
                       {isUserAnswer && (
                         <span className={styles.answerMeta}>
-                          Your answer—you can edit or delete it
+                          Your answer-you can edit or delete it
                         </span>
                       )}
-                      <div className={styles.answerContent}>
-                        {a.answer}
-                        {item.accepted_answer_id === a.id && ' (accepted)'}
-                      </div>
+                      {a.answerer_profile && (
+                        <span className={styles.answerMeta}>
+                          <Link to="/profiles/$slug" params={{ slug: a.answerer_profile.slug }}>
+                            {a.answerer_profile.username ?? 'Unknown'}
+                          </Link>
+                        </span>
+                      )}
+                      <div className={styles.answerContent}>{a.answer}</div>
                       <div className={styles.answerActions}>
+                        {isQuestionOwner && !isAccepted && (
+                          <FormTooltip content="Mark as accepted answer">
+                            <FormButton
+                              type="button"
+                              iconOnly
+                              aria-label="Mark as accepted answer"
+                              onClick={() =>
+                                setAcceptedAnswer.mutate({
+                                  faqItemId,
+                                  acceptedAnswerId: a.id,
+                                })
+                              }
+                              disabled={setAcceptedAnswer.isPending}
+                            >
+                              <Check size={16} aria-hidden />
+                            </FormButton>
+                          </FormTooltip>
+                        )}
+                        {isQuestionOwner && isAccepted && (
+                          <FormTooltip content="Unmark accepted answer">
+                            <FormButton
+                              type="button"
+                              variant="secondary"
+                              iconOnly
+                              aria-label="Unmark accepted answer"
+                              onClick={() =>
+                                setAcceptedAnswer.mutate({
+                                  faqItemId,
+                                  acceptedAnswerId: null,
+                                })
+                              }
+                              disabled={setAcceptedAnswer.isPending}
+                            >
+                              <X size={16} aria-hidden />
+                            </FormButton>
+                          </FormTooltip>
+                        )}
                         {canEditAnswer(a) && (
                           <FormTooltip content="Edit your answer">
                             <FormButton
@@ -366,10 +463,10 @@ function FaqDetailPage() {
                       </div>
                     </>
                   )}
-                </li>
+                </Answer.Item>
               );
             })}
-          </ul>
+          </Answer.List>
         ) : (
           <p>No answers yet.</p>
         )}
