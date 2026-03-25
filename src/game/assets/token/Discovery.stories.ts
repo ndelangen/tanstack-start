@@ -1,4 +1,5 @@
-import preview from '@storybook/preview';
+import preview from '@sb/preview';
+
 import { CustomToken } from './Custom';
 
 const meta = preview.meta({

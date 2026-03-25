@@ -1,5 +1,4 @@
 import { defineMain } from '@storybook/react-vite/node';
-import { mergeConfig } from 'vite';
 
 export default defineMain({
   stories: [
@@ -44,10 +43,26 @@ export default defineMain({
     },
   ],
   async viteFinal(config) {
-    return mergeConfig(config, {
-      resolve: {
-        ...({ tsconfigPaths: true } as Record<string, unknown>),
-      },
-    });
+    config.plugins = (
+      config.plugins?.map((plugin) => {
+        try {
+          if (Array.isArray(plugin)) {
+            return plugin.filter((p) => p.name.toLowerCase().includes('tanstack') === false);
+          }
+          if (!plugin) {
+            return false;
+          }
+          if (plugin.name.toLowerCase().includes('tanstack')) {
+            return false;
+          }
+          return plugin;
+        } catch (_error) {
+          // console.error('Error filtering plugins', error, plugin);
+          return false;
+        }
+      }) ?? []
+    ).filter((p) => !!p);
+
+    return config;
   },
 });

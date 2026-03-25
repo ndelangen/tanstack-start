@@ -1,4 +1,5 @@
-import preview from '@storybook/preview';
+import preview from '@sb/preview';
+
 import { Outline } from './Outline';
 import { Text } from './Text';
 

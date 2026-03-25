@@ -1,6 +1,6 @@
+import preview from '@sb/preview';
 import { ArrowLeft, Save, Trash2 } from 'lucide-react';
 
-import preview from '@storybook/preview';
 import { IconButton, IconButtonLink } from './IconButton';
 
 const meta = preview.meta({

@@ -1,6 +1,6 @@
+import preview from '@sb/preview';
 import { useState } from 'react';
 
-import preview from '@storybook/preview';
 import { AssetAutocomplete } from './AssetAutocomplete';
 
 const meta = preview.meta({

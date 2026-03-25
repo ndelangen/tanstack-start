@@ -1,4 +1,5 @@
-import preview from '@storybook/preview';
+import preview from '@sb/preview';
+
 import styles from '../Rulebook.module.css';
 import { Page } from '../utils/Page';
 import * as About from './About';

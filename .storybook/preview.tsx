@@ -1,10 +1,14 @@
 import addonDocs from '@storybook/addon-docs';
 import { definePreview } from '@storybook/react-vite';
+import { sb } from 'storybook/test';
 
 import '../src/app/styles/fonts.css';
 import '../src/app/styles/tokens.css';
 
 import * as sizes from '../src/game/data/sizes';
+
+sb.mock(import('@tanstack/react-router'));
+sb.mock(import('@tanstack/react-query'));
 
 export default definePreview({
   addons: [addonDocs()],
@@ -53,7 +57,6 @@ export default definePreview({
   decorators: [
     (Story, { globals }) => {
       const { viewport } = globals;
-      console.log({ viewport });
       const viewportValue = viewport.value as keyof typeof sizes;
       let size: typeof sizes.page | undefined;
       if (viewportValue === 'page') {
