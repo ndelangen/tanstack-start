@@ -63,7 +63,7 @@
   padding: 0.5rem 0;
 }
 
-.answerItem[data-accepted='true'] {
+.answerItem[data-accepted="true"] {
   border-left: 2px solid var(--color-accent, #4b82f8);
   padding-left: 0.5rem;
 }

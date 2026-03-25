@@ -14,8 +14,8 @@ import {
 } from '@db/faq';
 import { useCurrentProfile } from '@db/profiles';
 import { rulesetBySlugQueryOptions } from '@db/rulesets';
-import { Answer } from '@app/components/faq/Answer';
 import { Card } from '@app/components/card/Card';
+import { Answer } from '@app/components/faq/Answer';
 import {
   FormActions,
   FormButton,
@@ -231,8 +231,10 @@ function FaqDetailPage() {
                       />
                     ) : (
                       <span className={styles.avatarPlaceholder}>
-                        {item.asker_profile.username?.slice(0, 2).toUpperCase().replace(/[^A-Z]/g, '') ??
-                          '?'}
+                        {item.asker_profile.username
+                          ?.slice(0, 2)
+                          .toUpperCase()
+                          .replace(/[^A-Z]/g, '') ?? '?'}
                       </span>
                     )}
                   </Link>
@@ -393,9 +395,7 @@ function FaqDetailPage() {
                           </Link>
                         </span>
                       )}
-                      <div className={styles.answerContent}>
-                        {a.answer}
-                      </div>
+                      <div className={styles.answerContent}>{a.answer}</div>
                       <div className={styles.answerActions}>
                         {isQuestionOwner && !isAccepted && (
                           <FormTooltip content="Mark as accepted answer">
