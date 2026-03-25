@@ -142,11 +142,6 @@ export function Page({ head, content }: PageProps) {
               <Link to="/assets" activeProps={{ className: styles.navLinkActive }}>
                 Assets
               </Link>
-              {profile.data && (
-                <Link to="/admin/migrations" activeProps={{ className: styles.navLinkActive }}>
-                  Admin
-                </Link>
-              )}
             </div>
             <div className={styles.auth}>
               <AuthNav />
