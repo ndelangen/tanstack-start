@@ -10,7 +10,8 @@ import {
   useCurrentProfile,
   useProfilesAll,
 } from '@db/profiles';
-import { FormButton, FormTooltip } from '@app/components/generic/form';
+import { FormButton } from '@app/components/form/FormButton';
+import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 

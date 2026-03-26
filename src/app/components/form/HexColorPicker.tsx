@@ -93,7 +93,6 @@ export function HexColorPicker({
     >
       <TextField
         id={textId}
-        unstyled
         className={styles.hexColorHexInput}
         type="text"
         value={value}

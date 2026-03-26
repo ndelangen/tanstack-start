@@ -3,13 +3,11 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { faqItemsByRulesetQueryOptions, useCreateFaqItem } from '@db/faq';
 import { useCurrentProfile } from '@db/profiles';
 import { rulesetBySlugQueryOptions, useRulesetBySlug } from '@db/rulesets';
-import {
-  FormActions,
-  FormButton,
-  FormField,
-  MultilineTextField,
-  TextField,
-} from '@app/components/generic/form';
+import { FormActions } from '@app/components/form/FormActions';
+import { FormButton } from '@app/components/form/FormButton';
+import { FormField } from '@app/components/form/FormField';
+import { MultilineTextField } from '@app/components/form/MultilineTextField';
+import { TextField } from '@app/components/form/TextField';
 import { Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 

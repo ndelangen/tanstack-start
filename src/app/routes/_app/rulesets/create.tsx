@@ -3,7 +3,10 @@ import { Plus } from 'lucide-react';
 import { useState } from 'react';
 
 import { useCreateRuleset } from '@db/rulesets';
-import { FormActions, FormButton, FormField, TextField } from '@app/components/generic/form';
+import { FormActions } from '@app/components/form/FormActions';
+import { FormButton } from '@app/components/form/FormButton';
+import { FormField } from '@app/components/form/FormField';
+import { TextField } from '@app/components/form/TextField';
 import { Stack } from '@app/components/generic/layout';
 
 export const Route = createFileRoute('/_app/rulesets/create')({

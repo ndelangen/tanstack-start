@@ -13,7 +13,9 @@ import {
   useRulesetFactionsWithDetails,
 } from '@db/rulesets';
 import { FaqList } from '@app/components/faq/FaqList';
-import { FormActions, FormButton, FormTooltip } from '@app/components/generic/form';
+import { FormActions } from '@app/components/form/FormActions';
+import { FormButton } from '@app/components/form/FormButton';
+import { FormTooltip } from '@app/components/form/FormTooltip';
 import { BlockCover } from '@app/components/generic/surfaces';
 import { Card } from '@app/components/generic/surfaces/Card';
 

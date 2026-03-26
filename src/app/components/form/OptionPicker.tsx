@@ -4,6 +4,7 @@ import { Check, ChevronDown } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import styles from './Form.module.css';
+import type { TextFieldAppearance } from './TextField';
 import { textFieldClassNames } from './TextField';
 
 export interface OptionPickerOption {
@@ -18,6 +19,7 @@ interface OptionPickerProps {
   placeholder?: string;
   ariaLabel?: string;
   triggerClassName?: string;
+  appearance?: TextFieldAppearance;
 }
 
 export function OptionPicker({
@@ -27,12 +29,17 @@ export function OptionPicker({
   placeholder = 'Select…',
   ariaLabel,
   triggerClassName,
+  appearance,
 }: OptionPickerProps) {
   return (
     <Select.Root value={value} onValueChange={onValueChange}>
       <Select.Trigger
         className={clsx(
-          textFieldClassNames({ variant: 'input', padded: false }),
+          textFieldClassNames({
+            variant: 'input',
+            padded: false,
+            embedded: appearance === 'embedded',
+          }),
           styles.selectTrigger,
           triggerClassName
         )}

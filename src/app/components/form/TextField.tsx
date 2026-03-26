@@ -4,33 +4,43 @@ import { type ComponentPropsWithoutRef, forwardRef } from 'react';
 import styles from './TextField.module.css';
 
 export type TextFieldVariant = 'input' | 'textarea';
+export type TextFieldAppearance = 'embedded';
 
 export function textFieldClassNames(options?: {
   variant?: TextFieldVariant;
   padded?: boolean;
+  embedded?: boolean;
 }): string {
   const variant = options?.variant ?? 'input';
   const padded = options?.padded ?? false;
-  return clsx(variant === 'textarea' ? styles.textarea : styles.input, padded && styles.padded);
+  const embedded = options?.embedded ?? false;
+  return clsx(
+    variant === 'textarea' ? styles.textarea : styles.input,
+    padded && styles.padded,
+    embedded && styles.embedded
+  );
 }
 
 export type TextFieldProps = Omit<ComponentPropsWithoutRef<'input'>, 'className'> & {
   className?: string;
-  /** Skip input chrome when nested in composed shells like PrefixedField. */
-  unstyled?: boolean;
-  padded?: boolean;
+  appearance?: TextFieldAppearance;
 };
 
 export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function TextField(
-  { className, padded = true, unstyled = false, ...rest },
+  { className, appearance, ...rest },
   ref
 ) {
   return (
     <input
       ref={ref}
-      className={
-        unstyled ? clsx(className) : clsx(textFieldClassNames({ variant: 'input', padded }), className)
-      }
+      className={clsx(
+        textFieldClassNames({
+          variant: 'input',
+          padded: true,
+          embedded: appearance === 'embedded',
+        }),
+        className
+      )}
       {...rest}
     />
   );

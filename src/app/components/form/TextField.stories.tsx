@@ -13,14 +13,6 @@ export const Default = meta.story({
   },
 });
 
-export const Unpadded = meta.story({
-  args: {
-    padded: false,
-    placeholder: 'No inner padding',
-    type: 'text',
-  },
-});
-
 export const Invalid = meta.story({
   args: {
     'aria-invalid': true,

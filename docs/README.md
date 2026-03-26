@@ -40,6 +40,13 @@ npm run capture          # Screenshots/PDFs (requires storybook-static from buil
 
 ## Common Workflows
 
+### Writing Stories
+
+- Stories should render the component the story file is for.
+- Avoid wrappers unless required to demonstrate that component's own capability.
+- Prefer args-only stories over custom `render` functions.
+- For controlled components in this repo, use non-interactive args-only examples with static values and noop callbacks.
+
 ### Adding a New Domain
 
 1. Create Zod schema in `src/app/domain-name/validation.ts` (or `src/game/schema/` for game-domain types):

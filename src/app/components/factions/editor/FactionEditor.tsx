@@ -15,7 +15,12 @@ import {
 import { useGroupsAll } from '@db/groups';
 import { useUserGroupMemberships } from '@db/members';
 import { useCurrentProfile, useProfilesAll } from '@db/profiles';
-import { FormActions, FormButton, FormPopover, FormTooltip } from '@app/components/generic/form';
+import { FormActions } from '@app/components/form/FormActions';
+import { FormButton } from '@app/components/form/FormButton';
+import { FormField } from '@app/components/form/FormField';
+import { FormPopover } from '@app/components/form/FormPopover';
+import { FormTooltip } from '@app/components/form/FormTooltip';
+import { SuggestField } from '@app/components/form/SuggestField';
 import { Token as FactionToken } from '@game/assets/faction/token/Token';
 import {
   FactionInputSchema,
@@ -23,7 +28,6 @@ import {
   factionSlugBaseFromName,
 } from '@game/schema/faction';
 
-import { AssetAutocomplete as TypeSuggestPicker } from './AssetAutocomplete';
 import styles from './FactionEditor.module.css';
 import { FactionFormFields } from './FactionFormFields';
 import { FactionSheetPreviewIframe } from './FactionSheetPreviewIframe';
@@ -366,17 +370,18 @@ export function FactionEditor({
                   No different faction is available to load right now.
                 </p>
               ) : (
-                <TypeSuggestPicker
-                  id="faction-load"
-                  label="Search factions"
-                  value={loadFactionId}
-                  onChange={handleLoadFaction}
-                  options={factionLoadOptions}
-                  optionToLabel={factionOptionLabel}
-                  optionToSearchText={factionOptionSearchText}
-                  renderOption={renderFactionOption}
-                  placeholder="Type name, owner, group, or token..."
-                />
+                <FormField label="Search factions" htmlFor="faction-load">
+                  <SuggestField
+                    id="faction-load"
+                    value={loadFactionId}
+                    onChange={handleLoadFaction}
+                    options={factionLoadOptions}
+                    optionToLabel={factionOptionLabel}
+                    optionToSearchText={factionOptionSearchText}
+                    renderOption={renderFactionOption}
+                    placeholder="Type name, owner, group, or token..."
+                  />
+                </FormField>
               )}
             </div>
           </FormPopover>
@@ -427,17 +432,18 @@ export function FactionEditor({
                   <p className={styles.loadFactionHint}>No groups are available yet.</p>
                 ) : (
                   <>
-                    <TypeSuggestPicker
-                      id="faction-group"
-                      label="Search groups"
-                      value={selectedGroupId}
-                      onChange={setSelectedGroupId}
-                      options={groupOptions}
-                      optionToLabel={groupOptionLabel}
-                      optionToSearchText={groupOptionSearchText}
-                      renderOption={renderGroupOption}
-                      placeholder="Type group name or slug..."
-                    />
+                    <FormField label="Search groups" htmlFor="faction-group">
+                      <SuggestField
+                        id="faction-group"
+                        value={selectedGroupId}
+                        onChange={setSelectedGroupId}
+                        options={groupOptions}
+                        optionToLabel={groupOptionLabel}
+                        optionToSearchText={groupOptionSearchText}
+                        renderOption={renderGroupOption}
+                        placeholder="Type group name or slug..."
+                      />
+                    </FormField>
                     <FormActions>
                       <FormTooltip content="Set selected group">
                         <FormButton

@@ -1,7 +1,7 @@
 import preview from '@sb/preview';
 import { ArrowLeft, Save, Trash2 } from 'lucide-react';
 
-import { IconButton, IconButtonLink } from './IconButton';
+import { IconButton } from './IconButton';
 
 const meta = preview.meta({
   component: IconButton,
@@ -37,15 +37,5 @@ export const NavLink = meta.story({
     children: <ArrowLeft size={16} aria-hidden />,
     to: '/profiles',
     variant: 'nav',
-  },
-});
-
-export const ExplicitIconButtonLink = meta.story({
-  render: function ExplicitIconButtonLinkDemo() {
-    return (
-      <IconButtonLink to="/profiles" variant="nav" aria-label="Back to profiles">
-        <ArrowLeft size={16} aria-hidden />
-      </IconButtonLink>
-    );
   },
 });

@@ -36,24 +36,22 @@ import {
 } from 'react';
 
 import type { Faction } from '@db/factions';
-import {
-  FormButton,
-  FormField,
-  FormPopover,
-  FormTabs,
-  FormTooltip,
-  FormUnitToolbar,
-  HexColorPicker,
-  MultilineTextField,
-  OptionPicker,
-  PrefixedField,
-  TextField,
-} from '@app/components/generic/form';
+import { ColorLayerField } from '@app/components/form/ColorLayerField';
+import { FormButton } from '@app/components/form/FormButton';
+import { FormField } from '@app/components/form/FormField';
+import { FormPopover } from '@app/components/form/FormPopover';
+import { FormTabs } from '@app/components/form/FormTabs';
+import { FormTooltip } from '@app/components/form/FormTooltip';
+import { FormUnitToolbar } from '@app/components/form/FormUnitToolbar';
+import { HexColorPicker } from '@app/components/form/HexColorPicker';
+import { MultilineTextField } from '@app/components/form/MultilineTextField';
+import { OptionPicker } from '@app/components/form/OptionPicker';
+import { PrefixedField } from '@app/components/form/PrefixedField';
+import { SuggestField } from '@app/components/form/SuggestField';
+import { TextField } from '@app/components/form/TextField';
 import { DECAL, GENERIC, ICON, LEADERS, LOGO, TROOP, TROOP_MODIFIER } from '@game/data/generated';
 import { TTSColor } from '@game/schema/faction';
 
-import { AssetAutocomplete as TypeSuggestPicker } from './AssetAutocomplete';
-import { BackgroundColorSlot as ColorPicker } from './BackgroundColorSlot';
 import styles from './FactionEditor.module.css';
 import { type FactionEditorSectionId, useEditorAccordionHash } from './useEditorAccordionHash';
 
@@ -96,6 +94,10 @@ function isPreviewableAssetPath(path: string): boolean {
 function assetPathToPublicUrl(path: string): string {
   const p = path.trim().replace(/^\/+/, '');
   return `/${p}`;
+}
+
+function assetOptionToPreviewSrc(path: string): string | null {
+  return isPreviewableAssetPath(path) ? assetPathToPublicUrl(path) : null;
 }
 
 function clampDecalOffset(n: number): number {
@@ -462,14 +464,16 @@ function TroopSideFields({
         </form.Field>
         <form.Field name={imageField}>
           {(field) => (
-            <TypeSuggestPicker
-              id={`${idBase}-img`}
-              label={imageLabel}
-              value={field.state.value ?? ''}
-              onChange={(v) => field.handleChange(v as Faction['troops'][number]['image'])}
-              options={TROOP.options}
-              optionToLabel={troopOptionToLabel}
-            />
+            <FormField label={imageLabel} htmlFor={`${idBase}-img`}>
+              <SuggestField
+                id={`${idBase}-img`}
+                value={field.state.value ?? ''}
+                onChange={(v) => field.handleChange(v as Faction['troops'][number]['image'])}
+                options={TROOP.options}
+                optionToLabel={troopOptionToLabel}
+                optionToPreviewSrc={assetOptionToPreviewSrc}
+              />
+            </FormField>
           )}
         </form.Field>
         <form.Field name={descField}>
@@ -772,14 +776,16 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
         </form.Field>
         <form.Field name="logo">
           {(field) => (
-            <TypeSuggestPicker
-              id="faction-logo"
-              label="Logo"
-              value={field.state.value}
-              onChange={(v) => field.handleChange(v as Faction['logo'])}
-              options={logoOptions}
-              optionToLabel={logoOptionToLabel}
-            />
+            <FormField label="Logo" htmlFor="faction-logo">
+              <SuggestField
+                id="faction-logo"
+                value={field.state.value}
+                onChange={(v) => field.handleChange(v as Faction['logo'])}
+                options={logoOptions}
+                optionToLabel={logoOptionToLabel}
+                optionToPreviewSrc={assetOptionToPreviewSrc}
+              />
+            </FormField>
           )}
         </form.Field>
         <form.Field name="themeColor">
@@ -845,7 +851,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
         </form.Field>
         <form.Field name="background.colors[0]">
           {(field) => (
-            <ColorPicker
+            <ColorLayerField
               legend="Background layer A"
               idPrefix="bg-a"
               value={field.state.value}
@@ -855,7 +861,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
         </form.Field>
         <form.Field name="background.colors[1]">
           {(field) => (
-            <ColorPicker
+            <ColorLayerField
               legend="Background layer B"
               idPrefix="bg-b"
               value={field.state.value}
@@ -922,14 +928,16 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
         </form.Field>
         <form.Field name="hero.image">
           {(field) => (
-            <TypeSuggestPicker
-              id="hero-image"
-              label="Hero image"
-              value={field.state.value}
-              onChange={(v) => field.handleChange(v as Faction['hero']['image'])}
-              options={LEADERS.options}
-              optionToLabel={leaderOptionToLabel}
-            />
+            <FormField label="Hero image" htmlFor="hero-image">
+              <SuggestField
+                id="hero-image"
+                value={field.state.value}
+                onChange={(v) => field.handleChange(v as Faction['hero']['image'])}
+                options={LEADERS.options}
+                optionToLabel={leaderOptionToLabel}
+                optionToPreviewSrc={assetOptionToPreviewSrc}
+              />
+            </FormField>
           )}
         </form.Field>
       </AccordionSection>
@@ -1045,18 +1053,20 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
                                   </form.Field>
                                   <form.Field name={`leaders[${i}].image`}>
                                     {(field) => (
-                                      <TypeSuggestPicker
-                                        id={`leader-${i}-img`}
-                                        label="Image"
-                                        value={field.state.value}
-                                        onChange={(v) =>
-                                          field.handleChange(
-                                            v as Faction['leaders'][number]['image']
-                                          )
-                                        }
-                                        options={LEADERS.options}
-                                        optionToLabel={leaderOptionToLabel}
-                                      />
+                                      <FormField label="Image" htmlFor={`leader-${i}-img`}>
+                                        <SuggestField
+                                          id={`leader-${i}-img`}
+                                          value={field.state.value}
+                                          onChange={(v) =>
+                                            field.handleChange(
+                                              v as Faction['leaders'][number]['image']
+                                            )
+                                          }
+                                          options={LEADERS.options}
+                                          optionToLabel={leaderOptionToLabel}
+                                          optionToPreviewSrc={assetOptionToPreviewSrc}
+                                        />
+                                      </FormField>
                                     )}
                                   </form.Field>
                                 </div>
@@ -1149,16 +1159,18 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
                               <div className={styles.unitCardBody}>
                                 <form.Field name={`decals[${i}].id`}>
                                   {(field) => (
-                                    <TypeSuggestPicker
-                                      id={`decal-${i}-id`}
-                                      label="Decal asset"
-                                      value={field.state.value}
-                                      onChange={(v) =>
-                                        field.handleChange(v as Faction['decals'][number]['id'])
-                                      }
-                                      options={decalAssetOptions}
-                                      optionToLabel={decalAssetOptionToLabel}
-                                    />
+                                    <FormField label="Decal asset" htmlFor={`decal-${i}-id`}>
+                                      <SuggestField
+                                        id={`decal-${i}-id`}
+                                        value={field.state.value}
+                                        onChange={(v) =>
+                                          field.handleChange(v as Faction['decals'][number]['id'])
+                                        }
+                                        options={decalAssetOptions}
+                                        optionToLabel={decalAssetOptionToLabel}
+                                        optionToPreviewSrc={assetOptionToPreviewSrc}
+                                      />
+                                    </FormField>
                                   )}
                                 </form.Field>
                                 <div className={styles.formRow}>

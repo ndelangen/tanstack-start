@@ -12,7 +12,8 @@ import {
 import { userGroupMembershipsQueryOptions, useUserGroupMemberships } from '@db/members';
 import { profileBySlugQueryOptions, useCurrentProfile, useProfileBySlug } from '@db/profiles';
 import { FactionList } from '@app/components/factions/FactionList';
-import { FormActions, FormTooltip } from '@app/components/generic/form';
+import { FormActions } from '@app/components/form/FormActions';
+import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { IconButton } from '@app/components/generic/ui';

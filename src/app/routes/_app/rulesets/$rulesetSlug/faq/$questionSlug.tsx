@@ -15,13 +15,11 @@ import {
 import { useCurrentProfile } from '@db/profiles';
 import { rulesetBySlugQueryOptions } from '@db/rulesets';
 import { Answer } from '@app/components/faq/Answer';
-import {
-  FormActions,
-  FormButton,
-  FormField,
-  FormTooltip,
-  MultilineTextField,
-} from '@app/components/generic/form';
+import { FormActions } from '@app/components/form/FormActions';
+import { FormButton } from '@app/components/form/FormButton';
+import { FormField } from '@app/components/form/FormField';
+import { FormTooltip } from '@app/components/form/FormTooltip';
+import { MultilineTextField } from '@app/components/form/MultilineTextField';
 import { Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 

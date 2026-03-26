@@ -13,20 +13,21 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 
-import { FormField, TextField } from '@app/components/generic/form';
+import styles from './SuggestField.module.css';
+import type { TextFieldAppearance } from './TextField';
+import { TextField } from './TextField';
 
-import styles from './FactionEditor.module.css';
-
-interface AssetAutocompleteProps {
-  label: string;
+export interface SuggestFieldProps {
   value: string;
   onChange: (next: string) => void;
   options: readonly string[];
   optionToLabel?: (raw: string) => string;
   optionToSearchText?: (raw: string) => string;
+  optionToPreviewSrc?: (raw: string) => string | null | undefined;
   renderOption?: (raw: string) => ReactNode;
   id?: string;
   placeholder?: string;
+  appearance?: TextFieldAppearance;
 }
 
 type ListGeom = { top: number; left: number; width: number };
@@ -37,28 +38,12 @@ const PREVIEW_SIZE = 100;
 const PREVIEW_GAP = 8;
 const VIEWPORT_PAD = 6;
 
-const PREVIEWABLE_EXT = /\.(svg|png|jpg|jpeg)$/i;
-
-function isPreviewableAssetPath(path: string): boolean {
-  return PREVIEWABLE_EXT.test(path.trim());
-}
-
-/** Paths in enums are relative to site root (`public/`). */
-function assetPathToPublicUrl(path: string): string {
-  const p = path.trim().replace(/^\/+/, '');
-  return `/${p}`;
-}
-
 type Partition = {
-  /** Substring matches, best matches first */
   included: string[];
-  /** Non-matches, A–Z */
   excluded: string[];
-  /** included then excluded — keyboard order */
   flat: string[];
 };
 
-/** Higher = better match; `null` = does not contain query */
 function scoreCandidate(option: string, qLower: string): number | null {
   if (qLower.length === 0) return 0;
   const o = option.toLowerCase();
@@ -120,19 +105,20 @@ function partitionOptions(
   return { included, excluded, flat: [...included, ...excluded] };
 }
 
-export function AssetAutocomplete({
-  label,
+export function SuggestField({
   value,
   onChange,
   options,
   optionToLabel = identityOptionLabel,
   optionToSearchText = identityOptionSearchText,
+  optionToPreviewSrc,
   renderOption,
   id: idProp,
   placeholder = 'Type to search…',
-}: AssetAutocompleteProps) {
+  appearance,
+}: SuggestFieldProps) {
   const reactId = useId();
-  const id = idProp ?? `asset-ac-${reactId}`;
+  const id = idProp ?? `suggest-${reactId}`;
   const listId = `${id}-listbox`;
 
   const [open, setOpen] = useState(false);
@@ -171,7 +157,6 @@ export function AssetAutocomplete({
     if (!el) return;
     const r = el.getBoundingClientRect();
     const gap = 4;
-    /* Ceil avoids subpixel overlap where the list can paint a row sliver under the input. */
     setListGeom({ top: Math.ceil(r.bottom) + gap, left: r.left, width: r.width });
   }, []);
 
@@ -199,7 +184,6 @@ export function AssetAutocomplete({
   openRef.current = open;
   showListRef.current = showList;
 
-  /* Opening the suggest should always start on the first row (hover + keyboard + preview). */
   useLayoutEffect(() => {
     if (showList) {
       setHighlight(0);
@@ -215,9 +199,9 @@ export function AssetAutocomplete({
     return () => p.removeEventListener('mousedown', preventBlur);
   }, [showList]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-run when highlight, list layout, or options change so preview tracks keyboard + filtered list
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keep preview synced to active option and list layout
   useLayoutEffect(() => {
-    if (!open || !showList) {
+    if (!open || !showList || !optionToPreviewSrc) {
       setPreviewGeom(null);
       return;
     }
@@ -229,8 +213,9 @@ export function AssetAutocomplete({
       }
       const h = highlightRef.current;
       const flat = flatRef.current;
-      const path = flat[h];
-      if (!path || !isPreviewableAssetPath(path)) {
+      const option = flat[h];
+      const previewSrc = option ? optionToPreviewSrc(option) : null;
+      if (!previewSrc) {
         setPreviewGeom(null);
         return;
       }
@@ -289,7 +274,7 @@ export function AssetAutocomplete({
       window.removeEventListener('scroll', sync, true);
       setPreviewGeom(null);
     };
-  }, [open, showList, highlight, id, listGeom, partition.flat]);
+  }, [open, showList, highlight, id, listGeom, optionToPreviewSrc, partition.flat]);
 
   useEffect(() => {
     const close = (e: MouseEvent) => {
@@ -363,13 +348,13 @@ export function AssetAutocomplete({
 
   const hasFilter = text.trim().length > 0;
   const includedLabel = hasFilter ? 'Likely matches' : 'All options';
-  const excludedLabel = 'Other paths';
+  const excludedLabel = 'Other options';
   const noMatchesOnly =
     hasFilter && partition.included.length === 0 && partition.excluded.length > 0;
 
-  const selectedPath = showList ? partition.flat[highlight] : undefined;
-  const previewActivePath =
-    selectedPath && isPreviewableAssetPath(selectedPath) ? selectedPath : null;
+  const selectedOption = showList ? partition.flat[highlight] : undefined;
+  const previewActiveSrc =
+    optionToPreviewSrc && selectedOption ? optionToPreviewSrc(selectedOption) : null;
 
   const portal =
     typeof document !== 'undefined' &&
@@ -388,7 +373,7 @@ export function AssetAutocomplete({
       >
         {noMatchesOnly ? (
           <div className={styles.comboboxSection}>
-            <div className={styles.comboboxSectionLabel}>No substring match — all paths (A–Z)</div>
+            <div className={styles.comboboxSectionLabel}>No substring match — all options</div>
             {partition.excluded.map((opt, j) => {
               const i = j;
               return (
@@ -458,7 +443,7 @@ export function AssetAutocomplete({
 
   const previewPortal =
     typeof document !== 'undefined' &&
-    previewActivePath &&
+    previewActiveSrc &&
     previewGeom &&
     createPortal(
       <div
@@ -466,22 +451,26 @@ export function AssetAutocomplete({
         style={{ left: previewGeom.left, top: previewGeom.top }}
         aria-hidden
       >
-        <img
-          src={assetPathToPublicUrl(previewActivePath)}
-          alt=""
-          decoding="async"
-          draggable={false}
-        />
+        <img src={previewActiveSrc} alt="" decoding="async" draggable={false} />
       </div>,
       document.body
     );
 
   return (
-    <FormField label={label} htmlFor={id}>
-      <div ref={wrapRef} className={clsx(styles.comboboxWrap, open && styles.comboboxWrapOpen)}>
+    <>
+      <div
+        ref={wrapRef}
+        data-suggestfield-open={open ? 'true' : undefined}
+        className={clsx(
+          styles.comboboxWrap,
+          open && styles.comboboxWrapOpen,
+          appearance === 'embedded' && styles.comboboxWrapEmbedded
+        )}
+      >
         <TextField
           ref={inputRef}
           id={id}
+          appearance={appearance}
           className={styles.comboboxInput}
           type="text"
           role="combobox"
@@ -532,6 +521,6 @@ export function AssetAutocomplete({
       </div>
       {portal}
       {previewPortal}
-    </FormField>
+    </>
   );
 }

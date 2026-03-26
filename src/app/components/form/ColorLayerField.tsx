@@ -1,16 +1,37 @@
 import { Plus, Trash2 } from 'lucide-react';
 
-import type { Faction } from '@db/factions';
-import { FormButton, FormTooltip, HexColorPicker, TextField } from '@app/components/generic/form';
+import styles from './ColorLayerField.module.css';
+import { FormButton } from './FormButton';
+import { FormTooltip } from './FormTooltip';
+import { HexColorPicker } from './HexColorPicker';
+import { TextField } from './TextField';
 
-import styles from './FactionEditor.module.css';
+export type ColorStop = [string, number];
 
-type BgColor = Faction['background']['colors'][number];
+export type LinearGradientColor = {
+  type: 'linear';
+  angle: number;
+  stops: ColorStop[];
+};
 
-type LinearGradient = Extract<BgColor, { type: 'linear' }>;
-type RadialGradient = Extract<BgColor, { type: 'radial' }>;
+export type RadialGradientColor = {
+  type: 'radial';
+  stops: ColorStop[];
+  x?: number;
+  y?: number;
+  r?: number;
+};
 
-const defaultLinear = (): LinearGradient => ({
+export type ColorLayerValue = string | LinearGradientColor | RadialGradientColor;
+
+export interface ColorLayerFieldProps {
+  legend: string;
+  value: ColorLayerValue;
+  onChange: (next: ColorLayerValue) => void;
+  idPrefix: string;
+}
+
+const defaultLinear = (): LinearGradientColor => ({
   type: 'linear',
   angle: 90,
   stops: [
@@ -19,7 +40,7 @@ const defaultLinear = (): LinearGradient => ({
   ],
 });
 
-const defaultRadial = (): RadialGradient => ({
+const defaultRadial = (): RadialGradientColor => ({
   type: 'radial',
   stops: [
     ['#000000', 0],
@@ -27,23 +48,11 @@ const defaultRadial = (): RadialGradient => ({
   ],
 });
 
-function isHex(v: BgColor): v is string {
+function isHex(v: ColorLayerValue): v is string {
   return typeof v === 'string';
 }
 
-interface BackgroundColorSlotProps {
-  legend: string;
-  value: BgColor;
-  onChange: (next: BgColor) => void;
-  idPrefix: string;
-}
-
-export function BackgroundColorSlot({
-  legend,
-  value,
-  onChange,
-  idPrefix,
-}: BackgroundColorSlotProps) {
+export function ColorLayerField({ legend, value, onChange, idPrefix }: ColorLayerFieldProps) {
   const mode = isHex(value) ? 'hex' : 'gradient';
 
   return (
@@ -111,8 +120,8 @@ function GradientEditor({
   onChange,
   idPrefix,
 }: {
-  value: LinearGradient | RadialGradient;
-  onChange: (next: BgColor) => void;
+  value: LinearGradientColor | RadialGradientColor;
+  onChange: (next: ColorLayerValue) => void;
   idPrefix: string;
 }) {
   const setLinear = () => {
@@ -124,12 +133,8 @@ function GradientEditor({
     onChange({ ...defaultRadial(), stops: [...value.stops] });
   };
 
-  const updateStops = (stops: [string, number][]) => {
-    if (value.type === 'linear') {
-      onChange({ ...value, stops });
-    } else {
-      onChange({ ...value, stops });
-    }
+  const updateStops = (stops: ColorStop[]) => {
+    onChange({ ...value, stops });
   };
 
   const addStop = () => {
@@ -169,7 +174,7 @@ function GradientEditor({
 
       {value.type === 'linear' && (
         <label className={styles.sliderLabel}>
-          Angle (0–360°)
+          Angle (0-360deg)
           <span className={styles.sliderValue}>{value.angle}</span>
           <input
             type="range"
@@ -243,7 +248,7 @@ function GradientEditor({
         </div>
       )}
 
-      <p className={styles.stopsHint}>Gradient stops (color + position 0–1). At least two stops.</p>
+      <p className={styles.stopsHint}>Gradient stops (color + position 0-1). At least two stops.</p>
       {value.stops.map((stop, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: stop rows tracked by array index in form state
         <div key={`${idPrefix}-stop-${i}`} className={styles.stopRow}>
@@ -252,7 +257,7 @@ function GradientEditor({
             textId={`${idPrefix}-stop-${i}-hex`}
             value={stop[0]}
             onChange={(h) => {
-              const next = [...value.stops] as [string, number][];
+              const next = [...value.stops] as ColorStop[];
               next[i] = [h, stop[1]];
               updateStops(next);
             }}
@@ -267,7 +272,7 @@ function GradientEditor({
               step={0.01}
               value={stop[1]}
               onChange={(e) => {
-                const next = [...value.stops] as [string, number][];
+                const next = [...value.stops] as ColorStop[];
                 next[i] = [stop[0], Number.parseFloat(e.target.value) || 0];
                 updateStops(next);
               }}
