@@ -1,6 +1,2 @@
 [build]
-  command = "bun run app:build"
   publish = "dist/client"
-
-[context.production]
-  command = "bun run convex:deploy && bun run app:build"
