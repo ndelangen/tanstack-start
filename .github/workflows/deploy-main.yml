@@ -51,7 +51,7 @@ jobs:
           VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
 
       - name: Deploy to Netlify
-        run: bunx --bun netlify-cli deploy --dir "./dist/client" --prod --message "GitHub Actions production deploy"
+        run: npx netlify-cli@latest deploy --dir "./dist/client" --prod --message "GitHub Actions production deploy"
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
