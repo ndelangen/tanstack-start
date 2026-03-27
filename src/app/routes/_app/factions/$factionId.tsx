@@ -1,9 +1,13 @@
 import { createFileRoute, Link, Outlet, useLocation, useMatches } from '@tanstack/react-router';
+import { UserPlus } from 'lucide-react';
 
 import { factionDetailQueryOptions, useFaction } from '@db/factions';
-import { useUserGroupMemberships } from '@db/members';
+import { useGroup } from '@db/groups';
+import { useGroupMembers, useRequestGroupMembership, useUserGroupMemberships } from '@db/members';
 import { currentProfileQueryOptions, useCurrentProfile, useProfilesAll } from '@db/profiles';
 import { rulesetsByFactionQueryOptions, useRulesetsByFaction } from '@db/rulesets';
+import { FormButton } from '@app/components/form/FormButton';
+import { FormTooltip } from '@app/components/form/FormTooltip';
 
 export const Route = createFileRoute('/_app/factions/$factionId')({
   loader: async ({ context, params, location }) => {
@@ -110,6 +114,9 @@ function FactionDetailPage() {
   const rulesets = useRulesetsByFaction(faction.data?.id);
   const profile = useCurrentProfile();
   const memberships = useUserGroupMemberships(profile.data?.id);
+  const group = useGroup(faction.data?.group_id ?? '');
+  const groupMembers = useGroupMembers(faction.data?.group_id ?? '');
+  const requestMembership = useRequestGroupMembership();
 
   const isChildOnlyRoute = matches.some(
     (m) => m.pathname.endsWith('/edit') || m.pathname.endsWith('/sheet')
@@ -133,6 +140,12 @@ function FactionDetailPage() {
     faction.data.group_id,
     memberships.data
   );
+  const viewerMembership = groupMembers.data?.find((entry) => entry.user_id === profile.data?.id);
+  const membershipStatus =
+    viewerMembership && viewerMembership.status !== 'removed' ? viewerMembership.status : 'none';
+  const factionGroupId = faction.data.group_id;
+  const canRequestMembership =
+    factionGroupId != null && !!profile.data?.id && membershipStatus === 'none';
 
   return (
     <>
@@ -153,13 +166,63 @@ function FactionDetailPage() {
         (opens without site chrome; use the browser print dialog for PDF)
       </p>
 
+      <section>
+        <h3>Group</h3>
+        {factionGroupId == null ? (
+          <p>This faction is not assigned to a group.</p>
+        ) : (
+          <>
+            <p>
+              Group:{' '}
+              {membershipStatus === 'active' && group.data?.slug ? (
+                <Link to="/groups/$groupSlug" params={{ groupSlug: group.data.slug }}>
+                  {group.data.name}
+                </Link>
+              ) : (
+                <strong>{group.data?.name ?? 'Loading group...'}</strong>
+              )}
+            </p>
+            <p>
+              Membership status:{' '}
+              {membershipStatus === 'active'
+                ? 'Active member'
+                : membershipStatus === 'pending'
+                  ? 'Pending approval'
+                  : 'Not a member'}
+            </p>
+            {membershipStatus === 'pending' && (
+              <p>Your membership request is waiting for approval.</p>
+            )}
+            {!profile.data?.id && (
+              <p>
+                <Link to="/auth/login">Log in</Link> to request membership.
+              </p>
+            )}
+            {canRequestMembership && (
+              <FormTooltip content="Request membership">
+                <FormButton
+                  type="button"
+                  iconOnly
+                  aria-label="Request membership"
+                  disabled={requestMembership.isPending}
+                  onClick={() => requestMembership.mutate(factionGroupId)}
+                >
+                  <UserPlus size={16} aria-hidden />
+                </FormButton>
+              </FormTooltip>
+            )}
+            {requestMembership.isError && <p>{requestMembership.error?.message}</p>}
+          </>
+        )}
+      </section>
+
       {rulesets.data && rulesets.data.length > 0 && (
         <section>
           <h3>In rulesets</h3>
           <ul>
             {rulesets.data.map((r) => (
               <li key={r.id}>
-                <Link to="/rulesets/$id" params={{ id: String(r.id) }}>
+                <Link to="/rulesets/$rulesetSlug" params={{ rulesetSlug: r.slug }}>
                   {r.name}
                 </Link>
               </li>

@@ -1,6 +1,6 @@
+import preview from '@sb/preview';
 import type { FC, PropsWithChildren } from 'react';
 
-import preview from '../../../../.storybook/preview';
 import { card } from '../../data/sizes';
 import { Fan } from './Fan';
 

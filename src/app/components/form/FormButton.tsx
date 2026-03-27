@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import type { ComponentPropsWithoutRef } from 'react';
 
-import btnStyles from '../ui/Button.module.css';
+import btnStyles from './FormButton.module.css';
 
 type Variant = 'primary' | 'secondary' | 'danger';
 

@@ -2,9 +2,11 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { RefreshCw } from 'lucide-react';
 
 import { useCurrentProfile } from '@db/profiles';
-import { Card } from '@app/components/card/Card';
-import { FormActions, FormButton, FormTooltip } from '@app/components/form';
-import { Stack } from '@app/components/layout';
+import { FormActions } from '@app/components/form/FormActions';
+import { FormButton } from '@app/components/form/FormButton';
+import { FormTooltip } from '@app/components/form/FormTooltip';
+import { Stack } from '@app/components/generic/layout';
+import { Card } from '@app/components/generic/surfaces/Card';
 import {
   useMigrationRunSnapshots,
   useMigrationStatuses,

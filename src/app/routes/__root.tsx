@@ -42,6 +42,10 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       {
         title: 'TanStack Start Starter',
       },
+      {
+        name: 'google-site-verification',
+        content: 'RPI_TL3TCH_KTbnzwKeXOJ8LY8EklOlsRStyfysz-24',
+      },
     ],
     links: [
       { rel: 'preconnect', href: 'https://fonts.googleapis.com' },

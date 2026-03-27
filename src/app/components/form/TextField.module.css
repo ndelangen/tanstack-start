@@ -43,6 +43,22 @@
   color: color-mix(in srgb, var(--color-muted, #735c47) 80%, transparent);
 }
 
+.embedded {
+  min-height: 100%;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.embedded:focus {
+  outline: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+
 .textarea {
   min-height: 4.8rem;
   resize: vertical;

@@ -1,13 +1,24 @@
 import clsx from 'clsx';
-import type { ComponentPropsWithoutRef, ReactNode } from 'react';
+import {
+  Children,
+  type ComponentPropsWithoutRef,
+  cloneElement,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 
-import { inputFieldClassNames } from '../ui/Input';
 import styles from './Form.module.css';
+import { textFieldClassNames } from './TextField';
+
+type EmbeddableChildProps = {
+  appearance?: 'embedded';
+};
 
 export interface PrefixedFieldProps extends Pick<ComponentPropsWithoutRef<'div'>, 'className'> {
   prefix?: ReactNode;
   suffix?: ReactNode;
-  children: ReactNode;
+  children: ReactElement<EmbeddableChildProps>;
   prefixClassName?: string;
   mainClassName?: string;
   suffixClassName?: string;
@@ -22,10 +33,22 @@ export function PrefixedField({
   mainClassName,
   suffixClassName,
 }: PrefixedFieldProps) {
+  let embeddedChild: ReactNode = children;
+  const count = Children.count(children);
+  if (!isValidElement(children) || count !== 1) {
+    if (import.meta.env.DEV) {
+      console.warn(
+        'PrefixedField expects exactly one embeddable React element child. Rendering fallback child as-is.'
+      );
+    }
+  } else {
+    embeddedChild = cloneElement(children, { appearance: 'embedded' });
+  }
+
   return (
     <div
       className={clsx(
-        inputFieldClassNames({ variant: 'input', padded: false }),
+        textFieldClassNames({ variant: 'input', padded: false }),
         styles.prefixedInput,
         className
       )}
@@ -33,7 +56,7 @@ export function PrefixedField({
       {prefix != null && (
         <div className={clsx(styles.prefixedPrefix, prefixClassName)}>{prefix}</div>
       )}
-      <div className={clsx(styles.prefixedMain, mainClassName)}>{children}</div>
+      <div className={clsx(styles.prefixedMain, mainClassName)}>{embeddedChild}</div>
       {suffix != null && (
         <div className={clsx(styles.prefixedSuffix, suffixClassName)}>{suffix}</div>
       )}

@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, useLocation, useMatches } from '@tanstack/react-router';
 import React from 'react';
 
-import { Page } from '@app/components/page/Page';
+import { Page } from '@app/components/generic/surfaces/Page';
 import { isFactionSheetBarePath } from '@app/lib/factionSheetRoute';
 
 export const Route = createFileRoute('/_app')({

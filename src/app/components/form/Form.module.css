@@ -283,6 +283,11 @@
   overflow: hidden;
 }
 
+.prefixedInput:focus-within {
+  border-color: var(--color-accent-strong, #c78346);
+  box-shadow: 0 0 0 3px var(--color-focus-ring, rgba(244, 207, 139, 0.42));
+}
+
 .prefixedPrefix,
 .prefixedSuffix {
   display: inline-flex;

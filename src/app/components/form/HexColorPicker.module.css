@@ -34,21 +34,7 @@
 .hexColorHexInput {
   flex: 1;
   min-width: 0;
-  margin: 0;
-  min-height: var(--control-h-md);
-  padding: var(--control-px-sm) var(--space-3);
   font-size: 0.94rem;
-  font-family: inherit;
-  color: inherit;
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-  box-sizing: border-box;
-}
-
-.hexColorHexInput:focus {
-  outline: none;
 }
 
 .hexColorHexInput::placeholder {

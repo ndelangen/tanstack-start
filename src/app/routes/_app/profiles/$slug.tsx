@@ -11,16 +11,17 @@ import {
 } from '@db/faq';
 import { userGroupMembershipsQueryOptions, useUserGroupMemberships } from '@db/members';
 import { profileBySlugQueryOptions, useCurrentProfile, useProfileBySlug } from '@db/profiles';
-import { Card } from '@app/components/card/Card';
 import { FactionList } from '@app/components/factions/FactionList';
-import { FormActions, FormTooltip } from '@app/components/form';
-import { Stack } from '@app/components/layout';
+import { FormActions } from '@app/components/form/FormActions';
+import { FormTooltip } from '@app/components/form/FormTooltip';
+import { Stack } from '@app/components/generic/layout';
+import { Card } from '@app/components/generic/surfaces/Card';
+import { IconButton } from '@app/components/generic/ui';
 import {
   ProfileFaqAnswersGiven,
   ProfileFaqQuestionsAsked,
 } from '@app/components/profile/ProfileFaqActivity';
 import layoutStyles from '@app/components/profile/ProfilePageLayout.module.css';
-import { IconButton } from '@app/components/ui';
 
 import styles from './ProfileDetail.module.css';
 

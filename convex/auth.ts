@@ -2,15 +2,27 @@ import Discord from '@auth/core/providers/discord';
 import Google from '@auth/core/providers/google';
 import { convexAuth } from '@convex-dev/auth/server';
 
+const gemini = 'https://www.googleapis.com/auth/generative-language.retriever';
+
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      authorization: {
+        params: {
+          scope: `openid profile ${gemini}`,
+        },
+      },
     }),
     Discord({
       clientId: process.env.AUTH_DISCORD_ID,
       clientSecret: process.env.AUTH_DISCORD_SECRET,
+      authorization: {
+        params: {
+          scope: 'profile',
+        },
+      },
     }),
   ],
   callbacks: {

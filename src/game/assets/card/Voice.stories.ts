@@ -1,4 +1,5 @@
-import preview from '../../../../.storybook/preview';
+import preview from '@sb/preview';
+
 import { TreacheryCard } from '../treachery/Treachery';
 
 const meta = preview.meta({

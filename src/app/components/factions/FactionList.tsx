@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 
 import { type FactionEntry } from '@db/factions';
-import { BlockLink } from '@app/components/block';
+import { BlockLink } from '@app/components/generic/surfaces';
 import { Token as FactionToken } from '@game/assets/faction/token/Token';
 
 import styles from './FactionList.module.css';

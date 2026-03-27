@@ -3,8 +3,11 @@ import { Plus } from 'lucide-react';
 import { useState } from 'react';
 
 import { useCreateRuleset } from '@db/rulesets';
-import { FormActions, FormButton, FormField, TextField } from '@app/components/form';
-import { Stack } from '@app/components/layout';
+import { FormActions } from '@app/components/form/FormActions';
+import { FormButton } from '@app/components/form/FormButton';
+import { FormField } from '@app/components/form/FormField';
+import { TextField } from '@app/components/form/TextField';
+import { Stack } from '@app/components/generic/layout';
 
 export const Route = createFileRoute('/_app/rulesets/create')({
   component: CreateRulesetPage,
@@ -39,7 +42,10 @@ function CreateRulesetPage() {
             { input: { name: nextName } },
             {
               onSuccess: (entry) => {
-                navigate({ to: '/rulesets/$id', params: { id: String(entry.id) } });
+                navigate({
+                  to: '/rulesets/$rulesetSlug',
+                  params: { rulesetSlug: entry.slug },
+                });
               },
             }
           );

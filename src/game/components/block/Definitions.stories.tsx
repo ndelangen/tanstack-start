@@ -1,6 +1,6 @@
+import preview from '@sb/preview';
 import { Fragment } from 'react';
 
-import preview from '../../../../.storybook/preview';
 import { Definitions } from './Definitions';
 import { Text } from './Text';
 

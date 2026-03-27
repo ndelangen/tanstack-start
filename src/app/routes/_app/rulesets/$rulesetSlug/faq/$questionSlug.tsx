@@ -14,16 +14,14 @@ import {
 } from '@db/faq';
 import { useCurrentProfile } from '@db/profiles';
 import { rulesetBySlugQueryOptions } from '@db/rulesets';
-import { Card } from '@app/components/card/Card';
 import { Answer } from '@app/components/faq/Answer';
-import {
-  FormActions,
-  FormButton,
-  FormField,
-  FormTooltip,
-  MultilineTextField,
-} from '@app/components/form';
-import { Stack } from '@app/components/layout';
+import { FormActions } from '@app/components/form/FormActions';
+import { FormButton } from '@app/components/form/FormButton';
+import { FormField } from '@app/components/form/FormField';
+import { FormTooltip } from '@app/components/form/FormTooltip';
+import { MultilineTextField } from '@app/components/form/MultilineTextField';
+import { Stack } from '@app/components/generic/layout';
+import { Card } from '@app/components/generic/surfaces/Card';
 
 import styles from '../../$id/faq/FaqDetail.module.css';
 
@@ -111,7 +109,6 @@ function FaqDetailPage() {
   }
 
   const faqItemId = item.id;
-  const rulesetId = item.ruleset.id;
   const isQuestionOwner = profile?.data?.id === item.asked_by;
   const hasUserAnswered = answers.some((a) => a.answered_by === profile?.data?.id);
   const showAddAnswerForm = !!profile?.data?.id && !hasUserAnswered;
@@ -123,7 +120,7 @@ function FaqDetailPage() {
   const handleDeleteQuestion = () => {
     if (!window.confirm('Delete this question and all its answers? This cannot be undone.')) return;
     deleteFaqItem.mutate(faqItemId, {
-      onSuccess: () => navigate({ to: '/rulesets/$id', params: { id: rulesetId } }),
+      onSuccess: () => navigate({ to: '/rulesets/$rulesetSlug', params: { rulesetSlug } }),
     });
   };
 
@@ -171,7 +168,11 @@ function FaqDetailPage() {
 
   return (
     <>
-      <Link to="/rulesets/$id" params={{ id: rulesetId }} className={styles.backLink}>
+      <Link
+        to="/rulesets/$rulesetSlug"
+        params={{ rulesetSlug: item.ruleset.slug }}
+        className={styles.backLink}
+      >
         Back to ruleset
       </Link>
 
