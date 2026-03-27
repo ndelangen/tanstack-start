@@ -216,3 +216,27 @@ export function useDeleteFaction() {
       await mutation.mutateAsync({ id }),
   };
 }
+
+export function useSetFactionGroup() {
+  const mutation = useLiveMutation<{ id: string; group_id: string | null }, FactionRow>(
+    api.factions.setGroup
+  );
+  return {
+    ...mutation,
+    mutate: (
+      variables: { id: string; groupId: string | null },
+      options?: { onSuccess?: (entry: FactionEntry) => void; onError?: (error: Error) => void }
+    ) =>
+      mutation.mutate(
+        { id: variables.id, group_id: variables.groupId },
+        {
+          onSuccess: (entry) => options?.onSuccess?.(toFactionEntry(entry)),
+          onError: (error) => options?.onError?.(error),
+        }
+      ),
+    mutateAsync: async ({ id, groupId }: { id: string; groupId: string | null }) => {
+      const entry = await mutation.mutateAsync({ id, group_id: groupId });
+      return toFactionEntry(entry);
+    },
+  };
+}

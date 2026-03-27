@@ -43,6 +43,31 @@ export function userGroupMembershipsQueryOptions(userId: string) {
   });
 }
 
+export function groupMembersByStatusQueryOptions(groupId: string, status: GroupMemberStatus) {
+  return queryOptions({
+    queryKey: memberKeys.byGroupAndStatus(groupId, status),
+    queryFn: async () =>
+      (
+        await db.query<GroupMemberRow[]>(api.members.listByGroupAndStatus, {
+          group_id: groupId,
+          status,
+        })
+      ).map((entry) => ({ ...entry, id: entry._id })),
+  });
+}
+
+export function groupMembersQueryOptions(groupId: string) {
+  return queryOptions({
+    queryKey: memberKeys.byGroup(groupId),
+    queryFn: async () =>
+      (
+        await db.query<GroupMemberRow[]>(api.members.listByGroup, {
+          group_id: groupId,
+        })
+      ).map((entry) => ({ ...entry, id: entry._id })),
+  });
+}
+
 export function useUserGroupMemberships(userId: string | undefined) {
   const result = useLiveQuery<
     (GroupMemberRow & { groups: { id: string; name: string } | null })[],

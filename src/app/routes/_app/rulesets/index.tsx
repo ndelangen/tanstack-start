@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 
 import { rulesetsListQueryOptions, useRulesetsAll } from '@db/rulesets';
-import { BlockCover, BlockLink } from '@app/components/block';
+import { BlockCover, BlockLink } from '@app/components/generic/surfaces';
 
 import styles from './RulesetsIndex.module.css';
 
@@ -32,8 +32,8 @@ function RulesetsPage() {
           {rulesets.data.map((r) => (
             <BlockLink
               key={r.id}
-              to="/rulesets/$id"
-              params={{ id: String(r.id) }}
+              to="/rulesets/$rulesetSlug"
+              params={{ rulesetSlug: r.slug }}
               className={styles.card}
             >
               <div className={styles.coverSlot}>

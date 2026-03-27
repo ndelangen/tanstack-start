@@ -53,8 +53,8 @@ export function ProfileFaqQuestionsAsked({ items }: { items: FaqItemAskedByWithR
         <FaqItemListRow key={item.id}>
           <div className={styles.contextStrip}>
             <Link
-              to="/rulesets/$id"
-              params={{ id: String(item.ruleset.id) }}
+              to="/rulesets/$rulesetSlug"
+              params={{ rulesetSlug: item.ruleset.slug }}
               className={styles.rulesetLink}
             >
               {item.ruleset.name}
@@ -97,8 +97,8 @@ export function ProfileFaqAnswersGiven({
           <FaqItemListRow key={row.id}>
             <div className={styles.contextStrip}>
               <Link
-                to="/rulesets/$id"
-                params={{ id: String(row.ruleset.id) }}
+                to="/rulesets/$rulesetSlug"
+                params={{ rulesetSlug: row.ruleset.slug }}
                 className={styles.rulesetLink}
               >
                 {row.ruleset.name}

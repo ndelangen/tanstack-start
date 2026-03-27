@@ -110,7 +110,10 @@ export const update = mutation({
     const userId = await requireAuthUserId(ctx);
     const row = await ctx.db.get(args.id);
     if (!row || row.is_deleted) throw new Error(`Faction with id ${args.id} not found`);
-    if (row.owner_id !== userId) throw new Error('Not authorized');
+    const isOwner = row.owner_id === userId;
+    const isGroupEditor =
+      row.group_id == null ? false : await isActiveGroupMember(ctx, row.group_id, userId);
+    if (!isOwner && !isGroupEditor) throw new Error('Not authorized');
 
     const data = normalizeFactionData(args.data);
     const slug = data.slug;
@@ -133,6 +136,31 @@ export const update = mutation({
   },
 });
 
+export const setGroup = mutation({
+  args: {
+    id: v.id('factions'),
+    group_id: v.union(v.id('groups'), v.null()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await requireAuthUserId(ctx);
+    const row = await ctx.db.get(args.id);
+    if (!row || row.is_deleted) throw new Error(`Faction with id ${args.id} not found`);
+    if (row.owner_id !== userId) throw new Error('Not authorized');
+    if (args.group_id) {
+      const canUseGroup = await isActiveGroupMember(ctx, args.group_id, userId);
+      if (!canUseGroup) throw new Error('Not authorized for group');
+    }
+
+    await ctx.db.patch(args.id, {
+      group_id: args.group_id,
+      updated_at: nowIso(),
+    });
+    const updated = await ctx.db.get(args.id);
+    if (!updated) throw new Error('Failed to update faction group');
+    return updated;
+  },
+});
+
 export const softDelete = mutation({
   args: { id: v.id('factions') },
   handler: async (ctx, args) => {
@@ -145,5 +173,29 @@ export const softDelete = mutation({
       is_deleted: true,
       updated_at: nowIso(),
     });
+  },
+});
+
+export const getFullBySlug = query({
+  args: { slug: v.string() },
+  handler: async (ctx, args) => {
+    const row = await ctx.db
+      .query('factions')
+      .withIndex('by_slug', (q) => q.eq('slug', args.slug))
+      .unique();
+    if (!row || row.is_deleted) throw new Error(`Faction with slug ${args.slug} not found`);
+    const profile = await ctx.db
+      .query('profiles')
+      .withIndex('by_user_id', (q) => q.eq('user_id', row.owner_id))
+      .unique();
+    if (!profile) throw new Error(`Profile with user id ${row.owner_id} not found`);
+    const group = row.group_id ? await ctx.db.get('groups', row.group_id) : null;
+
+    return {
+      ...row,
+      data: FactionInputSchema.parse(row.data),
+      owner: profile,
+      group: group,
+    };
   },
 });

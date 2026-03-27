@@ -1,15 +1,10 @@
 import { defineMain } from '@storybook/react-vite/node';
-import { mergeConfig } from 'vite';
 
 export default defineMain({
   stories: [
     {
-      directory: '../src/app/components/ui',
-      titlePrefix: 'App/UI',
-    },
-    {
-      directory: '../src/app/components/form',
-      titlePrefix: 'App/Form',
+      directory: '../src/app/components',
+      titlePrefix: 'App',
     },
     {
       directory: '../src/game/assets/faction',
@@ -48,10 +43,34 @@ export default defineMain({
     },
   ],
   async viteFinal(config) {
-    return mergeConfig(config, {
-      resolve: {
-        ...({ tsconfigPaths: true } as Record<string, unknown>),
-      },
-    });
+    const hasTanstackName = (value: unknown): boolean => {
+      if (value == null || typeof value !== 'object' || !('name' in value)) {
+        return false;
+      }
+      const maybeName = (value as { name?: unknown }).name;
+      return typeof maybeName === 'string' && maybeName.toLowerCase().includes('tanstack');
+    };
+
+    config.plugins = (
+      config.plugins?.map((plugin) => {
+        try {
+          if (Array.isArray(plugin)) {
+            return plugin.filter((p) => !hasTanstackName(p));
+          }
+          if (!plugin) {
+            return false;
+          }
+          if (hasTanstackName(plugin)) {
+            return false;
+          }
+          return plugin;
+        } catch (_error) {
+          // console.error('Error filtering plugins', error, plugin);
+          return false;
+        }
+      }) ?? []
+    ).filter((p) => !!p);
+
+    return config;
   },
 });

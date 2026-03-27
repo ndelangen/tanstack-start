@@ -1,4 +1,5 @@
-import preview from '../../../../.storybook/preview';
+import preview from '@sb/preview';
+
 import { DECAL, GENERIC, ICON, LOGO, TROOP } from '../../data/generated';
 
 const types = {

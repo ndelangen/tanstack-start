@@ -141,6 +141,15 @@ export const getBySlug = query({
   },
 });
 
+export const getByUserId = query({
+  args: { user_id: v.id('users') },
+  handler: async (ctx, args) => {
+    const profile = await ctx.db.get(args.user_id);
+    if (!profile) throw new Error(`Profile with user id ${args.user_id} not found`);
+    return profile;
+  },
+});
+
 export const list = query({
   args: {},
   handler: async (ctx) => {

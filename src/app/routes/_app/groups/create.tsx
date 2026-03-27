@@ -4,9 +4,13 @@ import { useState } from 'react';
 
 import { useCreateGroup } from '@db/groups';
 import { useCurrentProfile } from '@db/profiles';
-import { Card } from '@app/components/card/Card';
-import { FormActions, FormButton, FormField, FormTooltip, TextField } from '@app/components/form';
-import { Stack } from '@app/components/layout';
+import { FormActions } from '@app/components/form/FormActions';
+import { FormButton } from '@app/components/form/FormButton';
+import { FormField } from '@app/components/form/FormField';
+import { FormTooltip } from '@app/components/form/FormTooltip';
+import { TextField } from '@app/components/form/TextField';
+import { Stack } from '@app/components/generic/layout';
+import { Card } from '@app/components/generic/surfaces/Card';
 
 export const Route = createFileRoute('/_app/groups/create')({
   component: GroupCreatePage,

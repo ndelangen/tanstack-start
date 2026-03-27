@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 
 import { profilesListQueryOptions, useProfilesAll } from '@db/profiles';
-import { Card } from '@app/components/card/Card';
+import { Card } from '@app/components/generic/surfaces/Card';
 
 import styles from './ProfilesIndex.module.css';
 

@@ -1,5 +1,5 @@
 {
-  "include": ["**/*.ts", "**/*.tsx"],
+  "include": ["**/*.ts", "**/*.tsx", ".storybook/**/*.ts", ".storybook/**/*.tsx"],
   "exclude": ["node_modules", "dist", "**/*.stories.ts", "**/*.stories.tsx"],
   "compilerOptions": {
     "target": "ES2022",
@@ -14,6 +14,7 @@
       }
     ],
     "paths": {
+      "@sb/*": ["./.storybook/*"],
       "@db/core": ["./src/app/db/core/index.ts"],
       "@db/*": ["./src/app/*/db.ts"],
       "@app/*": ["./src/app/*"],

@@ -157,6 +157,11 @@
   text-decoration: underline;
 }
 
+.logo {
+  display: flex;
+  align-items: center;
+}
+
 .avatarLink {
   display: flex;
   align-items: center;

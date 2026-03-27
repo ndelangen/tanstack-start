@@ -64,7 +64,6 @@ const update = () => {
 export function Page({ head, content }: PageProps) {
   const tiny = !head;
   const location = useLocation();
-  const profile = useCurrentProfile();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -153,7 +152,9 @@ export function Page({ head, content }: PageProps) {
         {content}
       </div>
       <div className={styles.footer}>
-        <p>Footer</p>
+        <p>
+          <Link to="/privacy">Privacy Policy</Link>
+        </p>
       </div>
     </div>
   );

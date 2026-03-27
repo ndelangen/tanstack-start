@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 
 import { currentProfileQueryOptions, useCurrentProfile } from '@db/profiles';
-import { Card } from '@app/components/card/Card';
+import { Card } from '@app/components/generic/surfaces/Card';
 import { ProfileSettingsForm } from '@app/components/profile/ProfileSettingsForm';
 
 export const Route = createFileRoute('/_app/profiles/settings')({

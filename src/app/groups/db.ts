@@ -1,3 +1,6 @@
+import { queryOptions } from '@tanstack/react-query';
+
+import { db } from '@db/core';
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
 import { groupInputSchema } from '@app/groups/validation';
 
@@ -14,13 +17,36 @@ export const groupKeys = {
   lists: () => [...groupKeys.all, 'list'] as const,
   list: (filters: object) => [...groupKeys.lists(), filters] as const,
   detail: (id: string) => [...groupKeys.all, 'detail', id] as const,
+  detailBySlug: (slug: string) => [...groupKeys.all, 'detail-by-slug', slug] as const,
 };
+
+export function groupBySlugQueryOptions(slug: string) {
+  return queryOptions({
+    queryKey: groupKeys.detailBySlug(slug),
+    queryFn: async () => {
+      const group = await db.query<GroupRow>(api.groups.getBySlug, { slug });
+      return { ...group, id: group._id };
+    },
+  });
+}
 
 export function useGroup(id: string) {
   const result = useLiveQuery<GroupRow, { id: string }>(
     api.groups.getById,
     { id },
     { enabled: !!id }
+  );
+  return {
+    ...result,
+    data: result.data ? { ...result.data, id: result.data._id } : undefined,
+  };
+}
+
+export function useGroupBySlug(slug: string | undefined) {
+  const result = useLiveQuery<GroupRow, { slug: string }>(
+    api.groups.getBySlug,
+    { slug: slug ?? '' },
+    { enabled: Boolean(slug) }
   );
   return {
     ...result,

@@ -1,10 +1,9 @@
 import { Link } from '@tanstack/react-router';
 import Fuse from 'fuse.js';
-import { Search } from 'lucide-react';
 import { useMemo } from 'react';
 
 import type { FaqItemWithDetails } from '@db/faq';
-import { Stack } from '@app/components/layout';
+import { Stack } from '@app/components/generic/layout';
 import { formatRelativeDate } from '@app/utils/formatRelativeDate';
 
 import { FaqItemList, FaqItemListRow } from './FaqItemList';
@@ -14,17 +13,9 @@ interface FaqListProps {
   items: FaqItemWithDetails[];
   rulesetSlug: string;
   searchQuery: string;
-  onSearchChange: (value: string) => void;
-  placeholder?: string;
 }
 
-export function FaqList({
-  items,
-  rulesetSlug,
-  searchQuery,
-  onSearchChange,
-  placeholder = 'Search questions…',
-}: FaqListProps) {
+export function FaqList({ items, rulesetSlug, searchQuery }: FaqListProps) {
   const fuse = useMemo(
     () =>
       new Fuse(items, {
@@ -45,18 +36,6 @@ export function FaqList({
 
   return (
     <Stack gap={3}>
-      <div className={styles.searchWrapper}>
-        <Search className={styles.searchIcon} size={18} aria-hidden />
-        <input
-          type="search"
-          className={styles.searchInput}
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder={placeholder}
-          aria-label="Search FAQ questions"
-        />
-      </div>
-
       {filtered.length === 0 ? (
         <p className={styles.noResults}>No questions match your search.</p>
       ) : (
