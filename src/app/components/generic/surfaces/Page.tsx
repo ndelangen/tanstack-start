@@ -152,7 +152,9 @@ export function Page({ head, content }: PageProps) {
         {content}
       </div>
       <div className={styles.footer}>
-        <p>Footer</p>
+        <p>
+          <Link to="/privacy">Privacy Policy</Link>
+        </p>
       </div>
     </div>
   );

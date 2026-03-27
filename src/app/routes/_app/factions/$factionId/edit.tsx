@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 
 import { factionDetailQueryOptions, useFaction } from '@db/factions';
 import { useCurrentProfile } from '@db/profiles';
-import { FactionEditor } from '@app/components/factions/editor';
+import { FactionEditor } from '@app/components/factions/editor/FactionEditor';
 import { Card } from '@app/components/generic/surfaces/Card';
 
 export const Route = createFileRoute('/_app/factions/$factionId/edit')({

@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as PrivacyIndexRouteImport } from './routes/privacy/index'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AuthOauthRouteImport } from './routes/auth/oauth'
@@ -37,6 +38,11 @@ import { Route as AppRulesetsRulesetSlugFaqQuestionSlugRouteImport } from './rou
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyIndexRoute = PrivacyIndexRouteImport.update({
+  id: '/privacy/',
+  path: '/privacy/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthIndexRoute = AuthIndexRouteImport.update({
@@ -170,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/auth/login': typeof AuthLoginRoute
   '/auth/oauth': typeof AuthOauthRoute
   '/auth/': typeof AuthIndexRoute
+  '/privacy/': typeof PrivacyIndexRoute
   '/admin/migrations': typeof AppAdminMigrationsRoute
   '/assets/create': typeof AppAssetsCreateRoute
   '/factions/$factionId': typeof AppFactionsFactionIdRouteWithChildren
@@ -196,6 +203,7 @@ export interface FileRoutesByTo {
   '/auth/oauth': typeof AuthOauthRoute
   '/': typeof AppIndexRoute
   '/auth': typeof AuthIndexRoute
+  '/privacy': typeof PrivacyIndexRoute
   '/admin/migrations': typeof AppAdminMigrationsRoute
   '/assets/create': typeof AppAssetsCreateRoute
   '/factions/$factionId': typeof AppFactionsFactionIdRouteWithChildren
@@ -224,6 +232,7 @@ export interface FileRoutesById {
   '/auth/oauth': typeof AuthOauthRoute
   '/_app/': typeof AppIndexRoute
   '/auth/': typeof AuthIndexRoute
+  '/privacy/': typeof PrivacyIndexRoute
   '/_app/admin/migrations': typeof AppAdminMigrationsRoute
   '/_app/assets/create': typeof AppAssetsCreateRoute
   '/_app/factions/$factionId': typeof AppFactionsFactionIdRouteWithChildren
@@ -252,6 +261,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/oauth'
     | '/auth/'
+    | '/privacy/'
     | '/admin/migrations'
     | '/assets/create'
     | '/factions/$factionId'
@@ -278,6 +288,7 @@ export interface FileRouteTypes {
     | '/auth/oauth'
     | '/'
     | '/auth'
+    | '/privacy'
     | '/admin/migrations'
     | '/assets/create'
     | '/factions/$factionId'
@@ -305,6 +316,7 @@ export interface FileRouteTypes {
     | '/auth/oauth'
     | '/_app/'
     | '/auth/'
+    | '/privacy/'
     | '/_app/admin/migrations'
     | '/_app/assets/create'
     | '/_app/factions/$factionId'
@@ -332,6 +344,7 @@ export interface RootRouteChildren {
   AuthLoginRoute: typeof AuthLoginRoute
   AuthOauthRoute: typeof AuthOauthRoute
   AuthIndexRoute: typeof AuthIndexRoute
+  PrivacyIndexRoute: typeof PrivacyIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -341,6 +354,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy/': {
+      id: '/privacy/'
+      path: '/privacy'
+      fullPath: '/privacy/'
+      preLoaderRoute: typeof PrivacyIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/': {
@@ -590,6 +610,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthLoginRoute: AuthLoginRoute,
   AuthOauthRoute: AuthOauthRoute,
   AuthIndexRoute: AuthIndexRoute,
+  PrivacyIndexRoute: PrivacyIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

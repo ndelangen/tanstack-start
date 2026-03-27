@@ -1,4 +1,4 @@
-import { useForm } from '@tanstack/react-form';
+import { type ReactFormExtendedApi, useForm } from '@tanstack/react-form';
 import { Link } from '@tanstack/react-router';
 import { Check, Copy, RotateCcw, Save, Trash2, UserMinus, Users, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -534,11 +534,38 @@ export function FactionEditor({
         )}
       </div>
 
-      {(parseError || mutationError) && (
-        <div className={styles.errorBanner} role="alert">
-          {parseError ?? mutationError}
+      <FactionEditForm errors={[parseError ?? '', mutationError ?? '']} form={form} />
+    </div>
+  );
+}
+
+function FactionEditForm({
+  errors,
+  form,
+}: {
+  errors: string[];
+  form: ReactFormExtendedApi<
+    Faction,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined
+  >;
+}) {
+  return (
+    <>
+      {errors.map((error) => (
+        <div className={styles.errorBanner} role="alert" key={error}>
+          {error}
         </div>
-      )}
+      ))}
 
       <div className={styles.body}>
         <aside className={styles.preview}>
@@ -569,6 +596,6 @@ export function FactionEditor({
           <FactionFormFields form={form} />
         </div>
       </div>
-    </div>
+    </>
   );
 }
