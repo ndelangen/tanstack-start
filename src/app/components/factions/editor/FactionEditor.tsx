@@ -534,7 +534,10 @@ export function FactionEditor({
         )}
       </div>
 
-      <FactionEditForm errors={[parseError ?? '', mutationError ?? '']} form={form} />
+      <FactionEditForm
+        errors={([] as string[]).concat(parseError ?? []).concat(mutationError ?? [])}
+        form={form}
+      />
     </div>
   );
 }
