@@ -1,5 +1,3 @@
-import { queryOptions } from '@tanstack/react-query';
-
 import { db } from '@db/core';
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
 import {
@@ -37,61 +35,37 @@ function toFactionEntry(entry: FactionRow): FactionEntry {
   };
 }
 
-export const factionKeys = {
-  all: ['factions'] as const,
-  lists: () => [...factionKeys.all, 'list'] as const,
-  list: (filters: object) => [...factionKeys.lists(), filters] as const,
-  detail: (slug: string) => [...factionKeys.all, 'detail', slug] as const,
-};
-
-export function factionDetailQueryOptions(slug: string) {
-  return queryOptions({
-    queryKey: factionKeys.detail(slug),
-    queryFn: async () => {
-      const entry = await db.query<FactionRow>(api.factions.getBySlug, { slug });
-      return toFactionEntry(entry);
-    },
-  });
+export async function loadFactionBySlug(slug: string): Promise<FactionEntry> {
+  const entry = await db.query<FactionRow>(api.factions.getBySlug, { slug });
+  return toFactionEntry(entry);
 }
 
-export function factionsListQueryOptions() {
-  return queryOptions({
-    queryKey: factionKeys.list({ type: 'all' }),
-    queryFn: async () => {
-      const entries = await db.query<FactionRow[]>(api.factions.list, {});
-      return entries.map(toFactionEntry);
-    },
-  });
+export async function loadFactionsAll(): Promise<FactionEntry[]> {
+  const entries = await db.query<FactionRow[]>(api.factions.list, {});
+  return entries.map(toFactionEntry);
 }
 
-export function factionsByOwnerQueryOptions(ownerId: string) {
-  return queryOptions({
-    queryKey: factionKeys.list({ owner: ownerId }),
-    queryFn: async () => {
-      const entries = await db.query<FactionRow[]>(api.factions.listByOwner, { owner_id: ownerId });
-      return entries.map(toFactionEntry);
-    },
-  });
+export async function loadFactionsByOwner(ownerId: string): Promise<FactionEntry[]> {
+  const entries = await db.query<FactionRow[]>(api.factions.listByOwner, { owner_id: ownerId });
+  return entries.map(toFactionEntry);
 }
 
-export function factionsByGroupQueryOptions(groupId: string) {
-  return queryOptions({
-    queryKey: factionKeys.list({ group: groupId }),
-    queryFn: async () => {
-      const entries = await db.query<FactionRow[]>(api.factions.listByGroup, {
-        group_id: groupId,
-      });
-      return entries.map(toFactionEntry);
-    },
+export async function loadFactionsByGroup(groupId: string): Promise<FactionEntry[]> {
+  const entries = await db.query<FactionRow[]>(api.factions.listByGroup, {
+    group_id: groupId,
   });
+  return entries.map(toFactionEntry);
 }
 
-export function useFaction(slug: string, options?: { enabled?: boolean }) {
+export function useFaction(slug: string, options?: { enabled?: boolean; initialData?: FactionEntry }) {
   const enabled = options?.enabled ?? true;
   const result = useLiveQuery<FactionRow, { slug: string }>(
     api.factions.getBySlug,
     { slug },
-    { enabled: enabled && slug.length > 0 }
+    {
+      enabled: enabled && slug.length > 0,
+      initialData: () => options?.initialData ?? undefined,
+    }
   );
   return {
     ...result,
@@ -99,19 +73,27 @@ export function useFaction(slug: string, options?: { enabled?: boolean }) {
   };
 }
 
-export function useFactionsAll() {
-  const result = useLiveQuery<FactionRow[], Record<string, never>>(api.factions.list, {});
+export function useFactionsAll(options?: { initialData?: FactionEntry[] }) {
+  const result = useLiveQuery<FactionRow[], Record<string, never>>(api.factions.list, {}, {
+    initialData: () => options?.initialData ?? undefined,
+  });
   return {
     ...result,
     data: result.data?.map(toFactionEntry),
   };
 }
 
-export function useFactionsByOwner(ownerId: string | undefined) {
+export function useFactionsByOwner(
+  ownerId: string | undefined,
+  options?: { initialData?: FactionEntry[] }
+) {
   const result = useLiveQuery<FactionRow[], { owner_id: string }>(
     api.factions.listByOwner,
     { owner_id: ownerId ?? '' },
-    { enabled: Boolean(ownerId) }
+    {
+      enabled: Boolean(ownerId),
+      initialData: () => options?.initialData ?? undefined,
+    }
   );
   return {
     ...result,
@@ -119,11 +101,14 @@ export function useFactionsByOwner(ownerId: string | undefined) {
   };
 }
 
-export function useFactionsByGroup(groupId: string) {
+export function useFactionsByGroup(groupId: string, options?: { initialData?: FactionEntry[] }) {
   const result = useLiveQuery<FactionRow[], { group_id: string }>(
     api.factions.listByGroup,
     { group_id: groupId },
-    { enabled: Boolean(groupId) }
+    {
+      enabled: Boolean(groupId),
+      initialData: () => options?.initialData ?? undefined,
+    }
   );
   return {
     ...result,

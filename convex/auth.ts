@@ -19,9 +19,8 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       clientId: process.env.AUTH_DISCORD_ID,
       clientSecret: process.env.AUTH_DISCORD_SECRET,
       authorization: {
-        params: {
-          scope: 'profile',
-        },
+        url: 'https://discord.com/api/oauth2/authorize',
+        params: { scope: 'identify' },
       },
     }),
   ],

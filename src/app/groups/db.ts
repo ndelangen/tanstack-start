@@ -1,5 +1,3 @@
-import { queryOptions } from '@tanstack/react-query';
-
 import { db } from '@db/core';
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
 import { groupInputSchema } from '@app/groups/validation';
@@ -12,22 +10,9 @@ export type GroupEntry = GroupRow & { id: string };
 export type GroupInsert = GroupEntry;
 export type GroupUpdate = Partial<GroupEntry>;
 
-export const groupKeys = {
-  all: ['groups'] as const,
-  lists: () => [...groupKeys.all, 'list'] as const,
-  list: (filters: object) => [...groupKeys.lists(), filters] as const,
-  detail: (id: string) => [...groupKeys.all, 'detail', id] as const,
-  detailBySlug: (slug: string) => [...groupKeys.all, 'detail-by-slug', slug] as const,
-};
-
-export function groupBySlugQueryOptions(slug: string) {
-  return queryOptions({
-    queryKey: groupKeys.detailBySlug(slug),
-    queryFn: async () => {
-      const group = await db.query<GroupRow>(api.groups.getBySlug, { slug });
-      return { ...group, id: group._id };
-    },
-  });
+export async function loadGroupBySlug(slug: string): Promise<GroupEntry> {
+  const group = await db.query<GroupRow>(api.groups.getBySlug, { slug });
+  return { ...group, id: group._id };
 }
 
 export function useGroup(id: string) {
@@ -42,11 +27,17 @@ export function useGroup(id: string) {
   };
 }
 
-export function useGroupBySlug(slug: string | undefined) {
+export function useGroupBySlug(
+  slug: string | undefined,
+  options?: { initialData?: GroupEntry; enabled?: boolean }
+) {
   const result = useLiveQuery<GroupRow, { slug: string }>(
     api.groups.getBySlug,
     { slug: slug ?? '' },
-    { enabled: Boolean(slug) }
+    {
+      enabled: options?.enabled ?? Boolean(slug),
+      initialData: () => options?.initialData ?? undefined,
+    }
   );
   return {
     ...result,
@@ -54,8 +45,10 @@ export function useGroupBySlug(slug: string | undefined) {
   };
 }
 
-export function useGroupsAll() {
-  const result = useLiveQuery<GroupRow[], Record<string, never>>(api.groups.list, {});
+export function useGroupsAll(options?: { initialData?: GroupEntry[] }) {
+  const result = useLiveQuery<GroupRow[], Record<string, never>>(api.groups.list, {}, {
+    initialData: () => options?.initialData ?? undefined,
+  });
   return {
     ...result,
     data: result.data?.map((entry) => ({ ...entry, id: entry._id })),

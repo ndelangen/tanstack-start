@@ -1,38 +1,35 @@
-import { createFileRoute, Link, Outlet, useLocation, useMatches } from '@tanstack/react-router';
+import { createFileRoute, getRouteApi, Link, Outlet, useLocation, useMatches } from '@tanstack/react-router';
 import { UserPlus } from 'lucide-react';
 
-import { factionDetailQueryOptions, useFaction } from '@db/factions';
+import { loadFactionBySlug, useFaction } from '@db/factions';
 import { useGroup } from '@db/groups';
 import { useGroupMembers, useRequestGroupMembership, useUserGroupMemberships } from '@db/members';
-import { currentProfileQueryOptions, useCurrentProfile, useProfilesAll } from '@db/profiles';
-import { rulesetsByFactionQueryOptions, useRulesetsByFaction } from '@db/rulesets';
+import { useCurrentProfile, useProfilesAll } from '@db/profiles';
+import { loadRulesetsByFaction, useRulesetsByFaction } from '@db/rulesets';
 import { FormButton } from '@app/components/form/FormButton';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 
 export const Route = createFileRoute('/_app/factions/$factionId')({
-  loader: async ({ context, params, location }) => {
-    await context.queryClient.ensureQueryData(currentProfileQueryOptions());
-
+  loader: async ({ params, location }) => {
     const isSheet = location.pathname.endsWith('/sheet');
     const mode = new URLSearchParams(location.search).get('mode') ?? 'db';
 
     if (isSheet && mode === 'live') {
-      return;
+      return { faction: undefined, rulesets: [] };
     }
 
-    const faction = await context.queryClient.ensureQueryData(
-      factionDetailQueryOptions(params.factionId)
-    );
+    const faction = await loadFactionBySlug(params.factionId);
+    const rulesets = isSheet ? [] : await loadRulesetsByFaction(faction.id);
 
-    if (!isSheet) {
-      await context.queryClient.ensureQueryData(rulesetsByFactionQueryOptions(faction.id));
-    }
+    return { faction, rulesets };
   },
   component: FactionDetailPage,
   staticData: {
     PageHead: FactionPageHead,
   },
 });
+
+const appRouteApi = getRouteApi('/_app');
 
 function canEditFaction(
   profileId: string | undefined,
@@ -48,8 +45,14 @@ function canEditFaction(
 
 function FactionPageHead() {
   const { factionId } = Route.useParams();
-  const faction = useFaction(factionId);
-  const profile = useCurrentProfile();
+  const appLoaderData = appRouteApi.useLoaderData();
+  const loaderData = Route.useLoaderData();
+  const factionSeed = loaderData?.faction;
+  const faction = useFaction(factionId, { initialData: factionSeed });
+  const profile = useCurrentProfile({
+    initialCurrent: appLoaderData.currentProfile,
+    initialCurrentUserId: appLoaderData.currentUserId,
+  });
   const profiles = useProfilesAll();
   const memberships = useUserGroupMemberships(profile.data?.id);
 
@@ -95,6 +98,10 @@ function FactionPageHead() {
 
 function FactionDetailPage() {
   const { factionId } = Route.useParams();
+  const appLoaderData = appRouteApi.useLoaderData();
+  const loaderData = Route.useLoaderData();
+  const factionSeed = loaderData?.faction;
+  const rulesetsSeed = loaderData?.rulesets;
   const location = useLocation();
   const matches = useMatches();
   const isSheet = location.pathname.endsWith('/sheet');
@@ -110,9 +117,12 @@ function FactionDetailPage() {
   const sheetMode = sheetModeFromObject ?? sheetModeFromString ?? 'db';
   const isLiveSheet = isSheet && sheetMode === 'live';
 
-  const faction = useFaction(factionId, { enabled: !isLiveSheet });
-  const rulesets = useRulesetsByFaction(faction.data?.id);
-  const profile = useCurrentProfile();
+  const faction = useFaction(factionId, { enabled: !isLiveSheet, initialData: factionSeed });
+  const rulesets = useRulesetsByFaction(faction.data?.id, { initialData: rulesetsSeed });
+  const profile = useCurrentProfile({
+    initialCurrent: appLoaderData.currentProfile,
+    initialCurrentUserId: appLoaderData.currentUserId,
+  });
   const memberships = useUserGroupMemberships(profile.data?.id);
   const group = useGroup(faction.data?.group_id ?? '');
   const groupMembers = useGroupMembers(faction.data?.group_id ?? '');

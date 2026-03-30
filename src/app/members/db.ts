@@ -1,5 +1,3 @@
-import { queryOptions } from '@tanstack/react-query';
-
 import { db } from '@db/core';
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
 
@@ -12,70 +10,52 @@ export type GroupMemberInsert = GroupMemberEntry;
 export type GroupMemberUpdate = Partial<GroupMemberEntry>;
 export type GroupMemberStatus = GroupMemberRow['status'];
 
-export const memberKeys = {
-  all: ['group_members'] as const,
-  lists: () => [...memberKeys.all, 'list'] as const,
-  list: (filters: object) => [...memberKeys.lists(), filters] as const,
-  detail: (groupId: string, userId: string) =>
-    [...memberKeys.all, 'detail', groupId, userId] as const,
-  byGroup: (groupId: string) => [...memberKeys.all, 'group', groupId] as const,
-  byGroupAndStatus: (groupId: string, status: GroupMemberStatus) =>
-    [...memberKeys.byGroup(groupId), status] as const,
-  byUser: (userId: string) => [...memberKeys.all, 'user', userId] as const,
-};
-
 export type UserGroupMembershipWithGroup = GroupMemberEntry & {
   groups: { id: string; name: string } | null;
 };
 
-export function userGroupMembershipsQueryOptions(userId: string) {
-  return queryOptions({
-    queryKey: memberKeys.byUser(userId),
-    queryFn: async () =>
-      (
-        await db.query<(GroupMemberRow & { groups: { id: string; name: string } | null })[]>(
-          api.members.listByUserActiveWithGroups,
-          {
-            user_id: userId,
-          }
-        )
-      ).map((entry) => ({ ...entry, id: entry._id, groups: entry.groups })),
-  });
+export async function loadUserGroupMemberships(userId: string): Promise<UserGroupMembershipWithGroup[]> {
+  const entries = await db.query<(GroupMemberRow & { groups: { id: string; name: string } | null })[]>(
+    api.members.listByUserActiveWithGroups,
+    {
+      user_id: userId,
+    }
+  );
+  return entries.map((entry) => ({ ...entry, id: entry._id, groups: entry.groups }));
 }
 
-export function groupMembersByStatusQueryOptions(groupId: string, status: GroupMemberStatus) {
-  return queryOptions({
-    queryKey: memberKeys.byGroupAndStatus(groupId, status),
-    queryFn: async () =>
-      (
-        await db.query<GroupMemberRow[]>(api.members.listByGroupAndStatus, {
-          group_id: groupId,
-          status,
-        })
-      ).map((entry) => ({ ...entry, id: entry._id })),
+export async function loadGroupMembersByStatus(
+  groupId: string,
+  status: GroupMemberStatus
+): Promise<GroupMemberEntry[]> {
+  const entries = await db.query<GroupMemberRow[]>(api.members.listByGroupAndStatus, {
+    group_id: groupId,
+    status,
   });
+  return entries.map((entry) => ({ ...entry, id: entry._id }));
 }
 
-export function groupMembersQueryOptions(groupId: string) {
-  return queryOptions({
-    queryKey: memberKeys.byGroup(groupId),
-    queryFn: async () =>
-      (
-        await db.query<GroupMemberRow[]>(api.members.listByGroup, {
-          group_id: groupId,
-        })
-      ).map((entry) => ({ ...entry, id: entry._id })),
+export async function loadGroupMembers(groupId: string): Promise<GroupMemberEntry[]> {
+  const entries = await db.query<GroupMemberRow[]>(api.members.listByGroup, {
+    group_id: groupId,
   });
+  return entries.map((entry) => ({ ...entry, id: entry._id }));
 }
 
-export function useUserGroupMemberships(userId: string | undefined) {
+export function useUserGroupMemberships(
+  userId: string | undefined,
+  options?: { initialData?: UserGroupMembershipWithGroup[] }
+) {
   const result = useLiveQuery<
     (GroupMemberRow & { groups: { id: string; name: string } | null })[],
     { user_id: string }
   >(
     api.members.listByUserActiveWithGroups,
     { user_id: userId ?? '' },
-    { enabled: Boolean(userId) }
+    {
+      enabled: Boolean(userId),
+      initialData: () => options?.initialData ?? undefined,
+    }
   );
   return {
     ...result,
@@ -83,11 +63,14 @@ export function useUserGroupMemberships(userId: string | undefined) {
   };
 }
 
-export function useGroupMembers(groupId: string) {
+export function useGroupMembers(groupId: string, options?: { initialData?: GroupMemberEntry[] }) {
   const result = useLiveQuery<GroupMemberRow[], { group_id: string }>(
     api.members.listByGroup,
     { group_id: groupId },
-    { enabled: Boolean(groupId) }
+    {
+      enabled: Boolean(groupId),
+      initialData: () => options?.initialData ?? undefined,
+    }
   );
   return {
     ...result,
@@ -95,11 +78,18 @@ export function useGroupMembers(groupId: string) {
   };
 }
 
-export function useGroupMembersByStatus(groupId: string, status: GroupMemberStatus) {
+export function useGroupMembersByStatus(
+  groupId: string,
+  status: GroupMemberStatus,
+  options?: { initialData?: GroupMemberEntry[] }
+) {
   const result = useLiveQuery<GroupMemberRow[], { group_id: string; status: GroupMemberStatus }>(
     api.members.listByGroupAndStatus,
     { group_id: groupId, status },
-    { enabled: Boolean(groupId) }
+    {
+      enabled: Boolean(groupId),
+      initialData: () => options?.initialData ?? undefined,
+    }
   );
   return {
     ...result,

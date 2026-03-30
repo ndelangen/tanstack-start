@@ -3,13 +3,13 @@ import Fuse from 'fuse.js';
 import { Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import { factionsListQueryOptions, useFactionsAll } from '@db/factions';
+import { loadFactionsAll, useFactionsAll } from '@db/factions';
 import { FactionList } from '@app/components/factions/FactionList';
 
 import styles from './FactionsIndex.module.css';
 
 export const Route = createFileRoute('/_app/factions/')({
-  loader: ({ context }) => context.queryClient.ensureQueryData(factionsListQueryOptions()),
+  loader: async () => ({ factions: await loadFactionsAll() }),
   component: FactionsPage,
   staticData: {
     PageHead: () => (
@@ -38,7 +38,8 @@ export const Route = createFileRoute('/_app/factions/')({
 });
 
 function FactionsPage() {
-  const factions = useFactionsAll();
+  const loaderData = Route.useLoaderData();
+  const factions = useFactionsAll({ initialData: loaderData.factions });
   const [searchQuery, setSearchQuery] = useState('');
 
   const list = factions.data ?? [];

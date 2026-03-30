@@ -1,18 +1,17 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, getRouteApi, Link } from '@tanstack/react-router';
 
-import { currentProfileQueryOptions, useCurrentProfile } from '@db/profiles';
+import { useCurrentProfile } from '@db/profiles';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { ProfileSettingsForm } from '@app/components/profile/ProfileSettingsForm';
 
 export const Route = createFileRoute('/_app/profiles/settings')({
-  loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(currentProfileQueryOptions());
-  },
   component: ProfileSettingsPage,
   staticData: {
     PageHead: ProfileSettingsPageHead,
   },
 });
+
+const appRouteApi = getRouteApi('/_app');
 
 function ProfileSettingsPageHead() {
   return (
@@ -23,7 +22,11 @@ function ProfileSettingsPageHead() {
 }
 
 function ProfileSettingsPage() {
-  const profile = useCurrentProfile();
+  const appLoaderData = appRouteApi.useLoaderData();
+  const profile = useCurrentProfile({
+    initialCurrent: appLoaderData.currentProfile,
+    initialCurrentUserId: appLoaderData.currentUserId,
+  });
 
   if (!profile.data) {
     return (

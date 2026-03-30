@@ -1,5 +1,3 @@
-import { queryOptions } from '@tanstack/react-query';
-
 import { db } from '@db/core';
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
 import { rulesetInputSchema } from '@app/rulesets/validation';
@@ -20,85 +18,44 @@ export type RulesetUpdate = Omit<Partial<RulesetEntry>, 'name'> & {
   name?: Ruleset['name'];
 };
 
-export const rulesetKeys = {
-  all: ['rulesets'] as const,
-  lists: () => [...rulesetKeys.all, 'list'] as const,
-  list: (filters: object) => [...rulesetKeys.lists(), filters] as const,
-  detail: (id: string) => [...rulesetKeys.all, 'detail', id] as const,
-  detailBySlug: (slug: string) => [...rulesetKeys.all, 'detailBySlug', slug] as const,
-  factions: (rulesetId: string) => [...rulesetKeys.detail(rulesetId), 'factions'] as const,
-  byFaction: (factionId: string) => [...rulesetKeys.all, 'byFaction', factionId] as const,
-  canAccess: (rulesetId: string) => [...rulesetKeys.all, 'canAccess', rulesetId] as const,
-};
-
-export function rulesetsListQueryOptions() {
-  return queryOptions({
-    queryKey: rulesetKeys.list({ type: 'all' }),
-    queryFn: async () => {
-      const entries = await db.query<RulesetRow[]>(api.rulesets.list, {});
-      return entries.map((entry) => ({
-        ...entry,
-        id: entry._id,
-        name: rulesetInputSchema.parse({ name: entry.name }).name,
-      }));
-    },
-  });
+function toRulesetEntry(entry: RulesetRow): RulesetEntry {
+  return {
+    ...entry,
+    id: entry._id,
+    name: rulesetInputSchema.parse({ name: entry.name }).name,
+  };
 }
 
-export function rulesetDetailQueryOptions(id: string) {
-  return queryOptions({
-    queryKey: rulesetKeys.detail(id),
-    queryFn: async () => {
-      const entry = await db.query<RulesetRow>(api.rulesets.get, { id });
-      return {
-        ...entry,
-        id: entry._id,
-        name: rulesetInputSchema.parse({ name: entry.name }).name,
-      };
-    },
-  });
+export async function loadRulesetsAll(): Promise<RulesetEntry[]> {
+  const entries = await db.query<RulesetRow[]>(api.rulesets.list, {});
+  return entries.map(toRulesetEntry);
 }
 
-export function rulesetBySlugQueryOptions(slug: string) {
-  return queryOptions({
-    queryKey: rulesetKeys.detailBySlug(slug),
-    queryFn: async () => {
-      const entry = await db.query<RulesetRow>(api.rulesets.getBySlug, { slug });
-      return {
-        ...entry,
-        id: entry._id,
-        name: rulesetInputSchema.parse({ name: entry.name }).name,
-      };
-    },
-  });
+export async function loadRuleset(id: string): Promise<RulesetEntry> {
+  const entry = await db.query<RulesetRow>(api.rulesets.get, { id });
+  return toRulesetEntry(entry);
 }
 
-export function rulesetFactionsQueryOptions(rulesetId: string) {
-  return queryOptions({
-    queryKey: rulesetKeys.factions(rulesetId),
-    queryFn: async () =>
-      await db.query<string[]>(api.rulesets.factionIds, { ruleset_id: rulesetId }),
-  });
+export async function loadRulesetBySlug(slug: string): Promise<RulesetEntry> {
+  const entry = await db.query<RulesetRow>(api.rulesets.getBySlug, { slug });
+  return toRulesetEntry(entry);
 }
 
-export function rulesetFactionsWithDetailsQueryOptions(rulesetId: string) {
-  return queryOptions({
-    queryKey: [...rulesetKeys.factions(rulesetId), 'details'] as const,
-    queryFn: async () => {
-      const entries = await db.query<{ factionId: string; name: string; urlSlug: string }[]>(
-        api.rulesets.factionDetails,
-        { ruleset_id: rulesetId }
-      );
-      return entries;
-    },
-  });
+export async function loadRulesetFactions(rulesetId: string): Promise<string[]> {
+  return await db.query<string[]>(api.rulesets.factionIds, { ruleset_id: rulesetId });
 }
 
-export function canAccessRulesetQueryOptions(rulesetId: string) {
-  return queryOptions({
-    queryKey: rulesetKeys.canAccess(rulesetId),
-    queryFn: async () => await db.query<boolean>(api.rulesets.canAccess, { ruleset_id: rulesetId }),
-  });
+export async function loadRulesetFactionsWithDetails(
+  rulesetId: string
+): Promise<{ factionId: string; name: string; urlSlug: string }[]> {
+  return await db.query<{ factionId: string; name: string; urlSlug: string }[]>(
+    api.rulesets.factionDetails,
+    { ruleset_id: rulesetId }
+  );
+}
+
+export async function loadCanAccessRuleset(rulesetId: string): Promise<boolean> {
+  return await db.query<boolean>(api.rulesets.canAccess, { ruleset_id: rulesetId });
 }
 
 export function useCanAccessRuleset(rulesetId: string) {
@@ -109,31 +66,20 @@ export function useCanAccessRuleset(rulesetId: string) {
   );
 }
 
-export function rulesetsByFactionQueryOptions(factionId: string) {
-  return queryOptions({
-    queryKey: rulesetKeys.byFaction(factionId),
-    queryFn: async () => {
-      const entries = await db.query<RulesetRow[]>(api.rulesets.listByFaction, {
-        faction_id: factionId,
-      });
-      return entries.map((entry) => ({
-        ...entry,
-        id: entry._id,
-        name: rulesetInputSchema.parse({ name: entry.name }).name,
-      }));
-    },
+export async function loadRulesetsByFaction(factionId: string): Promise<RulesetEntry[]> {
+  const entries = await db.query<RulesetRow[]>(api.rulesets.listByFaction, {
+    faction_id: factionId,
   });
+  return entries.map(toRulesetEntry);
 }
 
-export function useRulesetsAll() {
-  const result = useLiveQuery<RulesetRow[], Record<string, never>>(api.rulesets.list, {});
+export function useRulesetsAll(options?: { initialData?: RulesetEntry[] }) {
+  const result = useLiveQuery<RulesetRow[], Record<string, never>>(api.rulesets.list, {}, {
+    initialData: () => options?.initialData ?? undefined,
+  });
   return {
     ...result,
-    data: result.data?.map((entry) => ({
-      ...entry,
-      id: entry._id,
-      name: rulesetInputSchema.parse({ name: entry.name }).name,
-    })),
+    data: result.data?.map(toRulesetEntry),
   };
 }
 
@@ -155,21 +101,18 @@ export function useRuleset(id: string) {
   };
 }
 
-export function useRulesetBySlug(slug: string) {
+export function useRulesetBySlug(slug: string, options?: { initialData?: RulesetEntry }) {
   const result = useLiveQuery<RulesetRow, { slug: string }>(
     api.rulesets.getBySlug,
     { slug },
-    { enabled: Boolean(slug) }
+    {
+      enabled: Boolean(slug),
+      initialData: () => options?.initialData ?? undefined,
+    }
   );
   return {
     ...result,
-    data: result.data
-      ? {
-          ...result.data,
-          id: result.data._id,
-          name: rulesetInputSchema.parse({ name: result.data.name }).name,
-        }
-      : undefined,
+    data: result.data ? toRulesetEntry(result.data) : undefined,
   };
 }
 
@@ -181,30 +124,38 @@ export function useRulesetFactions(rulesetId: string) {
   );
 }
 
-export function useRulesetFactionsWithDetails(rulesetId: string) {
+export function useRulesetFactionsWithDetails(
+  rulesetId: string,
+  options?: { initialData?: { factionId: string; name: string; urlSlug: string }[] }
+) {
   const result = useLiveQuery<
     { factionId: string; name: string; urlSlug: string }[],
     { ruleset_id: string }
-  >(api.rulesets.factionDetails, { ruleset_id: rulesetId }, { enabled: Boolean(rulesetId) });
+  >(api.rulesets.factionDetails, { ruleset_id: rulesetId }, {
+    enabled: Boolean(rulesetId),
+    initialData: () => options?.initialData ?? undefined,
+  });
   return {
     ...result,
     data: result.data,
   };
 }
 
-export function useRulesetsByFaction(factionRowId: string | undefined) {
+export function useRulesetsByFaction(
+  factionRowId: string | undefined,
+  options?: { initialData?: RulesetEntry[] }
+) {
   const result = useLiveQuery<RulesetRow[], { faction_id: string }>(
     api.rulesets.listByFaction,
     { faction_id: factionRowId ?? '' },
-    { enabled: Boolean(factionRowId) }
+    {
+      enabled: Boolean(factionRowId),
+      initialData: () => options?.initialData ?? undefined,
+    }
   );
   return {
     ...result,
-    data: result.data?.map((entry) => ({
-      ...entry,
-      id: entry._id,
-      name: rulesetInputSchema.parse({ name: entry.name }).name,
-    })),
+    data: result.data?.map(toRulesetEntry),
   };
 }
 

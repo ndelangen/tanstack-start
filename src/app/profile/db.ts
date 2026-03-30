@@ -1,4 +1,3 @@
-import { queryOptions } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 
 import { db } from '@db/core';
@@ -11,77 +10,45 @@ import type { Doc } from '../../../convex/_generated/dataModel';
 export type ProfileRow = Doc<'profiles'>;
 export type ProfileEntry = ProfileRow & { id: ProfileRow['user_id'] | ProfileRow['_id'] };
 
-const profileKeys = {
-  all: ['profiles'] as const,
-  lists: () => [...profileKeys.all, 'list'] as const,
-  list: (filters: object) => [...profileKeys.lists(), filters] as const,
-  detail: (id: string) => [...profileKeys.all, 'detail', id] as const,
-  detailBySlug: (slug: string) => [...profileKeys.all, 'detailBySlug', slug] as const,
-  current: () => [...profileKeys.all, 'current'] as const,
-};
-
-export function profileBySlugQueryOptions(slug: string) {
-  return queryOptions({
-    queryKey: profileKeys.detailBySlug(slug),
-    queryFn: async () => {
-      const entry = await db.query<ProfileRow>(api.profiles.getBySlug, { slug });
-      const resolvedId =
-        typeof entry.user_id === 'string' && entry.user_id.length > 0 ? entry.user_id : entry._id;
-      return { ...entry, id: resolvedId };
-    },
-  });
+function toProfileEntry(entry: ProfileRow): ProfileEntry {
+  const resolvedId =
+    typeof entry.user_id === 'string' && entry.user_id.length > 0 ? entry.user_id : entry._id;
+  return { ...entry, id: resolvedId };
 }
 
-export function profilesListQueryOptions() {
-  return queryOptions({
-    queryKey: profileKeys.list({ type: 'all' }),
-    queryFn: async () =>
-      (await db.query<ProfileRow[]>(api.profiles.list, {})).map((entry) => {
-        const resolvedId =
-          typeof entry.user_id === 'string' && entry.user_id.length > 0 ? entry.user_id : entry._id;
-        return { ...entry, id: resolvedId };
-      }),
-  });
+export async function loadProfileBySlug(slug: string): Promise<ProfileEntry> {
+  const entry = await db.query<ProfileRow>(api.profiles.getBySlug, { slug });
+  return toProfileEntry(entry);
 }
 
-export function currentProfileQueryOptions() {
-  return queryOptions({
-    queryKey: profileKeys.current(),
-    queryFn: async () => {
-      const currentRaw = await db.query<ProfileRow | null>(api.profiles.current, {});
-      const current = currentRaw
-        ? {
-            ...currentRaw,
-            id:
-              typeof currentRaw.user_id === 'string' && currentRaw.user_id.length > 0
-                ? currentRaw.user_id
-                : currentRaw._id,
-          }
-        : null;
-      if (current) {
-        const needsBackfill = current.slug === 'user' || !current.username || !current.avatar_url;
-        if (needsBackfill) {
-          const entry = await db.mutation<ProfileRow>(api.profiles.bootstrapCurrent, {});
-          const resolvedId =
-            typeof entry.user_id === 'string' && entry.user_id.length > 0
-              ? entry.user_id
-              : entry._id;
-          return { ...entry, id: resolvedId };
-        }
-        return current;
-      }
+export async function loadProfilesAll(): Promise<ProfileEntry[]> {
+  const entries = await db.query<ProfileRow[]>(api.profiles.list, {});
+  return entries.map(toProfileEntry);
+}
 
-      const userId = await db.query<string | null>(api.profiles.currentUserId, {});
-      if (!userId) {
-        return null;
-      }
+export async function loadCurrentUserId(): Promise<string | null> {
+  return await db.query<string | null>(api.profiles.currentUserId, {});
+}
 
+export async function loadCurrentProfile(): Promise<ProfileEntry | null> {
+  const currentRaw = await db.query<ProfileRow | null>(api.profiles.current, {});
+  const current = currentRaw ? toProfileEntry(currentRaw) : null;
+  if (current) {
+    const needsBackfill = current.slug === 'user' || !current.username || !current.avatar_url;
+    if (needsBackfill) {
       const entry = await db.mutation<ProfileRow>(api.profiles.bootstrapCurrent, {});
-      const resolvedId =
-        typeof entry.user_id === 'string' && entry.user_id.length > 0 ? entry.user_id : entry._id;
-      return { ...entry, id: resolvedId };
-    },
-  });
+      return toProfileEntry(entry);
+    }
+    return current;
+  }
+
+  const userId = await loadCurrentUserId();
+  if (!userId) {
+    return null;
+  }
+
+  const entry = await db.mutation<ProfileRow>(api.profiles.bootstrapCurrent, {});
+  return toProfileEntry(entry);
 }
 
 export function useProfile(id: string, options?: { enabled?: boolean }) {
@@ -105,43 +72,45 @@ export function useProfile(id: string, options?: { enabled?: boolean }) {
   };
 }
 
-export function useProfileBySlug(slug: string) {
+export function useProfileBySlug(
+  slug: string,
+  options?: { initialData?: ProfileEntry | null; enabled?: boolean }
+) {
   const result = useLiveQuery<ProfileRow | null, { slug: string }>(
     api.profiles.getBySlug,
     { slug },
-    { enabled: slug.trim().length > 0 }
+    {
+      enabled: options?.enabled ?? slug.trim().length > 0,
+      initialData: () => options?.initialData ?? undefined,
+    }
   );
   return {
     ...result,
-    data: result.data
-      ? {
-          ...result.data,
-          id:
-            typeof result.data.user_id === 'string' && result.data.user_id.length > 0
-              ? result.data.user_id
-              : result.data._id,
-        }
-      : undefined,
+    data: result.data ? toProfileEntry(result.data) : undefined,
   };
 }
 
-export function useProfilesAll() {
-  const result = useLiveQuery<ProfileRow[], Record<string, never>>(api.profiles.list, {});
+export function useProfilesAll(options?: { initialData?: ProfileEntry[] }) {
+  const result = useLiveQuery<ProfileRow[], Record<string, never>>(api.profiles.list, {}, {
+    initialData: () => options?.initialData ?? undefined,
+  });
   return {
     ...result,
-    data: result.data?.map((entry) => {
-      const resolvedId =
-        typeof entry.user_id === 'string' && entry.user_id.length > 0 ? entry.user_id : entry._id;
-      return { ...entry, id: resolvedId };
-    }),
+    data: result.data?.map(toProfileEntry),
   };
 }
 
-export function useCurrentProfile() {
-  const current = useLiveQuery<ProfileRow | null, Record<string, never>>(api.profiles.current, {});
+export function useCurrentProfile(options?: {
+  initialCurrent?: ProfileEntry | null;
+  initialCurrentUserId?: string | null;
+}) {
+  const current = useLiveQuery<ProfileRow | null, Record<string, never>>(api.profiles.current, {}, {
+    initialData: () => options?.initialCurrent ?? undefined,
+  });
   const currentUserId = useLiveQuery<string | null, Record<string, never>>(
     api.profiles.currentUserId,
-    {}
+    {},
+    { initialData: () => options?.initialCurrentUserId ?? undefined }
   );
   const bootstrap = useLiveMutation<Record<string, never>, ProfileRow>(
     api.profiles.bootstrapCurrent
@@ -164,26 +133,14 @@ export function useCurrentProfile() {
   if (current.data) {
     return {
       ...current,
-      data: {
-        ...current.data,
-        id:
-          typeof current.data.user_id === 'string' && current.data.user_id.length > 0
-            ? current.data.user_id
-            : current.data._id,
-      },
+      data: toProfileEntry(current.data),
     };
   }
 
   if (bootstrap.data) {
     return {
       ...bootstrap,
-      data: {
-        ...bootstrap.data,
-        id:
-          typeof bootstrap.data.user_id === 'string' && bootstrap.data.user_id.length > 0
-            ? bootstrap.data.user_id
-            : bootstrap.data._id,
-      },
+      data: toProfileEntry(bootstrap.data),
       isLoading: bootstrap.isPending,
     };
   }

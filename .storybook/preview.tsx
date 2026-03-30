@@ -8,7 +8,6 @@ import '../src/app/styles/tokens.css';
 import * as sizes from '../src/game/data/sizes';
 
 sb.mock(import('@tanstack/react-router'));
-sb.mock(import('@tanstack/react-query'));
 
 export default definePreview({
   addons: [addonDocs()],

@@ -1,9 +1,9 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, getRouteApi, Link, useNavigate } from '@tanstack/react-router';
 import { Check, MessageSquarePlus, Pencil, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import {
-  faqItemDetailByRulesetAndSlugQueryOptions,
+  loadFaqItemByRulesetAndSlug,
   useCreateFaqAnswer,
   useDeleteFaqAnswer,
   useDeleteFaqItem,
@@ -13,7 +13,7 @@ import {
   useUpdateFaqItem,
 } from '@db/faq';
 import { useCurrentProfile } from '@db/profiles';
-import { rulesetBySlugQueryOptions } from '@db/rulesets';
+import { loadRulesetBySlug } from '@db/rulesets';
 import { Answer } from '@app/components/faq/Answer';
 import { FormActions } from '@app/components/form/FormActions';
 import { FormButton } from '@app/components/form/FormButton';
@@ -26,13 +26,11 @@ import { Card } from '@app/components/generic/surfaces/Card';
 import styles from '../../$id/faq/FaqDetail.module.css';
 
 export const Route = createFileRoute('/_app/rulesets/$rulesetSlug/faq/$questionSlug')({
-  loader: async ({ context, params }) => {
+  loader: async ({ params }) => {
     try {
-      await context.queryClient.ensureQueryData(rulesetBySlugQueryOptions(params.rulesetSlug));
-      await context.queryClient.ensureQueryData(
-        faqItemDetailByRulesetAndSlugQueryOptions(params.rulesetSlug, params.questionSlug)
-      );
-      return { notFound: false };
+      await loadRulesetBySlug(params.rulesetSlug);
+      const item = await loadFaqItemByRulesetAndSlug(params.rulesetSlug, params.questionSlug);
+      return { notFound: false, item };
     } catch {
       return { notFound: true };
     }
@@ -50,12 +48,20 @@ export const Route = createFileRoute('/_app/rulesets/$rulesetSlug/faq/$questionS
   },
 });
 
+const appRouteApi = getRouteApi('/_app');
+
 function FaqDetailPage() {
   const { rulesetSlug, questionSlug } = Route.useParams();
   const loaderData = Route.useLoaderData();
   const navigate = useNavigate();
-  const faqItem = useFaqItemByRulesetAndSlug(rulesetSlug, questionSlug);
-  const profile = useCurrentProfile();
+  const faqItem = useFaqItemByRulesetAndSlug(rulesetSlug, questionSlug, {
+    initialData: 'item' in loaderData ? loaderData.item : undefined,
+  });
+  const appLoaderData = appRouteApi.useLoaderData();
+  const profile = useCurrentProfile({
+    initialCurrent: appLoaderData.currentProfile,
+    initialCurrentUserId: appLoaderData.currentUserId,
+  });
   const updateFaqItem = useUpdateFaqItem();
   const deleteFaqItem = useDeleteFaqItem();
   const createFaqAnswer = useCreateFaqAnswer();

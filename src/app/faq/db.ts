@@ -1,5 +1,3 @@
-import { queryOptions } from '@tanstack/react-query';
-
 import { db } from '@db/core';
 import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
 import { faqAnswerSchema, faqQuestionSchema } from '@app/faq/validation';
@@ -16,16 +14,6 @@ export type FaqAnswerEntry = FaqAnswerRow & { id: string };
 export type FaqAnswerInsert = FaqAnswerEntry;
 export type FaqAnswerUpdate = Partial<FaqAnswerEntry>;
 
-export const faqKeys = {
-  all: ['faq'] as const,
-  byRuleset: (rulesetId: string) => [...faqKeys.all, 'ruleset', rulesetId] as const,
-  detail: (id: string) => [...faqKeys.all, 'detail', id] as const,
-  detailByRulesetAndSlug: (rulesetSlug: string, questionSlug: string) =>
-    [...faqKeys.all, 'detailByRulesetAndSlug', rulesetSlug, questionSlug] as const,
-  askedBy: (profileId: string) => [...faqKeys.all, 'askedBy', profileId] as const,
-  answeredBy: (profileId: string) => [...faqKeys.all, 'answeredBy', profileId] as const,
-};
-
 export type FaqItemWithDetails = FaqItemEntry & {
   faq_answers: FaqAnswerEntry[];
   asker_profile: {
@@ -36,88 +24,103 @@ export type FaqItemWithDetails = FaqItemEntry & {
   } | null;
 };
 
-export function faqItemsByRulesetQueryOptions(rulesetId: string) {
-  return queryOptions({
-    queryKey: faqKeys.byRuleset(rulesetId),
-    queryFn: async () =>
-      (
-        await db.query<
-          (Omit<FaqItemWithDetails, 'id' | 'faq_answers'> & {
-            faq_answers: Omit<FaqAnswerEntry, 'id'>[];
-          })[]
-        >(api.faq.byRuleset, {
-          ruleset_id: rulesetId,
-        })
-      ).map((item) => ({
-        ...item,
-        id: item._id,
-        faq_answers: item.faq_answers.map((answer) => ({ ...answer, id: answer._id })),
-      })),
+export async function loadFaqItemsByRuleset(rulesetId: string): Promise<FaqItemWithDetails[]> {
+  const items = await db.query<
+    (Omit<FaqItemWithDetails, 'id' | 'faq_answers'> & {
+      faq_answers: Omit<FaqAnswerEntry, 'id'>[];
+    })[]
+  >(api.faq.byRuleset, {
+    ruleset_id: rulesetId,
   });
+  return items.map((item) => ({
+    ...item,
+    id: item._id,
+    faq_answers: item.faq_answers.map((answer) => ({ ...answer, id: answer._id })),
+  }));
 }
 
-export function faqItemDetailQueryOptions(id: string) {
-  return queryOptions({
-    queryKey: faqKeys.detail(id),
-    queryFn: async () => {
-      const item = await db.query<
-        Omit<FaqItemEntry, 'id'> & { faq_answers: Omit<FaqAnswerEntry, 'id'>[] }
-      >(api.faq.detail, { id });
-      return {
-        ...item,
-        id: item._id,
-        faq_answers: item.faq_answers.map((answer) => ({ ...answer, id: answer._id })),
-      };
-    },
-  });
+export async function loadFaqItemDetail(id: string): Promise<
+  Omit<FaqItemEntry, 'id'> & { faq_answers: Omit<FaqAnswerEntry, 'id'>[] } & { id: string }
+> {
+  const item = await db.query<Omit<FaqItemEntry, 'id'> & { faq_answers: Omit<FaqAnswerEntry, 'id'>[] }>(
+    api.faq.detail,
+    { id }
+  );
+  return {
+    ...item,
+    id: item._id,
+    faq_answers: item.faq_answers.map((answer) => ({ ...answer, id: answer._id })),
+  };
 }
 
-export function faqItemDetailByRulesetAndSlugQueryOptions(
+export async function loadFaqItemByRulesetAndSlug(
   rulesetSlug: string,
   questionSlug: string
-) {
-  return queryOptions({
-    queryKey: faqKeys.detailByRulesetAndSlug(rulesetSlug, questionSlug),
-    queryFn: async () => {
-      const item = await db.query<
-        Omit<FaqItemEntry, 'id' | 'faq_answers'> & {
-          asker_profile: {
-            id: string;
-            slug: string;
-            username: string | null;
-            avatar_url: string | null;
-          } | null;
-          ruleset: { id: string; slug: string; name: string };
-          faq_answers: (Omit<FaqAnswerEntry, 'id'> & {
-            answerer_profile: {
-              id: string;
-              slug: string;
-              username: string | null;
-              avatar_url: string | null;
-            } | null;
-          })[];
-        }
-      >(api.faq.detailByRulesetSlugAndQuestionSlug, {
-        ruleset_slug: rulesetSlug,
-        question_slug: questionSlug,
-      });
-      return {
-        ...item,
-        id: item._id,
-        ruleset: { ...item.ruleset, id: item.ruleset.id },
-        faq_answers: item.faq_answers.map((answer) => ({ ...answer, id: answer._id })),
-      };
-    },
+): Promise<
+  Omit<FaqItemEntry, 'id' | 'faq_answers'> & {
+    id: string;
+    asker_profile: {
+      id: string;
+      slug: string;
+      username: string | null;
+      avatar_url: string | null;
+    } | null;
+    ruleset: { id: string; slug: string; name: string };
+    faq_answers: (Omit<FaqAnswerEntry, 'id'> & {
+      id: string;
+      answerer_profile: {
+        id: string;
+        slug: string;
+        username: string | null;
+        avatar_url: string | null;
+      } | null;
+    })[];
+  }
+> {
+  const item = await db.query<
+    Omit<FaqItemEntry, 'id' | 'faq_answers'> & {
+      asker_profile: {
+        id: string;
+        slug: string;
+        username: string | null;
+        avatar_url: string | null;
+      } | null;
+      ruleset: { id: string; slug: string; name: string };
+      faq_answers: (Omit<FaqAnswerEntry, 'id'> & {
+        answerer_profile: {
+          id: string;
+          slug: string;
+          username: string | null;
+          avatar_url: string | null;
+        } | null;
+      })[];
+    }
+  >(api.faq.detailByRulesetSlugAndQuestionSlug, {
+    ruleset_slug: rulesetSlug,
+    question_slug: questionSlug,
   });
+  return {
+    ...item,
+    id: item._id,
+    ruleset: { ...item.ruleset, id: item.ruleset.id },
+    faq_answers: item.faq_answers.map((answer) => ({ ...answer, id: answer._id })),
+  };
 }
 
-export function useFaqItemsByRuleset(rulesetId: string) {
+export function useFaqItemsByRuleset(rulesetId: string, options?: { initialData?: FaqItemWithDetails[] }) {
   const result = useLiveQuery<
     (Omit<FaqItemWithDetails, 'id' | 'faq_answers'> & {
       faq_answers: Omit<FaqAnswerEntry, 'id'>[];
     })[],
     { ruleset_id: string }
-  >(api.faq.byRuleset, { ruleset_id: rulesetId }, { enabled: Boolean(rulesetId) });
+  >(
+    api.faq.byRuleset,
+    { ruleset_id: rulesetId },
+    {
+      enabled: Boolean(rulesetId),
+      initialData: () => options?.initialData ?? undefined,
+    }
+  );
   return {
     ...result,
     data: result.data?.map((item) => ({
@@ -145,7 +148,31 @@ export function useFaqItem(id: string) {
   };
 }
 
-export function useFaqItemByRulesetAndSlug(rulesetSlug: string, questionSlug: string) {
+export function useFaqItemByRulesetAndSlug(
+  rulesetSlug: string,
+  questionSlug: string,
+  options?: {
+    initialData?: Omit<FaqItemEntry, 'id' | 'faq_answers'> & {
+      id: string;
+      asker_profile: {
+        id: string;
+        slug: string;
+        username: string | null;
+        avatar_url: string | null;
+      } | null;
+      ruleset: { id: string; slug: string; name: string };
+      faq_answers: (Omit<FaqAnswerEntry, 'id'> & {
+        id: string;
+        answerer_profile: {
+          id: string;
+          slug: string;
+          username: string | null;
+          avatar_url: string | null;
+        } | null;
+      })[];
+    };
+  }
+) {
   const result = useLiveQuery<
     Omit<FaqItemEntry, 'id' | 'faq_answers'> & {
       asker_profile: {
@@ -168,7 +195,10 @@ export function useFaqItemByRulesetAndSlug(rulesetSlug: string, questionSlug: st
   >(
     api.faq.detailByRulesetSlugAndQuestionSlug,
     { ruleset_slug: rulesetSlug, question_slug: questionSlug },
-    { enabled: Boolean(rulesetSlug) && Boolean(questionSlug) }
+    {
+      enabled: Boolean(rulesetSlug) && Boolean(questionSlug),
+      initialData: () => options?.initialData ?? undefined,
+    }
   );
   return {
     ...result,
@@ -187,18 +217,13 @@ export type FaqItemAskedByWithRuleset = FaqItemEntry & {
   ruleset: { id: string; name: string; slug: string };
 };
 
-export function faqItemsAskedByQueryOptions(profileId: string) {
-  return queryOptions({
-    queryKey: faqKeys.askedBy(profileId),
-    queryFn: async () =>
-      (
-        await db.query<
-          (Omit<FaqItemAskedByWithRuleset, 'id'> & {
-            ruleset: { id: string; name: string; slug: string };
-          })[]
-        >(api.faq.askedBy, { profile_id: profileId })
-      ).map((entry) => ({ ...entry, id: entry._id })),
-  });
+export async function loadFaqItemsAskedBy(profileId: string): Promise<FaqItemAskedByWithRuleset[]> {
+  const entries = await db.query<
+    (Omit<FaqItemAskedByWithRuleset, 'id'> & {
+      ruleset: { id: string; name: string; slug: string };
+    })[]
+  >(api.faq.askedBy, { profile_id: profileId });
+  return entries.map((entry) => ({ ...entry, id: entry._id }));
 }
 
 export type FaqAnswerWithParent = FaqAnswerEntry & {
@@ -219,25 +244,23 @@ export type FaqAnswerWithParent = FaqAnswerEntry & {
   ruleset: { id: string; name: string; slug: string };
 };
 
-export function faqAnswersByUserQueryOptions(profileId: string) {
-  return queryOptions({
-    queryKey: faqKeys.answeredBy(profileId),
-    queryFn: async () =>
-      (
-        await db.query<
-          (Omit<FaqAnswerWithParent, 'id' | 'faq_item'> & {
-            faq_item: Omit<FaqAnswerWithParent['faq_item'], 'id'> & { id: string };
-          })[]
-        >(api.faq.answeredBy, { profile_id: profileId })
-      ).map((answer) => ({
-        ...answer,
-        id: answer._id,
-        faq_item: { ...answer.faq_item, id: answer.faq_item.id },
-      })),
-  });
+export async function loadFaqAnswersByUser(profileId: string): Promise<FaqAnswerWithParent[]> {
+  const answers = await db.query<
+    (Omit<FaqAnswerWithParent, 'id' | 'faq_item'> & {
+      faq_item: Omit<FaqAnswerWithParent['faq_item'], 'id'> & { id: string };
+    })[]
+  >(api.faq.answeredBy, { profile_id: profileId });
+  return answers.map((answer) => ({
+    ...answer,
+    id: answer._id,
+    faq_item: { ...answer.faq_item, id: answer.faq_item.id },
+  }));
 }
 
-export function useFaqItemsAskedBy(profileId: string | undefined) {
+export function useFaqItemsAskedBy(
+  profileId: string | undefined,
+  options?: { initialData?: FaqItemAskedByWithRuleset[] }
+) {
   const result = useLiveQuery<
     (Omit<FaqItemAskedByWithRuleset, 'id'> & {
       ruleset: { id: string; name: string; slug: string };
@@ -246,7 +269,10 @@ export function useFaqItemsAskedBy(profileId: string | undefined) {
   >(
     api.faq.askedBy,
     { profile_id: profileId ?? '' },
-    { enabled: profileId != null && profileId !== '' }
+    {
+      enabled: profileId != null && profileId !== '',
+      initialData: () => options?.initialData ?? undefined,
+    }
   );
   return {
     ...result,
@@ -254,7 +280,10 @@ export function useFaqItemsAskedBy(profileId: string | undefined) {
   };
 }
 
-export function useFaqAnswersByUser(profileId: string | undefined) {
+export function useFaqAnswersByUser(
+  profileId: string | undefined,
+  options?: { initialData?: FaqAnswerWithParent[] }
+) {
   const result = useLiveQuery<
     (Omit<FaqAnswerWithParent, 'id' | 'faq_item'> & {
       faq_item: Omit<FaqAnswerWithParent['faq_item'], 'id'> & { id: string };
@@ -263,7 +292,10 @@ export function useFaqAnswersByUser(profileId: string | undefined) {
   >(
     api.faq.answeredBy,
     { profile_id: profileId ?? '' },
-    { enabled: profileId != null && profileId !== '' }
+    {
+      enabled: profileId != null && profileId !== '',
+      initialData: () => options?.initialData ?? undefined,
+    }
   );
   return {
     ...result,

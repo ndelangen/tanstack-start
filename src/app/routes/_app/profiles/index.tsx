@@ -1,17 +1,18 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 
-import { profilesListQueryOptions, useProfilesAll } from '@db/profiles';
+import { loadProfilesAll, useProfilesAll } from '@db/profiles';
 import { Card } from '@app/components/generic/surfaces/Card';
 
 import styles from './ProfilesIndex.module.css';
 
 export const Route = createFileRoute('/_app/profiles/')({
-  loader: ({ context }) => context.queryClient.ensureQueryData(profilesListQueryOptions()),
+  loader: async () => ({ profiles: await loadProfilesAll() }),
   component: ProfilesPage,
 });
 
 function ProfilesPage() {
-  const profiles = useProfilesAll();
+  const loaderData = Route.useLoaderData();
+  const profiles = useProfilesAll({ initialData: loaderData.profiles });
 
   return (
     <div className={styles.root}>

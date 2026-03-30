@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect } from 'react';
 
-import { factionDetailQueryOptions, useFaction } from '@db/factions';
+import { loadFactionBySlug, useFaction } from '@db/factions';
 import '@app/components/factions/sheet/FactionSheetDocument.css';
 
 import { FactionSheetView } from '@app/components/factions/sheet/FactionSheetView';
@@ -11,21 +11,25 @@ export const Route = createFileRoute('/_app/factions/$factionId/sheet')({
   validateSearch: (params: Record<string, unknown>): { mode: 'db' | 'live' } => {
     return params.mode === 'live' ? { mode: 'live' } : { mode: 'db' };
   },
-  loader: async ({ context, params, location }) => {
+  loader: async ({ params, location }) => {
     // Loader deps do not include validated `search`; parse query string (matches validateSearch).
     const mode = new URLSearchParams(location.search).get('mode') ?? 'db';
     if (mode === 'live') {
-      return;
+      return { faction: undefined };
     }
-    await context.queryClient.ensureQueryData(factionDetailQueryOptions(params.factionId));
+    return { faction: await loadFactionBySlug(params.factionId) };
   },
   component: FactionSheetPage,
 });
 
 function FactionSheetPage() {
   const { factionId } = Route.useParams();
+  const loaderData = Route.useLoaderData();
   const { mode } = Route.useSearch();
-  const factionFromDb = useFaction(factionId, { enabled: mode === 'db' });
+  const factionFromDb = useFaction(factionId, {
+    enabled: mode === 'db',
+    initialData: loaderData.faction,
+  });
   const factionFromMessage = useFactionSheetPostMessage(mode === 'live');
 
   useEffect(() => {

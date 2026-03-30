@@ -1,12 +1,11 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, getRouteApi, Link } from '@tanstack/react-router';
 import { UserPlus } from 'lucide-react';
 
-import { factionsByGroupQueryOptions, useFactionsByGroup } from '@db/factions';
-import { groupBySlugQueryOptions, useGroupBySlug } from '@db/groups';
-import { groupMembersQueryOptions, useGroupMembers, useRequestGroupMembership } from '@db/members';
+import { loadFactionsByGroup, useFactionsByGroup } from '@db/factions';
+import { loadGroupBySlug, useGroupBySlug } from '@db/groups';
+import { loadGroupMembers, useGroupMembers, useRequestGroupMembership } from '@db/members';
 import {
-  currentProfileQueryOptions,
-  profilesListQueryOptions,
+  loadProfilesAll,
   useCurrentProfile,
   useProfilesAll,
 } from '@db/profiles';
@@ -16,14 +15,16 @@ import { Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 
 export const Route = createFileRoute('/_app/groups/$groupSlug')({
-  loader: async ({ context, params }) => {
-    await context.queryClient.ensureQueryData(currentProfileQueryOptions());
-    await context.queryClient.ensureQueryData(profilesListQueryOptions());
-    const group = await context.queryClient.ensureQueryData(
-      groupBySlugQueryOptions(params.groupSlug)
-    );
-    await context.queryClient.ensureQueryData(groupMembersQueryOptions(group.id));
-    await context.queryClient.ensureQueryData(factionsByGroupQueryOptions(group.id));
+  loader: async ({ params }) => {
+    const [profiles, group] = await Promise.all([
+      loadProfilesAll(),
+      loadGroupBySlug(params.groupSlug),
+    ]);
+    const [members, factions] = await Promise.all([
+      loadGroupMembers(group.id),
+      loadFactionsByGroup(group.id),
+    ]);
+    return { profiles, group, members, factions };
   },
   component: GroupDetailPage,
   staticData: {
@@ -31,9 +32,12 @@ export const Route = createFileRoute('/_app/groups/$groupSlug')({
   },
 });
 
+const appRouteApi = getRouteApi('/_app');
+
 function GroupPageHead() {
   const { groupSlug } = Route.useParams();
-  const group = useGroupBySlug(groupSlug);
+  const loaderData = Route.useLoaderData();
+  const group = useGroupBySlug(groupSlug, { initialData: loaderData.group });
 
   return (
     <div>
@@ -47,11 +51,16 @@ function GroupPageHead() {
 
 function GroupDetailPage() {
   const { groupSlug } = Route.useParams();
-  const group = useGroupBySlug(groupSlug);
-  const currentProfile = useCurrentProfile();
-  const profiles = useProfilesAll();
-  const members = useGroupMembers(group.data?.id ?? '');
-  const factions = useFactionsByGroup(group.data?.id ?? '');
+  const appLoaderData = appRouteApi.useLoaderData();
+  const loaderData = Route.useLoaderData();
+  const group = useGroupBySlug(groupSlug, { initialData: loaderData.group });
+  const currentProfile = useCurrentProfile({
+    initialCurrent: appLoaderData.currentProfile,
+    initialCurrentUserId: appLoaderData.currentUserId,
+  });
+  const profiles = useProfilesAll({ initialData: loaderData.profiles });
+  const members = useGroupMembers(group.data?.id ?? '', { initialData: loaderData.members });
+  const factions = useFactionsByGroup(group.data?.id ?? '', { initialData: loaderData.factions });
   const requestMembership = useRequestGroupMembership();
 
   if (group.isError) {

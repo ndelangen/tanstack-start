@@ -1,31 +1,35 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, getRouteApi, Link } from '@tanstack/react-router';
 
 import {
-  factionsByGroupQueryOptions,
-  factionsByOwnerQueryOptions,
+  loadFactionsByGroup,
+  loadFactionsByOwner,
   useFactionsByGroup,
   useFactionsByOwner,
 } from '@db/factions';
-import { userGroupMembershipsQueryOptions, useUserGroupMemberships } from '@db/members';
-import { currentProfileQueryOptions, useCurrentProfile } from '@db/profiles';
+import { loadUserGroupMemberships, useUserGroupMemberships } from '@db/members';
+import { loadCurrentProfile, useCurrentProfile } from '@db/profiles';
 import { FactionList } from '@app/components/factions/FactionList';
 
 export const Route = createFileRoute('/_app/factions/mine')({
-  loader: async ({ context }) => {
-    const profile = await context.queryClient.ensureQueryData(currentProfileQueryOptions());
+  loader: async () => {
+    const profile = await loadCurrentProfile();
 
     if (!profile?.id) {
-      return;
+      return { profile: null, ownedFactions: [], memberships: [], factionsByGroupId: {} };
     }
 
-    await context.queryClient.ensureQueryData(factionsByOwnerQueryOptions(profile.id));
-    const memberships = await context.queryClient.ensureQueryData(
-      userGroupMembershipsQueryOptions(profile.id)
+    const ownedFactions = await loadFactionsByOwner(profile.id);
+    const memberships = await loadUserGroupMemberships(profile.id);
+    const factionsByGroupEntries = await Promise.all(
+      memberships.map(
+        async (membership) =>
+          [membership.group_id, await loadFactionsByGroup(membership.group_id)] as const
+      )
     );
+    const factionsByGroupId: Record<string, Awaited<ReturnType<typeof loadFactionsByGroup>>> =
+      Object.fromEntries(factionsByGroupEntries);
 
-    for (const m of memberships) {
-      await context.queryClient.ensureQueryData(factionsByGroupQueryOptions(m.group_id));
-    }
+    return { profile, ownedFactions, memberships, factionsByGroupId };
   },
   component: FactionsMinePage,
   staticData: {
@@ -54,8 +58,15 @@ export const Route = createFileRoute('/_app/factions/mine')({
   },
 });
 
+const appRouteApi = getRouteApi('/_app');
+
 function FactionsMinePage() {
-  const profile = useCurrentProfile();
+  const appLoaderData = appRouteApi.useLoaderData();
+  const loaderData = Route.useLoaderData();
+  const profile = useCurrentProfile({
+    initialCurrent: appLoaderData.currentProfile,
+    initialCurrentUserId: appLoaderData.currentUserId,
+  });
 
   if (!profile.data?.id) {
     return (
@@ -68,16 +79,26 @@ function FactionsMinePage() {
   return (
     <>
       <h2>Factions I own</h2>
-      <FactionsOwnedList ownerId={profile.data.id} />
+      <FactionsOwnedList ownerId={profile.data.id} initialFactions={loaderData.ownedFactions} />
 
       <h2>Factions in my groups</h2>
-      <FactionsByGroupsList userId={profile.data.id} />
+      <FactionsByGroupsList
+        userId={profile.data.id}
+        initialMemberships={loaderData.memberships}
+        initialFactionsByGroupId={loaderData.factionsByGroupId}
+      />
     </>
   );
 }
 
-function FactionsOwnedList({ ownerId }: { ownerId: string }) {
-  const factions = useFactionsByOwner(ownerId);
+function FactionsOwnedList({
+  ownerId,
+  initialFactions,
+}: {
+  ownerId: string;
+  initialFactions: ReturnType<typeof Route.useLoaderData>['ownedFactions'];
+}) {
+  const factions = useFactionsByOwner(ownerId, { initialData: initialFactions });
 
   if (!factions.data || factions.data.length === 0) {
     return <p>You don&apos;t own any factions yet.</p>;
@@ -86,8 +107,16 @@ function FactionsOwnedList({ ownerId }: { ownerId: string }) {
   return <FactionList factions={factions.data} />;
 }
 
-function FactionsByGroupsList({ userId }: { userId: string }) {
-  const memberships = useUserGroupMemberships(userId);
+function FactionsByGroupsList({
+  userId,
+  initialMemberships,
+  initialFactionsByGroupId,
+}: {
+  userId: string;
+  initialMemberships: ReturnType<typeof Route.useLoaderData>['memberships'];
+  initialFactionsByGroupId: ReturnType<typeof Route.useLoaderData>['factionsByGroupId'];
+}) {
+  const memberships = useUserGroupMemberships(userId, { initialData: initialMemberships });
 
   if (!memberships.data || memberships.data.length === 0) {
     return <p>You&apos;re not a member of any groups with factions.</p>;
@@ -97,15 +126,27 @@ function FactionsByGroupsList({ userId }: { userId: string }) {
     <ul>
       {memberships.data.map((m) => (
         <li key={m.group_id}>
-          <GroupFactions groupId={m.group_id} groupName={m.groups?.name ?? 'Unknown'} />
+          <GroupFactions
+            groupId={m.group_id}
+            groupName={m.groups?.name ?? 'Unknown'}
+            initialFactions={initialFactionsByGroupId[m.group_id]}
+          />
         </li>
       ))}
     </ul>
   );
 }
 
-function GroupFactions({ groupId, groupName }: { groupId: string; groupName: string }) {
-  const factions = useFactionsByGroup(groupId);
+function GroupFactions({
+  groupId,
+  groupName,
+  initialFactions,
+}: {
+  groupId: string;
+  groupName: string;
+  initialFactions: ReturnType<typeof Route.useLoaderData>['ownedFactions'];
+}) {
+  const factions = useFactionsByGroup(groupId, { initialData: initialFactions });
 
   if (!factions.data || factions.data.length === 0) {
     return (

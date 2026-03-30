@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 
-import { rulesetsListQueryOptions, useRulesetsAll } from '@db/rulesets';
+import { loadRulesetsAll, useRulesetsAll } from '@db/rulesets';
 import { BlockCover, BlockLink } from '@app/components/generic/surfaces';
 
 import styles from './RulesetsIndex.module.css';
 
 export const Route = createFileRoute('/_app/rulesets/')({
-  loader: ({ context }) => context.queryClient.ensureQueryData(rulesetsListQueryOptions()),
+  loader: async () => ({ rulesets: await loadRulesetsAll() }),
   component: RulesetsPage,
   staticData: {
     PageHead: () => (
@@ -23,7 +23,8 @@ export const Route = createFileRoute('/_app/rulesets/')({
 });
 
 function RulesetsPage() {
-  const rulesets = useRulesetsAll();
+  const loaderData = Route.useLoaderData();
+  const rulesets = useRulesetsAll({ initialData: loaderData.rulesets });
 
   return (
     <>

@@ -1,16 +1,16 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, getRouteApi } from '@tanstack/react-router';
 import clsx from 'clsx';
 import { ArrowLeft, Pencil, UserPlus } from 'lucide-react';
 
-import { factionsByOwnerQueryOptions, useFactionsByOwner } from '@db/factions';
+import { loadFactionsByOwner, useFactionsByOwner } from '@db/factions';
 import {
-  faqAnswersByUserQueryOptions,
-  faqItemsAskedByQueryOptions,
+  loadFaqAnswersByUser,
+  loadFaqItemsAskedBy,
   useFaqAnswersByUser,
   useFaqItemsAskedBy,
 } from '@db/faq';
-import { userGroupMembershipsQueryOptions, useUserGroupMemberships } from '@db/members';
-import { profileBySlugQueryOptions, useCurrentProfile, useProfileBySlug } from '@db/profiles';
+import { loadUserGroupMemberships, useUserGroupMemberships } from '@db/members';
+import { loadProfileBySlug, useCurrentProfile, useProfileBySlug } from '@db/profiles';
 import { FactionList } from '@app/components/factions/FactionList';
 import { FormActions } from '@app/components/form/FormActions';
 import { FormTooltip } from '@app/components/form/FormTooltip';
@@ -26,14 +26,15 @@ import layoutStyles from '@app/components/profile/ProfilePageLayout.module.css';
 import styles from './ProfileDetail.module.css';
 
 export const Route = createFileRoute('/_app/profiles/$slug')({
-  loader: async ({ context, params }) => {
-    const profile = await context.queryClient.ensureQueryData(
-      profileBySlugQueryOptions(params.slug)
-    );
-    await context.queryClient.ensureQueryData(userGroupMembershipsQueryOptions(profile.id));
-    await context.queryClient.ensureQueryData(factionsByOwnerQueryOptions(profile.id));
-    await context.queryClient.ensureQueryData(faqItemsAskedByQueryOptions(profile.id));
-    await context.queryClient.ensureQueryData(faqAnswersByUserQueryOptions(profile.id));
+  loader: async ({ params }) => {
+    const profile = await loadProfileBySlug(params.slug);
+    const [memberships, factions, faqAsked, faqAnswers] = await Promise.all([
+      loadUserGroupMemberships(profile.id),
+      loadFactionsByOwner(profile.id),
+      loadFaqItemsAskedBy(profile.id),
+      loadFaqAnswersByUser(profile.id),
+    ]);
+    return { profile, memberships, factions, faqAsked, faqAnswers };
   },
   component: ProfileDetailPage,
   staticData: {
@@ -41,10 +42,17 @@ export const Route = createFileRoute('/_app/profiles/$slug')({
   },
 });
 
+const appRouteApi = getRouteApi('/_app');
+
 function ProfilePageHead() {
   const { slug } = Route.useParams();
-  const profile = useProfileBySlug(slug);
-  const currentProfile = useCurrentProfile();
+  const appLoaderData = appRouteApi.useLoaderData();
+  const loaderData = Route.useLoaderData();
+  const profile = useProfileBySlug(slug, { initialData: loaderData.profile });
+  const currentProfile = useCurrentProfile({
+    initialCurrent: appLoaderData.currentProfile,
+    initialCurrentUserId: appLoaderData.currentUserId,
+  });
 
   if (!profile.data) {
     return null;
@@ -80,13 +88,18 @@ function ProfilePageHead() {
 
 function ProfileDetailPage() {
   const { slug } = Route.useParams();
-  const profile = useProfileBySlug(slug);
-  const currentProfile = useCurrentProfile();
+  const appLoaderData = appRouteApi.useLoaderData();
+  const loaderData = Route.useLoaderData();
+  const profile = useProfileBySlug(slug, { initialData: loaderData.profile });
+  const currentProfile = useCurrentProfile({
+    initialCurrent: appLoaderData.currentProfile,
+    initialCurrentUserId: appLoaderData.currentUserId,
+  });
   const profileId = profile.data?.id;
-  const memberships = useUserGroupMemberships(profileId);
-  const factions = useFactionsByOwner(profileId);
-  const faqAsked = useFaqItemsAskedBy(profileId);
-  const faqAnswers = useFaqAnswersByUser(profileId);
+  const memberships = useUserGroupMemberships(profileId, { initialData: loaderData.memberships });
+  const factions = useFactionsByOwner(profileId, { initialData: loaderData.factions });
+  const faqAsked = useFaqItemsAskedBy(profileId, { initialData: loaderData.faqAsked });
+  const faqAnswers = useFaqAnswersByUser(profileId, { initialData: loaderData.faqAnswers });
 
   if (!profile.data) {
     return null;

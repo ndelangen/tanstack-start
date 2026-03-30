@@ -1,22 +1,27 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, getRouteApi, Link, useNavigate } from '@tanstack/react-router';
 
-import { factionDetailQueryOptions, useFaction } from '@db/factions';
+import { loadFactionBySlug, useFaction } from '@db/factions';
 import { useCurrentProfile } from '@db/profiles';
 import { FactionEditor } from '@app/components/factions/editor/FactionEditor';
 import { Card } from '@app/components/generic/surfaces/Card';
 
 export const Route = createFileRoute('/_app/factions/$factionId/edit')({
-  loader: async ({ context, params }) => {
-    await context.queryClient.ensureQueryData(factionDetailQueryOptions(params.factionId));
-  },
+  loader: async ({ params }) => ({ faction: await loadFactionBySlug(params.factionId) }),
   component: FactionEditPage,
 });
 
+const appRouteApi = getRouteApi('/_app');
+
 function FactionEditPage() {
   const { factionId } = Route.useParams();
+  const appLoaderData = appRouteApi.useLoaderData();
+  const loaderData = Route.useLoaderData();
   const navigate = useNavigate();
-  const faction = useFaction(factionId);
-  const profile = useCurrentProfile();
+  const faction = useFaction(factionId, { initialData: loaderData.faction });
+  const profile = useCurrentProfile({
+    initialCurrent: appLoaderData.currentProfile,
+    initialCurrentUserId: appLoaderData.currentUserId,
+  });
 
   if (!profile?.data?.id) {
     return (

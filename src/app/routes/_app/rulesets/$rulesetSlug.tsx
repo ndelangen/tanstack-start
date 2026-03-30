@@ -1,13 +1,20 @@
-import { createFileRoute, Link, Outlet, useMatches, useNavigate } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  getRouteApi,
+  Link,
+  Outlet,
+  useMatches,
+  useNavigate,
+} from '@tanstack/react-router';
 import { MessageCircleQuestionMark, Search, Trash2, UserPlus } from 'lucide-react';
 
-import { faqItemsByRulesetQueryOptions, useFaqItemsByRuleset } from '@db/faq';
+import { loadFaqItemsByRuleset, useFaqItemsByRuleset } from '@db/faq';
 import { useGroup } from '@db/groups';
 import { useGroupMembers, useRequestGroupMembership } from '@db/members';
 import { useCurrentProfile } from '@db/profiles';
 import {
-  rulesetBySlugQueryOptions,
-  rulesetFactionsWithDetailsQueryOptions,
+  loadRulesetBySlug,
+  loadRulesetFactionsWithDetails,
   useDeleteRuleset,
   useRulesetBySlug,
   useRulesetFactionsWithDetails,
@@ -26,18 +33,17 @@ export const Route = createFileRoute('/_app/rulesets/$rulesetSlug')({
     const q = params?.q;
     return typeof q === 'string' ? { q } : {};
   },
-  loader: async ({ context, params }) => {
+  loader: async ({ params }) => {
     try {
-      const ruleset = await context.queryClient.ensureQueryData(
-        rulesetBySlugQueryOptions(params.rulesetSlug)
-      );
+      const ruleset = await loadRulesetBySlug(params.rulesetSlug);
       if (ruleset) {
-        await Promise.all([
-          context.queryClient.ensureQueryData(faqItemsByRulesetQueryOptions(ruleset.id)),
-          context.queryClient.ensureQueryData(rulesetFactionsWithDetailsQueryOptions(ruleset.id)),
+        const [faqItems, factions] = await Promise.all([
+          loadFaqItemsByRuleset(ruleset.id),
+          loadRulesetFactionsWithDetails(ruleset.id),
         ]);
+        return { notFound: false, ruleset, faqItems, factions };
       }
-      return { notFound: false };
+      return { notFound: false, ruleset: undefined, faqItems: [], factions: [] };
     } catch {
       return { notFound: true };
     }
@@ -55,6 +61,8 @@ export const Route = createFileRoute('/_app/rulesets/$rulesetSlug')({
   },
 });
 
+const appRouteApi = getRouteApi('/_app');
+
 function RulesetDetailPage() {
   const { rulesetSlug } = Route.useParams();
   const search = Route.useSearch();
@@ -62,12 +70,19 @@ function RulesetDetailPage() {
   const navigate = useNavigate();
   const matches = useMatches();
   const hasFaqChildRoute = matches.some((m) => m.pathname.includes('/faq/'));
-  const ruleset = useRulesetBySlug(rulesetSlug);
-  const profile = useCurrentProfile();
+  const rulesetSeed = loaderData.notFound ? undefined : loaderData.ruleset;
+  const factionsSeed = loaderData.notFound ? undefined : loaderData.factions;
+  const faqItemsSeed = loaderData.notFound ? undefined : loaderData.faqItems;
+  const ruleset = useRulesetBySlug(rulesetSlug, { initialData: rulesetSeed });
+  const appLoaderData = appRouteApi.useLoaderData();
+  const profile = useCurrentProfile({
+    initialCurrent: appLoaderData.currentProfile,
+    initialCurrentUserId: appLoaderData.currentUserId,
+  });
   const deleteRuleset = useDeleteRuleset();
   const rulesetId = ruleset.data?._id ?? '';
-  const factions = useRulesetFactionsWithDetails(rulesetId);
-  const faqItems = useFaqItemsByRuleset(rulesetId);
+  const factions = useRulesetFactionsWithDetails(rulesetId, { initialData: factionsSeed });
+  const faqItems = useFaqItemsByRuleset(rulesetId, { initialData: faqItemsSeed });
   const groupId = ruleset.data?.group_id ?? '';
   const group = useGroup(groupId);
   const groupMembers = useGroupMembers(groupId);

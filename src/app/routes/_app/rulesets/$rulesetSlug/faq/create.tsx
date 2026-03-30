@@ -1,8 +1,8 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, getRouteApi, Link, useNavigate } from '@tanstack/react-router';
 
-import { faqItemsByRulesetQueryOptions, useCreateFaqItem } from '@db/faq';
+import { useCreateFaqItem } from '@db/faq';
 import { useCurrentProfile } from '@db/profiles';
-import { rulesetBySlugQueryOptions, useRulesetBySlug } from '@db/rulesets';
+import { loadRulesetBySlug, useRulesetBySlug } from '@db/rulesets';
 import { FormActions } from '@app/components/form/FormActions';
 import { FormButton } from '@app/components/form/FormButton';
 import { FormField } from '@app/components/form/FormField';
@@ -14,12 +14,7 @@ import { Card } from '@app/components/generic/surfaces/Card';
 import styles from '../../RulesetDetail.module.css';
 
 export const Route = createFileRoute('/_app/rulesets/$rulesetSlug/faq/create')({
-  loader: async ({ context, params }) => {
-    const ruleset = await context.queryClient.ensureQueryData(
-      rulesetBySlugQueryOptions(params.rulesetSlug)
-    );
-    await context.queryClient.ensureQueryData(faqItemsByRulesetQueryOptions(ruleset.id));
-  },
+  loader: async ({ params }) => ({ ruleset: await loadRulesetBySlug(params.rulesetSlug) }),
   component: FaqCreatePage,
   staticData: {
     PageHead: () => (
@@ -33,11 +28,18 @@ export const Route = createFileRoute('/_app/rulesets/$rulesetSlug/faq/create')({
   },
 });
 
+const appRouteApi = getRouteApi('/_app');
+
 function FaqCreatePage() {
   const { rulesetSlug } = Route.useParams();
+  const appLoaderData = appRouteApi.useLoaderData();
+  const loaderData = Route.useLoaderData();
   const navigate = useNavigate();
-  const ruleset = useRulesetBySlug(rulesetSlug);
-  const profile = useCurrentProfile();
+  const ruleset = useRulesetBySlug(rulesetSlug, { initialData: loaderData.ruleset });
+  const profile = useCurrentProfile({
+    initialCurrent: appLoaderData.currentProfile,
+    initialCurrentUserId: appLoaderData.currentUserId,
+  });
   const createFaqItem = useCreateFaqItem();
 
   if (!ruleset.data) {

@@ -1,35 +1,16 @@
 // import { TanStackDevtools } from '@tanstack/react-devtools';
 
 import { ConvexAuthProvider } from '@convex-dev/auth/react';
-import type { QueryClient } from '@tanstack/react-query';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { createRootRouteWithContext, HeadContent, Link, Scripts } from '@tanstack/react-router';
+import { createRootRoute, HeadContent, Link, Scripts } from '@tanstack/react-router';
 
-import { convex, isTanStackStartPrerendering } from '@db/core';
-import { currentProfileQueryOptions, type ProfileEntry } from '@db/profiles';
-import { queryClient } from '@app/queryClient';
+import { convex } from '@db/core';
 
 import '../styles/fonts.css';
 import '../styles/tokens.css';
 
 // import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 
-interface RouterContext {
-  queryClient: QueryClient;
-}
-
-export const Route = createRootRouteWithContext<RouterContext>()({
-  loader: async ({ context }) => {
-    if (isTanStackStartPrerendering()) {
-      await context.queryClient.prefetchQuery({
-        ...currentProfileQueryOptions(),
-        queryFn: async (): Promise<ProfileEntry | null> => null,
-        staleTime: Number.POSITIVE_INFINITY,
-      });
-      return;
-    }
-    await context.queryClient.ensureQueryData(currentProfileQueryOptions());
-  },
+export const Route = createRootRoute({
   head: () => ({
     meta: [
       {
@@ -85,10 +66,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <QueryClientProvider client={queryClient}>
-          <ConvexAuthProvider client={convex}>
-            {children}
-            {/* <TanStackDevtools
+        <ConvexAuthProvider client={convex}>
+          {children}
+          {/* <TanStackDevtools
             config={{
               position: 'bottom-right',
             }}
@@ -101,9 +81,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               ]
             }
           /> */}
-            <Scripts />
-          </ConvexAuthProvider>
-        </QueryClientProvider>
+          <Scripts />
+        </ConvexAuthProvider>
       </body>
     </html>
   );
