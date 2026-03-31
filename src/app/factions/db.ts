@@ -211,3 +211,33 @@ export function useSetFactionGroup() {
     },
   };
 }
+
+export type FactionEditorPageData = {
+  faction: FactionEntry;
+  owner: Doc<'profiles'>;
+  group: Doc<'groups'> | null;
+  memberships: Doc<'group_members'>[];
+  groups: Doc<'groups'>[];
+};
+
+export type FactionCreatePageData = {
+  ownerProfile: Doc<'profiles'> | null;
+  groups: Doc<'groups'>[];
+  memberships: Doc<'group_members'>[];
+};
+
+export async function loadFactionEditorPageBySlug(
+  slug: string
+): Promise<FactionEditorPageData> {
+  const result = await db.query<FactionEditorPageData>(api.factions.getEditorPageBySlug, {
+    slug,
+  });
+  return {
+    ...result,
+    faction: toFactionEntry(result.faction as unknown as FactionRow),
+  };
+}
+
+export async function loadFactionCreatePageContext(): Promise<FactionCreatePageData> {
+  return await db.query<FactionCreatePageData>(api.factions.getCreatePageContext, {});
+}
