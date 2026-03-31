@@ -1,8 +1,16 @@
 import { createFileRoute, getRouteApi, Link, useNavigate } from '@tanstack/react-router';
+import { useQuery } from 'convex/react';
 import { RotateCcw, Save, Trash2, Users, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 
-import { type Faction, useDeleteFaction, useSetFactionGroup, useUpdateFaction } from '@db/factions';
+import {
+  type Faction,
+  useDeleteFaction,
+  useFaction,
+  useFactionEditorPageBySlug,
+  useSetFactionGroup,
+  useUpdateFaction,
+} from '@db/factions';
 import { useCurrentProfile } from '@db/profiles';
 import {
   FactionEditor,
@@ -15,13 +23,11 @@ import { FormButton } from '@app/components/form/FormButton';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
-import { loadFactionEditorPageBySlug } from '@app/factions/db';
+import { loadFaction } from '@app/factions/db';
 import { FactionInputSchema } from '@game/schema/faction';
 
 export const Route = createFileRoute('/_app/factions/$factionId/edit')({
-  loader: async ({ params }) => ({
-    editorPage: await loadFactionEditorPageBySlug(params.factionId),
-  }),
+  loader: async ({ params }) => await loadFaction(params.factionId),
   component: FactionEditPage,
 });
 
@@ -42,13 +48,16 @@ function FactionEditPage() {
   const updateFaction = useUpdateFaction();
   const deleteFaction = useDeleteFaction();
   const setFactionGroup = useSetFactionGroup();
-  const { editorPage } = loaderData;
   const profile = useCurrentProfile({
     initialCurrent: appLoaderData.currentProfile,
     initialCurrentUserId: appLoaderData.currentUserId,
   });
   const [editorErrors, setEditorErrors] = useState<string[]>([]);
 
+  const { faction, group } = useFaction(factionId, {
+    enabled: !!factionId,
+    initialData: loaderData,
+  });
   if (!profile?.data?.id) {
     return (
       <Card>
@@ -64,7 +73,10 @@ function FactionEditPage() {
     );
   }
 
-  const { faction, group } = editorPage;
+  if (!faction) {
+    return null;
+  }
+
   const { slug: _ignored, ...initialFactionInput } = faction.data;
 
   const canDelete = faction.owner_id === profile.data.id;
@@ -78,7 +90,7 @@ function FactionEditPage() {
     }
     setEditorErrors([]);
     void (async () => {
-      const entry = await updateFaction.mutateAsync({ input: parsed.data, id: faction.id });
+      const entry = await updateFaction.mutateAsync({ input: parsed.data, id: faction._id });
       const newSlug = entry.data.slug;
       if (newSlug !== factionId) {
         navigate({
@@ -117,7 +129,7 @@ function FactionEditPage() {
             <FactionGroupPopover
               disabled={false}
               onChangeGroup={async (nextGroupId) => {
-                await setFactionGroup.mutateAsync({ id: faction.id, groupId: nextGroupId });
+                await setFactionGroup.mutateAsync({ id: faction._id, groupId: nextGroupId });
               }}
             />
           )}
@@ -131,7 +143,7 @@ function FactionEditPage() {
                 disabled={false}
                 onClick={() => {
                   void (async () => {
-                    await setFactionGroup.mutateAsync({ id: faction.id, groupId: null });
+                    await setFactionGroup.mutateAsync({ id: faction._id, groupId: null });
                   })();
                 }}
               >
@@ -189,7 +201,7 @@ function FactionEditPage() {
                 onClick={() => {
                   if (!window.confirm('Delete this faction? It will be hidden from lists.')) return;
                   void (async () => {
-                    await deleteFaction.mutateAsync({ id: faction.id });
+                    await deleteFaction.mutateAsync({ id: faction._id });
                     navigate({ to: '/factions' });
                   })();
                 }}
@@ -201,7 +213,7 @@ function FactionEditPage() {
         </Toolbar.Right>
       </Toolbar>
       <FactionEditor
-        key={faction.id}
+        key={faction._id}
         ref={editorRef}
         factionEntry={faction}
         errors={editorErrors}

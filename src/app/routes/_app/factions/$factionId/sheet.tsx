@@ -15,20 +15,21 @@ export const Route = createFileRoute('/_app/factions/$factionId/sheet')({
     // Loader deps do not include validated `search`; parse query string (matches validateSearch).
     const mode = new URLSearchParams(location.search).get('mode') ?? 'db';
     if (mode === 'live') {
-      return { faction: undefined };
+      return undefined;
     }
-    return { faction: await loadFactionBySlug(params.factionId) };
+    return await loadFactionBySlug(params.factionId);
   },
   component: FactionSheetPage,
 });
 
 function FactionSheetPage() {
   const { factionId } = Route.useParams();
-  const loaderData = Route.useLoaderData();
   const { mode } = Route.useSearch();
+  const loaderData = Route.useLoaderData();
+  const initialData = mode === 'db' ? loaderData : undefined;
   const factionFromDb = useFaction(factionId, {
     enabled: mode === 'db',
-    initialData: loaderData.faction,
+    initialData,
   });
   const factionFromMessage = useFactionSheetPostMessage(mode === 'live');
 

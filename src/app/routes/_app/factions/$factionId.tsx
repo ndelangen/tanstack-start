@@ -19,7 +19,7 @@ export const Route = createFileRoute('/_app/factions/$factionId')({
     }
 
     const faction = await loadFactionBySlug(params.factionId);
-    const rulesets = isSheet ? [] : await loadRulesetsByFaction(faction.id);
+    const rulesets = isSheet ? [] : await loadRulesetsByFaction(faction.faction._id);
 
     return { faction, rulesets };
   },
@@ -56,21 +56,22 @@ function FactionPageHead() {
   const profiles = useProfilesAll();
   const memberships = useUserGroupMemberships(profile.data?.id);
 
-  const ownerId = faction.data?.owner_id ?? null;
+  const factionRow = faction.faction;
+  const ownerId = factionRow?.owner_id ?? null;
   const ownerName =
     ownerId == null
       ? null
       : (profiles.data?.find((profile) => profile.id === ownerId)?.username?.trim() ?? ownerId);
   const canEdit = canEditFaction(
     profile.data?.id,
-    faction.data?.owner_id,
-    faction.data?.group_id,
+    factionRow?.owner_id,
+    factionRow?.group_id,
     memberships.data
   );
 
   return (
     <div>
-      <h1>{faction.data?.data.name ?? 'Faction'}</h1>
+      <h1>{factionRow?.data.name ?? 'Faction'}</h1>
       <p>{ownerName ? `Owner: ${ownerName}` : 'Owner: loading...'}</p>
       {canEdit && (
         <p>
@@ -118,14 +119,15 @@ function FactionDetailPage() {
   const isLiveSheet = isSheet && sheetMode === 'live';
 
   const faction = useFaction(factionId, { enabled: !isLiveSheet, initialData: factionSeed });
-  const rulesets = useRulesetsByFaction(faction.data?.id, { initialData: rulesetsSeed });
+  const factionRow = faction.faction;
+  const rulesets = useRulesetsByFaction(factionRow?._id, { initialData: rulesetsSeed });
   const profile = useCurrentProfile({
     initialCurrent: appLoaderData.currentProfile,
     initialCurrentUserId: appLoaderData.currentUserId,
   });
   const memberships = useUserGroupMemberships(profile.data?.id);
-  const group = useGroup(faction.data?.group_id ?? '');
-  const groupMembers = useGroupMembers(faction.data?.group_id ?? '');
+  const group = useGroup(factionRow?.group_id ?? '');
+  const groupMembers = useGroupMembers(factionRow?.group_id ?? '');
   const requestMembership = useRequestGroupMembership();
 
   const isChildOnlyRoute = matches.some(
@@ -136,7 +138,7 @@ function FactionDetailPage() {
     return <Outlet />;
   }
 
-  if (!faction.data) {
+  if (!factionRow) {
     return null;
   }
 
@@ -146,14 +148,14 @@ function FactionDetailPage() {
 
   const canEdit = canEditFaction(
     profile.data?.id,
-    faction.data.owner_id,
-    faction.data.group_id,
+    factionRow.owner_id,
+    factionRow.group_id,
     memberships.data
   );
   const viewerMembership = groupMembers.data?.find((entry) => entry.user_id === profile.data?.id);
   const membershipStatus =
     viewerMembership && viewerMembership.status !== 'removed' ? viewerMembership.status : 'none';
-  const factionGroupId = faction.data.group_id;
+  const factionGroupId = factionRow.group_id;
   const canRequestMembership =
     factionGroupId != null && !!profile.data?.id && membershipStatus === 'none';
 
