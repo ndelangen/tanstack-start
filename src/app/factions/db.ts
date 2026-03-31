@@ -58,9 +58,12 @@ export async function loadFactionsByGroup(groupId: string): Promise<FactionEntry
   return entries.map(toFactionEntry);
 }
 
-export function useFaction(slug: string, options?: { enabled?: boolean; initialData?: FactionEntry }) {
-  const enabled = (options?.enabled ?? true) && slug.length > 0;
-  const liveData = useQuery(api.factions.getBySlug, enabled ? { slug } : 'skip');
+export function useFaction(
+  slug: string | undefined,
+  options?: { enabled?: boolean; initialData?: FactionEntry }
+) {
+  const enabled = (options?.enabled ?? true) && typeof slug === 'string' && slug.length > 0;
+  const liveData = useQuery(api.factions.getBySlug, enabled ? { slug: slug as string } : 'skip');
   const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
   return {
     ...result,

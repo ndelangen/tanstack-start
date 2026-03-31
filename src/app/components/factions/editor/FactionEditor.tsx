@@ -1,10 +1,9 @@
 import { useForm } from '@tanstack/react-form';
 import { Link } from '@tanstack/react-router';
-import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 
 import { type Faction, type FactionEntry } from '@db/factions';
 import {
-  FactionInputSchema,
   FactionStoredSchema,
   factionSlugBaseFromName,
 } from '@game/schema/faction';
@@ -13,16 +12,10 @@ import styles from './FactionEditor.module.css';
 import { FactionFormFields } from './FactionFormFields';
 import { FactionSheetPreviewIframe } from './FactionSheetPreviewIframe';
 
-function formatZodIssues(err: { issues: readonly { path: PropertyKey[]; message: string }[] }) {
-  return err.issues
-    .map((i) => `${i.path.map((segment) => String(segment)).join('.') || '(root)'}: ${i.message}`)
-    .join('\n');
-}
-
 export interface FactionEditorProps {
-  initialFaction: Faction;
   factionEntry: FactionEntry;
-  onSubmit: (input: Faction) => Promise<{ slug: string }>;
+  errors: string[];
+  onSubmit?: (values: Faction) => void;
 }
 
 export interface FactionEditorHandle {
@@ -32,10 +25,11 @@ export interface FactionEditorHandle {
 }
 
 export const FactionEditor = forwardRef<FactionEditorHandle, FactionEditorProps>(
-  ({ initialFaction, factionEntry: _factionEntry, onSubmit }, ref) => {
-    const initialValuesRef = useRef(structuredClone(initialFaction));
-    const baselineRef = useRef(structuredClone(initialFaction));
-    const [parseError, setParseError] = useState<string | null>(null);
+  ({ factionEntry, errors, onSubmit }, ref) => {
+    const stored = FactionStoredSchema.parse(factionEntry.data);
+    const { slug: _ignored, ...initialInput } = stored;
+    const initialValuesRef = useRef<Faction>(structuredClone(initialInput));
+    const baselineRef = useRef<Faction>(structuredClone(initialInput));
 
     const form = useForm<
       Faction,
@@ -52,28 +46,8 @@ export const FactionEditor = forwardRef<FactionEditorHandle, FactionEditorProps>
       undefined
     >({
       defaultValues: initialValuesRef.current,
-      onSubmit: async ({ value }) => {
-        setParseError(null);
-        const parsed = FactionInputSchema.safeParse(value);
-        if (!parsed.success) {
-          setParseError(formatZodIssues(parsed.error));
-          return;
-        }
-
-        try {
-          const result = await onSubmit(parsed.data);
-          const saved = FactionStoredSchema.parse({ ...parsed.data, slug: result.slug });
-          const { slug: _ignored, ...savedInput } = saved;
-          initialValuesRef.current = structuredClone(savedInput);
-          baselineRef.current = structuredClone(savedInput);
-          form.reset(structuredClone(savedInput));
-        } catch (error) {
-          const message =
-            error instanceof Error ? error.message : 'Failed to save faction. Please try again.';
-          setParseError(message);
-        } finally {
-          // no-op; saving state is managed by the caller/tooling if needed
-        }
+      onSubmit: ({ value }) => {
+        onSubmit?.(value);
       },
     });
 
@@ -82,15 +56,10 @@ export const FactionEditor = forwardRef<FactionEditorHandle, FactionEditorProps>
         void form.handleSubmit();
       },
       resetToInitial: () => {
-        setParseError(null);
         form.reset(structuredClone(baselineRef.current));
       },
       getValues: () => form.state.values,
     }));
-
-    const mutationError = null;
-
-    const errors = ([] as string[]).concat(parseError ?? []).concat(mutationError ?? []);
 
     return (
       <div className={styles.root}>

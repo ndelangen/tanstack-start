@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
 
-import { FactionInputSchema } from '../src/game/schema/faction';
+import { FactionInputSchema, FactionStoredSchema } from '../src/game/schema/faction';
 import { mutation, query } from './_generated/server';
 import { isActiveGroupMember, requireAuthUserId } from './lib/policy';
 import { nowIso, slugify } from './lib/utils';
@@ -229,7 +229,7 @@ export const getEditorPageBySlug = query({
     return {
       faction: {
         ...row,
-        data: FactionInputSchema.parse(row.data),
+        data: FactionStoredSchema.parse(row.data),
       },
       owner: ownerProfile,
       group,
