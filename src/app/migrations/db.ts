@@ -1,4 +1,5 @@
-import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
+import { toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
+import { useQuery } from 'convex/react';
 
 import { api } from '../../../convex/_generated/api';
 
@@ -25,14 +26,13 @@ type MigrationRunSnapshot = {
 };
 
 export function useMigrationStatuses(ids?: string[]) {
-  return useLiveQuery<MigrationStatusRow[], { ids?: string[] }>(api.migrations.getStatus, { ids });
+  const liveData = useQuery(api.migrations.getStatus, { ids });
+  return toLiveQueryResult<MigrationStatusRow[]>(liveData as MigrationStatusRow[] | undefined);
 }
 
 export function useMigrationRunSnapshots() {
-  return useLiveQuery<MigrationRunSnapshot[], Record<string, never>>(
-    api.migrations.listRunSnapshots,
-    {}
-  );
+  const liveData = useQuery(api.migrations.listRunSnapshots, {});
+  return toLiveQueryResult<MigrationRunSnapshot[]>(liveData as MigrationRunSnapshot[] | undefined);
 }
 
 export function useSyncMigrationRuns() {

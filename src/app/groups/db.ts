@@ -1,6 +1,7 @@
 import { db } from '@db/core';
-import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
+import { toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
 import { groupInputSchema } from '@app/groups/validation';
+import { useQuery } from 'convex/react';
 
 import { api } from '../../../convex/_generated/api';
 import type { Doc } from '../../../convex/_generated/dataModel';
@@ -16,11 +17,10 @@ export async function loadGroupBySlug(slug: string): Promise<GroupEntry> {
 }
 
 export function useGroup(id: string) {
-  const result = useLiveQuery<GroupRow, { id: string }>(
-    api.groups.getById,
-    { id },
-    { enabled: !!id }
-  );
+  const enabled = Boolean(id);
+  const args = enabled ? ({ id } as never) : 'skip';
+  const liveData = useQuery(api.groups.getById, args) as GroupRow | undefined;
+  const result = toLiveQueryResult(liveData, enabled);
   return {
     ...result,
     data: result.data ? { ...result.data, id: result.data._id } : undefined,
@@ -31,14 +31,9 @@ export function useGroupBySlug(
   slug: string | undefined,
   options?: { initialData?: GroupEntry; enabled?: boolean }
 ) {
-  const result = useLiveQuery<GroupRow, { slug: string }>(
-    api.groups.getBySlug,
-    { slug: slug ?? '' },
-    {
-      enabled: options?.enabled ?? Boolean(slug),
-      initialData: () => options?.initialData ?? undefined,
-    }
-  );
+  const enabled = options?.enabled ?? Boolean(slug);
+  const liveData = useQuery(api.groups.getBySlug, enabled ? { slug: slug ?? '' } : 'skip');
+  const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
   return {
     ...result,
     data: result.data ? { ...result.data, id: result.data._id } : undefined,
@@ -46,9 +41,8 @@ export function useGroupBySlug(
 }
 
 export function useGroupsAll(options?: { initialData?: GroupEntry[] }) {
-  const result = useLiveQuery<GroupRow[], Record<string, never>>(api.groups.list, {}, {
-    initialData: () => options?.initialData ?? undefined,
-  });
+  const liveData = useQuery(api.groups.list, {});
+  const result = toLiveQueryResult(liveData, true, () => options?.initialData ?? undefined);
   return {
     ...result,
     data: result.data?.map((entry) => ({ ...entry, id: entry._id })),
@@ -56,11 +50,10 @@ export function useGroupsAll(options?: { initialData?: GroupEntry[] }) {
 }
 
 export function useGroupsByCreator(createdBy: string) {
-  const result = useLiveQuery<GroupRow[], { created_by: string }>(
-    api.groups.listByCreator,
-    { created_by: createdBy },
-    { enabled: !!createdBy }
-  );
+  const enabled = Boolean(createdBy);
+  const args = enabled ? ({ created_by: createdBy } as never) : 'skip';
+  const liveData = useQuery(api.groups.listByCreator, args) as GroupRow[] | undefined;
+  const result = toLiveQueryResult(liveData, enabled);
   return {
     ...result,
     data: result.data?.map((entry) => ({ ...entry, id: entry._id })),

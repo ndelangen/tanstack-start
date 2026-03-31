@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 
 import { db } from '@db/core';
-import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
+import { toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
 import { type ProfileUserEditInput, profileUserEditFormSchema } from '@app/profile/validation';
+import { useQuery } from 'convex/react';
 
 import { api } from '../../../convex/_generated/api';
 import type { Doc } from '../../../convex/_generated/dataModel';
@@ -52,12 +53,10 @@ export async function loadCurrentProfile(): Promise<ProfileEntry | null> {
 }
 
 export function useProfile(id: string, options?: { enabled?: boolean }) {
-  const enabled = options?.enabled ?? true;
-  const result = useLiveQuery<ProfileRow | null, { id: string }>(
-    api.profiles.getById,
-    { id },
-    { enabled: enabled && id != null && id !== '' }
-  );
+  const enabled = (options?.enabled ?? true) && id != null && id !== '';
+  const args = enabled ? ({ id } as never) : 'skip';
+  const liveData = useQuery(api.profiles.getById, args) as ProfileRow | null | undefined;
+  const result = toLiveQueryResult(liveData, enabled);
   return {
     ...result,
     data: result.data
@@ -76,14 +75,9 @@ export function useProfileBySlug(
   slug: string,
   options?: { initialData?: ProfileEntry | null; enabled?: boolean }
 ) {
-  const result = useLiveQuery<ProfileRow | null, { slug: string }>(
-    api.profiles.getBySlug,
-    { slug },
-    {
-      enabled: options?.enabled ?? slug.trim().length > 0,
-      initialData: () => options?.initialData ?? undefined,
-    }
-  );
+  const enabled = options?.enabled ?? slug.trim().length > 0;
+  const liveData = useQuery(api.profiles.getBySlug, enabled ? { slug } : 'skip');
+  const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
   return {
     ...result,
     data: result.data ? toProfileEntry(result.data) : undefined,
@@ -91,9 +85,8 @@ export function useProfileBySlug(
 }
 
 export function useProfilesAll(options?: { initialData?: ProfileEntry[] }) {
-  const result = useLiveQuery<ProfileRow[], Record<string, never>>(api.profiles.list, {}, {
-    initialData: () => options?.initialData ?? undefined,
-  });
+  const liveData = useQuery(api.profiles.list, {});
+  const result = toLiveQueryResult(liveData, true, () => options?.initialData ?? undefined);
   return {
     ...result,
     data: result.data?.map(toProfileEntry),
@@ -104,13 +97,11 @@ export function useCurrentProfile(options?: {
   initialCurrent?: ProfileEntry | null;
   initialCurrentUserId?: string | null;
 }) {
-  const current = useLiveQuery<ProfileRow | null, Record<string, never>>(api.profiles.current, {}, {
-    initialData: () => options?.initialCurrent ?? undefined,
-  });
-  const currentUserId = useLiveQuery<string | null, Record<string, never>>(
-    api.profiles.currentUserId,
-    {},
-    { initialData: () => options?.initialCurrentUserId ?? undefined }
+  const current = toLiveQueryResult(useQuery(api.profiles.current, {}), true, () =>
+    options?.initialCurrent ?? undefined
+  );
+  const currentUserId = toLiveQueryResult(useQuery(api.profiles.currentUserId, {}), true, () =>
+    options?.initialCurrentUserId ?? undefined
   );
   const bootstrap = useLiveMutation<Record<string, never>, ProfileRow>(
     api.profiles.bootstrapCurrent

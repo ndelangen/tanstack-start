@@ -1,6 +1,7 @@
 import { db } from '@db/core';
-import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
+import { toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
 import { faqAnswerSchema, faqQuestionSchema } from '@app/faq/validation';
+import { useQuery } from 'convex/react';
 
 import { api } from '../../../convex/_generated/api';
 import type { Doc } from '../../../convex/_generated/dataModel';
@@ -108,19 +109,14 @@ export async function loadFaqItemByRulesetAndSlug(
 }
 
 export function useFaqItemsByRuleset(rulesetId: string, options?: { initialData?: FaqItemWithDetails[] }) {
-  const result = useLiveQuery<
-    (Omit<FaqItemWithDetails, 'id' | 'faq_answers'> & {
-      faq_answers: Omit<FaqAnswerEntry, 'id'>[];
-    })[],
-    { ruleset_id: string }
-  >(
-    api.faq.byRuleset,
-    { ruleset_id: rulesetId },
-    {
-      enabled: Boolean(rulesetId),
-      initialData: () => options?.initialData ?? undefined,
-    }
-  );
+  const enabled = Boolean(rulesetId);
+  const args = enabled ? ({ ruleset_id: rulesetId } as never) : 'skip';
+  const liveData = useQuery(api.faq.byRuleset, args) as
+    | (Omit<FaqItemWithDetails, 'id' | 'faq_answers'> & {
+        faq_answers: Omit<FaqAnswerEntry, 'id'>[];
+      })[]
+    | undefined;
+  const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
   return {
     ...result,
     data: result.data?.map((item) => ({
@@ -132,10 +128,12 @@ export function useFaqItemsByRuleset(rulesetId: string, options?: { initialData?
 }
 
 export function useFaqItem(id: string) {
-  const result = useLiveQuery<
-    Omit<FaqItemEntry, 'id'> & { faq_answers: Omit<FaqAnswerEntry, 'id'>[] },
-    { id: string }
-  >(api.faq.detail, { id }, { enabled: Boolean(id) });
+  const enabled = Boolean(id);
+  const args = enabled ? ({ id } as never) : 'skip';
+  const liveData = useQuery(api.faq.detail, args) as
+    | (Omit<FaqItemEntry, 'id'> & { faq_answers: Omit<FaqAnswerEntry, 'id'>[] })
+    | undefined;
+  const result = toLiveQueryResult(liveData, enabled);
   return {
     ...result,
     data: result.data
@@ -173,33 +171,30 @@ export function useFaqItemByRulesetAndSlug(
     };
   }
 ) {
-  const result = useLiveQuery<
-    Omit<FaqItemEntry, 'id' | 'faq_answers'> & {
-      asker_profile: {
-        id: string;
-        slug: string;
-        username: string | null;
-        avatar_url: string | null;
-      } | null;
-      ruleset: { id: string; slug: string; name: string };
-      faq_answers: (Omit<FaqAnswerEntry, 'id'> & {
-        answerer_profile: {
+  const enabled = Boolean(rulesetSlug) && Boolean(questionSlug);
+  const args = enabled
+    ? ({ ruleset_slug: rulesetSlug, question_slug: questionSlug } as never)
+    : 'skip';
+  const liveData = useQuery(api.faq.detailByRulesetSlugAndQuestionSlug, args) as
+    | (Omit<FaqItemEntry, 'id' | 'faq_answers'> & {
+        asker_profile: {
           id: string;
           slug: string;
           username: string | null;
           avatar_url: string | null;
         } | null;
-      })[];
-    },
-    { ruleset_slug: string; question_slug: string }
-  >(
-    api.faq.detailByRulesetSlugAndQuestionSlug,
-    { ruleset_slug: rulesetSlug, question_slug: questionSlug },
-    {
-      enabled: Boolean(rulesetSlug) && Boolean(questionSlug),
-      initialData: () => options?.initialData ?? undefined,
-    }
-  );
+        ruleset: { id: string; slug: string; name: string };
+        faq_answers: (Omit<FaqAnswerEntry, 'id'> & {
+          answerer_profile: {
+            id: string;
+            slug: string;
+            username: string | null;
+            avatar_url: string | null;
+          } | null;
+        })[];
+      })
+    | undefined;
+  const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
   return {
     ...result,
     data: result.data
@@ -261,19 +256,14 @@ export function useFaqItemsAskedBy(
   profileId: string | undefined,
   options?: { initialData?: FaqItemAskedByWithRuleset[] }
 ) {
-  const result = useLiveQuery<
-    (Omit<FaqItemAskedByWithRuleset, 'id'> & {
-      ruleset: { id: string; name: string; slug: string };
-    })[],
-    { profile_id: string }
-  >(
-    api.faq.askedBy,
-    { profile_id: profileId ?? '' },
-    {
-      enabled: profileId != null && profileId !== '',
-      initialData: () => options?.initialData ?? undefined,
-    }
-  );
+  const enabled = profileId != null && profileId !== '';
+  const args = enabled ? ({ profile_id: profileId ?? '' } as never) : 'skip';
+  const liveData = useQuery(api.faq.askedBy, args) as
+    | (Omit<FaqItemAskedByWithRuleset, 'id'> & {
+        ruleset: { id: string; name: string; slug: string };
+      })[]
+    | undefined;
+  const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
   return {
     ...result,
     data: result.data?.map((entry) => ({ ...entry, id: entry._id })),
@@ -284,19 +274,14 @@ export function useFaqAnswersByUser(
   profileId: string | undefined,
   options?: { initialData?: FaqAnswerWithParent[] }
 ) {
-  const result = useLiveQuery<
-    (Omit<FaqAnswerWithParent, 'id' | 'faq_item'> & {
-      faq_item: Omit<FaqAnswerWithParent['faq_item'], 'id'> & { id: string };
-    })[],
-    { profile_id: string }
-  >(
-    api.faq.answeredBy,
-    { profile_id: profileId ?? '' },
-    {
-      enabled: profileId != null && profileId !== '',
-      initialData: () => options?.initialData ?? undefined,
-    }
-  );
+  const enabled = profileId != null && profileId !== '';
+  const args = enabled ? ({ profile_id: profileId ?? '' } as never) : 'skip';
+  const liveData = useQuery(api.faq.answeredBy, args) as
+    | (Omit<FaqAnswerWithParent, 'id' | 'faq_item'> & {
+        faq_item: Omit<FaqAnswerWithParent['faq_item'], 'id'> & { id: string };
+      })[]
+    | undefined;
+  const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
   return {
     ...result,
     data: result.data?.map((answer) => ({

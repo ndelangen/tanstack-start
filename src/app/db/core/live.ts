@@ -1,4 +1,4 @@
-import { useMutation as useConvexMutation, useQuery as useConvexQuery } from 'convex/react';
+import { useMutation as useConvexMutation } from 'convex/react';
 import type { FunctionReference } from 'convex/server';
 import { useCallback, useState } from 'react';
 
@@ -26,16 +26,12 @@ export type LiveMutationResult<TVariables, TResult> = {
   reset: () => void;
 };
 
-export function useLiveQuery<TData, TArgs extends Record<string, unknown>>(
-  queryRef: FunctionReference<'query'>,
-  args: TArgs,
-  options?: { enabled?: boolean; initialData?: () => TData | undefined }
+export function toLiveQueryResult<TData>(
+  liveData: TData | undefined,
+  enabled = true,
+  initialData?: () => TData | undefined
 ): LiveQueryResult<TData> {
-  const enabled = options?.enabled ?? true;
-  const liveData = useConvexQuery(queryRef, enabled ? (args as never) : 'skip');
-  const fallbackData = options?.initialData?.();
-  const data = (liveData as TData | undefined) ?? fallbackData;
-
+  const data = liveData ?? initialData?.();
   return {
     data,
     isPending: enabled && liveData === undefined,

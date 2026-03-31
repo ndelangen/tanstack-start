@@ -1,5 +1,6 @@
 import { db } from '@db/core';
-import { useLiveMutation, useLiveQuery } from '@app/db/core/live';
+import { toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
+import { useQuery } from 'convex/react';
 import {
   type FactionInput,
   FactionInputSchema,
@@ -58,15 +59,9 @@ export async function loadFactionsByGroup(groupId: string): Promise<FactionEntry
 }
 
 export function useFaction(slug: string, options?: { enabled?: boolean; initialData?: FactionEntry }) {
-  const enabled = options?.enabled ?? true;
-  const result = useLiveQuery<FactionRow, { slug: string }>(
-    api.factions.getBySlug,
-    { slug },
-    {
-      enabled: enabled && slug.length > 0,
-      initialData: () => options?.initialData ?? undefined,
-    }
-  );
+  const enabled = (options?.enabled ?? true) && slug.length > 0;
+  const liveData = useQuery(api.factions.getBySlug, enabled ? { slug } : 'skip');
+  const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
   return {
     ...result,
     data: result.data ? toFactionEntry(result.data) : undefined,
@@ -74,9 +69,8 @@ export function useFaction(slug: string, options?: { enabled?: boolean; initialD
 }
 
 export function useFactionsAll(options?: { initialData?: FactionEntry[] }) {
-  const result = useLiveQuery<FactionRow[], Record<string, never>>(api.factions.list, {}, {
-    initialData: () => options?.initialData ?? undefined,
-  });
+  const liveData = useQuery(api.factions.list, {});
+  const result = toLiveQueryResult(liveData, true, () => options?.initialData ?? undefined);
   return {
     ...result,
     data: result.data?.map(toFactionEntry),
@@ -87,14 +81,10 @@ export function useFactionsByOwner(
   ownerId: string | undefined,
   options?: { initialData?: FactionEntry[] }
 ) {
-  const result = useLiveQuery<FactionRow[], { owner_id: string }>(
-    api.factions.listByOwner,
-    { owner_id: ownerId ?? '' },
-    {
-      enabled: Boolean(ownerId),
-      initialData: () => options?.initialData ?? undefined,
-    }
-  );
+  const enabled = Boolean(ownerId);
+  const args = enabled ? ({ owner_id: ownerId } as never) : 'skip';
+  const liveData = useQuery(api.factions.listByOwner, args);
+  const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
   return {
     ...result,
     data: result.data?.map(toFactionEntry),
@@ -102,14 +92,10 @@ export function useFactionsByOwner(
 }
 
 export function useFactionsByGroup(groupId: string, options?: { initialData?: FactionEntry[] }) {
-  const result = useLiveQuery<FactionRow[], { group_id: string }>(
-    api.factions.listByGroup,
-    { group_id: groupId },
-    {
-      enabled: Boolean(groupId),
-      initialData: () => options?.initialData ?? undefined,
-    }
-  );
+  const enabled = Boolean(groupId);
+  const args = enabled ? ({ group_id: groupId } as never) : 'skip';
+  const liveData = useQuery(api.factions.listByGroup, args);
+  const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
   return {
     ...result,
     data: result.data?.map(toFactionEntry),
