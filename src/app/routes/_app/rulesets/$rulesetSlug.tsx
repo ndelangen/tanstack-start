@@ -1,11 +1,23 @@
-import { createFileRoute, getRouteApi, Link, Outlet, useMatches, useNavigate } from '@tanstack/react-router';
-import { MessageCircleQuestionMark, Search, Trash2, UserPlus } from 'lucide-react';
+import {
+  createFileRoute,
+  getRouteApi,
+  Link,
+  Outlet,
+  useMatches,
+  useNavigate,
+} from '@tanstack/react-router';
+import { MessageCircleQuestionMark, Search, Trash2 } from 'lucide-react';
 
 import { loadFaqItemsByRuleset, useFaqItemsByRuleset } from '@db/faq';
 import { useGroup } from '@db/groups';
 import { useGroupMembers, useRequestGroupMembership } from '@db/members';
 import { useCurrentProfile } from '@db/profiles';
-import { loadRulesetBySlug, useDeleteRuleset, useRulesetBySlug } from '@db/rulesets';
+import {
+  loadRulesetBySlug,
+  useDeleteRuleset,
+  useRulesetBySlug,
+  useUpdateRuleset,
+} from '@db/rulesets';
 import { FaqList } from '@app/components/faq/FaqList';
 import { FormActions } from '@app/components/form/FormActions';
 import { FormButton } from '@app/components/form/FormButton';
@@ -13,6 +25,7 @@ import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Toolbar } from '@app/components/generic/layout';
 import { BlockCover } from '@app/components/generic/surfaces';
 import { Card } from '@app/components/generic/surfaces/Card';
+import { GroupAssignPopover } from '@app/components/groups/GroupAssignPopover';
 
 import styles from './RulesetDetail.module.css';
 
@@ -25,9 +38,7 @@ export const Route = createFileRoute('/_app/rulesets/$rulesetSlug')({
     try {
       const rulesetPage = await loadRulesetBySlug(params.rulesetSlug);
       if (rulesetPage) {
-        const [faqItems] = await Promise.all([
-          loadFaqItemsByRuleset(rulesetPage.ruleset._id),
-        ]);
+        const [faqItems] = await Promise.all([loadFaqItemsByRuleset(rulesetPage.ruleset._id)]);
         return { notFound: false, rulesetPage, faqItems };
       }
       return { notFound: false, rulesetPage: undefined, faqItems: [] };
@@ -66,6 +77,7 @@ function RulesetDetailPage() {
     initialCurrentUserId: appLoaderData.currentUserId,
   });
   const deleteRuleset = useDeleteRuleset();
+  const updateRuleset = useUpdateRuleset();
   const rulesetId = ruleset.ruleset?._id ?? '';
   const faqItems = useFaqItemsByRuleset(rulesetId, { initialData: faqItemsSeed });
   const groupId = ruleset.ruleset?.group_id ?? '';
@@ -95,7 +107,9 @@ function RulesetDetailPage() {
 
   const r = ruleset.ruleset;
   const isOwner = profile?.data?.user_id === r.owner_id;
-  const viewerMembership = groupMembers.data?.find((entry) => entry.user_id === profile.data?.user_id);
+  const viewerMembership = groupMembers.data?.find(
+    (entry) => entry.user_id === profile.data?.user_id
+  );
   const membershipStatus =
     viewerMembership && viewerMembership.status !== 'removed' ? viewerMembership.status : 'none';
   const canRequestMembership =
@@ -151,6 +165,25 @@ function RulesetDetailPage() {
         </Toolbar.Left>
         <Toolbar.Center></Toolbar.Center>
         <Toolbar.Right>
+          {isOwner && (
+            <GroupAssignPopover
+              disabled={!isOwner}
+              onChangeGroup={async (nextGroupId) => {
+                await updateRuleset.mutateAsync({
+                  id: r._id,
+                  input: { name: r.name },
+                  groupId: nextGroupId,
+                  imageCover: r.image_cover ?? null,
+                });
+              }}
+              title="Assign Group"
+              descriptionLines={[
+                `Assign a group that can help maintain "${r.name}".`,
+                'You can create and join groups from your profile.',
+              ]}
+            />
+          )}
+
           <FormActions>
             {isOwner && (
               <FormTooltip content="Delete ruleset">
@@ -175,45 +208,48 @@ function RulesetDetailPage() {
         </div>
         <h2>{r.name}</h2>
 
-        <div className={styles.toolbarGroupAccess}>
-          <span className={styles.groupStatusLabel}>Group access:</span>
-          {r.group_id == null ? (
-            <span>No group</span>
-          ) : membershipStatus === 'active' && group.data?.slug ? (
-            <Link to="/groups/$groupSlug" params={{ groupSlug: group.data.slug }}>
-              {group.data.name}
-            </Link>
-          ) : (
-            <span>{group.data?.name ?? 'Loading group...'}</span>
-          )}
-          <span aria-hidden>·</span>
-          <span>
-            {membershipStatus === 'active'
+        {(() => {
+          const groupDisplay =
+            r.group_id == null ? (
+              <span>No group</span>
+            ) : membershipStatus === 'active' && group.data?.slug ? (
+              <Link to="/groups/$groupSlug" params={{ groupSlug: group.data.slug }}>
+                {group.data?.name ?? 'Group'}
+              </Link>
+            ) : (
+              <span>{group.data?.name ?? 'Loading group...'}</span>
+            );
+
+          const membershipLabel =
+            membershipStatus === 'active'
               ? 'Active member'
               : membershipStatus === 'pending'
                 ? 'Pending approval'
-                : 'Not a member'}
-          </span>
-          {!profile.data?._id && (
-            <>
+                : 'Not a member';
+
+          return (
+            <div className={styles.toolbarGroupAccess}>
+              <span className={styles.groupStatusLabel}>Group access:</span>
+              {groupDisplay}
               <span aria-hidden>·</span>
-              <Link to="/auth/login">Log in</Link>
-            </>
-          )}
-          {canRequestMembership && (
-            <FormTooltip content="Request membership">
-              <FormButton
-                type="button"
-                iconOnly
-                aria-label="Request membership"
-                disabled={requestMembership.isPending}
-                onClick={() => requestMembership.mutate(groupId)}
-              >
-                <UserPlus size={16} aria-hidden />
-              </FormButton>
-            </FormTooltip>
-          )}
-        </div>
+              <span>{membershipLabel}</span>
+              {canRequestMembership && (
+                <FormTooltip content="Request membership">
+                  <FormButton
+                    type="button"
+                    iconOnly
+                    aria-label="Request membership"
+                    disabled={requestMembership.isPending}
+                    onClick={() => requestMembership.mutate(groupId)}
+                  >
+                    {/* Reuse UserPlus icon via Faq toolbar import if desired; currently using generic button */}
+                    Request
+                  </FormButton>
+                </FormTooltip>
+              )}
+            </div>
+          );
+        })()}
         {(deleteRuleset.isError || requestMembership.isError) && (
           <p className={styles.error}>
             {deleteRuleset.error?.message ?? requestMembership.error?.message}

@@ -226,9 +226,14 @@ export const update = mutation({
     const permitted = await canAccessRuleset(ctx, ruleset, userId);
     if (!permitted) throw new Error('Not authorized');
 
-    if (args.group_id !== undefined && args.group_id !== null) {
-      const canUseGroup = await isActiveGroupMember(ctx, args.group_id, userId);
-      if (!canUseGroup) throw new Error('Not authorized for group');
+    if (args.group_id !== undefined) {
+      if (ruleset.owner_id !== userId) {
+        throw new Error('Only the ruleset owner can change its group');
+      }
+      if (args.group_id !== null) {
+        const canUseGroup = await isActiveGroupMember(ctx, args.group_id, userId);
+        if (!canUseGroup) throw new Error('Not authorized for group');
+      }
     }
 
     const duplicate = await ctx.db

@@ -144,3 +144,19 @@ This document records durable UI decisions for consistency across features.
 - Exceptions:
   - None by default.
 - Changed on: 2026-03-25
+
+## DD-012: Components are concern boundaries, not sub-views
+- Status: accepted
+- Context: Extracting chunks of JSX into \"helper\" components without a clear responsibility boundary leads to prop bloat, indirection, and harder reasoning, while providing little reuse. We observed this with `RulesetGroupToolbarControl`, which was just a fragment of the ruleset detail toolbar and required many props mirroring route-local state.
+- Rule: Only extract a component when it represents a real concern boundary (behavior or domain concept), not merely a sub-section of a single page's layout. Keep view-only sub-views inline in the route or feature component.
+- Examples:
+  - Good: `GroupAssignPopover` owns \"membership-aware group picking\" (fetches memberships, filters allowed groups, provides search UX) and exposes a small semantic API (`disabled`, `onChangeGroup`, optional text props). Faction and ruleset routes wrap it with thin adapters.
+  - Good: A reusable search box component that manages debounced navigation and accessible labeling.
+  - Bad: A `*ToolbarControl` component that only renders one page's toolbar row and needs many props like `rulesetId`, `rulesetName`, `groupId`, `groupSlug`, `groupName`, `isOwner`, `membershipStatus`, `canRequestMembership`, `onRequestMembership`, `canEditGroup`, `onChangeGroup`.
+  - Bad: Moving a long JSX block out of a route into a separate file without reducing responsibility or API surface, just to \"make it shorter\".
+- Exceptions:
+  - Very large routes can still be split for readability, but the extracted pieces should either:
+    - Form real concern-boundary components (as above), or
+    - Be kept as local helper functions in the same file, not exported feature components.
+  - If in doubt, prefer inlining and only extract when a clear responsibility and small prop surface emerge.
+- Changed on: 2026-04-01
