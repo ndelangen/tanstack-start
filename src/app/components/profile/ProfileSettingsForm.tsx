@@ -9,9 +9,9 @@ import { FormButton } from '@app/components/form/FormButton';
 import { FormField } from '@app/components/form/FormField';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { TextField } from '@app/components/form/TextField';
-import { Stack } from '@app/components/generic/layout';
+import { Stack, Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
-import { IconButton } from '@app/components/generic/ui';
+import { IconButton } from '@app/components/generic/ui/IconButton';
 import { profileSlugBaseFromName } from '@app/profile/validation';
 
 import layoutStyles from './ProfilePageLayout.module.css';
@@ -48,36 +48,38 @@ function ProfileSettingsFormFields({ initial }: { initial: ProfileEntry }) {
 
   return (
     <div className={layoutStyles.root}>
-      <div className={layoutStyles.toolbar}>
-        <FormActions>
-          <FormTooltip content={update.isPending ? 'Saving…' : 'Save'}>
-            <FormButton
-              type="submit"
-              form={PROFILE_SETTINGS_FORM_ID}
-              iconOnly
-              aria-label="Save profile"
-              disabled={update.isPending}
-            >
-              <Save size={16} aria-hidden />
-            </FormButton>
-          </FormTooltip>
-          <FormTooltip content="View public profile">
-            <IconButton
-              variant="secondary"
-              to="/profiles/$slug"
-              params={{ slug: initial.slug }}
-              aria-label="View public profile"
-            >
-              <User size={16} aria-hidden />
-            </IconButton>
-          </FormTooltip>
-          <FormTooltip content="Back to profiles">
-            <IconButton variant="nav" to="/profiles" aria-label="Back to profiles">
-              <ArrowLeft size={16} aria-hidden />
-            </IconButton>
-          </FormTooltip>
-        </FormActions>
-      </div>
+      <Toolbar>
+        <Toolbar.Left>
+          <FormActions>
+            <FormTooltip content={update.isPending ? 'Saving…' : 'Save'}>
+              <FormButton
+                type="submit"
+                form={PROFILE_SETTINGS_FORM_ID}
+                iconOnly
+                aria-label="Save profile"
+                disabled={update.isPending}
+              >
+                <Save size={16} aria-hidden />
+              </FormButton>
+            </FormTooltip>
+            <FormTooltip content="View public profile">
+              <IconButton
+                variant="secondary"
+                to="/profiles/$slug"
+                params={{ slug: initial.slug }}
+                aria-label="View public profile"
+              >
+                <User size={16} aria-hidden />
+              </IconButton>
+            </FormTooltip>
+            <FormTooltip content="Back to profiles">
+              <IconButton variant="nav" to="/profiles" aria-label="Back to profiles">
+                <ArrowLeft size={16} aria-hidden />
+              </IconButton>
+            </FormTooltip>
+          </FormActions>
+        </Toolbar.Left>
+      </Toolbar>
 
       <Card>
         <Stack as="form" gap={3} id={PROFILE_SETTINGS_FORM_ID} onSubmit={handleSubmit}>

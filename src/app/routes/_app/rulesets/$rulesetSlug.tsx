@@ -23,6 +23,7 @@ import { FaqList } from '@app/components/faq/FaqList';
 import { FormActions } from '@app/components/form/FormActions';
 import { FormButton } from '@app/components/form/FormButton';
 import { FormTooltip } from '@app/components/form/FormTooltip';
+import { Stack, Toolbar } from '@app/components/generic/layout';
 import { BlockCover } from '@app/components/generic/surfaces';
 import { Card } from '@app/components/generic/surfaces/Card';
 
@@ -133,97 +134,101 @@ function RulesetDetailPage() {
 
   return (
     <>
+      <Toolbar>
+        <Toolbar.Left>
+          {profile?.data?.id && (
+            <FormTooltip content="Ask a question">
+              <FormButton
+                type="button"
+                iconOnly
+                aria-label="Ask a question"
+                onClick={() =>
+                  navigate({
+                    to: '/rulesets/$rulesetSlug/faq/create',
+                    params: { rulesetSlug: r.slug },
+                  })
+                }
+              >
+                <MessageCircleQuestionMark size={16} aria-hidden />
+              </FormButton>
+            </FormTooltip>
+          )}
+          <div className={styles.searchWrapper}>
+            <Search className={styles.searchIcon} size={18} aria-hidden />
+            <input
+              type="search"
+              className={styles.searchInput}
+              value={search.q ?? ''}
+              onChange={(e) => handleFaqSearchChange(e.target.value)}
+              placeholder="Search questions..."
+              aria-label="Search FAQ questions"
+            />
+          </div>
+        </Toolbar.Left>
+        <Toolbar.Center></Toolbar.Center>
+        <Toolbar.Right>
+          <FormActions>
+            {isOwner && (
+              <FormTooltip content="Delete ruleset">
+                <FormButton
+                  variant="danger"
+                  type="button"
+                  iconOnly
+                  aria-label="Delete ruleset"
+                  onClick={handleDelete}
+                  disabled={deleteRuleset.isPending}
+                >
+                  <Trash2 size={16} aria-hidden />
+                </FormButton>
+              </FormTooltip>
+            )}
+          </FormActions>
+        </Toolbar.Right>
+      </Toolbar>
       <section className={styles.section}>
         <div className={styles.coverWrapper}>
           <BlockCover src={r.image_cover} alt={`Cover for ${r.name}`} />
         </div>
         <h2>{r.name}</h2>
-        <div className={styles.toolbar}>
-          <div className={styles.toolbarActions}>
-            <div className={styles.searchWrapper}>
-              <Search className={styles.searchIcon} size={18} aria-hidden />
-              <input
-                type="search"
-                className={styles.searchInput}
-                value={search.q ?? ''}
-                onChange={(e) => handleFaqSearchChange(e.target.value)}
-                placeholder="Search questions..."
-                aria-label="Search FAQ questions"
-              />
-            </div>
-            <FormActions>
-              {profile?.data?.id && (
-                <FormTooltip content="Ask a question">
-                  <FormButton
-                    type="button"
-                    iconOnly
-                    aria-label="Ask a question"
-                    onClick={() =>
-                      navigate({
-                        to: '/rulesets/$rulesetSlug/faq/create',
-                        params: { rulesetSlug: r.slug },
-                      })
-                    }
-                  >
-                    <MessageCircleQuestionMark size={16} aria-hidden />
-                  </FormButton>
-                </FormTooltip>
-              )}
-              {isOwner && (
-                <FormTooltip content="Delete ruleset">
-                  <FormButton
-                    variant="danger"
-                    type="button"
-                    iconOnly
-                    aria-label="Delete ruleset"
-                    onClick={handleDelete}
-                    disabled={deleteRuleset.isPending}
-                  >
-                    <Trash2 size={16} aria-hidden />
-                  </FormButton>
-                </FormTooltip>
-              )}
-            </FormActions>
-          </div>
-          <div className={styles.toolbarGroupAccess}>
-            <span className={styles.groupStatusLabel}>Group access:</span>
-            {r.group_id == null ? (
-              <span>No group</span>
-            ) : membershipStatus === 'active' && group.data?.slug ? (
-              <Link to="/groups/$groupSlug" params={{ groupSlug: group.data.slug }}>
-                {group.data.name}
-              </Link>
-            ) : (
-              <span>{group.data?.name ?? 'Loading group...'}</span>
-            )}
-            <span aria-hidden>·</span>
-            <span>
-              {membershipStatus === 'active'
-                ? 'Active member'
-                : membershipStatus === 'pending'
-                  ? 'Pending approval'
-                  : 'Not a member'}
-            </span>
-            {!profile.data?.id && (
-              <>
-                <span aria-hidden>·</span>
-                <Link to="/auth/login">Log in</Link>
-              </>
-            )}
-            {canRequestMembership && (
-              <FormTooltip content="Request membership">
-                <FormButton
-                  type="button"
-                  iconOnly
-                  aria-label="Request membership"
-                  disabled={requestMembership.isPending}
-                  onClick={() => requestMembership.mutate(groupId)}
-                >
-                  <UserPlus size={16} aria-hidden />
-                </FormButton>
-              </FormTooltip>
-            )}
-          </div>
+
+        <div className={styles.toolbarGroupAccess}>
+          <span className={styles.groupStatusLabel}>Group access:</span>
+          {r.group_id == null ? (
+            <span>No group</span>
+          ) : membershipStatus === 'active' && group.data?.slug ? (
+            <Link to="/groups/$groupSlug" params={{ groupSlug: group.data.slug }}>
+              {group.data.name}
+            </Link>
+          ) : (
+            <span>{group.data?.name ?? 'Loading group...'}</span>
+          )}
+          <span aria-hidden>·</span>
+          <span>
+            {membershipStatus === 'active'
+              ? 'Active member'
+              : membershipStatus === 'pending'
+                ? 'Pending approval'
+                : 'Not a member'}
+          </span>
+          {!profile.data?.id && (
+            <>
+              <span aria-hidden>·</span>
+              <Link to="/auth/login">Log in</Link>
+            </>
+          )}
+          {canRequestMembership && (
+            <FormTooltip content="Request membership">
+              <FormButton
+                type="button"
+                iconOnly
+                aria-label="Request membership"
+                disabled={requestMembership.isPending}
+                onClick={() => requestMembership.mutate(groupId)}
+              >
+                <UserPlus size={16} aria-hidden />
+              </FormButton>
+            </FormTooltip>
+          )}
         </div>
         {(deleteRuleset.isError || requestMembership.isError) && (
           <p className={styles.error}>
@@ -231,7 +236,6 @@ function RulesetDetailPage() {
           </p>
         )}
       </section>
-
       {factions.data && factions.data.length > 0 && (
         <section className={styles.section}>
           <h3 className={styles.sectionTitle}>Factions in this ruleset</h3>
@@ -246,7 +250,6 @@ function RulesetDetailPage() {
           </ul>
         </section>
       )}
-
       <section className={styles.section}>
         <h3 className={styles.sectionTitle}>FAQ</h3>
         <Card>
