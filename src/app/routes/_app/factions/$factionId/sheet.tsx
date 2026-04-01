@@ -27,7 +27,7 @@ function FactionSheetPage() {
   const { mode } = Route.useSearch();
   const loaderData = Route.useLoaderData();
   const initialData = mode === 'db' ? loaderData : undefined;
-  const factionFromDb = useFaction(factionId, {
+  const { faction } = useFaction(factionId, {
     enabled: mode === 'db',
     initialData,
   });
@@ -51,9 +51,9 @@ function FactionSheetPage() {
     return <FactionSheetView faction={factionFromMessage} />;
   }
 
-  if (!factionFromDb.data) {
+  if (!faction) {
     return null;
   }
 
-  return <FactionSheetView faction={factionFromDb.data.data} />;
+  return <FactionSheetView faction={faction.data} />;
 }
