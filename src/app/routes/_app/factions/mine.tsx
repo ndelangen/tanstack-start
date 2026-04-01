@@ -14,12 +14,12 @@ export const Route = createFileRoute('/_app/factions/mine')({
   loader: async () => {
     const profile = await loadCurrentProfile();
 
-    if (!profile?.id) {
+    if (!profile?._id) {
       return { profile: null, ownedFactions: [], memberships: [], factionsByGroupId: {} };
     }
 
-    const ownedFactions = await loadFactionsByOwner(profile.id);
-    const memberships = await loadUserGroupMemberships(profile.id);
+    const ownedFactions = await loadFactionsByOwner(profile._id);
+    const memberships = await loadUserGroupMemberships(profile._id);
     const factionsByGroupEntries = await Promise.all(
       memberships.map(
         async (membership) =>
@@ -65,10 +65,9 @@ function FactionsMinePage() {
   const loaderData = Route.useLoaderData();
   const profile = useCurrentProfile({
     initialCurrent: appLoaderData.currentProfile,
-    initialCurrentUserId: appLoaderData.currentUserId,
   });
 
-  if (!profile.data?.id) {
+  if (!profile.data?._id) {
     return (
       <p>
         <Link to="/auth/login">Log in</Link> to see your factions.
@@ -79,11 +78,11 @@ function FactionsMinePage() {
   return (
     <>
       <h2>Factions I own</h2>
-      <FactionsOwnedList ownerId={profile.data.id} initialFactions={loaderData.ownedFactions} />
+      <FactionsOwnedList ownerId={profile.data._id} initialFactions={loaderData.ownedFactions} />
 
       <h2>Factions in my groups</h2>
       <FactionsByGroupsList
-        userId={profile.data.id}
+        userId={profile.data._id}
         initialMemberships={loaderData.memberships}
         initialFactionsByGroupId={loaderData.factionsByGroupId}
       />

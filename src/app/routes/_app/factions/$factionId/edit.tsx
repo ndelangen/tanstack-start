@@ -1,16 +1,8 @@
 import { createFileRoute, getRouteApi, Link, useNavigate } from '@tanstack/react-router';
-import { useQuery } from 'convex/react';
 import { RotateCcw, Save, Trash2, Users, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 
-import {
-  type Faction,
-  useDeleteFaction,
-  useFaction,
-  useFactionEditorPageBySlug,
-  useSetFactionGroup,
-  useUpdateFaction,
-} from '@db/factions';
+import { type Faction, useDeleteFaction, useFaction, useSetFactionGroup, useUpdateFaction } from '@db/factions';
 import { useCurrentProfile } from '@db/profiles';
 import {
   FactionEditor,
@@ -50,7 +42,6 @@ function FactionEditPage() {
   const setFactionGroup = useSetFactionGroup();
   const profile = useCurrentProfile({
     initialCurrent: appLoaderData.currentProfile,
-    initialCurrentUserId: appLoaderData.currentUserId,
   });
   const [editorErrors, setEditorErrors] = useState<string[]>([]);
 
@@ -58,7 +49,7 @@ function FactionEditPage() {
     enabled: !!factionId,
     initialData: loaderData,
   });
-  if (!profile?.data?.id) {
+  if (!profile?.data?.user_id) {
     return (
       <Card>
         <p>
@@ -79,7 +70,7 @@ function FactionEditPage() {
 
   const { slug: _ignored, ...initialFactionInput } = faction.data;
 
-  const canDelete = faction.owner_id === profile.data.id;
+  const canDelete = faction.owner_id === profile.data.user_id;
   const canAssignGroup = canDelete;
 
   const handleEditorSubmit = (values: Faction) => {

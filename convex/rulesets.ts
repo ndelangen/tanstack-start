@@ -64,7 +64,38 @@ export const getBySlug = query({
       .withIndex('by_slug', (q) => q.eq('slug', args.slug))
       .unique();
     if (!row || row.is_deleted) throw new Error(`Ruleset with slug ${args.slug} not found`);
-    return row;
+
+    const links = await ctx.db
+      .query('ruleset_factions')
+      .withIndex('by_ruleset', (q) => q.eq('ruleset_id', row._id))
+      .take(500);
+    const factions = await Promise.all(links.map((link) => getFactionById(ctx, link.faction_id)));
+
+    const userId = await getAuthUserId(ctx);
+    const canAccess =
+      userId != null && (await canAccessRuleset(ctx, row, userId as unknown as Id<'users'>));
+
+    return {
+      ruleset: row,
+      factions: links.map((link, index) => {
+        const faction = factions[index];
+        const data = faction?.data;
+        const dataObj = data != null ? ensureObject(data) : null;
+        const name = typeof dataObj?.name === 'string' ? dataObj.name : String(link.faction_id);
+        const urlSlug =
+          typeof faction?.slug === 'string'
+            ? faction.slug
+            : typeof dataObj?.slug === 'string'
+              ? dataObj.slug
+              : String(link.faction_id);
+        return {
+          factionId: link.faction_id,
+          name,
+          urlSlug,
+        };
+      }),
+      canAccess,
+    };
   },
 });
 

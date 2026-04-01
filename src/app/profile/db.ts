@@ -1,30 +1,41 @@
-import { useEffect, useRef } from 'react';
+import { useQuery } from 'convex/react';
 
 import { db } from '@db/core';
 import { toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
 import { type ProfileUserEditInput, profileUserEditFormSchema } from '@app/profile/validation';
-import { useQuery } from 'convex/react';
 
 import { api } from '../../../convex/_generated/api';
 import type { Doc } from '../../../convex/_generated/dataModel';
 
 export type ProfileRow = Doc<'profiles'>;
-export type ProfileEntry = ProfileRow & { id: ProfileRow['user_id'] | ProfileRow['_id'] };
+export type ProfileEntry = ProfileRow;
 
-function toProfileEntry(entry: ProfileRow): ProfileEntry {
-  const resolvedId =
-    typeof entry.user_id === 'string' && entry.user_id.length > 0 ? entry.user_id : entry._id;
-  return { ...entry, id: resolvedId };
-}
+export type ProfilePageData = {
+  profile: ProfileEntry;
+  memberships: Doc<'group_members'>[];
+  groups: Doc<'groups'>[];
+  faqAsked: unknown[];
+  faqAnswers: unknown[];
+  factions?: unknown[];
+};
 
-export async function loadProfileBySlug(slug: string): Promise<ProfileEntry> {
-  const entry = await db.query<ProfileRow>(api.profiles.getBySlug, { slug });
-  return toProfileEntry(entry);
+export async function loadProfileBySlug(slug: string): Promise<ProfilePageData> {
+  const result = await db.query<{
+    profile: ProfileRow;
+    memberships: Doc<'group_members'>[];
+    groups: Doc<'groups'>[];
+    faqAsked: import('../faq/db').FaqItemAskedByWithRuleset[];
+    faqAnswers: import('../faq/db').FaqAnswerWithParent[];
+  }>(api.profiles.getBySlug, { slug });
+
+  return {
+    ...result,
+  };
 }
 
 export async function loadProfilesAll(): Promise<ProfileEntry[]> {
   const entries = await db.query<ProfileRow[]>(api.profiles.list, {});
-  return entries.map(toProfileEntry);
+  return entries;
 }
 
 export async function loadCurrentUserId(): Promise<string | null> {
@@ -33,12 +44,12 @@ export async function loadCurrentUserId(): Promise<string | null> {
 
 export async function loadCurrentProfile(): Promise<ProfileEntry | null> {
   const currentRaw = await db.query<ProfileRow | null>(api.profiles.current, {});
-  const current = currentRaw ? toProfileEntry(currentRaw) : null;
+  const current = currentRaw ? currentRaw : null;
   if (current) {
     const needsBackfill = current.slug === 'user' || !current.username || !current.avatar_url;
     if (needsBackfill) {
       const entry = await db.mutation<ProfileRow>(api.profiles.bootstrapCurrent, {});
-      return toProfileEntry(entry);
+      return entry;
     }
     return current;
   }
@@ -49,7 +60,7 @@ export async function loadCurrentProfile(): Promise<ProfileEntry | null> {
   }
 
   const entry = await db.mutation<ProfileRow>(api.profiles.bootstrapCurrent, {});
-  return toProfileEntry(entry);
+  return entry;
 }
 
 export function useProfile(id: string, options?: { enabled?: boolean }) {
@@ -59,28 +70,33 @@ export function useProfile(id: string, options?: { enabled?: boolean }) {
   const result = toLiveQueryResult(liveData, enabled);
   return {
     ...result,
-    data: result.data
-      ? {
-          ...result.data,
-          id:
-            typeof result.data.user_id === 'string' && result.data.user_id.length > 0
-              ? result.data.user_id
-              : result.data._id,
-        }
-      : undefined,
+    data: result.data ?? undefined,
   };
 }
 
 export function useProfileBySlug(
   slug: string,
-  options?: { initialData?: ProfileEntry | null; enabled?: boolean }
+  options?: {
+    initialData?: ProfilePageData;
+    enabled?: boolean;
+  }
 ) {
   const enabled = options?.enabled ?? slug.trim().length > 0;
   const liveData = useQuery(api.profiles.getBySlug, enabled ? { slug } : 'skip');
-  const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
+  const result = toLiveQueryResult<{
+    profile: ProfileRow;
+    memberships: Doc<'group_members'>[];
+    groups: Doc<'groups'>[];
+    faqAsked: import('../faq/db').FaqItemAskedByWithRuleset[];
+    faqAnswers: import('../faq/db').FaqAnswerWithParent[];
+  } | null>(liveData, enabled, () => (options?.initialData as never) ?? undefined);
   return {
     ...result,
-    data: result.data ? toProfileEntry(result.data) : undefined,
+    profile: result.data ? result.data.profile : undefined,
+    memberships: result.data?.memberships,
+    groups: result.data?.groups,
+    faqAsked: result.data?.faqAsked,
+    faqAnswers: result.data?.faqAnswers,
   };
 }
 
@@ -89,7 +105,6 @@ export function useProfilesAll(options?: { initialData?: ProfileEntry[] }) {
   const result = toLiveQueryResult(liveData, true, () => options?.initialData ?? undefined);
   return {
     ...result,
-    data: result.data?.map(toProfileEntry),
   };
 }
 
@@ -97,48 +112,14 @@ export function useCurrentProfile(options?: {
   initialCurrent?: ProfileEntry | null;
   initialCurrentUserId?: string | null;
 }) {
-  const current = toLiveQueryResult(useQuery(api.profiles.current, {}), true, () =>
-    options?.initialCurrent ?? undefined
+  const current = toLiveQueryResult(
+    useQuery(api.profiles.current, {}),
+    true,
+    () => options?.initialCurrent ?? undefined
   );
-  const currentUserId = toLiveQueryResult(useQuery(api.profiles.currentUserId, {}), true, () =>
-    options?.initialCurrentUserId ?? undefined
-  );
-  const bootstrap = useLiveMutation<Record<string, never>, ProfileRow>(
-    api.profiles.bootstrapCurrent
-  );
-  const bootstrapStarted = useRef(false);
-
-  useEffect(() => {
-    const currentValue = current.data;
-    if (
-      currentValue == null &&
-      currentUserId.data &&
-      !bootstrapStarted.current &&
-      !bootstrap.isPending
-    ) {
-      bootstrapStarted.current = true;
-      bootstrap.mutate({});
-    }
-  }, [bootstrap, current.data, currentUserId.data]);
-
-  if (current.data) {
-    return {
-      ...current,
-      data: toProfileEntry(current.data),
-    };
-  }
-
-  if (bootstrap.data) {
-    return {
-      ...bootstrap,
-      data: toProfileEntry(bootstrap.data),
-      isLoading: bootstrap.isPending,
-    };
-  }
 
   return {
     ...current,
-    data: undefined,
   };
 }
 
@@ -173,11 +154,7 @@ export function useUpdateCurrentProfile() {
           },
           {
             onSuccess: (entry) => {
-              const resolvedId =
-                typeof entry.user_id === 'string' && entry.user_id.length > 0
-                  ? entry.user_id
-                  : entry._id;
-              options?.onSuccess?.({ ...entry, id: resolvedId }, variables);
+              options?.onSuccess?.(entry, variables);
             },
             onError: (error) => options?.onError?.(error, variables),
           }
@@ -195,9 +172,7 @@ export function useUpdateCurrentProfile() {
         username: parsed.username,
         avatar_url: parsed.avatar_url,
       });
-      const resolvedId =
-        typeof entry.user_id === 'string' && entry.user_id.length > 0 ? entry.user_id : entry._id;
-      return { ...entry, id: resolvedId };
+      return entry;
     },
   };
 }

@@ -2,14 +2,6 @@ import { createFileRoute, getRouteApi } from '@tanstack/react-router';
 import clsx from 'clsx';
 import { ArrowLeft, Pencil, UserPlus } from 'lucide-react';
 
-import { loadFactionsByOwner, useFactionsByOwner } from '@db/factions';
-import {
-  loadFaqAnswersByUser,
-  loadFaqItemsAskedBy,
-  useFaqAnswersByUser,
-  useFaqItemsAskedBy,
-} from '@db/faq';
-import { loadUserGroupMemberships, useUserGroupMemberships } from '@db/members';
 import { loadProfileBySlug, useCurrentProfile, useProfileBySlug } from '@db/profiles';
 import { FactionList } from '@app/components/factions/FactionList';
 import { FormActions } from '@app/components/form/FormActions';
@@ -27,14 +19,8 @@ import styles from './ProfileDetail.module.css';
 
 export const Route = createFileRoute('/_app/profiles/$slug')({
   loader: async ({ params }) => {
-    const profile = await loadProfileBySlug(params.slug);
-    const [memberships, factions, faqAsked, faqAnswers] = await Promise.all([
-      loadUserGroupMemberships(profile.id),
-      loadFactionsByOwner(profile.id),
-      loadFaqItemsAskedBy(profile.id),
-      loadFaqAnswersByUser(profile.id),
-    ]);
-    return { profile, memberships, factions, faqAsked, faqAnswers };
+    const profilePage = await loadProfileBySlug(params.slug);
+    return { profilePage };
   },
   component: ProfileDetailPage,
   staticData: {
@@ -47,38 +33,38 @@ const appRouteApi = getRouteApi('/_app');
 function ProfilePageHead() {
   const { slug } = Route.useParams();
   const appLoaderData = appRouteApi.useLoaderData();
-  const loaderData = Route.useLoaderData();
-  const profile = useProfileBySlug(slug, { initialData: loaderData.profile });
+  const loaderData = Route.useLoaderData() as { profilePage?: unknown } | undefined;
+  const profileData = useProfileBySlug(slug, { initialData: loaderData?.profilePage as any });
   const currentProfile = useCurrentProfile({
     initialCurrent: appLoaderData.currentProfile,
     initialCurrentUserId: appLoaderData.currentUserId,
   });
 
-  if (!profile.data) {
+  if (!profileData.profile) {
     return null;
   }
 
   const initials =
-    profile.data.username
+    profileData.profile.username
       ?.slice(0, 2)
       .toUpperCase()
       .replace(/[^A-Z]/g, '') || '?';
-  const isSelf = currentProfile.data?.id === profile.data.id;
+  const isSelf = currentProfile.data?._id === profileData.profile._id;
 
   return (
     <div>
       <div className={styles.identityRow}>
-        {profile.data.avatar_url ? (
+        {profileData.profile.avatar_url ? (
           <img
-            src={profile.data.avatar_url}
-            alt={profile.data.username ?? 'Avatar'}
+            src={profileData.profile.avatar_url}
+            alt={profileData.profile.username ?? 'Avatar'}
             className={styles.avatar}
           />
         ) : (
           <span className={styles.avatarPlaceholder}>{initials}</span>
         )}
         <div>
-          <h2 className={styles.displayName}>{profile.data.username ?? 'Unknown'}</h2>
+          <h2 className={styles.displayName}>{profileData.profile.username ?? 'Unknown'}</h2>
           {isSelf && <p className={styles.selfHint}>This is you!</p>}
         </div>
       </div>
@@ -90,22 +76,18 @@ function ProfileDetailPage() {
   const { slug } = Route.useParams();
   const appLoaderData = appRouteApi.useLoaderData();
   const loaderData = Route.useLoaderData();
-  const profile = useProfileBySlug(slug, { initialData: loaderData.profile });
+  const profileData = useProfileBySlug(slug, { initialData: loaderData.profilePage });
   const currentProfile = useCurrentProfile({
     initialCurrent: appLoaderData.currentProfile,
     initialCurrentUserId: appLoaderData.currentUserId,
   });
-  const profileId = profile.data?.id;
-  const memberships = useUserGroupMemberships(profileId, { initialData: loaderData.memberships });
-  const factions = useFactionsByOwner(profileId, { initialData: loaderData.factions });
-  const faqAsked = useFaqItemsAskedBy(profileId, { initialData: loaderData.faqAsked });
-  const faqAnswers = useFaqAnswersByUser(profileId, { initialData: loaderData.faqAnswers });
+  const profileId = profileData.profile?._id;
 
-  if (!profile.data) {
+  if (!profileId || !profileData.profile) {
     return null;
   }
 
-  const isSelf = currentProfile.data?.id === profile.data.id;
+  const isSelf = currentProfile.data?._id === profileData.profile._id;
 
   return (
     <Stack className={layoutStyles.root} gap={2}>
@@ -140,11 +122,11 @@ function ProfileDetailPage() {
           <h3 className={clsx(styles.sectionTitle, styles.sectionTitleCardHeader)}>Groups</h3>
         }
       >
-        {memberships.data && memberships.data.length > 0 ? (
+        {profileData.memberships && profileData.memberships.length > 0 ? (
           <ul className={styles.list}>
-            {memberships.data.map((m) => (
+            {profileData.memberships.map((m) => (
               <li key={m.group_id}>
-                <span>{m.groups?.name ?? 'Unknown group'}</span>
+                <span>{m.group_id}</span>
               </li>
             ))}
           </ul>
@@ -160,8 +142,8 @@ function ProfileDetailPage() {
           </h3>
         }
       >
-        {faqAsked.data && faqAsked.data.length > 0 ? (
-          <ProfileFaqQuestionsAsked items={faqAsked.data} />
+        {profileData.faqAsked && profileData.faqAsked.length > 0 ? (
+          <ProfileFaqQuestionsAsked items={profileData.faqAsked} />
         ) : (
           <p className={styles.empty}>No questions asked yet.</p>
         )}
@@ -172,8 +154,11 @@ function ProfileDetailPage() {
           <h3 className={clsx(styles.sectionTitle, styles.sectionTitleCardHeader)}>FAQ answers</h3>
         }
       >
-        {faqAnswers.data && faqAnswers.data.length > 0 ? (
-          <ProfileFaqAnswersGiven items={faqAnswers.data} viewedProfileId={profile.data.id} />
+        {profileData.faqAnswers && profileData.faqAnswers.length > 0 ? (
+          <ProfileFaqAnswersGiven
+            items={profileData.faqAnswers}
+            viewedProfileId={profileData.profile._id}
+          />
         ) : (
           <p className={styles.empty}>No FAQ answers yet.</p>
         )}
@@ -186,8 +171,9 @@ function ProfileDetailPage() {
           </h3>
         }
       >
-        {factions.data && factions.data.length > 0 ? (
-          <FactionList factions={factions.data} />
+        {Array.isArray(loaderData.profilePage.factions) &&
+        loaderData.profilePage.factions.length > 0 ? (
+          <FactionList factions={loaderData.profilePage.factions as any} />
         ) : (
           <p className={styles.empty}>No factions owned.</p>
         )}

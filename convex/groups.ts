@@ -45,7 +45,16 @@ export const getBySlug = query({
       .withIndex('by_slug', (q) => q.eq('slug', args.slug))
       .unique();
     if (!group) throw new Error(`Group with slug ${args.slug} not found`);
-    return group;
+
+    const members = await ctx.db
+      .query('group_members')
+      .withIndex('by_group', (q) => q.eq('group_id', group._id))
+      .take(500);
+
+    return {
+      group,
+      members,
+    };
   },
 });
 

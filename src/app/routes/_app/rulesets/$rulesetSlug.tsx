@@ -1,29 +1,16 @@
-import {
-  createFileRoute,
-  getRouteApi,
-  Link,
-  Outlet,
-  useMatches,
-  useNavigate,
-} from '@tanstack/react-router';
+import { createFileRoute, getRouteApi, Link, Outlet, useMatches, useNavigate } from '@tanstack/react-router';
 import { MessageCircleQuestionMark, Search, Trash2, UserPlus } from 'lucide-react';
 
 import { loadFaqItemsByRuleset, useFaqItemsByRuleset } from '@db/faq';
 import { useGroup } from '@db/groups';
 import { useGroupMembers, useRequestGroupMembership } from '@db/members';
 import { useCurrentProfile } from '@db/profiles';
-import {
-  loadRulesetBySlug,
-  loadRulesetFactionsWithDetails,
-  useDeleteRuleset,
-  useRulesetBySlug,
-  useRulesetFactionsWithDetails,
-} from '@db/rulesets';
+import { loadRulesetBySlug, useDeleteRuleset, useRulesetBySlug } from '@db/rulesets';
 import { FaqList } from '@app/components/faq/FaqList';
 import { FormActions } from '@app/components/form/FormActions';
 import { FormButton } from '@app/components/form/FormButton';
 import { FormTooltip } from '@app/components/form/FormTooltip';
-import { Stack, Toolbar } from '@app/components/generic/layout';
+import { Toolbar } from '@app/components/generic/layout';
 import { BlockCover } from '@app/components/generic/surfaces';
 import { Card } from '@app/components/generic/surfaces/Card';
 
@@ -36,15 +23,14 @@ export const Route = createFileRoute('/_app/rulesets/$rulesetSlug')({
   },
   loader: async ({ params }) => {
     try {
-      const ruleset = await loadRulesetBySlug(params.rulesetSlug);
-      if (ruleset) {
-        const [faqItems, factions] = await Promise.all([
-          loadFaqItemsByRuleset(ruleset.id),
-          loadRulesetFactionsWithDetails(ruleset.id),
+      const rulesetPage = await loadRulesetBySlug(params.rulesetSlug);
+      if (rulesetPage) {
+        const [faqItems] = await Promise.all([
+          loadFaqItemsByRuleset(rulesetPage.ruleset._id),
         ]);
-        return { notFound: false, ruleset, faqItems, factions };
+        return { notFound: false, rulesetPage, faqItems };
       }
-      return { notFound: false, ruleset: undefined, faqItems: [], factions: [] };
+      return { notFound: false, rulesetPage: undefined, faqItems: [] };
     } catch {
       return { notFound: true };
     }
@@ -71,8 +57,7 @@ function RulesetDetailPage() {
   const navigate = useNavigate();
   const matches = useMatches();
   const hasFaqChildRoute = matches.some((m) => m.pathname.includes('/faq/'));
-  const rulesetSeed = loaderData.notFound ? undefined : loaderData.ruleset;
-  const factionsSeed = loaderData.notFound ? undefined : loaderData.factions;
+  const rulesetSeed = loaderData.notFound ? undefined : loaderData.rulesetPage;
   const faqItemsSeed = loaderData.notFound ? undefined : loaderData.faqItems;
   const ruleset = useRulesetBySlug(rulesetSlug, { initialData: rulesetSeed });
   const appLoaderData = appRouteApi.useLoaderData();
@@ -81,10 +66,9 @@ function RulesetDetailPage() {
     initialCurrentUserId: appLoaderData.currentUserId,
   });
   const deleteRuleset = useDeleteRuleset();
-  const rulesetId = ruleset.data?._id ?? '';
-  const factions = useRulesetFactionsWithDetails(rulesetId, { initialData: factionsSeed });
+  const rulesetId = ruleset.ruleset?._id ?? '';
   const faqItems = useFaqItemsByRuleset(rulesetId, { initialData: faqItemsSeed });
-  const groupId = ruleset.data?.group_id ?? '';
+  const groupId = ruleset.ruleset?.group_id ?? '';
   const group = useGroup(groupId);
   const groupMembers = useGroupMembers(groupId);
   const requestMembership = useRequestGroupMembership();
@@ -101,7 +85,7 @@ function RulesetDetailPage() {
     );
   }
 
-  if (!ruleset.data) {
+  if (!ruleset.ruleset) {
     return null;
   }
 
@@ -109,13 +93,13 @@ function RulesetDetailPage() {
     return <Outlet />;
   }
 
-  const r = ruleset.data;
-  const isOwner = profile?.data?.id === r.owner_id;
-  const viewerMembership = groupMembers.data?.find((entry) => entry.user_id === profile.data?.id);
+  const r = ruleset.ruleset;
+  const isOwner = profile?.data?.user_id === r.owner_id;
+  const viewerMembership = groupMembers.data?.find((entry) => entry.user_id === profile.data?.user_id);
   const membershipStatus =
     viewerMembership && viewerMembership.status !== 'removed' ? viewerMembership.status : 'none';
   const canRequestMembership =
-    r.group_id != null && !!profile.data?.id && membershipStatus === 'none';
+    r.group_id != null && !!profile.data?.user_id && membershipStatus === 'none';
 
   const handleDelete = () => {
     if (!window.confirm(`Delete ruleset "${r.name}"? This cannot be undone.`)) return;
@@ -136,7 +120,7 @@ function RulesetDetailPage() {
     <>
       <Toolbar>
         <Toolbar.Left>
-          {profile?.data?.id && (
+          {profile?.data?._id && (
             <FormTooltip content="Ask a question">
               <FormButton
                 type="button"
@@ -210,7 +194,7 @@ function RulesetDetailPage() {
                 ? 'Pending approval'
                 : 'Not a member'}
           </span>
-          {!profile.data?.id && (
+          {!profile.data?._id && (
             <>
               <span aria-hidden>·</span>
               <Link to="/auth/login">Log in</Link>
@@ -236,11 +220,11 @@ function RulesetDetailPage() {
           </p>
         )}
       </section>
-      {factions.data && factions.data.length > 0 && (
+      {ruleset.factions && ruleset.factions.length > 0 && (
         <section className={styles.section}>
           <h3 className={styles.sectionTitle}>Factions in this ruleset</h3>
           <ul>
-            {factions.data.map((f) => (
+            {ruleset.factions.map((f) => (
               <li key={f.factionId}>
                 <Link to="/factions/$factionId" params={{ factionId: f.urlSlug }}>
                   {f.name}
