@@ -1,6 +1,6 @@
 # UI Design Decision Compliance Audit
 
-Full audit of every JSX-returning component against the [UI design decisions](docs/technical/ui-design-decisions.md) (DD-001 through DD-011).
+Full audit of every JSX-returning component against the [UI design decisions](./ui-design-decisions.md) (DD-001 through DD-011).
 
 Each component is classified as either:
 - **UI concern** — a legitimate, single-purpose UI abstraction whose concern can be phrased in one sentence
