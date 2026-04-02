@@ -12,8 +12,8 @@ Each component is classified as either:
 
 | File | Component | Classification | UI Concern / Purpose | Violations | Recommended Resolution |
 |------|-----------|---------------|---------------------|------------|----------------------|
-| `generic/surfaces/Page.tsx` | `Page` | Sub-view | Page shell with scroll-tracking header and navigation | **DD-002**: imports `@db/profiles` (upward into data layer); **DD-004**: imports non-module `Page.css` | Extract `AuthNav` into a domain wrapper or accept it as a render prop; merge `Page.css` into `Page.module.css` |
-| `generic/surfaces/Page.tsx` | `AuthNav` (local) | Sub-view | Profile avatar/login link in the nav bar | **DD-002**: calls `useCurrentProfile()` inside a generic layer component | Move to `profile/` domain or pass as a slot/render prop to `Page` |
+| `generic/surfaces/Page.tsx` | `Page` | Sub-view | Page shell with scroll-tracking header and navigation | **DD-004**: imports non-module `Page.css` | Merge `Page.css` into `Page.module.css` |
+| `generic/surfaces/Page.tsx` | `AuthNav` (local) | Sub-view | Profile avatar/login link in the nav bar | None | No action needed (db module access is unrestricted) |
 | `factions/editor/FactionFormFields.tsx` | `FactionFormFields` | Sub-view | Orchestrates all faction editor form sections | **DD-009**: 1685 lines — monolithic file with 9+ local components | Decompose into ≤ 10 focused files: `TroopSideFields`, `TtsColorsEditor`, `AccordionSection`, `GradientEditor`, `SortableTtsRow`, etc. |
 | `factions/editor/FactionFormFields.tsx` | `DecalOffsetAxisSlider` (local) | UI concern | Labeled slider for decal X/Y offset | **DD-008**: no story (generic-quality control) | Extract to own file; add story |
 | `factions/editor/FactionFormFields.tsx` | `IconActionButton` (local) | UI concern | Thin icon-button wrapper with tooltip | **DD-001**: duplicates `IconButton` + `FormTooltip` composition | Remove wrapper; compose inline or use shared component directly |
@@ -121,7 +121,7 @@ Route components are inherently sub-views (they wire domain components into page
 | Decision | # Violations | Affected Components |
 |----------|-------------|-------------------|
 | **DD-001** Reuse shared first | 2 | `IconActionButton` (duplicates composition), `GradientEditor` in FactionFormFields (duplicated) |
-| **DD-002** Layer direction | 1 critical | `Page` + `AuthNav` import from `@db/profiles` |
+| **DD-002** Layer direction | 0 | All compliant ✅ (note: db module access is unrestricted by DD-002) |
 | **DD-003** Spacing via gap | 3 | `FactionList.module.css`, `FaqList.module.css`, margin in leaf controls |
 | **DD-004** No custom CSS | 2 | `Page.tsx` (non-module CSS), `Block.tsx` (string concat vs clsx) |
 | **DD-005** Icon-only a11y | 0 | All compliant ✅ |
@@ -137,16 +137,15 @@ Route components are inherently sub-views (they wire domain components into page
 ## Priority Actions
 
 ### 🔴 Critical
-1. **`Page.tsx` — DD-002 layer violation**: Remove `useCurrentProfile` import from generic surface; extract `AuthNav` to profile domain or accept as slot prop
-2. **`FactionFormFields.tsx` — DD-009 monolith**: Decompose 1685-line file into focused components
-3. **`Page.tsx` — DD-004 non-module CSS**: Merge `Page.css` into `Page.module.css`
+1. **`FactionFormFields.tsx` — DD-009 monolith**: Decompose 1685-line file into focused components
+2. **`Page.tsx` — DD-004 non-module CSS**: Merge `Page.css` into `Page.module.css`
 
 ### 🟠 High Priority
-4. **DD-008 — 17 generic components missing stories**: Prioritize `form/` components (8 missing), then `generic/` (3 missing), then domain (6 missing)
-5. **Duplicate `GradientEditor`**: Consolidate the two implementations (in `ColorLayerField.tsx` and `FactionFormFields.tsx`) into one shared component
+3. **DD-008 — 17 generic components missing stories**: Prioritize `form/` components (8 missing), then `generic/` (3 missing), then domain (6 missing)
+4. **Duplicate `GradientEditor`**: Consolidate the two implementations (in `ColorLayerField.tsx` and `FactionFormFields.tsx`) into one shared component
 
 ### 🟡 Medium Priority
-6. **DD-003 margin audit**: Replace leaf-level margins in `FactionList.module.css` and `FaqList.module.css` with gap-based parent wrappers
-7. **`FactionEditor.tsx` — DD-009**: Extract popover logic into separate components (604 lines)
-8. **`Block.tsx` — DD-004**: Replace string concat with `clsx()` for className composition
-9. **`LoginForm` placement**: Document whether `auth/` is an acceptable domain folder for auth-specific forms
+5. **DD-003 margin audit**: Replace leaf-level margins in `FactionList.module.css` and `FaqList.module.css` with gap-based parent wrappers
+6. **`FactionEditor.tsx` — DD-009**: Extract popover logic into separate components (604 lines)
+7. **`Block.tsx` — DD-004**: Replace string concat with `clsx()` for className composition
+8. **`LoginForm` placement**: Document whether `auth/` is an acceptable domain folder for auth-specific forms
