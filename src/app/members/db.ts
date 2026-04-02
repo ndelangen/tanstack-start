@@ -1,9 +1,9 @@
+import { useQuery } from 'convex/react';
 import { useMemo } from 'react';
 
 import { db } from '@db/core';
-import { toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
 import { useCurrentProfile } from '@db/profiles';
-import { useQuery } from 'convex/react';
+import { toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
 
 import { api } from '../../../convex/_generated/api';
 import type { Doc } from '../../../convex/_generated/dataModel';
@@ -65,7 +65,7 @@ export function useUserGroupMemberships(
 
 export function useCurrentUserMemberships(options?: { enabled?: boolean }) {
   const profile = useCurrentProfile();
-  const userId = profile.data?.id;
+  const userId = profile.data?.user_id;
 
   const enabled = (options?.enabled ?? true) && Boolean(userId);
 
@@ -77,10 +77,7 @@ export function useCurrentUserMemberships(options?: { enabled?: boolean }) {
     () =>
       (memberships.data ?? [])
         .map((membership) => membership.groups)
-        .filter(
-          (group): group is { id: string; name: string; slug: string } =>
-            Boolean(group)
-        ),
+        .filter((group): group is { id: string; name: string; slug: string } => Boolean(group)),
     [memberships.data]
   );
 

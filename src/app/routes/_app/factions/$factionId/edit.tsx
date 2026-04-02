@@ -1,8 +1,14 @@
 import { createFileRoute, getRouteApi, Link, useNavigate } from '@tanstack/react-router';
-import { RotateCcw, Save, Trash2, X } from 'lucide-react';
+import { RotateCcw, Save, Trash2, UserRoundMinus, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 
-import { type Faction, useDeleteFaction, useFaction, useSetFactionGroup, useUpdateFaction } from '@db/factions';
+import {
+  type Faction,
+  useDeleteFaction,
+  useFaction,
+  useSetFactionGroup,
+  useUpdateFaction,
+} from '@db/factions';
 import { useCurrentProfile } from '@db/profiles';
 import {
   FactionEditor,
@@ -116,13 +122,27 @@ function FactionEditPage() {
               // For now this is a no-op placeholder; routes can wire a callback later if needed.
             }}
           />
-          {canAssignGroup && (
+          {canAssignGroup && !group && (
             <FactionGroupPopover
               disabled={false}
               onChangeGroup={async (nextGroupId) => {
                 await setFactionGroup.mutateAsync({ id: faction._id, groupId: nextGroupId });
               }}
             />
+          )}
+          {canAssignGroup && group && (
+            <FormTooltip content="Remove group">
+              <FormButton
+                type="button"
+                iconOnly
+                aria-label="Remove group"
+                disabled={false}
+                variant="danger"
+                onClick={() => setFactionGroup.mutateAsync({ id: faction._id, groupId: null })}
+              >
+                <UserRoundMinus size={16} aria-hidden />
+              </FormButton>
+            </FormTooltip>
           )}
 
           <FormTooltip content="Reset unsaved edits">

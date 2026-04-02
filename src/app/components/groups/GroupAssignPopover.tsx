@@ -38,10 +38,7 @@ export function GroupAssignPopover({
     [accessibleGroups]
   );
 
-  const groupOptions = useMemo(
-    () => accessibleGroups.map((group) => group.id),
-    [accessibleGroups]
-  );
+  const groupOptions = useMemo(() => accessibleGroups.map((group) => group.id), [accessibleGroups]);
 
   const groupOptionLabel = (groupId: string) => {
     const group = accessibleGroups.find((entry) => entry.id === groupId);
@@ -157,4 +154,3 @@ export function GroupAssignPopover({
     </FormPopover>
   );
 }
-
