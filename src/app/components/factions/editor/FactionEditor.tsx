@@ -3,10 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { forwardRef, useImperativeHandle, useRef } from 'react';
 
 import { type Faction, type FactionEntry } from '@db/factions';
-import {
-  FactionStoredSchema,
-  factionSlugBaseFromName,
-} from '@game/schema/faction';
+import { FactionStoredSchema, factionSlugBaseFromName } from '@game/schema/faction';
 
 import styles from './FactionEditor.module.css';
 import { FactionFormFields } from './FactionFormFields';

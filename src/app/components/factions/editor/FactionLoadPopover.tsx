@@ -63,9 +63,7 @@ export function FactionLoadPopover({ disabled, currentValues, onLoaded }: Factio
   const factionLoadOptions = useMemo(
     () =>
       (factions.data ?? [])
-        .filter(
-          (entry) => entry.data.slug !== factionSlugBaseFromName(currentValues.name ?? ''),
-        )
+        .filter((entry) => entry.data.slug !== factionSlugBaseFromName(currentValues.name ?? ''))
         .map((entry) => entry.id),
     [factions.data, currentValues.name]
   );
@@ -124,7 +122,7 @@ export function FactionLoadPopover({ disabled, currentValues, onLoaded }: Factio
       return;
     }
     const confirmed = window.confirm(
-      `Load faction "${entry.data.name}"? Any local unsaved changes will be discarded and replaced.`,
+      `Load faction "${entry.data.name}"? Any local unsaved changes will be discarded and replaced.`
     );
     if (!confirmed) {
       return;
@@ -172,7 +170,9 @@ export function FactionLoadPopover({ disabled, currentValues, onLoaded }: Factio
         {factions.isPending ? (
           <p className={styles.loadFactionHint}>Loading factions...</p>
         ) : factionLoadOptions.length === 0 ? (
-          <p className={styles.loadFactionHint}>No different faction is available to load right now.</p>
+          <p className={styles.loadFactionHint}>
+            No different faction is available to load right now.
+          </p>
         ) : (
           <FormField label="Search factions" htmlFor="faction-load">
             <SuggestField
@@ -198,4 +198,3 @@ export function FactionLoadPopover({ disabled, currentValues, onLoaded }: Factio
     </FormPopover>
   );
 }
-
