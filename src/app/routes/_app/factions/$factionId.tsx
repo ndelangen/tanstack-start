@@ -13,7 +13,7 @@ import { useGroup } from '@db/groups';
 import { useGroupMembers, useRequestGroupMembership, useUserGroupMemberships } from '@db/members';
 import { useCurrentProfile, useProfilesAll } from '@db/profiles';
 import { loadRulesetsByFaction, useRulesetsByFaction } from '@db/rulesets';
-import { FormButton } from '@app/components/form/FormButton';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { ProfileLink } from '@app/components/profile/ProfileLink';
 
@@ -211,7 +211,7 @@ function FactionDetailPage() {
             )}
             {canRequestMembership && (
               <FormTooltip content="Request membership">
-                <FormButton
+                <UIButton
                   type="button"
                   iconOnly
                   aria-label="Request membership"
@@ -219,7 +219,7 @@ function FactionDetailPage() {
                   onClick={() => requestMembership.mutate(factionGroupId)}
                 >
                   <UserPlus size={16} aria-hidden />
-                </FormButton>
+                </UIButton>
               </FormTooltip>
             )}
             {requestMembership.isError && <p>{requestMembership.error?.message}</p>}

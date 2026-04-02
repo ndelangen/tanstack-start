@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useCreateRuleset } from '@db/rulesets';
 import { useGroupsByCreator } from '@db/groups';
 import { FormActions } from '@app/components/form/FormActions';
-import { FormButton } from '@app/components/form/FormButton';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormField } from '@app/components/form/FormField';
 import { TextField } from '@app/components/form/TextField';
 import { Stack } from '@app/components/generic/layout';
@@ -82,10 +82,10 @@ function CreateRulesetPage() {
           </select>
         </FormField>
         <FormActions>
-          <FormButton type="submit" disabled={createRuleset.isPending || name.trim().length === 0}>
+          <UIButton type="submit" disabled={createRuleset.isPending || name.trim().length === 0}>
             <Plus size={16} aria-hidden />
             <span>{createRuleset.isPending ? 'Creating…' : 'Create'}</span>
-          </FormButton>
+          </UIButton>
         </FormActions>
       </Stack>
     </>

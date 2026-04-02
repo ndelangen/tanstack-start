@@ -20,7 +20,7 @@ import {
 } from '@db/rulesets';
 import { FaqList } from '@app/components/faq/FaqList';
 import { FormActions } from '@app/components/form/FormActions';
-import { FormButton } from '@app/components/form/FormButton';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Toolbar } from '@app/components/generic/layout';
 import { BlockCover } from '@app/components/generic/surfaces';
@@ -136,7 +136,7 @@ function RulesetDetailPage() {
         <Toolbar.Left>
           {profile?.data?._id && (
             <FormTooltip content="Ask a question">
-              <FormButton
+              <UIButton
                 type="button"
                 iconOnly
                 aria-label="Ask a question"
@@ -148,7 +148,7 @@ function RulesetDetailPage() {
                 }
               >
                 <MessageCircleQuestionMark size={16} aria-hidden />
-              </FormButton>
+              </UIButton>
             </FormTooltip>
           )}
           <div className={styles.searchWrapper}>
@@ -187,8 +187,8 @@ function RulesetDetailPage() {
           <FormActions>
             {isOwner && (
               <FormTooltip content="Delete ruleset">
-                <FormButton
-                  variant="danger"
+                <UIButton
+                  variant="critical"
                   type="button"
                   iconOnly
                   aria-label="Delete ruleset"
@@ -196,7 +196,7 @@ function RulesetDetailPage() {
                   disabled={deleteRuleset.isPending}
                 >
                   <Trash2 size={16} aria-hidden />
-                </FormButton>
+                </UIButton>
               </FormTooltip>
             )}
           </FormActions>
@@ -235,7 +235,7 @@ function RulesetDetailPage() {
               <span>{membershipLabel}</span>
               {canRequestMembership && (
                 <FormTooltip content="Request membership">
-                  <FormButton
+                  <UIButton
                     type="button"
                     iconOnly
                     aria-label="Request membership"
@@ -244,7 +244,7 @@ function RulesetDetailPage() {
                   >
                     {/* Reuse UserPlus icon via Faq toolbar import if desired; currently using generic button */}
                     Request
-                  </FormButton>
+                  </UIButton>
                 </FormTooltip>
               )}
             </div>

@@ -4,7 +4,7 @@ import { useCreateFaqItem } from '@db/faq';
 import { useCurrentProfile } from '@db/profiles';
 import { loadRulesetBySlug, useRulesetBySlug } from '@db/rulesets';
 import { FormActions } from '@app/components/form/FormActions';
-import { FormButton } from '@app/components/form/FormButton';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormField } from '@app/components/form/FormField';
 import { MultilineTextField } from '@app/components/form/MultilineTextField';
 import { TextField } from '@app/components/form/TextField';
@@ -115,9 +115,9 @@ function FaqCreatePage() {
             <MultilineTextField name="answer" rows={3} placeholder="Optional answer..." />
           </FormField>
           <FormActions>
-            <FormButton type="submit" disabled={createFaqItem.isPending}>
+            <UIButton type="submit" disabled={createFaqItem.isPending}>
               {createFaqItem.isPending ? 'Asking…' : 'Ask'}
-            </FormButton>
+            </UIButton>
             {createFaqItem.isError && (
               <span className={styles.error}>{createFaqItem.error?.message}</span>
             )}

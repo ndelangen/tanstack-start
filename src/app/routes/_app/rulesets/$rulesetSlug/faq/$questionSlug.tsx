@@ -16,7 +16,7 @@ import { useCurrentProfile } from '@db/profiles';
 import { loadRulesetBySlug } from '@db/rulesets';
 import { Answer } from '@app/components/faq/Answer';
 import { FormActions } from '@app/components/form/FormActions';
-import { FormButton } from '@app/components/form/FormButton';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormField } from '@app/components/form/FormField';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { MultilineTextField } from '@app/components/form/MultilineTextField';
@@ -195,7 +195,7 @@ function FaqDetailPage() {
               </FormField>
               <FormActions>
                 <FormTooltip content="Save question">
-                  <FormButton
+                  <UIButton
                     type="button"
                     iconOnly
                     aria-label="Save question"
@@ -203,10 +203,10 @@ function FaqDetailPage() {
                     disabled={updateFaqItem.isPending}
                   >
                     <Check size={16} aria-hidden />
-                  </FormButton>
+                  </UIButton>
                 </FormTooltip>
                 <FormTooltip content="Cancel editing question">
-                  <FormButton
+                  <UIButton
                     variant="secondary"
                     type="button"
                     iconOnly
@@ -214,7 +214,7 @@ function FaqDetailPage() {
                     onClick={() => setEditingQuestion(false)}
                   >
                     <X size={16} aria-hidden />
-                  </FormButton>
+                  </UIButton>
                 </FormTooltip>
                 {updateFaqItem.isError && (
                   <span className={styles.error}>{updateFaqItem.error?.message}</span>
@@ -261,18 +261,18 @@ function FaqDetailPage() {
               {isQuestionOwner && (
                 <FormActions>
                   <FormTooltip content="Edit question">
-                    <FormButton
+                    <UIButton
                       type="button"
                       iconOnly
                       aria-label="Edit question"
                       onClick={startEditQuestion}
                     >
                       <Pencil size={16} aria-hidden />
-                    </FormButton>
+                    </UIButton>
                   </FormTooltip>
                   <FormTooltip content="Delete question">
-                    <FormButton
-                      variant="danger"
+                    <UIButton
+                      variant="critical"
                       type="button"
                       iconOnly
                       aria-label="Delete question"
@@ -280,7 +280,7 @@ function FaqDetailPage() {
                       disabled={deleteFaqItem.isPending}
                     >
                       <Trash2 size={16} aria-hidden />
-                    </FormButton>
+                    </UIButton>
                   </FormTooltip>
                   {deleteFaqItem.isError && (
                     <span className={styles.error}>{deleteFaqItem.error?.message}</span>
@@ -320,14 +320,14 @@ function FaqDetailPage() {
             </FormField>
             <FormActions>
               <FormTooltip content="Add answer">
-                <FormButton
+                <UIButton
                   type="submit"
                   iconOnly
                   aria-label="Add answer"
                   disabled={createFaqAnswer.isPending}
                 >
                   <MessageSquarePlus size={16} aria-hidden />
-                </FormButton>
+                </UIButton>
               </FormTooltip>
             </FormActions>
           </Stack>
@@ -361,7 +361,7 @@ function FaqDetailPage() {
                       </FormField>
                       <FormActions>
                         <FormTooltip content="Save answer">
-                          <FormButton
+                          <UIButton
                             type="button"
                             iconOnly
                             aria-label="Save answer"
@@ -369,10 +369,10 @@ function FaqDetailPage() {
                             disabled={updateFaqAnswer.isPending}
                           >
                             <Check size={16} aria-hidden />
-                          </FormButton>
+                          </UIButton>
                         </FormTooltip>
                         <FormTooltip content="Cancel editing answer">
-                          <FormButton
+                          <UIButton
                             variant="secondary"
                             type="button"
                             iconOnly
@@ -380,7 +380,7 @@ function FaqDetailPage() {
                             onClick={() => setEditingAnswerId(null)}
                           >
                             <X size={16} aria-hidden />
-                          </FormButton>
+                          </UIButton>
                         </FormTooltip>
                         {updateFaqAnswer.isError && (
                           <span className={styles.error}>{updateFaqAnswer.error?.message}</span>
@@ -406,7 +406,7 @@ function FaqDetailPage() {
                       <div className={styles.answerActions}>
                         {isQuestionOwner && !isAccepted && (
                           <FormTooltip content="Mark as accepted answer">
-                            <FormButton
+                            <UIButton
                               type="button"
                               iconOnly
                               aria-label="Mark as accepted answer"
@@ -419,12 +419,12 @@ function FaqDetailPage() {
                               disabled={setAcceptedAnswer.isPending}
                             >
                               <Check size={16} aria-hidden />
-                            </FormButton>
+                            </UIButton>
                           </FormTooltip>
                         )}
                         {isQuestionOwner && isAccepted && (
                           <FormTooltip content="Unmark accepted answer">
-                            <FormButton
+                            <UIButton
                               type="button"
                               variant="secondary"
                               iconOnly
@@ -438,25 +438,25 @@ function FaqDetailPage() {
                               disabled={setAcceptedAnswer.isPending}
                             >
                               <X size={16} aria-hidden />
-                            </FormButton>
+                            </UIButton>
                           </FormTooltip>
                         )}
                         {canEditAnswer(a) && (
                           <FormTooltip content="Edit your answer">
-                            <FormButton
+                            <UIButton
                               type="button"
                               iconOnly
                               aria-label="Edit your answer"
                               onClick={() => startEditAnswer(a)}
                             >
                               <Pencil size={16} aria-hidden />
-                            </FormButton>
+                            </UIButton>
                           </FormTooltip>
                         )}
                         {canDeleteAnswer(a) && (
                           <FormTooltip content="Delete answer">
-                            <FormButton
-                              variant="danger"
+                            <UIButton
+                              variant="critical"
                               type="button"
                               iconOnly
                               aria-label="Delete answer"
@@ -464,7 +464,7 @@ function FaqDetailPage() {
                               disabled={deleteFaqAnswer.isPending}
                             >
                               <Trash2 size={16} aria-hidden />
-                            </FormButton>
+                            </UIButton>
                           </FormTooltip>
                         )}
                       </div>

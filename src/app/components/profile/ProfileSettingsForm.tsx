@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { type ProfileEntry, useCurrentProfile, useUpdateCurrentProfile } from '@db/profiles';
 import formStyles from '@app/components/form/Form.module.css';
 import { FormActions } from '@app/components/form/FormActions';
-import { FormButton } from '@app/components/form/FormButton';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormField } from '@app/components/form/FormField';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { TextField } from '@app/components/form/TextField';
@@ -52,7 +52,7 @@ function ProfileSettingsFormFields({ initial }: { initial: ProfileEntry }) {
         <Toolbar.Left>
           <FormActions>
             <FormTooltip content={update.isPending ? 'Saving…' : 'Save'}>
-              <FormButton
+              <UIButton
                 type="submit"
                 form={PROFILE_SETTINGS_FORM_ID}
                 iconOnly
@@ -60,7 +60,7 @@ function ProfileSettingsFormFields({ initial }: { initial: ProfileEntry }) {
                 disabled={update.isPending}
               >
                 <Save size={16} aria-hidden />
-              </FormButton>
+              </UIButton>
             </FormTooltip>
             <FormTooltip content="View public profile">
               <IconButton

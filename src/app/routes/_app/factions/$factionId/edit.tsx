@@ -17,7 +17,7 @@ import {
 import styles from '@app/components/factions/editor/FactionEditor.module.css';
 import { FactionGroupPopover } from '@app/components/factions/editor/FactionGroupPopover';
 import { FactionLoadPopover } from '@app/components/factions/editor/FactionLoadPopover';
-import { FormButton } from '@app/components/form/FormButton';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
@@ -104,7 +104,7 @@ function FactionEditPage() {
       <Toolbar>
         <Toolbar.Left>
           <FormTooltip content="Save changes">
-            <FormButton
+            <UIButton
               type="button"
               iconOnly
               aria-label="Save changes"
@@ -112,7 +112,7 @@ function FactionEditPage() {
               onClick={() => editorRef.current?.submit()}
             >
               <Save size={16} aria-hidden />
-            </FormButton>
+            </UIButton>
           </FormTooltip>
           <FactionLoadPopover
             disabled={false}
@@ -132,30 +132,30 @@ function FactionEditPage() {
           )}
           {canAssignGroup && group && (
             <FormTooltip content="Remove group">
-              <FormButton
+              <UIButton
                 type="button"
                 iconOnly
                 aria-label="Remove group"
                 disabled={false}
-                variant="danger"
+                variant="critical"
                 onClick={() => setFactionGroup.mutateAsync({ id: faction._id, groupId: null })}
               >
                 <UserRoundMinus size={16} aria-hidden />
-              </FormButton>
+              </UIButton>
             </FormTooltip>
           )}
 
           <FormTooltip content="Reset unsaved edits">
-            <FormButton
+            <UIButton
               type="button"
-              variant="danger"
+              variant="critical"
               iconOnly
               aria-label="Reset unsaved edits"
               disabled={false}
               onClick={() => editorRef.current?.resetToInitial()}
             >
               <RotateCcw size={16} aria-hidden />
-            </FormButton>
+            </UIButton>
           </FormTooltip>
         </Toolbar.Left>
 
@@ -167,9 +167,9 @@ function FactionEditPage() {
             </div>
           ) : null}
           <FormTooltip content="Close editor">
-            <FormButton
+            <UIButton
               type="button"
-              variant="danger"
+              variant="critical"
               iconOnly
               aria-label="Close editor"
               disabled={false}
@@ -181,13 +181,13 @@ function FactionEditPage() {
               }
             >
               <X size={16} aria-hidden />
-            </FormButton>
+            </UIButton>
           </FormTooltip>
           {canDelete && (
             <FormTooltip content="Delete faction">
-              <FormButton
+              <UIButton
                 type="button"
-                variant="danger"
+                variant="critical"
                 iconOnly
                 aria-label="Delete faction"
                 disabled={false}
@@ -200,7 +200,7 @@ function FactionEditPage() {
                 }}
               >
                 <Trash2 size={16} aria-hidden />
-              </FormButton>
+              </UIButton>
             </FormTooltip>
           )}
         </Toolbar.Right>

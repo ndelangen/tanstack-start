@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useCreateGroup } from '@db/groups';
 import { useCurrentProfile } from '@db/profiles';
 import { FormActions } from '@app/components/form/FormActions';
-import { FormButton } from '@app/components/form/FormButton';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormField } from '@app/components/form/FormField';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { TextField } from '@app/components/form/TextField';
@@ -74,12 +74,12 @@ function GroupCreatePage() {
         <div>
           <FormActions>
             <FormTooltip content="Save group">
-              <FormButton type="submit" iconOnly aria-label="Save group" disabled={!canSubmit}>
+              <UIButton type="submit" iconOnly aria-label="Save group" disabled={!canSubmit}>
                 <Save size={16} aria-hidden />
-              </FormButton>
+              </UIButton>
             </FormTooltip>
             <FormTooltip content="Close create group">
-              <FormButton
+              <UIButton
                 type="button"
                 variant="secondary"
                 iconOnly
@@ -90,7 +90,7 @@ function GroupCreatePage() {
                 }
               >
                 <X size={16} aria-hidden />
-              </FormButton>
+              </UIButton>
             </FormTooltip>
           </FormActions>
         </div>

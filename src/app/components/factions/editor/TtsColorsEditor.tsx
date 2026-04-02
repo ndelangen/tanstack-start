@@ -17,7 +17,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { useMemo } from 'react';
 
 import type { Faction } from '@db/factions';
-import { FormButton } from '@app/components/form/FormButton';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormField } from '@app/components/form/FormField';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { OptionPicker } from '@app/components/form/OptionPicker';
@@ -101,16 +101,16 @@ export function TtsColorsEditor({
                       suffixClassName={styles.ttsRowActions}
                       suffix={
                         <FormTooltip content={`Remove TTS color slot ${i + 1}`}>
-                          <FormButton
+                          <UIButton
                             type="button"
-                            variant="danger"
+                            variant="critical"
                             iconOnly
                             className={styles.ttsRemoveButton}
                             aria-label={`Remove TTS color slot ${i + 1}`}
                             onClick={() => onChange(value.filter((_, j) => j !== i))}
                           >
                             <Trash2 size={16} strokeWidth={2} aria-hidden />
-                          </FormButton>
+                          </UIButton>
                         </FormTooltip>
                       }
                     >
@@ -139,7 +139,7 @@ export function TtsColorsEditor({
         </SortableContext>
       </DndContext>
       <FormTooltip content="Add color at the end">
-        <FormButton
+        <UIButton
           type="button"
           variant="secondary"
           iconOnly
@@ -151,7 +151,7 @@ export function TtsColorsEditor({
           }}
         >
           <Plus size={16} aria-hidden />
-        </FormButton>
+        </UIButton>
       </FormTooltip>
     </FormField>
   );

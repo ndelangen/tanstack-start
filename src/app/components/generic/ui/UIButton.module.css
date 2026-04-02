@@ -100,3 +100,10 @@
 .nav:active:not(:disabled) {
   background-color: var(--button-neutral-active-bg, #bdb3a4);
 }
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}

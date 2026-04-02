@@ -2,7 +2,7 @@ import { Check, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { FormActions } from '@app/components/form/FormActions';
-import { FormButton } from '@app/components/form/FormButton';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormField } from '@app/components/form/FormField';
 import { FormPopover } from '@app/components/form/FormPopover';
 import { SuggestField } from '@app/components/form/SuggestField';
@@ -96,7 +96,7 @@ export function GroupAssignPopover({
       align="start"
       side="bottom"
       trigger={
-        <FormButton
+        <UIButton
           type="button"
           variant="secondary"
           iconOnly
@@ -104,7 +104,7 @@ export function GroupAssignPopover({
           disabled={disabled}
         >
           <Users size={16} aria-hidden />
-        </FormButton>
+        </UIButton>
       }
     >
       <div className={styles.loadFactionPopover}>
@@ -138,7 +138,7 @@ export function GroupAssignPopover({
               />
             </FormField>
             <FormActions>
-              <FormButton
+              <UIButton
                 type="button"
                 iconOnly
                 aria-label="Set selected group"
@@ -146,7 +146,7 @@ export function GroupAssignPopover({
                 disabled={disabled}
               >
                 <Check size={16} aria-hidden />
-              </FormButton>
+              </UIButton>
             </FormActions>
           </>
         )}

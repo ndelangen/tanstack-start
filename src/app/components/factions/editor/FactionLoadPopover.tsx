@@ -7,7 +7,7 @@ import { useGroupsAll } from '@db/groups';
 import { useUserGroupMemberships } from '@db/members';
 import { useCurrentProfile } from '@db/profiles';
 import { FormActions } from '@app/components/form/FormActions';
-import { FormButton } from '@app/components/form/FormButton';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormField } from '@app/components/form/FormField';
 import { FormPopover } from '@app/components/form/FormPopover';
 import { FormTooltip } from '@app/components/form/FormTooltip';
@@ -146,7 +146,7 @@ export function FactionLoadPopover({ disabled, currentValues, onLoaded }: Factio
       align="start"
       side="bottom"
       trigger={
-        <FormButton
+        <UIButton
           type="button"
           variant="secondary"
           iconOnly
@@ -154,7 +154,7 @@ export function FactionLoadPopover({ disabled, currentValues, onLoaded }: Factio
           disabled={disabled || factions.isPending || groups.isPending}
         >
           <Copy size={16} aria-hidden />
-        </FormButton>
+        </UIButton>
       }
     >
       <div className={styles.loadFactionPopover}>

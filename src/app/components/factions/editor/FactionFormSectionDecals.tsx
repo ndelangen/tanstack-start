@@ -17,7 +17,7 @@ import clsx from 'clsx';
 import { Plus, Trash2 } from 'lucide-react';
 
 import type { Faction } from '@db/factions';
-import { FormButton } from '@app/components/form/FormButton';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormField } from '@app/components/form/FormField';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { FormUnitToolbar } from '@app/components/form/FormUnitToolbar';
@@ -87,15 +87,15 @@ export function FactionFormSectionDecals({ form }: { form: FactionFormApi }) {
                               }
                               actions={
                                 <FormTooltip content="Remove decal">
-                                  <FormButton
+                                  <UIButton
                                     type="button"
-                                    variant="danger"
+                                    variant="critical"
                                     iconOnly
                                     aria-label="Remove decal"
                                     onClick={() => df.removeValue(i)}
                                   >
                                     <Trash2 size={16} aria-hidden />
-                                  </FormButton>
+                                  </UIButton>
                                 </FormTooltip>
                               }
                             />
@@ -199,7 +199,7 @@ export function FactionFormSectionDecals({ form }: { form: FactionFormApi }) {
                 </SortableContext>
               </DndContext>
               <FormTooltip content="Add decal">
-                <FormButton
+                <UIButton
                   type="button"
                   variant="secondary"
                   iconOnly
@@ -207,7 +207,7 @@ export function FactionFormSectionDecals({ form }: { form: FactionFormApi }) {
                   onClick={() => df.pushValue(defaultDecal())}
                 >
                   <Plus size={16} aria-hidden />
-                </FormButton>
+                </UIButton>
               </FormTooltip>
             </>
           );

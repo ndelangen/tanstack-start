@@ -9,7 +9,7 @@ import {
   useCurrentProfile,
   useProfilesAll,
 } from '@db/profiles';
-import { FormButton } from '@app/components/form/FormButton';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
@@ -118,7 +118,7 @@ function GroupDetailPage() {
         )}
         {canRequestMembership && (
           <FormTooltip content="Request membership">
-            <FormButton
+            <UIButton
               type="button"
               iconOnly
               aria-label="Request membership"
@@ -126,7 +126,7 @@ function GroupDetailPage() {
               onClick={() => requestMembership.mutate(groupId)}
             >
               <UserPlus size={16} aria-hidden />
-            </FormButton>
+            </UIButton>
           </FormTooltip>
         )}
         {requestMembership.isError && <p>{requestMembership.error?.message}</p>}

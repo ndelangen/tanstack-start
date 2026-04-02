@@ -11,7 +11,7 @@ import {
 import styles from '@app/components/factions/editor/FactionEditor.module.css';
 import { FactionLoadPopover } from '@app/components/factions/editor/FactionLoadPopover';
 import { FormActions } from '@app/components/form/FormActions';
-import { FormButton } from '@app/components/form/FormButton';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
@@ -93,7 +93,7 @@ function CreateFactionPage() {
       <Toolbar>
         <Toolbar.Left>
           <FormTooltip content="Save changes">
-            <FormButton
+            <UIButton
               type="button"
               iconOnly
               aria-label="Save changes"
@@ -101,7 +101,7 @@ function CreateFactionPage() {
               onClick={() => editorRef.current?.submit()}
             >
               <Save size={16} aria-hidden />
-            </FormButton>
+            </UIButton>
           </FormTooltip>
           <FactionLoadPopover
             disabled={false}
@@ -112,32 +112,32 @@ function CreateFactionPage() {
             }}
           />
           <FormTooltip content="Reset unsaved edits">
-            <FormButton
+            <UIButton
               type="button"
-              variant="danger"
+              variant="critical"
               iconOnly
               aria-label="Reset unsaved edits"
               disabled={false}
               onClick={() => editorRef.current?.resetToInitial()}
             >
               <RotateCcw size={16} aria-hidden />
-            </FormButton>
+            </UIButton>
           </FormTooltip>
         </Toolbar.Left>
 
         <Toolbar.Right>
           <p>You'll be able to assign it to a group after the first save.</p>
           <FormTooltip content="Close editor">
-            <FormButton
+            <UIButton
               type="button"
-              variant="danger"
+              variant="critical"
               iconOnly
               aria-label="Close editor"
               disabled={false}
               onClick={() => navigate({ to: '/factions' })}
             >
               <X size={16} aria-hidden />
-            </FormButton>
+            </UIButton>
           </FormTooltip>
         </Toolbar.Right>
       </Toolbar>

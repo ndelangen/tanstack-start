@@ -17,7 +17,7 @@ import clsx from 'clsx';
 import { CircleOff, Plus, Rotate3d, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
-import { FormButton } from '@app/components/form/FormButton';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormField } from '@app/components/form/FormField';
 import { FormTabs } from '@app/components/form/FormTabs';
 import { FormTooltip } from '@app/components/form/FormTooltip';
@@ -101,7 +101,7 @@ export function FactionFormSectionTroops({ form }: { form: FactionFormApi }) {
                                           : 'Enable flip side'
                                       }
                                     >
-                                      <FormButton
+                                      <UIButton
                                         type="button"
                                         variant="secondary"
                                         iconOnly
@@ -128,7 +128,7 @@ export function FactionFormSectionTroops({ form }: { form: FactionFormApi }) {
                                         ) : (
                                           <Rotate3d size={16} aria-hidden />
                                         )}
-                                      </FormButton>
+                                      </UIButton>
                                     </FormTooltip>
                                   </>
                                 }
@@ -159,15 +159,15 @@ export function FactionFormSectionTroops({ form }: { form: FactionFormApi }) {
                                 }
                                 actions={
                                   <FormTooltip content="Remove troop">
-                                    <FormButton
+                                    <UIButton
                                       type="button"
-                                      variant="danger"
+                                      variant="critical"
                                       iconOnly
                                       aria-label="Remove troop"
                                       onClick={() => tf.removeValue(i)}
                                     >
                                       <Trash2 size={16} aria-hidden />
-                                    </FormButton>
+                                    </UIButton>
                                   </FormTooltip>
                                 }
                               />
@@ -213,7 +213,7 @@ export function FactionFormSectionTroops({ form }: { form: FactionFormApi }) {
               </SortableContext>
             </DndContext>
             <FormTooltip content="Add troop">
-              <FormButton
+              <UIButton
                 type="button"
                 variant="secondary"
                 iconOnly
@@ -221,7 +221,7 @@ export function FactionFormSectionTroops({ form }: { form: FactionFormApi }) {
                 onClick={() => tf.pushValue(defaultTroop())}
               >
                 <Plus size={16} aria-hidden />
-              </FormButton>
+              </UIButton>
             </FormTooltip>
           </>
         );
