@@ -1,5 +1,8 @@
+import { useMemo } from 'react';
+
 import { db } from '@db/core';
 import { toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
+import { useCurrentProfile } from '@db/profiles';
 import { useQuery } from 'convex/react';
 
 import { api } from '../../../convex/_generated/api';
@@ -12,16 +15,17 @@ export type GroupMemberUpdate = Partial<GroupMemberEntry>;
 export type GroupMemberStatus = GroupMemberRow['status'];
 
 export type UserGroupMembershipWithGroup = GroupMemberEntry & {
-  groups: { id: string; name: string } | null;
+  groups: { id: string; name: string; slug: string } | null;
 };
 
-export async function loadUserGroupMemberships(userId: string): Promise<UserGroupMembershipWithGroup[]> {
-  const entries = await db.query<(GroupMemberRow & { groups: { id: string; name: string } | null })[]>(
-    api.members.listByUserActiveWithGroups,
-    {
-      user_id: userId,
-    }
-  );
+export async function loadUserGroupMemberships(
+  userId: string
+): Promise<UserGroupMembershipWithGroup[]> {
+  const entries = await db.query<
+    (GroupMemberRow & { groups: { id: string; name: string; slug: string } | null })[]
+  >(api.members.listByUserActiveWithGroups, {
+    user_id: userId,
+  });
   return entries.map((entry) => ({ ...entry, id: entry._id, groups: entry.groups }));
 }
 
@@ -56,6 +60,33 @@ export function useUserGroupMemberships(
   return {
     ...result,
     data: result.data?.map((entry) => ({ ...entry, id: entry._id, groups: entry.groups })),
+  };
+}
+
+export function useCurrentUserMemberships(options?: { enabled?: boolean }) {
+  const profile = useCurrentProfile();
+  const userId = profile.data?.id;
+
+  const enabled = (options?.enabled ?? true) && Boolean(userId);
+
+  const memberships = useUserGroupMemberships(enabled ? userId : undefined, {
+    initialData: [],
+  });
+
+  const groups = useMemo(
+    () =>
+      (memberships.data ?? [])
+        .map((membership) => membership.groups)
+        .filter(
+          (group): group is { id: string; name: string; slug: string } =>
+            Boolean(group)
+        ),
+    [memberships.data]
+  );
+
+  return {
+    ...memberships,
+    groups,
   };
 }
 

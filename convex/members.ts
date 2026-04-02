@@ -35,7 +35,13 @@ export const listByUserActiveWithGroups = query({
       const group = groups[index];
       return {
         ...row,
-        groups: group ? { id: group._id, name: group.name } : null,
+        groups: group
+          ? {
+              id: group._id,
+              name: group.name,
+              slug: group.slug,
+            }
+          : null,
       };
     });
   },

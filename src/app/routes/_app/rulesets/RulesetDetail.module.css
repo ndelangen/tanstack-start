@@ -18,23 +18,6 @@
   color: var(--color-error, #c33);
 }
 
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  padding: var(--space-2) 0;
-  border-bottom: var(--border-strong, 2px solid var(--panel-border));
-}
-
-.toolbarActions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-}
-
 .searchWrapper {
   position: relative;
   min-width: min(100%, 18rem);

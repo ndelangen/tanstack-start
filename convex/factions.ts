@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
 
-import { FactionInputSchema } from '../src/game/schema/faction';
+import { FactionInputSchema, FactionStoredSchema } from '../src/game/schema/faction';
 import { mutation, query } from './_generated/server';
 import { isActiveGroupMember, requireAuthUserId } from './lib/policy';
 import { nowIso, slugify } from './lib/utils';
@@ -22,14 +22,39 @@ function normalizeFactionData(input: unknown) {
 export const getBySlug = query({
   args: { slug: v.string() },
   handler: async (ctx, args) => {
+    const userId = await requireAuthUserId(ctx);
+
     const row = await ctx.db
       .query('factions')
       .withIndex('by_slug', (q) => q.eq('slug', args.slug))
       .unique();
-    if (!row || row.is_deleted) {
-      throw new Error(`Faction with id ${args.slug} not found`);
-    }
-    return row;
+    if (!row || row.is_deleted) throw new Error(`Faction with slug ${args.slug} not found`);
+
+    const ownerProfile = await ctx.db
+      .query('profiles')
+      .withIndex('by_user_id', (q) => q.eq('user_id', row.owner_id))
+      .unique();
+    if (!ownerProfile) throw new Error(`Profile with user id ${row.owner_id} not found`);
+
+    const group = row.group_id ? await ctx.db.get('groups', row.group_id) : null;
+
+    const memberships = await ctx.db
+      .query('group_members')
+      .withIndex('by_user_status', (q) => q.eq('user_id', userId).eq('status', 'active'))
+      .take(500);
+
+    const groups = await ctx.db.query('groups').take(500);
+
+    return {
+      faction: {
+        ...row,
+        data: FactionStoredSchema.parse(row.data),
+      },
+      owner: ownerProfile,
+      group,
+      memberships,
+      groups,
+    };
   },
 });
 
@@ -196,6 +221,73 @@ export const getFullBySlug = query({
       data: FactionInputSchema.parse(row.data),
       owner: profile,
       group: group,
+    };
+  },
+});
+
+export const getEditorPageBySlug = query({
+  args: { slug: v.string() },
+  handler: async (ctx, args) => {
+    const userId = await requireAuthUserId(ctx);
+
+    const row = await ctx.db
+      .query('factions')
+      .withIndex('by_slug', (q) => q.eq('slug', args.slug))
+      .unique();
+    if (!row || row.is_deleted) throw new Error(`Faction with slug ${args.slug} not found`);
+
+    const ownerProfile = await ctx.db
+      .query('profiles')
+      .withIndex('by_user_id', (q) => q.eq('user_id', row.owner_id))
+      .unique();
+    if (!ownerProfile) throw new Error(`Profile with user id ${row.owner_id} not found`);
+
+    const group = row.group_id ? await ctx.db.get('groups', row.group_id) : null;
+
+    const memberships = await ctx.db
+      .query('group_members')
+      .withIndex('by_user_status', (q) => q.eq('user_id', userId).eq('status', 'active'))
+      .take(500);
+
+    const groups = await ctx.db.query('groups').take(500);
+
+    return {
+      faction: {
+        ...row,
+        data: FactionStoredSchema.parse(row.data),
+      },
+      owner: ownerProfile,
+      group,
+      memberships,
+      groups,
+    };
+  },
+});
+
+export const getCreatePageContext = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await requireAuthUserId(ctx);
+
+    const profile = await ctx.db
+      .query('profiles')
+      .withIndex('by_user_id', (q) => q.eq('user_id', userId))
+      .unique();
+
+    const groups = await ctx.db
+      .query('groups')
+      .withIndex('by_created_by', (q) => q.eq('created_by', userId))
+      .take(500);
+
+    const memberships = await ctx.db
+      .query('group_members')
+      .withIndex('by_user_status', (q) => q.eq('user_id', userId).eq('status', 'active'))
+      .take(500);
+
+    return {
+      ownerProfile: profile,
+      groups,
+      memberships,
     };
   },
 });

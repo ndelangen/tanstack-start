@@ -45,7 +45,16 @@ export const getBySlug = query({
       .withIndex('by_slug', (q) => q.eq('slug', args.slug))
       .unique();
     if (!group) throw new Error(`Group with slug ${args.slug} not found`);
-    return group;
+
+    const members = await ctx.db
+      .query('group_members')
+      .withIndex('by_group', (q) => q.eq('group_id', group._id))
+      .take(500);
+
+    return {
+      group,
+      members,
+    };
   },
 });
 
@@ -144,6 +153,23 @@ export const remove = mutation({
     if (!group) throw new Error(`Group with id ${args.id} not found`);
     if (group.created_by !== userId) throw new Error('Not authorized');
     await ctx.db.delete(args.id);
+
+    const rulesetsWithGroup = await ctx.db
+      .query('rulesets')
+      .withIndex('by_group_deleted', (q) => q.eq('group_id', args.id).eq('is_deleted', false))
+      .take(100);
+    for (const ruleset of rulesetsWithGroup) {
+      await ctx.db.patch(ruleset._id, { group_id: null });
+    }
+
+    const memberships = await ctx.db
+      .query('group_members')
+      .withIndex('by_group', (q) => q.eq('group_id', args.id))
+      .take(100);
+    for (const membership of memberships) {
+      await ctx.db.delete(membership._id);
+    }
+
     return args.id;
   },
 });

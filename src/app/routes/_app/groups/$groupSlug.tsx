@@ -16,15 +16,15 @@ import { Card } from '@app/components/generic/surfaces/Card';
 
 export const Route = createFileRoute('/_app/groups/$groupSlug')({
   loader: async ({ params }) => {
-    const [profiles, group] = await Promise.all([
+    const [profiles, groupPage] = await Promise.all([
       loadProfilesAll(),
       loadGroupBySlug(params.groupSlug),
     ]);
     const [members, factions] = await Promise.all([
-      loadGroupMembers(group.id),
-      loadFactionsByGroup(group.id),
+      loadGroupMembers(groupPage.group._id),
+      loadFactionsByGroup(groupPage.group._id),
     ]);
-    return { profiles, group, members, factions };
+    return { profiles, groupPage, members, factions };
   },
   component: GroupDetailPage,
   staticData: {
@@ -37,11 +37,11 @@ const appRouteApi = getRouteApi('/_app');
 function GroupPageHead() {
   const { groupSlug } = Route.useParams();
   const loaderData = Route.useLoaderData();
-  const group = useGroupBySlug(groupSlug, { initialData: loaderData.group });
+  const groupData = useGroupBySlug(groupSlug, { initialData: loaderData.groupPage });
 
   return (
     <div>
-      <h1>{group.data?.name ?? 'Group'}</h1>
+      <h1>{groupData.group?.name ?? 'Group'}</h1>
       <p>
         <Link to="/profiles">Profiles</Link>
       </p>
@@ -53,17 +53,19 @@ function GroupDetailPage() {
   const { groupSlug } = Route.useParams();
   const appLoaderData = appRouteApi.useLoaderData();
   const loaderData = Route.useLoaderData();
-  const group = useGroupBySlug(groupSlug, { initialData: loaderData.group });
+  const groupData = useGroupBySlug(groupSlug, { initialData: loaderData.groupPage });
   const currentProfile = useCurrentProfile({
     initialCurrent: appLoaderData.currentProfile,
     initialCurrentUserId: appLoaderData.currentUserId,
   });
   const profiles = useProfilesAll({ initialData: loaderData.profiles });
-  const members = useGroupMembers(group.data?.id ?? '', { initialData: loaderData.members });
-  const factions = useFactionsByGroup(group.data?.id ?? '', { initialData: loaderData.factions });
+  const members = useGroupMembers(groupData.group?._id ?? '', { initialData: loaderData.members });
+  const factions = useFactionsByGroup(groupData.group?._id ?? '', {
+    initialData: loaderData.factions,
+  });
   const requestMembership = useRequestGroupMembership();
 
-  if (group.isError) {
+  if (groupData.isError) {
     return (
       <Card>
         <p>Group not found.</p>
@@ -71,14 +73,14 @@ function GroupDetailPage() {
     );
   }
 
-  if (!group.data) {
+  if (!groupData.group) {
     return null;
   }
 
-  const groupId = group.data.id;
+  const groupId = groupData.group._id;
   const activeMembers = (members.data ?? []).filter((entry) => entry.status === 'active');
   const profileById = new Map((profiles.data ?? []).map((entry) => [entry.id, entry]));
-  const ownerProfile = profileById.get(group.data.created_by);
+  const ownerProfile = profileById.get(groupData.group.created_by);
   const viewerMembership = (members.data ?? []).find(
     (entry) => entry.user_id === currentProfile.data?.id
   );
@@ -89,7 +91,7 @@ function GroupDetailPage() {
   return (
     <Stack gap={3}>
       <Card>
-        <h2>{group.data.name}</h2>
+        <h2>{groupData.group.name}</h2>
         <p>
           Owner:{' '}
           {ownerProfile?.slug ? (
@@ -97,7 +99,7 @@ function GroupDetailPage() {
               {ownerProfile.username ?? ownerProfile.slug}
             </Link>
           ) : (
-            (ownerProfile?.username ?? group.data.created_by)
+                    (ownerProfile?.username ?? groupData.group.created_by)
           )}
         </p>
         <p>

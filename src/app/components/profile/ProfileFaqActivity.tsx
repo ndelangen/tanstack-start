@@ -50,7 +50,7 @@ export function ProfileFaqQuestionsAsked({ items }: { items: FaqItemAskedByWithR
   return (
     <FaqItemList>
       {items.map((item) => (
-        <FaqItemListRow key={item.id}>
+        <FaqItemListRow key={item._id}>
           <div className={styles.contextStrip}>
             <Link
               to="/rulesets/$rulesetSlug"
@@ -91,10 +91,10 @@ export function ProfileFaqAnswersGiven({
   return (
     <FaqItemList>
       {items.map((row) => {
-        const isPicked = row.faq_item.accepted_answer_id === row.id;
+        const isPicked = row.faq_item.accepted_answer_id === row._id;
 
         return (
-          <FaqItemListRow key={row.id}>
+          <FaqItemListRow key={row._id}>
             <div className={styles.contextStrip}>
               <Link
                 to="/rulesets/$rulesetSlug"

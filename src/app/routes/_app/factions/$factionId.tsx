@@ -1,13 +1,21 @@
-import { createFileRoute, getRouteApi, Link, Outlet, useLocation, useMatches } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  getRouteApi,
+  Link,
+  Outlet,
+  useLocation,
+  useMatches,
+} from '@tanstack/react-router';
 import { UserPlus } from 'lucide-react';
 
-import { loadFactionBySlug, useFaction } from '@db/factions';
+import { loadFaction, loadFactionBySlug, useFaction } from '@db/factions';
 import { useGroup } from '@db/groups';
 import { useGroupMembers, useRequestGroupMembership, useUserGroupMemberships } from '@db/members';
 import { useCurrentProfile, useProfilesAll } from '@db/profiles';
 import { loadRulesetsByFaction, useRulesetsByFaction } from '@db/rulesets';
 import { FormButton } from '@app/components/form/FormButton';
 import { FormTooltip } from '@app/components/form/FormTooltip';
+import { ProfileLink } from '@app/components/profile/ProfileLink';
 
 export const Route = createFileRoute('/_app/factions/$factionId')({
   loader: async ({ params, location }) => {
@@ -18,8 +26,8 @@ export const Route = createFileRoute('/_app/factions/$factionId')({
       return { faction: undefined, rulesets: [] };
     }
 
-    const faction = await loadFactionBySlug(params.factionId);
-    const rulesets = isSheet ? [] : await loadRulesetsByFaction(faction.id);
+    const faction = await loadFaction(params.factionId);
+    const rulesets = isSheet ? [] : await loadRulesetsByFaction(faction.faction._id);
 
     return { faction, rulesets };
   },
@@ -48,30 +56,19 @@ function FactionPageHead() {
   const appLoaderData = appRouteApi.useLoaderData();
   const loaderData = Route.useLoaderData();
   const factionSeed = loaderData?.faction;
-  const faction = useFaction(factionId, { initialData: factionSeed });
+  const { faction, owner, memberships } = useFaction(factionId, { initialData: factionSeed });
   const profile = useCurrentProfile({
     initialCurrent: appLoaderData.currentProfile,
     initialCurrentUserId: appLoaderData.currentUserId,
   });
-  const profiles = useProfilesAll();
-  const memberships = useUserGroupMemberships(profile.data?.id);
 
-  const ownerId = faction.data?.owner_id ?? null;
-  const ownerName =
-    ownerId == null
-      ? null
-      : (profiles.data?.find((profile) => profile.id === ownerId)?.username?.trim() ?? ownerId);
-  const canEdit = canEditFaction(
-    profile.data?.id,
-    faction.data?.owner_id,
-    faction.data?.group_id,
-    memberships.data
-  );
+  const factionRow = faction;
+  const canEdit = canEditFaction(profile.data?._id, owner?._id, faction?.group_id, memberships);
 
   return (
     <div>
-      <h1>{faction.data?.data.name ?? 'Faction'}</h1>
-      <p>{ownerName ? `Owner: ${ownerName}` : 'Owner: loading...'}</p>
+      <h1>{factionRow?.data.name ?? 'Faction'}</h1>
+      <p>Owner: {owner ? <ProfileLink {...owner} /> : <span>Loading owner...</span>}</p>
       {canEdit && (
         <p>
           <Link to="/factions/$factionId/edit" params={{ factionId }}>
@@ -117,15 +114,17 @@ function FactionDetailPage() {
   const sheetMode = sheetModeFromObject ?? sheetModeFromString ?? 'db';
   const isLiveSheet = isSheet && sheetMode === 'live';
 
-  const faction = useFaction(factionId, { enabled: !isLiveSheet, initialData: factionSeed });
-  const rulesets = useRulesetsByFaction(faction.data?.id, { initialData: rulesetsSeed });
+  const { faction, owner, group, memberships } = useFaction(factionId, {
+    enabled: !isLiveSheet,
+    initialData: factionSeed,
+  });
+  const factionRow = faction;
+  const rulesets = useRulesetsByFaction(factionRow?._id, { initialData: rulesetsSeed });
   const profile = useCurrentProfile({
     initialCurrent: appLoaderData.currentProfile,
     initialCurrentUserId: appLoaderData.currentUserId,
   });
-  const memberships = useUserGroupMemberships(profile.data?.id);
-  const group = useGroup(faction.data?.group_id ?? '');
-  const groupMembers = useGroupMembers(faction.data?.group_id ?? '');
+  const groupMembers = useGroupMembers(factionRow?.group_id ?? '');
   const requestMembership = useRequestGroupMembership();
 
   const isChildOnlyRoute = matches.some(
@@ -136,7 +135,7 @@ function FactionDetailPage() {
     return <Outlet />;
   }
 
-  if (!faction.data) {
+  if (!factionRow) {
     return null;
   }
 
@@ -145,17 +144,19 @@ function FactionDetailPage() {
   }
 
   const canEdit = canEditFaction(
-    profile.data?.id,
-    faction.data.owner_id,
-    faction.data.group_id,
-    memberships.data
+    profile.data?._id,
+    factionRow.owner_id,
+    factionRow.group_id,
+    memberships
   );
-  const viewerMembership = groupMembers.data?.find((entry) => entry.user_id === profile.data?.id);
+  const viewerMembership = groupMembers.data?.find(
+    (entry) => entry.user_id === profile.data?.user_id
+  );
   const membershipStatus =
     viewerMembership && viewerMembership.status !== 'removed' ? viewerMembership.status : 'none';
-  const factionGroupId = faction.data.group_id;
+  const factionGroupId = factionRow.group_id;
   const canRequestMembership =
-    factionGroupId != null && !!profile.data?.id && membershipStatus === 'none';
+    factionGroupId != null && !!profile.data?._id && membershipStatus === 'none';
 
   return (
     <>
@@ -184,12 +185,12 @@ function FactionDetailPage() {
           <>
             <p>
               Group:{' '}
-              {membershipStatus === 'active' && group.data?.slug ? (
-                <Link to="/groups/$groupSlug" params={{ groupSlug: group.data.slug }}>
-                  {group.data.name}
+              {membershipStatus === 'active' && group?.slug ? (
+                <Link to="/groups/$groupSlug" params={{ groupSlug: group.slug }}>
+                  {group.name}
                 </Link>
               ) : (
-                <strong>{group.data?.name ?? 'Loading group...'}</strong>
+                <strong>{group?.name ?? 'Loading group...'}</strong>
               )}
             </p>
             <p>
@@ -203,7 +204,7 @@ function FactionDetailPage() {
             {membershipStatus === 'pending' && (
               <p>Your membership request is waiting for approval.</p>
             )}
-            {!profile.data?.id && (
+            {!profile.isPending && !profile.data?.user_id && (
               <p>
                 <Link to="/auth/login">Log in</Link> to request membership.
               </p>

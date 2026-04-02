@@ -10,13 +10,19 @@ export type Ruleset = { name: string };
 export type RulesetRow = Doc<'rulesets'>;
 export type RulesetEntry = Omit<RulesetRow, 'name'> & {
   name: Ruleset['name'];
-  id: string;
+  id: RulesetRow['_id'];
 };
 export type RulesetInsert = Omit<RulesetEntry, 'name'> & {
   name: Ruleset['name'];
 };
 export type RulesetUpdate = Omit<Partial<RulesetEntry>, 'name'> & {
   name?: Ruleset['name'];
+};
+
+export type RulesetPageData = {
+  ruleset: RulesetEntry;
+  factions: { factionId: string; name: string; urlSlug: string }[];
+  canAccess: boolean;
 };
 
 function toRulesetEntry(entry: RulesetRow): RulesetEntry {
@@ -37,9 +43,16 @@ export async function loadRuleset(id: string): Promise<RulesetEntry> {
   return toRulesetEntry(entry);
 }
 
-export async function loadRulesetBySlug(slug: string): Promise<RulesetEntry> {
-  const entry = await db.query<RulesetRow>(api.rulesets.getBySlug, { slug });
-  return toRulesetEntry(entry);
+export async function loadRulesetBySlug(slug: string): Promise<RulesetPageData> {
+  const result = await db.query<{
+    ruleset: RulesetRow;
+    factions: { factionId: string; name: string; urlSlug: string }[];
+    canAccess: boolean;
+  }>(api.rulesets.getBySlug, { slug });
+  return {
+    ...result,
+    ruleset: toRulesetEntry(result.ruleset),
+  };
 }
 
 export async function loadRulesetFactions(rulesetId: string): Promise<string[]> {
@@ -99,13 +112,21 @@ export function useRuleset(id: string) {
   };
 }
 
-export function useRulesetBySlug(slug: string, options?: { initialData?: RulesetEntry }) {
+export function useRulesetBySlug(slug: string, options?: { initialData?: RulesetPageData }) {
   const enabled = Boolean(slug);
   const liveData = useQuery(api.rulesets.getBySlug, enabled ? { slug } : 'skip');
-  const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
+  const result = toLiveQueryResult<
+    {
+      ruleset: RulesetRow;
+      factions: { factionId: string; name: string; urlSlug: string }[];
+      canAccess: boolean;
+    } | null
+  >(liveData, enabled, () => (options?.initialData as never) ?? undefined);
   return {
     ...result,
-    data: result.data ? toRulesetEntry(result.data) : undefined,
+    ruleset: result.data ? toRulesetEntry(result.data.ruleset) : undefined,
+    factions: result.data?.factions,
+    canAccess: result.data?.canAccess ?? false,
   };
 }
 

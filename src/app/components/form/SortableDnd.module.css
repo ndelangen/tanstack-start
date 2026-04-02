@@ -1,0 +1,37 @@
+.itemDragging {
+  opacity: 0.6;
+  z-index: 3;
+}
+
+.itemDropTarget {
+  outline: 2px dashed var(--color-accent-strong, #c78346);
+  outline-offset: 2px;
+}
+
+.reorderHandle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h-md);
+  min-width: var(--control-h-md);
+  min-height: var(--control-h-md);
+  margin: 0;
+  padding: 0;
+  color: var(--button-toggle-fg, #2e2927);
+  background: var(--button-toggle-bg, #d7cfc2);
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  cursor: ns-resize;
+  touch-action: none;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.reorderHandle:hover {
+  background: var(--button-toggle-hover-bg, #ccc3b5);
+}
+
+.reorderHandle:active {
+  cursor: grabbing;
+}

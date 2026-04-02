@@ -2,6 +2,7 @@ import { getAuthUserId } from '@convex-dev/auth/server';
 import { v } from 'convex/values';
 
 import { profileUserEditFormSchema } from '../src/app/profile/validation';
+import { api } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import { type MutationCtx, mutation, query } from './_generated/server';
 import { requireAuthUserId } from './lib/policy';
@@ -137,7 +138,33 @@ export const getBySlug = query({
       .withIndex('by_slug', (q) => q.eq('slug', args.slug))
       .unique();
     if (!profile) throw new Error(`Profile with slug ${args.slug} not found`);
-    return profile;
+
+    const memberships = await ctx.db
+      .query('group_members')
+      .withIndex('by_user_status', (q) => q.eq('user_id', profile.user_id).eq('status', 'active'))
+      .take(500);
+
+    const groupsWithNulls = await Promise.all(
+      memberships.map((membership) => ctx.db.get('groups', membership.group_id))
+    );
+    const groups = groupsWithNulls.filter(
+      (group): group is NonNullable<(typeof groupsWithNulls)[number]> => group !== null
+    );
+
+    const faqAsked: any = await ctx.runQuery(api.faq.askedBy, {
+      profile_id: profile.user_id,
+    });
+    const faqAnswers: any = await ctx.runQuery(api.faq.answeredBy, {
+      profile_id: profile.user_id,
+    });
+
+    return {
+      profile,
+      memberships,
+      groups,
+      faqAsked,
+      faqAnswers,
+    };
   },
 });
 

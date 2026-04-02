@@ -7,13 +7,24 @@ import { api } from '../../../convex/_generated/api';
 import type { Doc } from '../../../convex/_generated/dataModel';
 
 export type GroupRow = Doc<'groups'>;
-export type GroupEntry = GroupRow & { id: string };
+export type GroupEntry = GroupRow & { id: GroupRow['_id'] };
 export type GroupInsert = GroupEntry;
 export type GroupUpdate = Partial<GroupEntry>;
 
-export async function loadGroupBySlug(slug: string): Promise<GroupEntry> {
-  const group = await db.query<GroupRow>(api.groups.getBySlug, { slug });
-  return { ...group, id: group._id };
+export type GroupPageData = {
+  group: GroupEntry;
+  members: Doc<'group_members'>[];
+};
+
+export async function loadGroupBySlug(slug: string): Promise<GroupPageData> {
+  const result = await db.query<{
+    group: GroupRow;
+    members: Doc<'group_members'>[];
+  }>(api.groups.getBySlug, { slug });
+  return {
+    ...result,
+    group: { ...result.group, id: result.group._id },
+  };
 }
 
 export function useGroup(id: string) {
@@ -29,14 +40,20 @@ export function useGroup(id: string) {
 
 export function useGroupBySlug(
   slug: string | undefined,
-  options?: { initialData?: GroupEntry; enabled?: boolean }
+  options?: { initialData?: GroupPageData; enabled?: boolean }
 ) {
   const enabled = options?.enabled ?? Boolean(slug);
   const liveData = useQuery(api.groups.getBySlug, enabled ? { slug: slug ?? '' } : 'skip');
-  const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
+  const result = toLiveQueryResult<
+    {
+      group: GroupRow;
+      members: Doc<'group_members'>[];
+    } | null
+  >(liveData, enabled, () => (options?.initialData as never) ?? undefined);
   return {
     ...result,
-    data: result.data ? { ...result.data, id: result.data._id } : undefined,
+    group: result.data ? ({ ...result.data.group, id: result.data.group._id } as GroupEntry) : undefined,
+    members: result.data?.members,
   };
 }
 

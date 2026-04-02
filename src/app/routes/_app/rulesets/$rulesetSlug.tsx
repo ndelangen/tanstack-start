@@ -6,7 +6,7 @@ import {
   useMatches,
   useNavigate,
 } from '@tanstack/react-router';
-import { MessageCircleQuestionMark, Search, Trash2, UserPlus } from 'lucide-react';
+import { MessageCircleQuestionMark, Search, Trash2 } from 'lucide-react';
 
 import { loadFaqItemsByRuleset, useFaqItemsByRuleset } from '@db/faq';
 import { useGroup } from '@db/groups';
@@ -14,17 +14,18 @@ import { useGroupMembers, useRequestGroupMembership } from '@db/members';
 import { useCurrentProfile } from '@db/profiles';
 import {
   loadRulesetBySlug,
-  loadRulesetFactionsWithDetails,
   useDeleteRuleset,
   useRulesetBySlug,
-  useRulesetFactionsWithDetails,
+  useUpdateRuleset,
 } from '@db/rulesets';
 import { FaqList } from '@app/components/faq/FaqList';
 import { FormActions } from '@app/components/form/FormActions';
 import { FormButton } from '@app/components/form/FormButton';
 import { FormTooltip } from '@app/components/form/FormTooltip';
+import { Toolbar } from '@app/components/generic/layout';
 import { BlockCover } from '@app/components/generic/surfaces';
 import { Card } from '@app/components/generic/surfaces/Card';
+import { GroupAssignPopover } from '@app/components/groups/GroupAssignPopover';
 
 import styles from './RulesetDetail.module.css';
 
@@ -35,15 +36,12 @@ export const Route = createFileRoute('/_app/rulesets/$rulesetSlug')({
   },
   loader: async ({ params }) => {
     try {
-      const ruleset = await loadRulesetBySlug(params.rulesetSlug);
-      if (ruleset) {
-        const [faqItems, factions] = await Promise.all([
-          loadFaqItemsByRuleset(ruleset.id),
-          loadRulesetFactionsWithDetails(ruleset.id),
-        ]);
-        return { notFound: false, ruleset, faqItems, factions };
+      const rulesetPage = await loadRulesetBySlug(params.rulesetSlug);
+      if (rulesetPage) {
+        const [faqItems] = await Promise.all([loadFaqItemsByRuleset(rulesetPage.ruleset._id)]);
+        return { notFound: false, rulesetPage, faqItems };
       }
-      return { notFound: false, ruleset: undefined, faqItems: [], factions: [] };
+      return { notFound: false, rulesetPage: undefined, faqItems: [] };
     } catch {
       return { notFound: true };
     }
@@ -70,8 +68,7 @@ function RulesetDetailPage() {
   const navigate = useNavigate();
   const matches = useMatches();
   const hasFaqChildRoute = matches.some((m) => m.pathname.includes('/faq/'));
-  const rulesetSeed = loaderData.notFound ? undefined : loaderData.ruleset;
-  const factionsSeed = loaderData.notFound ? undefined : loaderData.factions;
+  const rulesetSeed = loaderData.notFound ? undefined : loaderData.rulesetPage;
   const faqItemsSeed = loaderData.notFound ? undefined : loaderData.faqItems;
   const ruleset = useRulesetBySlug(rulesetSlug, { initialData: rulesetSeed });
   const appLoaderData = appRouteApi.useLoaderData();
@@ -80,10 +77,10 @@ function RulesetDetailPage() {
     initialCurrentUserId: appLoaderData.currentUserId,
   });
   const deleteRuleset = useDeleteRuleset();
-  const rulesetId = ruleset.data?._id ?? '';
-  const factions = useRulesetFactionsWithDetails(rulesetId, { initialData: factionsSeed });
+  const updateRuleset = useUpdateRuleset();
+  const rulesetId = ruleset.ruleset?._id ?? '';
   const faqItems = useFaqItemsByRuleset(rulesetId, { initialData: faqItemsSeed });
-  const groupId = ruleset.data?.group_id ?? '';
+  const groupId = ruleset.ruleset?.group_id ?? '';
   const group = useGroup(groupId);
   const groupMembers = useGroupMembers(groupId);
   const requestMembership = useRequestGroupMembership();
@@ -100,7 +97,7 @@ function RulesetDetailPage() {
     );
   }
 
-  if (!ruleset.data) {
+  if (!ruleset.ruleset) {
     return null;
   }
 
@@ -108,13 +105,15 @@ function RulesetDetailPage() {
     return <Outlet />;
   }
 
-  const r = ruleset.data;
-  const isOwner = profile?.data?.id === r.owner_id;
-  const viewerMembership = groupMembers.data?.find((entry) => entry.user_id === profile.data?.id);
+  const r = ruleset.ruleset;
+  const isOwner = profile?.data?.user_id === r.owner_id;
+  const viewerMembership = groupMembers.data?.find(
+    (entry) => entry.user_id === profile.data?.user_id
+  );
   const membershipStatus =
     viewerMembership && viewerMembership.status !== 'removed' ? viewerMembership.status : 'none';
   const canRequestMembership =
-    r.group_id != null && !!profile.data?.id && membershipStatus === 'none';
+    r.group_id != null && !!profile.data?.user_id && membershipStatus === 'none';
 
   const handleDelete = () => {
     if (!window.confirm(`Delete ruleset "${r.name}"? This cannot be undone.`)) return;
@@ -133,110 +132,135 @@ function RulesetDetailPage() {
 
   return (
     <>
+      <Toolbar>
+        <Toolbar.Left>
+          {profile?.data?._id && (
+            <FormTooltip content="Ask a question">
+              <FormButton
+                type="button"
+                iconOnly
+                aria-label="Ask a question"
+                onClick={() =>
+                  navigate({
+                    to: '/rulesets/$rulesetSlug/faq/create',
+                    params: { rulesetSlug: r.slug },
+                  })
+                }
+              >
+                <MessageCircleQuestionMark size={16} aria-hidden />
+              </FormButton>
+            </FormTooltip>
+          )}
+          <div className={styles.searchWrapper}>
+            <Search className={styles.searchIcon} size={18} aria-hidden />
+            <input
+              type="search"
+              className={styles.searchInput}
+              value={search.q ?? ''}
+              onChange={(e) => handleFaqSearchChange(e.target.value)}
+              placeholder="Search questions..."
+              aria-label="Search FAQ questions"
+            />
+          </div>
+        </Toolbar.Left>
+        <Toolbar.Center></Toolbar.Center>
+        <Toolbar.Right>
+          {isOwner && (
+            <GroupAssignPopover
+              disabled={!isOwner}
+              onChangeGroup={async (nextGroupId) => {
+                await updateRuleset.mutateAsync({
+                  id: r._id,
+                  input: { name: r.name },
+                  groupId: nextGroupId,
+                  imageCover: r.image_cover ?? null,
+                });
+              }}
+              title="Assign Group"
+              descriptionLines={[
+                `Assign a group that can help maintain "${r.name}".`,
+                'You can create and join groups from your profile.',
+              ]}
+            />
+          )}
+
+          <FormActions>
+            {isOwner && (
+              <FormTooltip content="Delete ruleset">
+                <FormButton
+                  variant="danger"
+                  type="button"
+                  iconOnly
+                  aria-label="Delete ruleset"
+                  onClick={handleDelete}
+                  disabled={deleteRuleset.isPending}
+                >
+                  <Trash2 size={16} aria-hidden />
+                </FormButton>
+              </FormTooltip>
+            )}
+          </FormActions>
+        </Toolbar.Right>
+      </Toolbar>
       <section className={styles.section}>
         <div className={styles.coverWrapper}>
           <BlockCover src={r.image_cover} alt={`Cover for ${r.name}`} />
         </div>
         <h2>{r.name}</h2>
-        <div className={styles.toolbar}>
-          <div className={styles.toolbarActions}>
-            <div className={styles.searchWrapper}>
-              <Search className={styles.searchIcon} size={18} aria-hidden />
-              <input
-                type="search"
-                className={styles.searchInput}
-                value={search.q ?? ''}
-                onChange={(e) => handleFaqSearchChange(e.target.value)}
-                placeholder="Search questions..."
-                aria-label="Search FAQ questions"
-              />
-            </div>
-            <FormActions>
-              {profile?.data?.id && (
-                <FormTooltip content="Ask a question">
-                  <FormButton
-                    type="button"
-                    iconOnly
-                    aria-label="Ask a question"
-                    onClick={() =>
-                      navigate({
-                        to: '/rulesets/$rulesetSlug/faq/create',
-                        params: { rulesetSlug: r.slug },
-                      })
-                    }
-                  >
-                    <MessageCircleQuestionMark size={16} aria-hidden />
-                  </FormButton>
-                </FormTooltip>
-              )}
-              {isOwner && (
-                <FormTooltip content="Delete ruleset">
-                  <FormButton
-                    variant="danger"
-                    type="button"
-                    iconOnly
-                    aria-label="Delete ruleset"
-                    onClick={handleDelete}
-                    disabled={deleteRuleset.isPending}
-                  >
-                    <Trash2 size={16} aria-hidden />
-                  </FormButton>
-                </FormTooltip>
-              )}
-            </FormActions>
-          </div>
-          <div className={styles.toolbarGroupAccess}>
-            <span className={styles.groupStatusLabel}>Group access:</span>
-            {r.group_id == null ? (
+
+        {(() => {
+          const groupDisplay =
+            r.group_id == null ? (
               <span>No group</span>
             ) : membershipStatus === 'active' && group.data?.slug ? (
               <Link to="/groups/$groupSlug" params={{ groupSlug: group.data.slug }}>
-                {group.data.name}
+                {group.data?.name ?? 'Group'}
               </Link>
             ) : (
               <span>{group.data?.name ?? 'Loading group...'}</span>
-            )}
-            <span aria-hidden>·</span>
-            <span>
-              {membershipStatus === 'active'
-                ? 'Active member'
-                : membershipStatus === 'pending'
-                  ? 'Pending approval'
-                  : 'Not a member'}
-            </span>
-            {!profile.data?.id && (
-              <>
-                <span aria-hidden>·</span>
-                <Link to="/auth/login">Log in</Link>
-              </>
-            )}
-            {canRequestMembership && (
-              <FormTooltip content="Request membership">
-                <FormButton
-                  type="button"
-                  iconOnly
-                  aria-label="Request membership"
-                  disabled={requestMembership.isPending}
-                  onClick={() => requestMembership.mutate(groupId)}
-                >
-                  <UserPlus size={16} aria-hidden />
-                </FormButton>
-              </FormTooltip>
-            )}
-          </div>
-        </div>
+            );
+
+          const membershipLabel =
+            membershipStatus === 'active'
+              ? 'Active member'
+              : membershipStatus === 'pending'
+                ? 'Pending approval'
+                : 'Not a member';
+
+          return (
+            <div className={styles.toolbarGroupAccess}>
+              <span className={styles.groupStatusLabel}>Group access:</span>
+              {groupDisplay}
+              <span aria-hidden>·</span>
+              <span>{membershipLabel}</span>
+              {canRequestMembership && (
+                <FormTooltip content="Request membership">
+                  <FormButton
+                    type="button"
+                    iconOnly
+                    aria-label="Request membership"
+                    disabled={requestMembership.isPending}
+                    onClick={() => requestMembership.mutate(groupId)}
+                  >
+                    {/* Reuse UserPlus icon via Faq toolbar import if desired; currently using generic button */}
+                    Request
+                  </FormButton>
+                </FormTooltip>
+              )}
+            </div>
+          );
+        })()}
         {(deleteRuleset.isError || requestMembership.isError) && (
           <p className={styles.error}>
             {deleteRuleset.error?.message ?? requestMembership.error?.message}
           </p>
         )}
       </section>
-
-      {factions.data && factions.data.length > 0 && (
+      {ruleset.factions && ruleset.factions.length > 0 && (
         <section className={styles.section}>
           <h3 className={styles.sectionTitle}>Factions in this ruleset</h3>
           <ul>
-            {factions.data.map((f) => (
+            {ruleset.factions.map((f) => (
               <li key={f.factionId}>
                 <Link to="/factions/$factionId" params={{ factionId: f.urlSlug }}>
                   {f.name}
@@ -246,7 +270,6 @@ function RulesetDetailPage() {
           </ul>
         </section>
       )}
-
       <section className={styles.section}>
         <h3 className={styles.sectionTitle}>FAQ</h3>
         <Card>
