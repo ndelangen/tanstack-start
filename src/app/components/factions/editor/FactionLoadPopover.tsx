@@ -32,6 +32,10 @@ export interface FactionLoadPopoverContentProps {
   onLoaded: (loaded: Faction) => void;
 }
 
+/**
+ * Renders inside {@link FormPopover} / Radix `Popover.Content`, which unmounts when closed (`Presence`),
+ * so `useFactionLoadPicker` is not subscribed while the popover is closed.
+ */
 export function FactionLoadPopoverContent({
   currentPublicSlug,
   onLoaded,

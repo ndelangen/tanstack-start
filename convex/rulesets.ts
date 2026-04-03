@@ -2,9 +2,11 @@ import { getAuthUserId } from '@convex-dev/auth/server';
 import { v } from 'convex/values';
 
 import { rulesetInputSchema } from '../src/app/rulesets/validation';
-import type { Id } from './_generated/dataModel';
+import type { Doc, Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
+import { loadFaqItemsForRuleset } from './lib/faqRulesetList';
 import { canAccessRuleset, isActiveGroupMember, requireAuthUserId } from './lib/policy';
+import { profileSummary } from './lib/profileSummary';
 import { ensureObject, nowIso, slugify } from './lib/utils';
 import type { MutationCtx, QueryCtx } from './types';
 
@@ -56,41 +58,79 @@ export const get = query({
   },
 });
 
+async function rulesetPublicBundleBySlug(ctx: QueryCtx, slug: string) {
+  const row = await ctx.db
+    .query('rulesets')
+    .withIndex('by_slug', (q) => q.eq('slug', slug))
+    .unique();
+  if (!row || row.is_deleted) throw new Error(`Ruleset with slug ${slug} not found`);
+
+  const links = await ctx.db
+    .query('ruleset_factions')
+    .withIndex('by_ruleset', (q) => q.eq('ruleset_id', row._id))
+    .take(500);
+  const factionRows = await Promise.all(links.map((link) => getFactionById(ctx, link.faction_id)));
+
+  const userId = await getAuthUserId(ctx);
+  const canAccess =
+    userId != null && (await canAccessRuleset(ctx, row, userId as unknown as Id<'users'>));
+
+  return {
+    ruleset: row,
+    factions: links.map((link, index) => {
+      const faction = factionRows[index];
+      const data = faction?.data;
+      const dataObj = data != null ? ensureObject(data) : null;
+      const name = typeof dataObj?.name === 'string' ? dataObj.name : String(link.faction_id);
+      const urlSlug = typeof faction?.slug === 'string' ? faction.slug : String(link.faction_id);
+      return {
+        factionId: link.faction_id,
+        name,
+        urlSlug,
+      };
+    }),
+    canAccess,
+  };
+}
+
 export const getBySlug = query({
   args: { slug: v.string() },
+  handler: async (ctx, args) => rulesetPublicBundleBySlug(ctx, args.slug),
+});
+
+export const detailPageBySlug = query({
+  args: { slug: v.string() },
   handler: async (ctx, args) => {
-    const row = await ctx.db
-      .query('rulesets')
-      .withIndex('by_slug', (q) => q.eq('slug', args.slug))
-      .unique();
-    if (!row || row.is_deleted) throw new Error(`Ruleset with slug ${args.slug} not found`);
+    const base = await rulesetPublicBundleBySlug(ctx, args.slug);
+    const faqItems = await loadFaqItemsForRuleset(ctx, base.ruleset._id);
 
-    const links = await ctx.db
-      .query('ruleset_factions')
-      .withIndex('by_ruleset', (q) => q.eq('ruleset_id', row._id))
-      .take(500);
-    const factions = await Promise.all(links.map((link) => getFactionById(ctx, link.faction_id)));
+    let groupAccess: {
+      group: Doc<'groups'>;
+      members: Array<{
+        membership: Doc<'group_members'>;
+        profile: Awaited<ReturnType<typeof profileSummary>>;
+      }>;
+    } | null = null;
 
-    const userId = await getAuthUserId(ctx);
-    const canAccess =
-      userId != null && (await canAccessRuleset(ctx, row, userId as unknown as Id<'users'>));
+    const linkedGroupId = base.ruleset.group_id;
+    if (linkedGroupId) {
+      const group = await ctx.db.get(linkedGroupId);
+      if (group) {
+        const memberships = await ctx.db
+          .query('group_members')
+          .withIndex('by_group', (q) => q.eq('group_id', linkedGroupId))
+          .take(500);
+        const members = await Promise.all(
+          memberships.map(async (m) => ({
+            membership: m,
+            profile: await profileSummary(ctx, m.user_id),
+          }))
+        );
+        groupAccess = { group, members };
+      }
+    }
 
-    return {
-      ruleset: row,
-      factions: links.map((link, index) => {
-        const faction = factions[index];
-        const data = faction?.data;
-        const dataObj = data != null ? ensureObject(data) : null;
-        const name = typeof dataObj?.name === 'string' ? dataObj.name : String(link.faction_id);
-        const urlSlug = typeof faction?.slug === 'string' ? faction.slug : String(link.faction_id);
-        return {
-          factionId: link.faction_id,
-          name,
-          urlSlug,
-        };
-      }),
-      canAccess,
-    };
+    return { ...base, groupAccess, faqItems };
   },
 });
 

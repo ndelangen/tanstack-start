@@ -1,13 +1,14 @@
-import { createFileRoute, getRouteApi, Link } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { UserPlus } from 'lucide-react';
 
 import { loadGroupDetailBySlug, useGroupDetailBySlug } from '@db/groups';
 import { useRequestGroupMembership } from '@db/members';
+import { useCurrentProfile } from '@db/profiles';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Stack } from '@app/components/generic/layout';
-import { ProfileLink } from '@app/components/profile/ProfileLink';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
+import { ProfileLink } from '@app/components/profile/ProfileLink';
 
 export const Route = createFileRoute('/_app/groups/$groupSlug')({
   loader: async ({ params }) => {
@@ -19,8 +20,6 @@ export const Route = createFileRoute('/_app/groups/$groupSlug')({
     PageHead: GroupPageHead,
   },
 });
-
-const appRouteApi = getRouteApi('/_app');
 
 function GroupPageHead() {
   const { groupSlug } = Route.useParams();
@@ -39,12 +38,11 @@ function GroupPageHead() {
 
 function GroupDetailPage() {
   const { groupSlug } = Route.useParams();
-  const appLoaderData = appRouteApi.useLoaderData();
   const loaderData = Route.useLoaderData();
   const groupData = useGroupDetailBySlug(groupSlug, { initialData: loaderData.groupDetail });
   const requestMembership = useRequestGroupMembership();
-
-  const currentUserId = appLoaderData.currentUserId;
+  const profile = useCurrentProfile();
+  const viewerUserId = profile.data?.user_id;
 
   if (groupData.isError) {
     return (
@@ -63,10 +61,10 @@ function GroupDetailPage() {
   const activeMembers = members.filter((entry) => entry.status === 'active');
   const profileByUserId = new Map((groupData.profiles ?? []).map((p) => [p.user_id, p]));
   const ownerProfile = profileByUserId.get(groupData.group.created_by);
-  const viewerMembership = members.find((entry) => entry.user_id === currentUserId);
+  const viewerMembership = members.find((entry) => entry.user_id === viewerUserId);
   const membershipStatus =
     viewerMembership && viewerMembership.status !== 'removed' ? viewerMembership.status : 'none';
-  const canRequestMembership = membershipStatus === 'none' && !!currentUserId;
+  const canRequestMembership = membershipStatus === 'none' && !!viewerUserId;
 
   const factions = groupData.factions ?? [];
 
@@ -95,7 +93,7 @@ function GroupDetailPage() {
               : 'Not a member'}
         </p>
         {membershipStatus === 'pending' && <p>Your request is awaiting approval.</p>}
-        {!currentUserId && (
+        {!profile.isPending && !viewerUserId && (
           <p>
             <Link to="/auth/login">Log in</Link> to request membership.
           </p>

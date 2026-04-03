@@ -1,10 +1,10 @@
-import { createFileRoute, getRouteApi, Link, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Check, MessageSquarePlus, Pencil, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import {
-  loadFaqItemByRulesetAndSlug,
   type FaqItemByRulesetSlugInitialData,
+  loadFaqItemByRulesetAndSlug,
   useCreateFaqAnswer,
   useDeleteFaqAnswer,
   useDeleteFaqItem,
@@ -17,12 +17,12 @@ import { useCurrentProfile } from '@db/profiles';
 import { loadRulesetBySlug } from '@db/rulesets';
 import { Answer } from '@app/components/faq/Answer';
 import { FormActions } from '@app/components/form/FormActions';
-import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormField } from '@app/components/form/FormField';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { MultilineTextField } from '@app/components/form/MultilineTextField';
 import { Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { ProfileLink } from '@app/components/profile/ProfileLink';
 
 import styles from '../../$id/faq/FaqDetail.module.css';
@@ -50,8 +50,6 @@ export const Route = createFileRoute('/_app/rulesets/$rulesetSlug/faq/$questionS
   },
 });
 
-const appRouteApi = getRouteApi('/_app');
-
 function FaqDetailPage() {
   const { rulesetSlug, questionSlug } = Route.useParams();
   const loaderData = Route.useLoaderData();
@@ -69,11 +67,7 @@ function FaqDetailPage() {
           } as FaqItemByRulesetSlugInitialData)
         : undefined,
   });
-  const appLoaderData = appRouteApi.useLoaderData();
-  const profile = useCurrentProfile({
-    initialCurrent: appLoaderData.currentProfile,
-    initialCurrentUserId: appLoaderData.currentUserId,
-  });
+  const profile = useCurrentProfile();
   const updateFaqItem = useUpdateFaqItem();
   const deleteFaqItem = useDeleteFaqItem();
   const createFaqAnswer = useCreateFaqAnswer();

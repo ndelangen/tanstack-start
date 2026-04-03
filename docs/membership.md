@@ -29,7 +29,7 @@ Status transitions: `pending` → `active` (approved) or `removed` (rejected/rem
 
 **Mutations**: `useRequestGroupMembership`, `useApproveGroupMember`, `useRejectGroupMember`, `useRemoveGroupMember`
 
-**Queries**: `useGroupMembers`, `useGroupMembersByStatus`, `useGroupMember`
+**Queries**: `useGroupMembers`, `useGroupMembersByStatus`, `useGroupMember`, `useUserGroupMemberships` (mount only when `userId` is known), `useUserGroupMembershipGroups` (helper over membership rows)
 
 **Example**: [`src/app/members/db.ts`](../src/app/members/db.ts)
 

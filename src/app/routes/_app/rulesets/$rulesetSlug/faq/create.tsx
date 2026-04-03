@@ -1,15 +1,15 @@
-import { createFileRoute, getRouteApi, Link, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 
 import { useCreateFaqItem } from '@db/faq';
 import { useCurrentProfile } from '@db/profiles';
 import { loadRulesetBySlug, useRulesetBySlug } from '@db/rulesets';
 import { FormActions } from '@app/components/form/FormActions';
-import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormField } from '@app/components/form/FormField';
 import { MultilineTextField } from '@app/components/form/MultilineTextField';
 import { TextField } from '@app/components/form/TextField';
 import { Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 
 import styles from '../../RulesetDetail.module.css';
 
@@ -28,26 +28,20 @@ export const Route = createFileRoute('/_app/rulesets/$rulesetSlug/faq/create')({
   },
 });
 
-const appRouteApi = getRouteApi('/_app');
-
 function FaqCreatePage() {
   const { rulesetSlug } = Route.useParams();
-  const appLoaderData = appRouteApi.useLoaderData();
   const loaderData = Route.useLoaderData();
   const navigate = useNavigate();
   const ruleset = useRulesetBySlug(rulesetSlug, { initialData: loaderData.ruleset });
-  const profile = useCurrentProfile({
-    initialCurrent: appLoaderData.currentProfile,
-    initialCurrentUserId: appLoaderData.currentUserId,
-  });
+  const profile = useCurrentProfile();
   const createFaqItem = useCreateFaqItem();
 
   if (!ruleset.data) {
     return null;
   }
-  const rulesetId = ruleset.data._id;
+  const rulesetId = ruleset.data.ruleset._id;
 
-  if (!profile?.data?.id) {
+  if (!profile?.data?._id) {
     return (
       <Card>
         <p>

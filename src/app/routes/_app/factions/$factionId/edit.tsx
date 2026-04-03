@@ -1,4 +1,4 @@
-import { createFileRoute, getRouteApi, Link, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { RotateCcw, Save, Trash2, UserRoundMinus, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 
@@ -29,8 +29,6 @@ export const Route = createFileRoute('/_app/factions/$factionId/edit')({
   component: FactionEditPage,
 });
 
-const appRouteApi = getRouteApi('/_app');
-
 function formatZodIssues(err: { issues: readonly { path: PropertyKey[]; message: string }[] }) {
   return err.issues
     .map((i) => `${i.path.map((segment) => String(segment)).join('.') || '(root)'}: ${i.message}`)
@@ -39,22 +37,16 @@ function formatZodIssues(err: { issues: readonly { path: PropertyKey[]; message:
 
 function FactionEditPage() {
   const { factionId } = Route.useParams();
-  const appLoaderData = appRouteApi.useLoaderData();
   const loaderData = Route.useLoaderData();
   const navigate = useNavigate();
   const editorRef = useRef<FactionEditorHandle | null>(null);
   const updateFaction = useUpdateFaction();
   const deleteFaction = useDeleteFaction();
   const setFactionGroup = useSetFactionGroup();
-  const profile = useCurrentProfile({
-    initialCurrent: appLoaderData.currentProfile,
-  });
+  const profile = useCurrentProfile();
   const [editorErrors, setEditorErrors] = useState<string[]>([]);
 
-  const { faction, group } = useFaction(factionId, {
-    enabled: !!factionId,
-    initialData: loaderData,
-  });
+  const { faction, group } = useFaction(factionId, { initialData: loaderData });
   if (!profile?.data?.user_id) {
     return (
       <Card>

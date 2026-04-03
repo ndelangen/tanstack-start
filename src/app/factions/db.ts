@@ -57,6 +57,29 @@ export function factionRowsToEntries(rows: FactionRow[]): FactionEntry[] {
   return rows.map(toFactionEntry);
 }
 
+/** Assigned group + members (profile summaries) for faction detail; mirrors ruleset `groupAccess`. */
+export type FactionPageGroupAccess = {
+  group: Doc<'groups'>;
+  members: Array<{
+    membership: Doc<'group_members'>;
+    profile: {
+      id: string;
+      slug: string;
+      username: string | null;
+      avatar_url: string | null;
+    } | null;
+  }>;
+};
+
+export type FactionEditorPageData = {
+  faction: FactionEntry;
+  owner: Doc<'profiles'>;
+  group: Doc<'groups'> | null;
+  memberships: Doc<'group_members'>[];
+  groups: Doc<'groups'>[];
+  groupAccess: FactionPageGroupAccess | null;
+};
+
 export async function loadFactionBySlug(slug: string): Promise<FactionEditorPageData> {
   // Delegate to the editor-page loader so callers get the full shape
   // expected by `useFaction`'s `initialData`.
@@ -81,21 +104,13 @@ export async function loadFactionsByGroup(groupId: string): Promise<FactionEntry
 }
 
 export function useFaction(
-  slug: string | undefined,
+  slug: string,
   options?: {
-    enabled?: boolean;
-    initialData?: {
-      faction: FactionEntry;
-      owner: Doc<'profiles'>;
-      group: Doc<'groups'> | null;
-      memberships: Doc<'group_members'>[];
-      groups: Doc<'groups'>[];
-    };
+    initialData?: FactionEditorPageData;
   }
 ) {
-  const enabled = (options?.enabled ?? true) && typeof slug === 'string' && slug.length > 0;
-  const liveData = useQuery(api.factions.getBySlug, enabled ? { slug: slug as string } : 'skip');
-  const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
+  const liveData = useQuery(api.factions.getBySlug, { slug });
+  const result = toLiveQueryResult(liveData, true, () => options?.initialData ?? undefined);
   return {
     ...result,
     faction: result.data ? toFactionEntry(result.data.faction) : undefined,
@@ -103,6 +118,7 @@ export function useFaction(
     group: result.data?.group,
     memberships: result.data?.memberships,
     groups: result.data?.groups,
+    groupAccess: result.data?.groupAccess ?? null,
   };
 }
 
@@ -150,14 +166,9 @@ export function useFactionLoadPicker(options?: { initialData?: FactionLoadPicker
   };
 }
 
-export function useFactionsByOwner(
-  ownerId: string | undefined,
-  options?: { initialData?: FactionEntry[] }
-) {
-  const enabled = Boolean(ownerId);
-  const args = enabled ? ({ owner_id: ownerId } as never) : 'skip';
-  const liveData = useQuery(api.factions.listByOwner, args);
-  const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
+export function useFactionsByOwner(ownerId: string, options?: { initialData?: FactionEntry[] }) {
+  const liveData = useQuery(api.factions.listByOwner, { owner_id: ownerId } as never);
+  const result = toLiveQueryResult(liveData, true, () => options?.initialData ?? undefined);
   return {
     ...result,
     data: result.data ? factionRowsToEntries(result.data) : undefined,
@@ -165,10 +176,8 @@ export function useFactionsByOwner(
 }
 
 export function useFactionsByGroup(groupId: string, options?: { initialData?: FactionEntry[] }) {
-  const enabled = Boolean(groupId);
-  const args = enabled ? ({ group_id: groupId } as never) : 'skip';
-  const liveData = useQuery(api.factions.listByGroup, args);
-  const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
+  const liveData = useQuery(api.factions.listByGroup, { group_id: groupId } as never);
+  const result = toLiveQueryResult(liveData, true, () => options?.initialData ?? undefined);
   return {
     ...result,
     data: result.data ? factionRowsToEntries(result.data) : undefined,
@@ -285,14 +294,6 @@ export function useSetFactionGroup() {
   };
 }
 
-export type FactionEditorPageData = {
-  faction: FactionEntry;
-  owner: Doc<'profiles'>;
-  group: Doc<'groups'> | null;
-  memberships: Doc<'group_members'>[];
-  groups: Doc<'groups'>[];
-};
-
 export type FactionCreatePageData = {
   ownerProfile: Doc<'profiles'> | null;
   groups: Doc<'groups'>[];
@@ -313,9 +314,9 @@ export async function loadFactionCreatePageContext(): Promise<FactionCreatePageD
   return await db.query<FactionCreatePageData>(api.factions.getCreatePageContext, {});
 }
 
-export function useFactionCreatePageContext() {
+export function useFactionCreatePageContext(options?: { initialData?: FactionCreatePageData }) {
   const liveData = useQuery(api.factions.getCreatePageContext, {});
-  const result = toLiveQueryResult(liveData, true, () => undefined);
+  const result = toLiveQueryResult(liveData, true, () => options?.initialData ?? undefined);
   return {
     ...result,
   };

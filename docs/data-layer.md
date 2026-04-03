@@ -125,3 +125,9 @@ Factions and rulesets use `is_deleted` flags instead of hard deletes:
 **Example**: [`src/app/factions/db.ts`](../src/app/factions/db.ts)
 
 Groups use hard delete (actual row removal).
+
+## Convex `useQuery` in domain hooks (`src/app/**/db.ts`)
+
+Avoid Convex React `"skip"` and `enabled ? args : 'skip'` in domain data modules. When a subscription should not run, **unmount** the component that calls `useQuery` (for example, render a child only when `open && userId`, or split route shells so live-only paths do not mount DB-mode hooks). Route loaders continue to prefetch with `db.query`; route leaves use matching `useQuery` with the same arguments and `initialData` from the loader where applicable.
+
+**Guard**: `bun run check:convex-skip` fails if `"skip"` appears in any `src/app/**/db.ts` file.

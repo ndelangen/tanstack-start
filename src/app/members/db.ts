@@ -2,7 +2,6 @@ import { useQuery } from 'convex/react';
 import { useMemo } from 'react';
 
 import { db } from '@db/core';
-import { useCurrentProfile } from '@db/profiles';
 import { toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
 
 import { api } from '../../../convex/_generated/api';
@@ -47,51 +46,43 @@ export async function loadGroupMembers(groupId: string): Promise<GroupMemberEntr
   return entries.map((entry) => ({ ...entry, id: entry._id }));
 }
 
+/** Mount only when `userId` is defined (e.g. child of a component that already loaded profile). */
 export function useUserGroupMemberships(
-  userId: string | undefined,
+  userId: string,
   options?: { initialData?: UserGroupMembershipWithGroup[] }
 ) {
-  const enabled = Boolean(userId);
-  const args = enabled ? ({ user_id: userId ?? '' } as never) : 'skip';
-  const liveData = useQuery(api.members.listByUserActiveWithGroups, args) as
-    | (GroupMemberRow & { groups: { id: string; name: string } | null })[]
+  const liveData = useQuery(api.members.listByUserActiveWithGroups, {
+    user_id: userId,
+  } as never) as
+    | (GroupMemberRow & {
+        groups: { id: string; name: string; slug: string } | null;
+      })[]
     | undefined;
-  const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
+  const result = toLiveQueryResult(liveData, true, () => options?.initialData ?? undefined);
   return {
     ...result,
     data: result.data?.map((entry) => ({ ...entry, id: entry._id, groups: entry.groups })),
   };
 }
 
-export function useCurrentUserMemberships(options?: { enabled?: boolean }) {
-  const profile = useCurrentProfile();
-  const userId = profile.data?.user_id;
-
-  const enabled = (options?.enabled ?? true) && Boolean(userId);
-
-  const memberships = useUserGroupMemberships(enabled ? userId : undefined, {
-    initialData: [],
-  });
-
-  const groups = useMemo(
+export function useUserGroupMembershipGroups(
+  memberships: UserGroupMembershipWithGroup[] | undefined
+) {
+  return useMemo(
     () =>
-      (memberships.data ?? [])
+      (memberships ?? [])
         .map((membership) => membership.groups)
         .filter((group): group is { id: string; name: string; slug: string } => Boolean(group)),
-    [memberships.data]
+    [memberships]
   );
-
-  return {
-    ...memberships,
-    groups,
-  };
 }
 
+/** Mount only when `groupId` is a real group id. */
 export function useGroupMembers(groupId: string, options?: { initialData?: GroupMemberEntry[] }) {
-  const enabled = Boolean(groupId);
-  const args = enabled ? ({ group_id: groupId } as never) : 'skip';
-  const liveData = useQuery(api.members.listByGroup, args) as GroupMemberRow[] | undefined;
-  const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
+  const liveData = useQuery(api.members.listByGroup, { group_id: groupId } as never) as
+    | GroupMemberRow[]
+    | undefined;
+  const result = toLiveQueryResult(liveData, true, () => options?.initialData ?? undefined);
   return {
     ...result,
     data: result.data?.map((entry) => ({ ...entry, id: entry._id })),
@@ -103,10 +94,11 @@ export function useGroupMembersByStatus(
   status: GroupMemberStatus,
   options?: { initialData?: GroupMemberEntry[] }
 ) {
-  const enabled = Boolean(groupId);
-  const args = enabled ? ({ group_id: groupId, status } as never) : 'skip';
-  const liveData = useQuery(api.members.listByGroupAndStatus, args) as GroupMemberRow[] | undefined;
-  const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
+  const liveData = useQuery(api.members.listByGroupAndStatus, {
+    group_id: groupId,
+    status,
+  } as never) as GroupMemberRow[] | undefined;
+  const result = toLiveQueryResult(liveData, true, () => options?.initialData ?? undefined);
   return {
     ...result,
     data: result.data?.map((entry) => ({ ...entry, id: entry._id })),
@@ -114,10 +106,11 @@ export function useGroupMembersByStatus(
 }
 
 export function useGroupMember(groupId: string, userId: string) {
-  const enabled = Boolean(groupId) && Boolean(userId);
-  const args = enabled ? ({ group_id: groupId, user_id: userId } as never) : 'skip';
-  const liveData = useQuery(api.members.get, args) as GroupMemberRow | undefined;
-  const result = toLiveQueryResult(liveData, enabled);
+  const liveData = useQuery(api.members.get, {
+    group_id: groupId,
+    user_id: userId,
+  } as never) as GroupMemberRow | undefined;
+  const result = toLiveQueryResult(liveData, true);
   return {
     ...result,
     data: result.data ? { ...result.data, id: result.data._id } : undefined,

@@ -5,12 +5,12 @@ import { useState } from 'react';
 import { useCreateGroup } from '@db/groups';
 import { useCurrentProfile } from '@db/profiles';
 import { FormActions } from '@app/components/form/FormActions';
-import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormField } from '@app/components/form/FormField';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { TextField } from '@app/components/form/TextField';
 import { Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 
 export const Route = createFileRoute('/_app/groups/create')({
   component: GroupCreatePage,
@@ -30,7 +30,7 @@ function GroupCreatePage() {
   const [name, setName] = useState('');
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  if (!profile.data?.id || !profile.data.slug) {
+  if (!profile.data?._id || !profile.data.slug) {
     return (
       <Card>
         <p>
@@ -43,6 +43,7 @@ function GroupCreatePage() {
     );
   }
 
+  const profileRow = profile.data;
   const canSubmit = !createGroup.isPending && name.trim().length > 0;
 
   return (
@@ -62,7 +63,7 @@ function GroupCreatePage() {
                 setSubmitError(null);
                 navigate({
                   to: '/profiles/$slug',
-                  params: { slug: profile.data.slug },
+                  params: { slug: profileRow.slug },
                 });
               },
               onError: (error) => setSubmitError(error.message),
@@ -86,7 +87,7 @@ function GroupCreatePage() {
                 aria-label="Close create group"
                 disabled={createGroup.isPending}
                 onClick={() =>
-                  navigate({ to: '/profiles/$slug', params: { slug: profile.data.slug } })
+                  navigate({ to: '/profiles/$slug', params: { slug: profileRow.slug } })
                 }
               >
                 <X size={16} aria-hidden />

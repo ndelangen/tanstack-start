@@ -3,7 +3,9 @@ import { v } from 'convex/values';
 import { faqAnswerSchema, faqQuestionSchema } from '../src/app/faq/validation';
 import type { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
+import { loadFaqItemsForRuleset } from './lib/faqRulesetList';
 import { canAccessRuleset, requireAuthUserId } from './lib/policy';
+import { profileSummary } from './lib/profileSummary';
 import { nowIso } from './lib/utils';
 import type { MutationCtx, QueryCtx } from './types';
 
@@ -24,20 +26,6 @@ async function getFaqItem(ctx: QueryCtx | MutationCtx, id: Id<'faq_items'>) {
 
 async function getFaqAnswer(ctx: QueryCtx | MutationCtx, id: Id<'faq_answers'>) {
   return await ctx.db.get(id);
-}
-
-async function profileSummary(ctx: QueryCtx | MutationCtx, id: Id<'users'>) {
-  const profile = await ctx.db
-    .query('profiles')
-    .withIndex('by_user_id', (q) => q.eq('user_id', id))
-    .unique();
-  if (!profile) return null;
-  return {
-    id: profile._id,
-    slug: profile.slug,
-    username: profile.username ?? null,
-    avatar_url: profile.avatar_url ?? null,
-  };
 }
 
 async function assertAcceptedAnswerBelongsToItem(
@@ -86,30 +74,7 @@ async function allocateNextFaqItemSlug(
 
 export const byRuleset = query({
   args: { ruleset_id: v.id('rulesets') },
-  handler: async (ctx, args) => {
-    const items = await ctx.db
-      .query('faq_items')
-      .withIndex('by_ruleset_created', (q) => q.eq('ruleset_id', args.ruleset_id))
-      .take(200);
-    const sorted = [...items].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
-    if (sorted.length === 0) return [];
-
-    const answers = await Promise.all(
-      sorted.map((item) =>
-        ctx.db
-          .query('faq_answers')
-          .withIndex('by_faq_item_created', (q) => q.eq('faq_item_id', item._id))
-          .take(50)
-      )
-    );
-    const askers = await Promise.all(sorted.map((item) => profileSummary(ctx, item.asked_by)));
-
-    return sorted.map((item, index) => ({
-      ...item,
-      faq_answers: answers[index],
-      asker_profile: askers[index],
-    }));
-  },
+  handler: async (ctx, args) => loadFaqItemsForRuleset(ctx, args.ruleset_id),
 });
 
 export const detail = query({

@@ -1,12 +1,13 @@
 import { Check, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
+import { useCurrentProfile } from '@db/profiles';
 import { FormActions } from '@app/components/form/FormActions';
-import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormField } from '@app/components/form/FormField';
 import { FormPopover } from '@app/components/form/FormPopover';
 import { SuggestField } from '@app/components/form/SuggestField';
-import { useCurrentUserMemberships } from '@app/members/db';
+import { UIButton } from '@app/components/generic/ui/UIButton';
+import { useUserGroupMembershipGroups, useUserGroupMemberships } from '@app/members/db';
 
 import styles from '../factions/editor/FactionEditor.module.css';
 
@@ -17,21 +18,31 @@ export interface GroupAssignPopoverProps {
   descriptionLines?: string[];
 }
 
-export function GroupAssignPopover({
+function GroupAssignPopoverBody({
+  userId,
+  selectedGroupId,
+  setSelectedGroupId,
+  error,
+  setError,
   disabled,
   onChangeGroup,
-  title = 'Assign Group',
-  descriptionLines = [
-    'Groups are used to allow group members to edit this item.',
-    'You can create groups on your profile page.',
-  ],
-}: GroupAssignPopoverProps) {
-  const [open, setOpen] = useState(false);
-  const [selectedGroupId, setSelectedGroupId] = useState('');
-  const [error, setError] = useState<string | null>(null);
-
-  const memberships = useCurrentUserMemberships({ enabled: open });
-  const accessibleGroups = memberships.groups;
+  title,
+  descriptionLines,
+  onAssigned,
+}: {
+  userId: string;
+  selectedGroupId: string;
+  setSelectedGroupId: (id: string) => void;
+  error: string | null;
+  setError: (e: string | null) => void;
+  disabled: boolean;
+  onChangeGroup: (groupId: string | null) => Promise<void>;
+  title: string;
+  descriptionLines: string[];
+  onAssigned: () => void;
+}) {
+  const memberships = useUserGroupMemberships(userId, { initialData: [] });
+  const accessibleGroups = useUserGroupMembershipGroups(memberships.data);
 
   const memberGroupIdSet = useMemo(
     () => new Set(accessibleGroups.map((group) => String(group.id))),
@@ -74,7 +85,7 @@ export function GroupAssignPopover({
     void (async () => {
       try {
         await onChangeGroup(nextGroupId);
-        setOpen(false);
+        onAssigned();
       } catch (err) {
         const message =
           err instanceof Error ? err.message : 'Failed to assign group. Please try again.';
@@ -82,6 +93,69 @@ export function GroupAssignPopover({
       }
     })();
   };
+
+  return (
+    <div className={styles.loadFactionPopover}>
+      <p className={styles.loadFactionTitle}>{title}</p>
+      {descriptionLines.map((line) => (
+        <p key={line} className={styles.loadFactionHint}>
+          {line}
+        </p>
+      ))}
+      {error && (
+        <p className={styles.loadFactionHint} role="alert">
+          {error}
+        </p>
+      )}
+      {memberships.isPending ? (
+        <p className={styles.loadFactionHint}>Loading groups...</p>
+      ) : groupOptions.length === 0 ? (
+        <p className={styles.loadFactionHint}>No groups are available yet.</p>
+      ) : (
+        <>
+          <FormField label="Search groups" htmlFor="entity-group">
+            <SuggestField
+              id="entity-group"
+              value={selectedGroupId}
+              onChange={setSelectedGroupId}
+              options={groupOptions}
+              optionToLabel={groupOptionLabel}
+              optionToSearchText={groupOptionSearchText}
+              renderOption={renderGroupOption}
+              placeholder="Type group name or slug..."
+            />
+          </FormField>
+          <FormActions>
+            <UIButton
+              type="button"
+              iconOnly
+              aria-label="Set selected group"
+              onClick={handleAssignGroup}
+              disabled={disabled}
+            >
+              <Check size={16} aria-hidden />
+            </UIButton>
+          </FormActions>
+        </>
+      )}
+    </div>
+  );
+}
+
+export function GroupAssignPopover({
+  disabled,
+  onChangeGroup,
+  title = 'Assign Group',
+  descriptionLines = [
+    'Groups are used to allow group members to edit this item.',
+    'You can create groups on your profile page.',
+  ],
+}: GroupAssignPopoverProps) {
+  const [open, setOpen] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const profile = useCurrentProfile();
+  const userId = profile.data?.user_id;
 
   return (
     <FormPopover
@@ -107,50 +181,24 @@ export function GroupAssignPopover({
         </UIButton>
       }
     >
-      <div className={styles.loadFactionPopover}>
-        <p className={styles.loadFactionTitle}>{title}</p>
-        {descriptionLines.map((line) => (
-          <p key={line} className={styles.loadFactionHint}>
-            {line}
-          </p>
-        ))}
-        {error && (
-          <p className={styles.loadFactionHint} role="alert">
-            {error}
-          </p>
-        )}
-        {memberships.isPending ? (
-          <p className={styles.loadFactionHint}>Loading groups...</p>
-        ) : groupOptions.length === 0 ? (
-          <p className={styles.loadFactionHint}>No groups are available yet.</p>
-        ) : (
-          <>
-            <FormField label="Search groups" htmlFor="entity-group">
-              <SuggestField
-                id="entity-group"
-                value={selectedGroupId}
-                onChange={setSelectedGroupId}
-                options={groupOptions}
-                optionToLabel={groupOptionLabel}
-                optionToSearchText={groupOptionSearchText}
-                renderOption={renderGroupOption}
-                placeholder="Type group name or slug..."
-              />
-            </FormField>
-            <FormActions>
-              <UIButton
-                type="button"
-                iconOnly
-                aria-label="Set selected group"
-                onClick={handleAssignGroup}
-                disabled={disabled}
-              >
-                <Check size={16} aria-hidden />
-              </UIButton>
-            </FormActions>
-          </>
-        )}
-      </div>
+      {open && userId ? (
+        <GroupAssignPopoverBody
+          userId={userId}
+          selectedGroupId={selectedGroupId}
+          setSelectedGroupId={setSelectedGroupId}
+          error={error}
+          setError={setError}
+          disabled={disabled}
+          onChangeGroup={onChangeGroup}
+          title={title}
+          descriptionLines={descriptionLines}
+          onAssigned={() => setOpen(false)}
+        />
+      ) : open && profile.isPending ? (
+        <p className={styles.loadFactionHint}>Loading account…</p>
+      ) : open ? (
+        <p className={styles.loadFactionHint}>Sign in to assign a group.</p>
+      ) : null}
     </FormPopover>
   );
 }

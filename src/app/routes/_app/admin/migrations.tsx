@@ -3,17 +3,18 @@ import { RefreshCw } from 'lucide-react';
 
 import { useCurrentProfile } from '@db/profiles';
 import { FormActions } from '@app/components/form/FormActions';
-import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import {
-  useMigrationRunSnapshots,
-  useMigrationStatuses,
+  loadAdminMigrationDashboard,
+  useAdminMigrationDashboard,
   useSyncMigrationRuns,
 } from '@app/migrations/db';
 
 export const Route = createFileRoute('/_app/admin/migrations')({
+  loader: async () => ({ dashboard: await loadAdminMigrationDashboard() }),
   component: AdminMigrationsPage,
   staticData: {
     PageHead: () => <h1>Migration activity</h1>,
@@ -26,12 +27,12 @@ function formatDate(timestamp?: number) {
 }
 
 function AdminMigrationsPage() {
+  const loaderData = Route.useLoaderData();
   const profile = useCurrentProfile();
-  const statuses = useMigrationStatuses();
-  const snapshots = useMigrationRunSnapshots();
+  const dashboard = useAdminMigrationDashboard({ initialData: loaderData.dashboard });
   const syncRuns = useSyncMigrationRuns();
 
-  if (!profile.data?.id) {
+  if (!profile.data?._id) {
     return (
       <Card>
         <p>
@@ -43,6 +44,7 @@ function AdminMigrationsPage() {
 
   return (
     <Stack gap={3}>
+      {dashboard.isPending && <p>Loading migration dashboard…</p>}
       <Card>
         <Stack gap={2}>
           <h2>Live migration status</h2>
@@ -72,7 +74,7 @@ function AdminMigrationsPage() {
               </tr>
             </thead>
             <tbody>
-              {(statuses.data ?? []).map((row) => (
+              {dashboard.statuses.map((row) => (
                 <tr key={row.name}>
                   <td>{row.name}</td>
                   <td>{row.state}</td>
@@ -85,7 +87,6 @@ function AdminMigrationsPage() {
               ))}
             </tbody>
           </table>
-          {statuses.isPending && <p>Loading live statuses...</p>}
         </Stack>
       </Card>
 
@@ -104,7 +105,7 @@ function AdminMigrationsPage() {
               </tr>
             </thead>
             <tbody>
-              {(snapshots.data ?? []).map((row) => (
+              {dashboard.snapshots.map((row) => (
                 <tr key={row._id}>
                   <td>{row.migration_id}</td>
                   <td>{row.state}</td>
@@ -116,7 +117,6 @@ function AdminMigrationsPage() {
               ))}
             </tbody>
           </table>
-          {snapshots.isPending && <p>Loading run snapshots...</p>}
         </Stack>
       </Card>
     </Stack>

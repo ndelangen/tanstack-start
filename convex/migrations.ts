@@ -173,6 +173,19 @@ export const listRunSnapshots = query({
   },
 });
 
+/** Single subscription for admin UI: live statuses + recorded snapshots. */
+export const adminDashboard = query({
+  args: {
+    ids: v.optional(v.array(v.string())),
+  },
+  handler: async (ctx, args) => {
+    const refs = args.ids ? migrationRefsFor(args.ids) : undefined;
+    const statuses = await migrations.getStatus(ctx, { migrations: refs, limit: 100 });
+    const snapshots = await ctx.db.query('migration_runs').order('desc').take(100);
+    return { statuses, snapshots };
+  },
+});
+
 export const syncMigrationRuns = mutation({
   args: {
     ids: v.optional(v.array(v.string())),

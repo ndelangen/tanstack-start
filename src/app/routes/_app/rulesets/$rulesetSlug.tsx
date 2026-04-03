@@ -1,30 +1,24 @@
-import {
-  createFileRoute,
-  getRouteApi,
-  Link,
-  Outlet,
-  useMatches,
-  useNavigate,
-} from '@tanstack/react-router';
+import { createFileRoute, Link, Outlet, useMatches, useNavigate } from '@tanstack/react-router';
 import { MessageCircleQuestionMark, Search, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
-import { loadFaqItemsByRuleset, useFaqItemsByRuleset } from '@db/faq';
-import { useGroup } from '@db/groups';
-import { useGroupMembers, useRequestGroupMembership } from '@db/members';
+import type { FaqItemWithDetails } from '@db/faq';
+import { useRequestGroupMembership } from '@db/members';
 import { useCurrentProfile } from '@db/profiles';
 import {
-  loadRulesetBySlug,
+  loadRulesetDetailPage,
+  type RulesetDetailPageData,
   useDeleteRuleset,
-  useRulesetBySlug,
+  useRulesetDetailPage,
   useUpdateRuleset,
 } from '@db/rulesets';
 import { FaqList } from '@app/components/faq/FaqList';
 import { FormActions } from '@app/components/form/FormActions';
-import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Toolbar } from '@app/components/generic/layout';
 import { BlockCover } from '@app/components/generic/surfaces';
 import { Card } from '@app/components/generic/surfaces/Card';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { GroupAssignPopover } from '@app/components/groups/GroupAssignPopover';
 
 import styles from './RulesetDetail.module.css';
@@ -36,14 +30,10 @@ export const Route = createFileRoute('/_app/rulesets/$rulesetSlug')({
   },
   loader: async ({ params }) => {
     try {
-      const rulesetPage = await loadRulesetBySlug(params.rulesetSlug);
-      if (rulesetPage) {
-        const [faqItems] = await Promise.all([loadFaqItemsByRuleset(rulesetPage.ruleset._id)]);
-        return { notFound: false, rulesetPage, faqItems };
-      }
-      return { notFound: false, rulesetPage: undefined, faqItems: [] };
+      const detailPage = await loadRulesetDetailPage(params.rulesetSlug);
+      return { notFound: false as const, detailPage };
     } catch {
-      return { notFound: true };
+      return { notFound: true as const };
     }
   },
   component: RulesetDetailPage,
@@ -59,7 +49,92 @@ export const Route = createFileRoute('/_app/rulesets/$rulesetSlug')({
   },
 });
 
-const appRouteApi = getRouteApi('/_app');
+function RulesetGroupAccessExpanded({
+  groupId,
+  groupAccess,
+  profileUserId,
+  requestMembership,
+}: {
+  groupId: string;
+  groupAccess: RulesetDetailPageData['groupAccess'];
+  profileUserId: string | undefined;
+  requestMembership: ReturnType<typeof useRequestGroupMembership>;
+}) {
+  const group = groupAccess?.group;
+  const members = groupAccess?.members ?? [];
+  const viewerMembership = members.find(
+    (entry) => entry.membership.user_id === profileUserId
+  )?.membership;
+  const membershipStatus =
+    viewerMembership && viewerMembership.status !== 'removed' ? viewerMembership.status : 'none';
+  const canRequestMembership = !!profileUserId && !!group && membershipStatus === 'none';
+
+  if (!group) {
+    return (
+      <div className={styles.toolbarGroupAccess}>
+        <span className={styles.groupStatusLabel}>Group access:</span>
+        <span>Group details unavailable.</span>
+      </div>
+    );
+  }
+
+  const groupDisplay =
+    membershipStatus === 'active' && group.slug ? (
+      <Link to="/groups/$groupSlug" params={{ groupSlug: group.slug }}>
+        {group.name}
+      </Link>
+    ) : (
+      <span>{group.name}</span>
+    );
+
+  const membershipLabel =
+    membershipStatus === 'active'
+      ? 'Active member'
+      : membershipStatus === 'pending'
+        ? 'Pending approval'
+        : 'Not a member';
+
+  return (
+    <div className={styles.toolbarGroupAccess}>
+      <span className={styles.groupStatusLabel}>Group access:</span>
+      {groupDisplay}
+      <span aria-hidden>·</span>
+      <span>{membershipLabel}</span>
+      {canRequestMembership && (
+        <FormTooltip content="Request membership">
+          <UIButton
+            type="button"
+            iconOnly
+            aria-label="Request membership"
+            disabled={requestMembership.isPending}
+            onClick={() => requestMembership.mutate(groupId)}
+          >
+            Request
+          </UIButton>
+        </FormTooltip>
+      )}
+    </div>
+  );
+}
+
+function RulesetFaqSection({
+  rulesetSlug,
+  faqItems,
+  searchQuery,
+}: {
+  rulesetSlug: string;
+  faqItems: FaqItemWithDetails[];
+  searchQuery: string;
+}) {
+  return (
+    <section className={styles.section}>
+      <h3 className={styles.sectionTitle}>FAQ</h3>
+      <Card>
+        <FaqList items={faqItems} rulesetSlug={rulesetSlug} searchQuery={searchQuery} />
+      </Card>
+    </section>
+  );
+}
 
 function RulesetDetailPage() {
   const { rulesetSlug } = Route.useParams();
@@ -67,22 +142,13 @@ function RulesetDetailPage() {
   const loaderData = Route.useLoaderData();
   const navigate = useNavigate();
   const matches = useMatches();
+  const [groupAccessOpen, setGroupAccessOpen] = useState(false);
   const hasFaqChildRoute = matches.some((m) => m.pathname.includes('/faq/'));
-  const rulesetSeed = loaderData.notFound ? undefined : loaderData.rulesetPage;
-  const faqItemsSeed = loaderData.notFound ? undefined : loaderData.faqItems;
-  const ruleset = useRulesetBySlug(rulesetSlug, { initialData: rulesetSeed });
-  const appLoaderData = appRouteApi.useLoaderData();
-  const profile = useCurrentProfile({
-    initialCurrent: appLoaderData.currentProfile,
-    initialCurrentUserId: appLoaderData.currentUserId,
-  });
+  const detailSeed = loaderData.notFound ? undefined : loaderData.detailPage;
+  const page = useRulesetDetailPage(rulesetSlug, { initialData: detailSeed });
+  const profile = useCurrentProfile();
   const deleteRuleset = useDeleteRuleset();
   const updateRuleset = useUpdateRuleset();
-  const rulesetId = ruleset.ruleset?._id ?? '';
-  const faqItems = useFaqItemsByRuleset(rulesetId, { initialData: faqItemsSeed });
-  const groupId = ruleset.ruleset?.group_id ?? '';
-  const group = useGroup(groupId);
-  const groupMembers = useGroupMembers(groupId);
   const requestMembership = useRequestGroupMembership();
 
   if (loaderData?.notFound) {
@@ -97,7 +163,7 @@ function RulesetDetailPage() {
     );
   }
 
-  if (!ruleset.ruleset) {
+  if (!page.ruleset) {
     return null;
   }
 
@@ -105,15 +171,8 @@ function RulesetDetailPage() {
     return <Outlet />;
   }
 
-  const r = ruleset.ruleset;
+  const r = page.ruleset;
   const isOwner = profile?.data?.user_id === r.owner_id;
-  const viewerMembership = groupMembers.data?.find(
-    (entry) => entry.user_id === profile.data?.user_id
-  );
-  const membershipStatus =
-    viewerMembership && viewerMembership.status !== 'removed' ? viewerMembership.status : 'none';
-  const canRequestMembership =
-    r.group_id != null && !!profile.data?.user_id && membershipStatus === 'none';
 
   const handleDelete = () => {
     if (!window.confirm(`Delete ruleset "${r.name}"? This cannot be undone.`)) return;
@@ -208,59 +267,38 @@ function RulesetDetailPage() {
         </div>
         <h2>{r.name}</h2>
 
-        {(() => {
-          const groupDisplay =
-            r.group_id == null ? (
-              <span>No group</span>
-            ) : membershipStatus === 'active' && group.data?.slug ? (
-              <Link to="/groups/$groupSlug" params={{ groupSlug: group.data.slug }}>
-                {group.data?.name ?? 'Group'}
-              </Link>
-            ) : (
-              <span>{group.data?.name ?? 'Loading group...'}</span>
-            );
-
-          const membershipLabel =
-            membershipStatus === 'active'
-              ? 'Active member'
-              : membershipStatus === 'pending'
-                ? 'Pending approval'
-                : 'Not a member';
-
-          return (
-            <div className={styles.toolbarGroupAccess}>
-              <span className={styles.groupStatusLabel}>Group access:</span>
-              {groupDisplay}
-              <span aria-hidden>·</span>
-              <span>{membershipLabel}</span>
-              {canRequestMembership && (
-                <FormTooltip content="Request membership">
-                  <UIButton
-                    type="button"
-                    iconOnly
-                    aria-label="Request membership"
-                    disabled={requestMembership.isPending}
-                    onClick={() => requestMembership.mutate(groupId)}
-                  >
-                    {/* Reuse UserPlus icon via Faq toolbar import if desired; currently using generic button */}
-                    Request
-                  </UIButton>
-                </FormTooltip>
-              )}
-            </div>
-          );
-        })()}
+        {r.group_id == null ? (
+          <div className={styles.toolbarGroupAccess}>
+            <span className={styles.groupStatusLabel}>Group access:</span>
+            <span>No group</span>
+          </div>
+        ) : !groupAccessOpen ? (
+          <div className={styles.toolbarGroupAccess}>
+            <span className={styles.groupStatusLabel}>Group access:</span>
+            <span>This ruleset is linked to a group.</span>
+            <UIButton type="button" variant="secondary" onClick={() => setGroupAccessOpen(true)}>
+              Show details
+            </UIButton>
+          </div>
+        ) : (
+          <RulesetGroupAccessExpanded
+            groupId={r.group_id}
+            groupAccess={page.groupAccess}
+            profileUserId={profile.data?.user_id}
+            requestMembership={requestMembership}
+          />
+        )}
         {(deleteRuleset.isError || requestMembership.isError) && (
           <p className={styles.error}>
             {deleteRuleset.error?.message ?? requestMembership.error?.message}
           </p>
         )}
       </section>
-      {ruleset.factions && ruleset.factions.length > 0 && (
+      {page.factions && page.factions.length > 0 && (
         <section className={styles.section}>
           <h3 className={styles.sectionTitle}>Factions in this ruleset</h3>
           <ul>
-            {ruleset.factions.map((f) => (
+            {page.factions.map((f) => (
               <li key={f.factionId}>
                 <Link to="/factions/$factionId" params={{ factionId: f.urlSlug }}>
                   {f.name}
@@ -270,12 +308,11 @@ function RulesetDetailPage() {
           </ul>
         </section>
       )}
-      <section className={styles.section}>
-        <h3 className={styles.sectionTitle}>FAQ</h3>
-        <Card>
-          <FaqList items={faqItems.data ?? []} rulesetSlug={r.slug} searchQuery={search.q ?? ''} />
-        </Card>
-      </section>
+      <RulesetFaqSection
+        rulesetSlug={r.slug}
+        faqItems={page.faqItems}
+        searchQuery={search.q ?? ''}
+      />
     </>
   );
 }

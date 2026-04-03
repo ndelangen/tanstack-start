@@ -26,7 +26,6 @@ import { Route as AppProfilesSettingsRouteImport } from './routes/_app/profiles/
 import { Route as AppProfilesSlugRouteImport } from './routes/_app/profiles/$slug'
 import { Route as AppGroupsCreateRouteImport } from './routes/_app/groups/create'
 import { Route as AppGroupsGroupSlugRouteImport } from './routes/_app/groups/$groupSlug'
-import { Route as AppFactionsMineRouteImport } from './routes/_app/factions/mine'
 import { Route as AppFactionsCreateRouteImport } from './routes/_app/factions/create'
 import { Route as AppFactionsFactionIdRouteImport } from './routes/_app/factions/$factionId'
 import { Route as AppAssetsCreateRouteImport } from './routes/_app/assets/create'
@@ -120,11 +119,6 @@ const AppGroupsGroupSlugRoute = AppGroupsGroupSlugRouteImport.update({
   path: '/groups/$groupSlug',
   getParentRoute: () => AppRoute,
 } as any)
-const AppFactionsMineRoute = AppFactionsMineRouteImport.update({
-  id: '/factions/mine',
-  path: '/factions/mine',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppFactionsCreateRoute = AppFactionsCreateRouteImport.update({
   id: '/factions/create',
   path: '/factions/create',
@@ -181,7 +175,6 @@ export interface FileRoutesByFullPath {
   '/assets/create': typeof AppAssetsCreateRoute
   '/factions/$factionId': typeof AppFactionsFactionIdRouteWithChildren
   '/factions/create': typeof AppFactionsCreateRoute
-  '/factions/mine': typeof AppFactionsMineRoute
   '/groups/$groupSlug': typeof AppGroupsGroupSlugRoute
   '/groups/create': typeof AppGroupsCreateRoute
   '/profiles/$slug': typeof AppProfilesSlugRoute
@@ -208,7 +201,6 @@ export interface FileRoutesByTo {
   '/assets/create': typeof AppAssetsCreateRoute
   '/factions/$factionId': typeof AppFactionsFactionIdRouteWithChildren
   '/factions/create': typeof AppFactionsCreateRoute
-  '/factions/mine': typeof AppFactionsMineRoute
   '/groups/$groupSlug': typeof AppGroupsGroupSlugRoute
   '/groups/create': typeof AppGroupsCreateRoute
   '/profiles/$slug': typeof AppProfilesSlugRoute
@@ -237,7 +229,6 @@ export interface FileRoutesById {
   '/_app/assets/create': typeof AppAssetsCreateRoute
   '/_app/factions/$factionId': typeof AppFactionsFactionIdRouteWithChildren
   '/_app/factions/create': typeof AppFactionsCreateRoute
-  '/_app/factions/mine': typeof AppFactionsMineRoute
   '/_app/groups/$groupSlug': typeof AppGroupsGroupSlugRoute
   '/_app/groups/create': typeof AppGroupsCreateRoute
   '/_app/profiles/$slug': typeof AppProfilesSlugRoute
@@ -266,7 +257,6 @@ export interface FileRouteTypes {
     | '/assets/create'
     | '/factions/$factionId'
     | '/factions/create'
-    | '/factions/mine'
     | '/groups/$groupSlug'
     | '/groups/create'
     | '/profiles/$slug'
@@ -293,7 +283,6 @@ export interface FileRouteTypes {
     | '/assets/create'
     | '/factions/$factionId'
     | '/factions/create'
-    | '/factions/mine'
     | '/groups/$groupSlug'
     | '/groups/create'
     | '/profiles/$slug'
@@ -321,7 +310,6 @@ export interface FileRouteTypes {
     | '/_app/assets/create'
     | '/_app/factions/$factionId'
     | '/_app/factions/create'
-    | '/_app/factions/mine'
     | '/_app/groups/$groupSlug'
     | '/_app/groups/create'
     | '/_app/profiles/$slug'
@@ -468,13 +456,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppGroupsGroupSlugRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/factions/mine': {
-      id: '/_app/factions/mine'
-      path: '/factions/mine'
-      fullPath: '/factions/mine'
-      preLoaderRoute: typeof AppFactionsMineRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/factions/create': {
       id: '/_app/factions/create'
       path: '/factions/create'
@@ -570,7 +551,6 @@ interface AppRouteChildren {
   AppAssetsCreateRoute: typeof AppAssetsCreateRoute
   AppFactionsFactionIdRoute: typeof AppFactionsFactionIdRouteWithChildren
   AppFactionsCreateRoute: typeof AppFactionsCreateRoute
-  AppFactionsMineRoute: typeof AppFactionsMineRoute
   AppGroupsGroupSlugRoute: typeof AppGroupsGroupSlugRoute
   AppGroupsCreateRoute: typeof AppGroupsCreateRoute
   AppProfilesSlugRoute: typeof AppProfilesSlugRoute
@@ -589,7 +569,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppAssetsCreateRoute: AppAssetsCreateRoute,
   AppFactionsFactionIdRoute: AppFactionsFactionIdRouteWithChildren,
   AppFactionsCreateRoute: AppFactionsCreateRoute,
-  AppFactionsMineRoute: AppFactionsMineRoute,
   AppGroupsGroupSlugRoute: AppGroupsGroupSlugRoute,
   AppGroupsCreateRoute: AppGroupsCreateRoute,
   AppProfilesSlugRoute: AppProfilesSlugRoute,

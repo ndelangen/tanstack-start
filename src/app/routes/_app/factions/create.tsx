@@ -1,8 +1,16 @@
-import { createFileRoute, getRouteApi, Link, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { RotateCcw, Save, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 
-import { type Faction, type FactionEntry, useCreateFaction } from '@db/factions';
+import { isTanStackStartPrerendering } from '@db/core';
+import {
+  type Faction,
+  type FactionCreatePageData,
+  type FactionEntry,
+  loadFactionCreatePageContext,
+  useCreateFaction,
+  useFactionCreatePageContext,
+} from '@db/factions';
 import { useCurrentProfile } from '@db/profiles';
 import {
   FactionEditor,
@@ -17,10 +25,18 @@ import { defaultFaction } from '@data/defaultFaction';
 import { FactionInputSchema, factionSlugBaseFromName } from '@game/schema/faction';
 
 export const Route = createFileRoute('/_app/factions/create')({
+  loader: async () => {
+    if (isTanStackStartPrerendering()) {
+      return { createContext: undefined as FactionCreatePageData | undefined };
+    }
+    try {
+      return { createContext: await loadFactionCreatePageContext() };
+    } catch {
+      return { createContext: undefined as FactionCreatePageData | undefined };
+    }
+  },
   component: CreateFactionPage,
 });
-
-const appRouteApi = getRouteApi('/_app');
 
 function toSyntheticFactionEntry(
   defaultFactionData: typeof defaultFaction,
@@ -46,31 +62,20 @@ function formatZodIssues(err: { issues: readonly { path: PropertyKey[]; message:
     .join('\n');
 }
 
-function CreateFactionPage() {
+function CreateFactionPageAuthed({
+  ownerUserId,
+  createContext,
+}: {
+  ownerUserId: string;
+  createContext: FactionCreatePageData | undefined;
+}) {
   const navigate = useNavigate();
-  const appLoaderData = appRouteApi.useLoaderData();
-  const profile = useCurrentProfile({
-    initialCurrent: appLoaderData.currentProfile,
-    initialCurrentUserId: appLoaderData.currentUserId,
-  });
+  useFactionCreatePageContext({ initialData: createContext });
   const createFaction = useCreateFaction();
   const editorRef = useRef<FactionEditorHandle | null>(null);
   const [editorErrors, setEditorErrors] = useState<string[]>([]);
 
-  if (!profile.data?.user_id) {
-    return (
-      <Card>
-        <p>
-          <Link to="/auth/login">Log in</Link> to create a faction.
-        </p>
-        <p>
-          <Link to="/factions">Back to factions</Link>
-        </p>
-      </Card>
-    );
-  }
-
-  const syntheticEntry = toSyntheticFactionEntry(defaultFaction, profile.data.user_id);
+  const syntheticEntry = toSyntheticFactionEntry(defaultFaction, ownerUserId);
 
   const handleEditorSubmit = (values: Faction) => {
     const parsed = FactionInputSchema.safeParse(values);
@@ -148,5 +153,30 @@ function CreateFactionPage() {
         onSubmit={handleEditorSubmit}
       />
     </>
+  );
+}
+
+function CreateFactionPage() {
+  const loaderData = Route.useLoaderData();
+  const profile = useCurrentProfile();
+
+  if (!profile.data?.user_id) {
+    return (
+      <Card>
+        <p>
+          <Link to="/auth/login">Log in</Link> to create a faction.
+        </p>
+        <p>
+          <Link to="/factions">Back to factions</Link>
+        </p>
+      </Card>
+    );
+  }
+
+  return (
+    <CreateFactionPageAuthed
+      ownerUserId={profile.data.user_id}
+      createContext={loaderData.createContext}
+    />
   );
 }
