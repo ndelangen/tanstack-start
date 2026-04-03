@@ -52,6 +52,11 @@ function toFactionEntry(entry: FactionRow): FactionEntry {
   };
 }
 
+/** Parse Convex faction rows into typed entries (shared by loaders and group detail). */
+export function factionRowsToEntries(rows: FactionRow[]): FactionEntry[] {
+  return rows.map(toFactionEntry);
+}
+
 export async function loadFactionBySlug(slug: string): Promise<FactionEditorPageData> {
   // Delegate to the editor-page loader so callers get the full shape
   // expected by `useFaction`'s `initialData`.
@@ -60,19 +65,19 @@ export async function loadFactionBySlug(slug: string): Promise<FactionEditorPage
 
 export async function loadFactionsAll(): Promise<FactionEntry[]> {
   const entries = await db.query<FactionRow[]>(api.factions.list, {});
-  return entries.map(toFactionEntry);
+  return factionRowsToEntries(entries);
 }
 
 export async function loadFactionsByOwner(ownerId: string): Promise<FactionEntry[]> {
   const entries = await db.query<FactionRow[]>(api.factions.listByOwner, { owner_id: ownerId });
-  return entries.map(toFactionEntry);
+  return factionRowsToEntries(entries);
 }
 
 export async function loadFactionsByGroup(groupId: string): Promise<FactionEntry[]> {
   const entries = await db.query<FactionRow[]>(api.factions.listByGroup, {
     group_id: groupId,
   });
-  return entries.map(toFactionEntry);
+  return factionRowsToEntries(entries);
 }
 
 export function useFaction(
@@ -106,7 +111,7 @@ export function useFactionsAll(options?: { initialData?: FactionEntry[] }) {
   const result = toLiveQueryResult(liveData, true, () => options?.initialData ?? undefined);
   return {
     ...result,
-    data: result.data?.map(toFactionEntry),
+    data: result.data ? factionRowsToEntries(result.data) : undefined,
   };
 }
 
@@ -155,7 +160,7 @@ export function useFactionsByOwner(
   const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
   return {
     ...result,
-    data: result.data?.map(toFactionEntry),
+    data: result.data ? factionRowsToEntries(result.data) : undefined,
   };
 }
 
@@ -166,7 +171,7 @@ export function useFactionsByGroup(groupId: string, options?: { initialData?: Fa
   const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
   return {
     ...result,
-    data: result.data?.map(toFactionEntry),
+    data: result.data ? factionRowsToEntries(result.data) : undefined,
   };
 }
 

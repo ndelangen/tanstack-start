@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 import {
   loadFaqItemByRulesetAndSlug,
+  type FaqItemByRulesetSlugInitialData,
   useCreateFaqAnswer,
   useDeleteFaqAnswer,
   useDeleteFaqItem,
@@ -22,6 +23,7 @@ import { FormTooltip } from '@app/components/form/FormTooltip';
 import { MultilineTextField } from '@app/components/form/MultilineTextField';
 import { Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
+import { ProfileLink } from '@app/components/profile/ProfileLink';
 
 import styles from '../../$id/faq/FaqDetail.module.css';
 
@@ -55,7 +57,17 @@ function FaqDetailPage() {
   const loaderData = Route.useLoaderData();
   const navigate = useNavigate();
   const faqItem = useFaqItemByRulesetAndSlug(rulesetSlug, questionSlug, {
-    initialData: 'item' in loaderData ? loaderData.item : undefined,
+    initialData:
+      'item' in loaderData && loaderData.item
+        ? ({
+            ...loaderData.item,
+            id: loaderData.item._id,
+            faq_answers: loaderData.item.faq_answers.map((a) => ({
+              ...a,
+              id: a._id,
+            })),
+          } as FaqItemByRulesetSlugInitialData)
+        : undefined,
   });
   const appLoaderData = appRouteApi.useLoaderData();
   const profile = useCurrentProfile({
@@ -80,7 +92,7 @@ function FaqDetailPage() {
     item?.accepted_answer_id == null
       ? answers
       : [...answers].sort((a, b) =>
-          a.id === item.accepted_answer_id ? -1 : b.id === item.accepted_answer_id ? 1 : 0
+          a._id === item.accepted_answer_id ? -1 : b._id === item.accepted_answer_id ? 1 : 0
         );
 
   useEffect(() => {
@@ -90,7 +102,7 @@ function FaqDetailPage() {
       if (!targetSlug) return;
       const answer = answers.find((row) => row.answerer_profile?.slug === targetSlug);
       if (!answer) return;
-      const node = document.getElementById(`faq-answer-${answer.id}`);
+      const node = document.getElementById(`faq-answer-${answer._id}`);
       node?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
     scrollToHash();
@@ -114,14 +126,14 @@ function FaqDetailPage() {
     return null;
   }
 
-  const faqItemId = item.id;
-  const isQuestionOwner = profile?.data?.id === item.asked_by;
-  const hasUserAnswered = answers.some((a) => a.answered_by === profile?.data?.id);
-  const showAddAnswerForm = !!profile?.data?.id && !hasUserAnswered;
+  const faqItemId = item._id;
+  const isQuestionOwner = profile?.data?.user_id === item.asked_by;
+  const hasUserAnswered = answers.some((a) => a.answered_by === profile?.data?.user_id);
+  const showAddAnswerForm = !!profile?.data?.user_id && !hasUserAnswered;
 
-  const canEditAnswer = (a: (typeof answers)[0]) => a.answered_by === profile?.data?.id;
+  const canEditAnswer = (a: (typeof answers)[0]) => a.answered_by === profile?.data?.user_id;
   const canDeleteAnswer = (a: (typeof answers)[0]) =>
-    a.answered_by === profile?.data?.id || isQuestionOwner;
+    a.answered_by === profile?.data?.user_id || isQuestionOwner;
 
   const handleDeleteQuestion = () => {
     if (!window.confirm('Delete this question and all its answers? This cannot be undone.')) return;
@@ -151,12 +163,12 @@ function FaqDetailPage() {
 
   const startEditAnswer = (a: (typeof answers)[0]) => {
     setEditAnswerValue(a.answer);
-    setEditingAnswerId(a.id);
+    setEditingAnswerId(a._id);
   };
 
   const saveAnswer = (answerId: string) => {
     const trimmed = editAnswerValue.trim();
-    const a = answers.find((x) => x.id === answerId);
+    const a = answers.find((x) => x._id === answerId);
     if (!a || !trimmed || trimmed === a.answer) {
       setEditingAnswerId(null);
       return;
@@ -225,37 +237,16 @@ function FaqDetailPage() {
             <>
               <div className={styles.questionHeader}>
                 {item.asker_profile && (
-                  <Link
-                    to="/profiles/$slug"
-                    params={{ slug: item.asker_profile.slug }}
+                  <ProfileLink
+                    slug={item.asker_profile.slug}
+                    username={item.asker_profile.username}
+                    avatar_url={item.asker_profile.avatar_url}
+                    className={styles.questionAskerLink}
                     style={{ flexShrink: 0 }}
-                  >
-                    {item.asker_profile.avatar_url ? (
-                      <img
-                        src={item.asker_profile.avatar_url}
-                        alt={item.asker_profile.username ?? 'Avatar'}
-                        className={styles.avatar}
-                      />
-                    ) : (
-                      <span className={styles.avatarPlaceholder}>
-                        {item.asker_profile.username
-                          ?.slice(0, 2)
-                          .toUpperCase()
-                          .replace(/[^A-Z]/g, '') ?? '?'}
-                      </span>
-                    )}
-                  </Link>
+                  />
                 )}
                 <div>
                   <h2 className={styles.questionTitle}>{item.question}</h2>
-                  {item.asker_profile && (
-                    <span className={styles.askedBy}>
-                      Asked by{' '}
-                      <Link to="/profiles/$slug" params={{ slug: item.asker_profile.slug }}>
-                        {item.asker_profile.username ?? 'Unknown'}
-                      </Link>
-                    </span>
-                  )}
                 </div>
               </div>
               {isQuestionOwner && (
@@ -340,13 +331,13 @@ function FaqDetailPage() {
         {orderedAnswers.length > 0 ? (
           <Answer.List className={styles.answerList}>
             {orderedAnswers.map((a) => {
-              const isEditing = editingAnswerId === a.id;
-              const isUserAnswer = a.answered_by === profile?.data?.id;
-              const isAccepted = item.accepted_answer_id === a.id;
+              const isEditing = editingAnswerId === a._id;
+              const isUserAnswer = a.answered_by === profile?.data?.user_id;
+              const isAccepted = item.accepted_answer_id === a._id;
               return (
                 <Answer.Item
-                  key={a.id}
-                  id={`faq-answer-${a.id}`}
+                  key={a._id}
+                  id={`faq-answer-${a._id}`}
                   className={styles.answerItem}
                   isAccepted={isAccepted}
                 >
@@ -365,7 +356,7 @@ function FaqDetailPage() {
                             type="button"
                             iconOnly
                             aria-label="Save answer"
-                            onClick={() => saveAnswer(a.id)}
+                            onClick={() => saveAnswer(a._id)}
                             disabled={updateFaqAnswer.isPending}
                           >
                             <Check size={16} aria-hidden />
@@ -397,9 +388,11 @@ function FaqDetailPage() {
                       )}
                       {a.answerer_profile && (
                         <span className={styles.answerMeta}>
-                          <Link to="/profiles/$slug" params={{ slug: a.answerer_profile.slug }}>
-                            {a.answerer_profile.username ?? 'Unknown'}
-                          </Link>
+                          <ProfileLink
+                            slug={a.answerer_profile.slug}
+                            username={a.answerer_profile.username}
+                            avatar_url={a.answerer_profile.avatar_url}
+                          />
                         </span>
                       )}
                       <div className={styles.answerContent}>{a.answer}</div>
@@ -413,7 +406,7 @@ function FaqDetailPage() {
                               onClick={() =>
                                 setAcceptedAnswer.mutate({
                                   faqItemId,
-                                  acceptedAnswerId: a.id,
+                                  acceptedAnswerId: a._id,
                                 })
                               }
                               disabled={setAcceptedAnswer.isPending}
@@ -460,7 +453,7 @@ function FaqDetailPage() {
                               type="button"
                               iconOnly
                               aria-label="Delete answer"
-                              onClick={() => handleDeleteAnswer(a.id)}
+                              onClick={() => handleDeleteAnswer(a._id)}
                               disabled={deleteFaqAnswer.isPending}
                             >
                               <Trash2 size={16} aria-hidden />

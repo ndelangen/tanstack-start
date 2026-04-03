@@ -3,6 +3,7 @@ import clsx from 'clsx';
 
 import type { FaqAnswerWithParent, FaqItemAskedByWithRuleset } from '@db/faq';
 import { FaqItemList, FaqItemListRow } from '@app/components/faq/FaqItemList';
+import { ProfileLink } from '@app/components/profile/ProfileLink';
 import { formatRelativeDate } from '@app/utils/formatRelativeDate';
 
 import faqStyles from '../faq/FaqList.module.css';
@@ -26,19 +27,14 @@ function AskerChip({
   }
 
   return (
-    <Link to="/profiles/$slug" params={{ slug: profile.slug }} className={faqStyles.askerLink}>
-      {profile.avatar_url ? (
-        <img src={profile.avatar_url} alt="" className={faqStyles.avatar} />
-      ) : (
-        <span className={faqStyles.avatarPlaceholder}>
-          {profile.username
-            ?.slice(0, 2)
-            .toUpperCase()
-            .replace(/[^A-Z]/g, '') ?? '?'}
-        </span>
-      )}
-      <span>Question by {profile.username ?? 'Unknown'}</span>
-    </Link>
+    <ProfileLink
+      slug={profile.slug}
+      username={profile.username}
+      avatar_url={profile.avatar_url}
+      className={faqStyles.askerLink}
+    >
+      Question by {profile.username ?? 'Unknown'}
+    </ProfileLink>
   );
 }
 

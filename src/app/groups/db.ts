@@ -1,4 +1,5 @@
 import { db } from '@db/core';
+import { factionRowsToEntries, type FactionEntry } from '@db/factions';
 import { toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
 import { groupInputSchema } from '@app/groups/validation';
 import { useQuery } from 'convex/react';
@@ -15,6 +16,30 @@ export type GroupPageData = {
   group: GroupEntry;
   members: Doc<'group_members'>[];
 };
+
+export type GroupMemberWithId = Doc<'group_members'> & { id: Doc<'group_members'>['_id'] };
+
+export type GroupDetailPageData = {
+  group: GroupEntry;
+  members: GroupMemberWithId[];
+  factions: FactionEntry[];
+  profiles: Doc<'profiles'>[];
+};
+
+export async function loadGroupDetailBySlug(slug: string): Promise<GroupDetailPageData> {
+  const result = await db.query<{
+    group: GroupRow;
+    members: Doc<'group_members'>[];
+    factions: Doc<'factions'>[];
+    profiles: Doc<'profiles'>[];
+  }>(api.groups.detailBySlug, { slug });
+  return {
+    group: { ...result.group, id: result.group._id },
+    members: result.members.map((m) => ({ ...m, id: m._id })),
+    factions: factionRowsToEntries(result.factions),
+    profiles: result.profiles,
+  };
+}
 
 export async function loadGroupBySlug(slug: string): Promise<GroupPageData> {
   const result = await db.query<{
@@ -54,6 +79,41 @@ export function useGroupBySlug(
     ...result,
     group: result.data ? ({ ...result.data.group, id: result.data.group._id } as GroupEntry) : undefined,
     members: result.data?.members,
+  };
+}
+
+function normalizeGroupDetailFromConvex(raw: {
+  group: GroupRow;
+  members: Doc<'group_members'>[];
+  factions: Doc<'factions'>[];
+  profiles: Doc<'profiles'>[];
+}): GroupDetailPageData {
+  return {
+    group: { ...raw.group, id: raw.group._id },
+    members: raw.members.map((m) => ({ ...m, id: m._id })),
+    factions: factionRowsToEntries(raw.factions),
+    profiles: raw.profiles,
+  };
+}
+
+export function useGroupDetailBySlug(
+  slug: string | undefined,
+  options?: { initialData?: GroupDetailPageData; enabled?: boolean }
+) {
+  const enabled = options?.enabled ?? Boolean(slug);
+  const liveData = useQuery(api.groups.detailBySlug, enabled ? { slug: slug ?? '' } : 'skip');
+  const normalizedLive = liveData ? normalizeGroupDetailFromConvex(liveData) : undefined;
+  const result = toLiveQueryResult<GroupDetailPageData | undefined>(
+    normalizedLive,
+    enabled,
+    () => options?.initialData
+  );
+  return {
+    ...result,
+    group: result.data?.group,
+    members: result.data?.members,
+    factions: result.data?.factions,
+    profiles: result.data?.profiles,
   };
 }
 

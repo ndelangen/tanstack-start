@@ -185,6 +185,11 @@ export function useFaqItemByRulesetAndSlug(
   };
 }
 
+/** `initialData` shape for `useFaqItemByRulesetAndSlug` (Convex `_id` + mapped `id`). */
+export type FaqItemByRulesetSlugInitialData = NonNullable<
+  NonNullable<Parameters<typeof useFaqItemByRulesetAndSlug>[2]>['initialData']
+>;
+
 export type FaqItemAskedByWithRuleset = FaqItemEntry & {
   ruleset: { id: string; name: string; slug: string };
 };
