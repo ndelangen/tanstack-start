@@ -1,6 +1,7 @@
 import { v } from 'convex/values';
 
 import { FactionInputSchema, FactionStoredSchema } from '../src/game/schema/faction';
+import type { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { isActiveGroupMember, requireAuthUserId } from './lib/policy';
 import { nowIso, slugify } from './lib/utils';
@@ -65,6 +66,65 @@ export const list = query({
       .query('factions')
       .withIndex('by_deleted', (q) => q.eq('is_deleted', false))
       .take(500);
+  },
+});
+
+/** Factions + resolved group/owner labels and the caller's group memberships for the load picker. */
+export const listForLoadPicker = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await requireAuthUserId(ctx);
+
+    const factionRows = await ctx.db
+      .query('factions')
+      .withIndex('by_deleted', (q) => q.eq('is_deleted', false))
+      .take(500);
+
+    const memberships = await ctx.db
+      .query('group_members')
+      .withIndex('by_user_status', (q) => q.eq('user_id', userId).eq('status', 'active'))
+      .take(500);
+    const memberGroupIds = [...new Set(memberships.map((m) => m.group_id))];
+
+    const groupIds = new Set<Id<'groups'>>();
+    for (const row of factionRows) {
+      if (row.group_id) {
+        groupIds.add(row.group_id);
+      }
+    }
+    const groupNameById = new Map<string, string>();
+    for (const gid of groupIds) {
+      const group = await ctx.db.get('groups', gid);
+      if (group) {
+        groupNameById.set(gid, group.name.trim());
+      }
+    }
+
+    const ownerIds = [...new Set(factionRows.map((row) => row.owner_id))];
+    const ownerUsernameById = new Map<string, string | null>();
+    for (const oid of ownerIds) {
+      const profile = await ctx.db
+        .query('profiles')
+        .withIndex('by_user_id', (q) => q.eq('user_id', oid))
+        .unique();
+      ownerUsernameById.set(oid, profile?.username ?? null);
+    }
+
+    const rows = factionRows.map((row) => {
+      const data = FactionStoredSchema.parse(row.data);
+      const groupId = row.group_id ?? null;
+      const groupLabel = groupId ? (groupNameById.get(groupId) ?? groupId) : 'No group';
+      return {
+        id: row._id,
+        data,
+        groupId,
+        groupLabel,
+        ownerId: row.owner_id,
+        ownerUsername: ownerUsernameById.get(row.owner_id) ?? null,
+      };
+    });
+
+    return { rows, memberGroupIds };
   },
 });
 

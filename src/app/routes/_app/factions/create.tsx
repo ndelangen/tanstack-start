@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, getRouteApi, Link, useNavigate } from '@tanstack/react-router';
 import { RotateCcw, Save, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 
@@ -8,9 +8,7 @@ import {
   FactionEditor,
   type FactionEditorHandle,
 } from '@app/components/factions/editor/FactionEditor';
-import styles from '@app/components/factions/editor/FactionEditor.module.css';
 import { FactionLoadPopover } from '@app/components/factions/editor/FactionLoadPopover';
-import { FormActions } from '@app/components/form/FormActions';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Toolbar } from '@app/components/generic/layout';
@@ -21,6 +19,8 @@ import { FactionInputSchema } from '@game/schema/faction';
 export const Route = createFileRoute('/_app/factions/create')({
   component: CreateFactionPage,
 });
+
+const appRouteApi = getRouteApi('/_app');
 
 function toSyntheticFactionEntry(
   defaultFactionData: typeof defaultFaction,
@@ -40,7 +40,6 @@ function toSyntheticFactionEntry(
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     is_deleted: false,
-    id: 'new',
   };
 }
 
@@ -52,12 +51,16 @@ function formatZodIssues(err: { issues: readonly { path: PropertyKey[]; message:
 
 function CreateFactionPage() {
   const navigate = useNavigate();
-  const profile = useCurrentProfile();
+  const appLoaderData = appRouteApi.useLoaderData();
+  const profile = useCurrentProfile({
+    initialCurrent: appLoaderData.currentProfile,
+    initialCurrentUserId: appLoaderData.currentUserId,
+  });
   const createFaction = useCreateFaction();
   const editorRef = useRef<FactionEditorHandle | null>(null);
   const [editorErrors, setEditorErrors] = useState<string[]>([]);
 
-  if (!profile?.data?.id) {
+  if (!profile.data?.user_id) {
     return (
       <Card>
         <p>
@@ -70,7 +73,7 @@ function CreateFactionPage() {
     );
   }
 
-  const syntheticEntry = toSyntheticFactionEntry(defaultFaction, profile.data.id);
+  const syntheticEntry = toSyntheticFactionEntry(defaultFaction, profile.data.user_id);
 
   const handleEditorSubmit = (values: Faction) => {
     const parsed = FactionInputSchema.safeParse(values);
@@ -118,7 +121,7 @@ function CreateFactionPage() {
               iconOnly
               aria-label="Reset unsaved edits"
               disabled={false}
-              onClick={() => editorRef.current?.resetToInitial()}
+              onClick={() => editorRef.current?.load()}
             >
               <RotateCcw size={16} aria-hidden />
             </UIButton>

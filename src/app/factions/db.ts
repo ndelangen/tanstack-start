@@ -1,7 +1,11 @@
 import { useQuery } from 'convex/react';
 
 import { db } from '@db/core';
-import { toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
+import {
+  type LiveQueryResult,
+  toLiveQueryResult,
+  useLiveMutation,
+} from '@app/db/core/live';
 import {
   type FactionInput,
   FactionInputSchema,
@@ -87,6 +91,40 @@ export function useFactionsAll(options?: { initialData?: FactionEntry[] }) {
   return {
     ...result,
     data: result.data?.map(toFactionEntry),
+  };
+}
+
+/** Normalized row from `api.factions.listForLoadPicker` (group label + owner username resolved server-side). */
+export type FactionLoadPickerRow = {
+  id: FactionRow['_id'];
+  data: FactionData;
+  groupId: FactionRow['group_id'];
+  groupLabel: string;
+  ownerId: FactionRow['owner_id'];
+  ownerUsername: string | null;
+};
+
+export type FactionLoadPickerPayload = {
+  rows: FactionLoadPickerRow[];
+  memberGroupIds: Doc<'groups'>['_id'][];
+};
+
+export type FactionLoadPickerQuery = LiveQueryResult<FactionLoadPickerPayload>;
+
+export function useFactionLoadPicker(options?: { initialData?: FactionLoadPickerPayload }) {
+  const liveData = useQuery(api.factions.listForLoadPicker, {});
+  const result = toLiveQueryResult(liveData, true, () => options?.initialData ?? undefined);
+  return {
+    ...result,
+    data: result.data
+      ? {
+          rows: result.data.rows.map((row) => ({
+            ...row,
+            data: FactionStoredSchema.parse(row.data),
+          })),
+          memberGroupIds: result.data.memberGroupIds,
+        }
+      : undefined,
   };
 }
 
