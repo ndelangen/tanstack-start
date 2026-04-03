@@ -1,9 +1,9 @@
 import { useForm } from '@tanstack/react-form';
 import { Link } from '@tanstack/react-router';
-import { forwardRef, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 
 import { type Faction, type FactionEntry } from '@db/factions';
-import { FactionStoredSchema, factionSlugBaseFromName } from '@game/schema/faction';
+import { FactionStoredSchema } from '@game/schema/faction';
 
 import styles from './FactionEditor.module.css';
 import { FactionFormFields } from './FactionFormFields';
@@ -17,16 +17,20 @@ export interface FactionEditorProps {
 
 export interface FactionEditorHandle {
   submit: () => void;
-  resetToInitial: () => void;
+  load: (entry?: FactionEntry['data']) => void;
   getValues: () => Faction;
 }
 
 export const FactionEditor = forwardRef<FactionEditorHandle, FactionEditorProps>(
   ({ factionEntry, errors, onSubmit }, ref) => {
-    const stored = FactionStoredSchema.parse(factionEntry.data);
-    const { slug: _ignored, ...initialInput } = stored;
-    const initialValuesRef = useRef<Faction>(structuredClone(initialInput));
-    const baselineRef = useRef<Faction>(structuredClone(initialInput));
+    FactionStoredSchema.parse(factionEntry.data);
+    const initialValuesRef = useRef<Faction>(structuredClone(factionEntry.data));
+    const baselineRef = useRef<Faction>(structuredClone(factionEntry.data));
+
+    useEffect(() => {
+      initialValuesRef.current = structuredClone(factionEntry.data);
+      baselineRef.current = structuredClone(factionEntry.data);
+    }, [factionEntry.data]);
 
     const form = useForm<
       Faction,
@@ -52,8 +56,15 @@ export const FactionEditor = forwardRef<FactionEditorHandle, FactionEditorProps>
       submit: () => {
         void form.handleSubmit();
       },
-      resetToInitial: () => {
-        form.reset(structuredClone(baselineRef.current));
+      load: (entry?: FactionEntry['data']) => {
+        if (entry) {
+          const next = structuredClone(entry);
+          baselineRef.current = next;
+          initialValuesRef.current = next;
+          form.reset(next);
+        } else {
+          form.reset(structuredClone(baselineRef.current));
+        }
       },
       getValues: () => form.state.values,
     }));
@@ -76,7 +87,7 @@ export const FactionEditor = forwardRef<FactionEditorHandle, FactionEditorProps>
                 <p className={styles.previewHint}>
                   <Link
                     to="/factions/$factionId/sheet"
-                    params={{ factionId: factionSlugBaseFromName(slug) }}
+                    params={{ factionId: slug }}
                     search={{ mode: 'live' }}
                     target="_blank"
                     rel="noreferrer"
@@ -88,7 +99,12 @@ export const FactionEditor = forwardRef<FactionEditorHandle, FactionEditorProps>
             </form.Subscribe>
             <p className={styles.previewTitle}>Sheet preview</p>
             <form.Subscribe selector={(s: { values: Faction }) => s.values}>
-              {(values: Faction) => <FactionSheetPreviewIframe faction={values} />}
+              {(values: Faction) => {
+                const { slug: _omitSlug, ...factionForSheet } = values as Faction & {
+                  slug?: string;
+                };
+                return <FactionSheetPreviewIframe faction={factionForSheet} />;
+              }}
             </form.Subscribe>
           </aside>
           <div>

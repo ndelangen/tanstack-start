@@ -22,7 +22,7 @@ import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { loadFaction } from '@app/factions/db';
-import { FactionInputSchema } from '@game/schema/faction';
+import { FactionInputSchema, FactionStoredSchema, factionSlugBaseFromName } from '@game/schema/faction';
 
 export const Route = createFileRoute('/_app/factions/$factionId/edit')({
   loader: async ({ params }) => await loadFaction(params.factionId),
@@ -117,9 +117,12 @@ function FactionEditPage() {
           <FactionLoadPopover
             disabled={false}
             currentValues={initialFactionInput}
-            onLoaded={() => {
-              // Page will handle reloading the editor via props/remount if desired.
-              // For now this is a no-op placeholder; routes can wire a callback later if needed.
+            onLoaded={(loaded) => {
+              const data = FactionStoredSchema.parse({
+                ...loaded,
+                slug: factionSlugBaseFromName(loaded.name ?? ''),
+              });
+              editorRef.current?.load(data);
             }}
           />
           {canAssignGroup && !group && (
@@ -152,7 +155,7 @@ function FactionEditPage() {
               iconOnly
               aria-label="Reset unsaved edits"
               disabled={false}
-              onClick={() => editorRef.current?.resetToInitial()}
+              onClick={() => editorRef.current?.load()}
             >
               <RotateCcw size={16} aria-hidden />
             </UIButton>

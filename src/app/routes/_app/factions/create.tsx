@@ -14,7 +14,7 @@ import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { defaultFaction } from '@data/defaultFaction';
-import { FactionInputSchema } from '@game/schema/faction';
+import { FactionInputSchema, FactionStoredSchema, factionSlugBaseFromName } from '@game/schema/faction';
 
 export const Route = createFileRoute('/_app/factions/create')({
   component: CreateFactionPage,
@@ -109,9 +109,12 @@ function CreateFactionPage() {
           <FactionLoadPopover
             disabled={false}
             currentValues={defaultFaction}
-            onLoaded={() => {
-              // Page will handle reloading the editor via props/remount if desired.
-              // For now this is a no-op placeholder; routes can wire a callback later if needed.
+            onLoaded={(loaded) => {
+              const data = FactionStoredSchema.parse({
+                ...loaded,
+                slug: factionSlugBaseFromName(loaded.name ?? ''),
+              });
+              editorRef.current?.load(data);
             }}
           />
           <FormTooltip content="Reset unsaved edits">
