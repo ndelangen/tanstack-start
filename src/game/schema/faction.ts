@@ -123,24 +123,33 @@ const factionShape = {
   /** extra game assets, used by TTS */
   extras: z
     .array(
-      z.object({
+      z.strictObject({
         name: z.string(),
         description: z.string().optional(),
-        items: z.array(z.object({ url: URL, description: z.string().optional() })),
+        items: z.array(z.strictObject({ url: URL, description: z.string().optional() })),
       })
     )
     .optional(),
 };
 
+/** Rejects unknown keys (e.g. `slug` must live on the Convex row, not in `data`). */
 export const FactionInputSchema = z.strictObject(factionShape);
-export const FactionStoredSchema = FactionInputSchema.extend({
-  slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+
+/** URL slug on the `factions` row — not a field on `FactionInput` / `factions.data`. */
+export const FactionRowSlugSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+
+/**
+ * Validated pair for asset paths that need both row slug and faction payload (separate keys).
+ * Matches `FactionRowAssetSource` / `FactionAssetSource` in `@db/factions` (`Pick<FactionEntry, 'data' | 'slug'>`).
+ */
+export const FactionAssetSourceSchema = z.strictObject({
+  data: FactionInputSchema,
+  slug: FactionRowSlugSchema,
 });
-export const FactionSchema = FactionStoredSchema;
 
 export type FactionInput = z.infer<typeof FactionInputSchema>;
-export type FactionStored = z.infer<typeof FactionStoredSchema>;
-export type FactionData = FactionStored;
+/** Convex `factions.data` payload; public slug is only on the faction row (`FactionEntry.slug`). */
+export type FactionData = FactionInput;
 
 function toHash(input: Record<string, unknown>) {
   return SHA256(JSON.stringify(input)).toString().slice(0, 16);
@@ -160,38 +169,36 @@ export function factionSlugBaseFromName(name: string): string {
 }
 
 export const FactionAssets = {
-  shield: FactionSchema.transform((input) => ({
-    name: input.name,
-    leader: `/generated/leader/${input.slug}/${toSimple(input.hero.name)}.jpg`,
-    logo: `/generated/logo/${input.slug}.jpg`,
+  shield: FactionAssetSourceSchema.transform(({ data, slug }) => ({
+    name: data.name,
+    leader: `/generated/leader/${slug}/${toSimple(data.hero.name)}.jpg`,
+    logo: `/generated/logo/${slug}.jpg`,
   })),
-  token: FactionSchema.transform((input) => ({
+  token: FactionInputSchema.transform((input) => ({
     logo: input.logo,
     background: `/generated/background/${toHash(input.background)}.jpg`,
   })),
-  sheet: FactionSchema.transform((input) => ({
-    name: input.name,
-    logo: `/generated/logo/${input.slug}.jpg`,
-    leaders: input.leaders.map(
-      (leader) => `/generated/leader/${input.slug}/${toSimple(leader.name)}.jpg`
-    ),
-    themeColor: input.themeColor,
-    troops: input.troops.map((troop) => ({
-      image: `/generated/troop/${input.slug}/${toSimple(troop.name)}.jpg`,
+  sheet: FactionAssetSourceSchema.transform(({ data, slug }) => ({
+    name: data.name,
+    logo: `/generated/logo/${slug}.jpg`,
+    leaders: data.leaders.map((leader) => `/generated/leader/${slug}/${toSimple(leader.name)}.jpg`),
+    themeColor: data.themeColor,
+    troops: data.troops.map((troop) => ({
+      image: `/generated/troop/${slug}/${toSimple(troop.name)}.jpg`,
       name: troop.name,
       description: troop.description,
       back: troop.back
         ? {
-            image: `/generated/troop/${input.slug}/${toSimple(troop.back.name)}.jpg`,
+            image: `/generated/troop/${slug}/${toSimple(troop.back.name)}.jpg`,
             name: troop.back.name,
             description: troop.back.description,
           }
         : undefined,
     })),
-    rules: input.rules,
+    rules: data.rules,
   })),
-  planet: FactionSchema.transform((input) => input.planet),
-  alliance: FactionSchema.transform((input) => ({
+  planet: FactionInputSchema.transform((input) => input.planet),
+  alliance: FactionInputSchema.transform((input) => ({
     title: input.name,
     text: input.rules.alliance.text,
     logo: input.logo,
@@ -199,14 +206,14 @@ export const FactionAssets = {
     troop: input.troops[0]?.image,
     decals: input.decals,
   })),
-  leaders: FactionSchema.transform((input) =>
+  leaders: FactionInputSchema.transform((input) =>
     input.leaders.map((leader) => ({
       ...leader,
       background: `/generated/background/${toHash(input.background)}.jpg`,
       logo: input.logo,
     }))
   ),
-  traitors: FactionSchema.transform((input) =>
+  traitors: FactionInputSchema.transform((input) =>
     input.leaders.map((leader) => ({
       ...leader,
       logo: input.logo,
@@ -214,7 +221,7 @@ export const FactionAssets = {
       owner: input.name,
     }))
   ),
-  troops: FactionSchema.transform((input) =>
+  troops: FactionInputSchema.transform((input) =>
     input.troops.flatMap((troop) => [
       {
         image: troop.image,

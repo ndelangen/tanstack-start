@@ -82,12 +82,7 @@ export const getBySlug = query({
         const data = faction?.data;
         const dataObj = data != null ? ensureObject(data) : null;
         const name = typeof dataObj?.name === 'string' ? dataObj.name : String(link.faction_id);
-        const urlSlug =
-          typeof faction?.slug === 'string'
-            ? faction.slug
-            : typeof dataObj?.slug === 'string'
-              ? dataObj.slug
-              : String(link.faction_id);
+        const urlSlug = typeof faction?.slug === 'string' ? faction.slug : String(link.faction_id);
         return {
           factionId: link.faction_id,
           name,
@@ -123,12 +118,7 @@ export const factionDetails = query({
       const data = faction?.data;
       const dataObj = data != null ? ensureObject(data) : null;
       const name = typeof dataObj?.name === 'string' ? dataObj.name : String(link.faction_id);
-      const urlSlug =
-        typeof faction?.slug === 'string'
-          ? faction.slug
-          : typeof dataObj?.slug === 'string'
-            ? dataObj.slug
-            : String(link.faction_id);
+      const urlSlug = typeof faction?.slug === 'string' ? faction.slug : String(link.faction_id);
       return {
         factionId: link.faction_id,
         name,

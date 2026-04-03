@@ -26,8 +26,10 @@ export const Route = createFileRoute('/_app/factions/mine')({
           [membership.group_id, await loadFactionsByGroup(membership.group_id)] as const
       )
     );
-    const factionsByGroupId: Record<string, Awaited<ReturnType<typeof loadFactionsByGroup>>> =
-      Object.fromEntries(factionsByGroupEntries);
+    const factionsByGroupId: Record<
+      string,
+      Awaited<ReturnType<typeof loadFactionsByGroup>>
+    > = Object.fromEntries(factionsByGroupEntries);
 
     return { profile, ownedFactions, memberships, factionsByGroupId };
   },
@@ -160,8 +162,8 @@ function GroupFactions({
       <strong>{groupName}</strong>:
       <ul>
         {factions.data.map((faction) => (
-          <li key={faction.id}>
-            <Link to="/factions/$factionId" params={{ factionId: faction.data.slug }}>
+          <li key={faction._id}>
+            <Link to="/factions/$factionId" params={{ factionId: faction.slug }}>
               {faction.data.name}
             </Link>
           </li>

@@ -1,8 +1,7 @@
-import type { FactionStored } from '@game/schema/faction';
+import type { FactionInput } from '@game/schema/faction';
 
-/** Valid `FactionStored` sample for Scene and similar stories. */
+/** Valid `FactionInput` sample for Scene and similar stories. */
 export default {
-  slug: 'atreides',
   name: 'Atreides',
   logo: '/vector/logo/atreides.svg',
   colors: ['Green', 'Teal', 'Brown', 'Yellow'],
@@ -67,4 +66,4 @@ export default {
       text: 'Fate',
     },
   },
-} satisfies FactionStored;
+} satisfies FactionInput;

@@ -17,12 +17,12 @@ import {
 import styles from '@app/components/factions/editor/FactionEditor.module.css';
 import { FactionGroupPopover } from '@app/components/factions/editor/FactionGroupPopover';
 import { FactionLoadPopover } from '@app/components/factions/editor/FactionLoadPopover';
-import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { loadFaction } from '@app/factions/db';
-import { FactionInputSchema, FactionStoredSchema, factionSlugBaseFromName } from '@game/schema/faction';
+import { FactionInputSchema } from '@game/schema/faction';
 
 export const Route = createFileRoute('/_app/factions/$factionId/edit')({
   loader: async ({ params }) => await loadFaction(params.factionId),
@@ -74,8 +74,6 @@ function FactionEditPage() {
     return null;
   }
 
-  const { slug: _ignored, ...initialFactionInput } = faction.data;
-
   const canDelete = faction.owner_id === profile.data.user_id;
   const canAssignGroup = canDelete;
 
@@ -88,7 +86,7 @@ function FactionEditPage() {
     setEditorErrors([]);
     void (async () => {
       const entry = await updateFaction.mutateAsync({ input: parsed.data, id: faction._id });
-      const newSlug = entry.data.slug;
+      const newSlug = entry.slug;
       if (newSlug !== factionId) {
         navigate({
           to: '/factions/$factionId/edit',
@@ -116,13 +114,9 @@ function FactionEditPage() {
           </FormTooltip>
           <FactionLoadPopover
             disabled={false}
-            currentValues={initialFactionInput}
+            currentPublicSlug={faction.slug}
             onLoaded={(loaded) => {
-              const data = FactionStoredSchema.parse({
-                ...loaded,
-                slug: factionSlugBaseFromName(loaded.name ?? ''),
-              });
-              editorRef.current?.load(data);
+              editorRef.current?.load(loaded);
             }}
           />
           {canAssignGroup && !group && (

@@ -23,7 +23,7 @@ export function FactionList({ factions, className }: FactionListProps) {
   return (
     <div className={clsx(styles.grid, className)}>
       {factions.map((faction) => (
-        <FactionListItem key={faction.id} faction={faction} />
+        <FactionListItem key={faction._id} faction={faction} />
       ))}
     </div>
   );
@@ -35,7 +35,7 @@ function FactionListItem({ faction }: { faction: FactionEntry }) {
   return (
     <BlockLink
       to="/factions/$factionId"
-      params={{ factionId: faction.data.slug }}
+      params={{ factionId: faction.slug }}
       className={styles.card}
     >
       <div className={styles.coverSlot}>

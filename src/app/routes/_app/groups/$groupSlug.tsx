@@ -4,15 +4,11 @@ import { UserPlus } from 'lucide-react';
 import { loadFactionsByGroup, useFactionsByGroup } from '@db/factions';
 import { loadGroupBySlug, useGroupBySlug } from '@db/groups';
 import { loadGroupMembers, useGroupMembers, useRequestGroupMembership } from '@db/members';
-import {
-  loadProfilesAll,
-  useCurrentProfile,
-  useProfilesAll,
-} from '@db/profiles';
-import { UIButton } from '@app/components/generic/ui/UIButton';
+import { loadProfilesAll, useCurrentProfile, useProfilesAll } from '@db/profiles';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 
 export const Route = createFileRoute('/_app/groups/$groupSlug')({
   loader: async ({ params }) => {
@@ -99,7 +95,7 @@ function GroupDetailPage() {
               {ownerProfile.username ?? ownerProfile.slug}
             </Link>
           ) : (
-                    (ownerProfile?.username ?? groupData.group.created_by)
+            (ownerProfile?.username ?? groupData.group.created_by)
           )}
         </p>
         <p>
@@ -164,8 +160,8 @@ function GroupDetailPage() {
         ) : (
           <ul>
             {factions.data.map((faction) => (
-              <li key={faction.id}>
-                <Link to="/factions/$factionId" params={{ factionId: faction.data.slug }}>
+              <li key={faction._id}>
+                <Link to="/factions/$factionId" params={{ factionId: faction.slug }}>
                   {faction.data.name}
                 </Link>
               </li>

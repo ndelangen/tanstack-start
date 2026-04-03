@@ -9,12 +9,12 @@ import {
   type FactionEditorHandle,
 } from '@app/components/factions/editor/FactionEditor';
 import { FactionLoadPopover } from '@app/components/factions/editor/FactionLoadPopover';
-import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { defaultFaction } from '@data/defaultFaction';
-import { FactionInputSchema, FactionStoredSchema, factionSlugBaseFromName } from '@game/schema/faction';
+import { FactionInputSchema, factionSlugBaseFromName } from '@game/schema/faction';
 
 export const Route = createFileRoute('/_app/factions/create')({
   component: CreateFactionPage,
@@ -31,11 +31,8 @@ function toSyntheticFactionEntry(
     _id: 'new' as never,
     _creationTime: Date.now(),
     owner_id: ownerId as never,
-    data: {
-      ...defaultFactionData,
-      slug: defaultFactionData.name.toLowerCase().replace(/[^a-z0-9]+/g, '') || 'faction',
-    },
-    slug: defaultFactionData.name.toLowerCase().replace(/[^a-z0-9]+/g, '') || 'faction',
+    data: { ...defaultFactionData },
+    slug: factionSlugBaseFromName(defaultFactionData.name ?? ''),
     group_id: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -86,7 +83,7 @@ function CreateFactionPage() {
       const entry = await createFaction.mutateAsync({ input: parsed.data, groupId: null });
       navigate({
         to: '/factions/$factionId/edit',
-        params: { factionId: entry.data.slug },
+        params: { factionId: entry.slug },
       });
     })();
   };
@@ -108,13 +105,9 @@ function CreateFactionPage() {
           </FormTooltip>
           <FactionLoadPopover
             disabled={false}
-            currentValues={defaultFaction}
+            currentPublicSlug={syntheticEntry.slug}
             onLoaded={(loaded) => {
-              const data = FactionStoredSchema.parse({
-                ...loaded,
-                slug: factionSlugBaseFromName(loaded.name ?? ''),
-              });
-              editorRef.current?.load(data);
+              editorRef.current?.load(loaded);
             }}
           />
           <FormTooltip content="Reset unsaved edits">

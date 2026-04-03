@@ -2,12 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { Copy } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import {
-  type Faction,
-  type FactionLoadPickerQuery,
-  type FactionLoadPickerRow,
-  useFactionLoadPicker,
-} from '@db/factions';
+import { type Faction, type FactionLoadPickerRow, useFactionLoadPicker } from '@db/factions';
 import { useCurrentProfile } from '@db/profiles';
 import { FormActions } from '@app/components/form/FormActions';
 import { FormField } from '@app/components/form/FormField';
@@ -15,7 +10,7 @@ import { FormPopover } from '@app/components/form/FormPopover';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { SuggestField } from '@app/components/form/SuggestField';
 import { UIButton } from '@app/components/generic/ui/UIButton';
-import { FactionInputSchema, factionSlugBaseFromName } from '@game/schema/faction';
+import { FactionInputSchema } from '@game/schema/faction';
 
 import styles from './FactionEditor.module.css';
 import {
@@ -32,12 +27,13 @@ function formatZodIssues(err: { issues: readonly { path: PropertyKey[]; message:
 }
 
 export interface FactionLoadPopoverContentProps {
-  currentValues: Faction;
+  /** Row URL slug for the faction being edited (excludes that row from the picker). */
+  currentPublicSlug: string;
   onLoaded: (loaded: Faction) => void;
 }
 
 export function FactionLoadPopoverContent({
-  currentValues,
+  currentPublicSlug,
   onLoaded,
 }: FactionLoadPopoverContentProps) {
   const picker = useFactionLoadPicker();
@@ -61,17 +57,17 @@ export function FactionLoadPopoverContent({
   );
 
   const factionLoadOptions = useMemo(() => {
-    const slug = factionSlugBaseFromName(currentValues.name ?? '');
-    return (picker.data?.rows ?? []).filter((row) => row.data.slug !== slug).map((row) => row.id);
-  }, [picker.data?.rows, currentValues.name]);
+    return (picker.data?.rows ?? [])
+      .filter((row) => row.slug !== currentPublicSlug)
+      .map((row) => row.id);
+  }, [picker.data?.rows, currentPublicSlug]);
 
   const handleSelect = (rowId: string) => {
     setSelectedId(rowId);
     const row = rowsById.get(rowId);
     if (!row) return;
 
-    const currentSlug = factionSlugBaseFromName(currentValues.name ?? '');
-    if (row.data.slug === currentSlug) {
+    if (row.slug === currentPublicSlug) {
       window.alert('The selected faction is already loaded.');
       return;
     }
@@ -82,8 +78,7 @@ export function FactionLoadPopoverContent({
       return;
     }
 
-    const { slug: _ignored, ...inputData } = row.data;
-    const parsed = FactionInputSchema.safeParse(inputData);
+    const parsed = FactionInputSchema.safeParse(row.data);
     if (!parsed.success) {
       setError(formatZodIssues(parsed.error));
       return;
@@ -131,7 +126,7 @@ export function FactionLoadPopoverContent({
               return (
                 <FactionLoadOptionRow
                   name={row.data.name}
-                  slug={row.data.slug}
+                  slug={row.slug}
                   logo={row.data.logo}
                   background={row.data.background}
                   ownerLabel={factionLoadOwnerLabel(row)}
@@ -157,11 +152,15 @@ export function FactionLoadPopoverContent({
 
 export interface FactionLoadPopoverProps {
   disabled: boolean;
-  currentValues: Faction;
+  currentPublicSlug: string;
   onLoaded: (loaded: Faction) => void;
 }
 
-export function FactionLoadPopover({ disabled, currentValues, onLoaded }: FactionLoadPopoverProps) {
+export function FactionLoadPopover({
+  disabled,
+  currentPublicSlug,
+  onLoaded,
+}: FactionLoadPopoverProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -183,7 +182,7 @@ export function FactionLoadPopover({ disabled, currentValues, onLoaded }: Factio
       }
     >
       <FactionLoadPopoverContent
-        currentValues={currentValues}
+        currentPublicSlug={currentPublicSlug}
         onLoaded={(loaded) => {
           onLoaded(loaded);
           setOpen(false);

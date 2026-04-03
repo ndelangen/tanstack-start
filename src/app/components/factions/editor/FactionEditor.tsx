@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 
 import { type Faction, type FactionEntry } from '@db/factions';
-import { FactionStoredSchema } from '@game/schema/faction';
+import { factionSlugBaseFromName } from '@game/schema/faction';
 
 import styles from './FactionEditor.module.css';
 import { FactionFormFields } from './FactionFormFields';
@@ -12,7 +12,7 @@ import { FactionSheetPreviewIframe } from './FactionSheetPreviewIframe';
 export interface FactionEditorProps {
   factionEntry: FactionEntry;
   errors: string[];
-  onSubmit?: (values: Faction) => void;
+  onSubmit: (values: Faction) => void;
 }
 
 export interface FactionEditorHandle {
@@ -23,7 +23,6 @@ export interface FactionEditorHandle {
 
 export const FactionEditor = forwardRef<FactionEditorHandle, FactionEditorProps>(
   ({ factionEntry, errors, onSubmit }, ref) => {
-    FactionStoredSchema.parse(factionEntry.data);
     const initialValuesRef = useRef<Faction>(structuredClone(factionEntry.data));
     const baselineRef = useRef<Faction>(structuredClone(factionEntry.data));
 
@@ -47,9 +46,7 @@ export const FactionEditor = forwardRef<FactionEditorHandle, FactionEditorProps>
       undefined
     >({
       defaultValues: initialValuesRef.current,
-      onSubmit: ({ value }) => {
-        onSubmit?.(value);
-      },
+      onSubmit: ({ value }) => onSubmit(value),
     });
 
     useImperativeHandle(ref, () => ({
@@ -83,11 +80,11 @@ export const FactionEditor = forwardRef<FactionEditorHandle, FactionEditorProps>
               Sheet updates as you edit (unsaved). Save and share the faction URL when ready.
             </p>
             <form.Subscribe selector={(s: { values: Faction }) => s.values.name}>
-              {(slug) => (
+              {(name) => (
                 <p className={styles.previewHint}>
                   <Link
                     to="/factions/$factionId/sheet"
-                    params={{ factionId: slug }}
+                    params={{ factionId: factionSlugBaseFromName(name ?? '') }}
                     search={{ mode: 'live' }}
                     target="_blank"
                     rel="noreferrer"
@@ -99,12 +96,7 @@ export const FactionEditor = forwardRef<FactionEditorHandle, FactionEditorProps>
             </form.Subscribe>
             <p className={styles.previewTitle}>Sheet preview</p>
             <form.Subscribe selector={(s: { values: Faction }) => s.values}>
-              {(values: Faction) => {
-                const { slug: _omitSlug, ...factionForSheet } = values as Faction & {
-                  slug?: string;
-                };
-                return <FactionSheetPreviewIframe faction={factionForSheet} />;
-              }}
+              {(values: Faction) => <FactionSheetPreviewIframe faction={values} />}
             </form.Subscribe>
           </aside>
           <div>

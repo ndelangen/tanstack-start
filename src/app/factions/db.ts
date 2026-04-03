@@ -1,27 +1,38 @@
 import { useQuery } from 'convex/react';
+import type { z } from 'zod';
 
 import { db } from '@db/core';
+import { type LiveQueryResult, toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
 import {
-  type LiveQueryResult,
-  toLiveQueryResult,
-  useLiveMutation,
-} from '@app/db/core/live';
-import {
+  FactionAssetSourceSchema,
   type FactionInput,
   FactionInputSchema,
-  type FactionStored,
-  FactionStoredSchema,
 } from '@game/schema/faction';
 
 import { api } from '../../../convex/_generated/api';
 import type { Doc } from '../../../convex/_generated/dataModel';
 
 export type Faction = FactionInput;
-export type FactionData = FactionStored;
+export type FactionData = FactionInput;
 export type FactionRow = Doc<'factions'>;
 export type FactionEntry = Omit<FactionRow, 'data'> & {
   data: FactionData;
 };
+
+/** Subset of {@link FactionEntry} validated by {@link FactionAssetSourceSchema}. */
+export type FactionRowAssetSource = Pick<FactionEntry, 'data' | 'slug'>;
+
+type ZodFactionAssetSource = z.infer<typeof FactionAssetSourceSchema>;
+
+/**
+ * Same keys as {@link FactionRowAssetSource}. Resolves to `never` if Zod output and row pick diverge.
+ */
+export type FactionAssetSource = FactionRowAssetSource extends ZodFactionAssetSource
+  ? ZodFactionAssetSource extends FactionRowAssetSource
+    ? FactionRowAssetSource
+    : never
+  : never;
+
 export type FactionInsert = Omit<FactionEntry, 'data'> & {
   data: FactionData;
 };
@@ -29,10 +40,15 @@ export type FactionUpdate = Omit<Partial<FactionEntry>, 'data'> & {
   data?: FactionData;
 };
 
+/** Runtime check: row `data` + `slug` match {@link FactionAssetSourceSchema}. */
+export function parseFactionAssetSource(entry: FactionRowAssetSource): FactionAssetSource {
+  return FactionAssetSourceSchema.parse({ data: entry.data, slug: entry.slug });
+}
+
 function toFactionEntry(entry: FactionRow): FactionEntry {
   return {
     ...entry,
-    data: FactionStoredSchema.parse(entry.data),
+    data: FactionInputSchema.parse(entry.data),
   };
 }
 
@@ -97,6 +113,7 @@ export function useFactionsAll(options?: { initialData?: FactionEntry[] }) {
 /** Normalized row from `api.factions.listForLoadPicker` (group label + owner username resolved server-side). */
 export type FactionLoadPickerRow = {
   id: FactionRow['_id'];
+  slug: FactionRow['slug'];
   data: FactionData;
   groupId: FactionRow['group_id'];
   groupLabel: string;
@@ -120,7 +137,7 @@ export function useFactionLoadPicker(options?: { initialData?: FactionLoadPicker
       ? {
           rows: result.data.rows.map((row) => ({
             ...row,
-            data: FactionStoredSchema.parse(row.data),
+            data: FactionInputSchema.parse(row.data),
           })),
           memberGroupIds: result.data.memberGroupIds,
         }

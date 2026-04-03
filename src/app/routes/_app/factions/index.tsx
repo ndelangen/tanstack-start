@@ -47,7 +47,7 @@ function FactionsPage() {
   const fuse = useMemo(
     () =>
       new Fuse(list, {
-        keys: ['data.name', 'data.slug'],
+        keys: ['data.name', 'slug'],
         threshold: 0.35,
       }),
     [list]

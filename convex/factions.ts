@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
 
-import { FactionInputSchema, FactionStoredSchema } from '../src/game/schema/faction';
+import { FactionInputSchema } from '../src/game/schema/faction';
 import type { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { isActiveGroupMember, requireAuthUserId } from './lib/policy';
@@ -14,10 +14,7 @@ function normalizeFactionData(input: unknown) {
     const issueMessage = firstIssue?.message ?? 'Invalid faction data';
     throw new Error(`Invalid faction data at ${issuePath}: ${issueMessage}`);
   }
-  return {
-    ...parsed.data,
-    slug: slugify(parsed.data.name),
-  };
+  return parsed.data;
 }
 
 export const getBySlug = query({
@@ -49,7 +46,7 @@ export const getBySlug = query({
     return {
       faction: {
         ...row,
-        data: FactionStoredSchema.parse(row.data),
+        data: FactionInputSchema.parse(row.data),
       },
       owner: ownerProfile,
       group,
@@ -111,11 +108,12 @@ export const listForLoadPicker = query({
     }
 
     const rows = factionRows.map((row) => {
-      const data = FactionStoredSchema.parse(row.data);
+      const data = FactionInputSchema.parse(row.data);
       const groupId = row.group_id ?? null;
       const groupLabel = groupId ? (groupNameById.get(groupId) ?? groupId) : 'No group';
       return {
         id: row._id,
+        slug: row.slug,
         data,
         groupId,
         groupLabel,
@@ -161,7 +159,7 @@ export const create = mutation({
     }
 
     const data = normalizeFactionData(args.data);
-    const slug = data.slug;
+    const slug = slugify(data.name);
     const existing = await ctx.db
       .query('factions')
       .withIndex('by_slug', (q) => q.eq('slug', slug))
@@ -201,7 +199,7 @@ export const update = mutation({
     if (!isOwner && !isGroupEditor) throw new Error('Not authorized');
 
     const data = normalizeFactionData(args.data);
-    const slug = data.slug;
+    const slug = slugify(data.name);
     const slugOwner = await ctx.db
       .query('factions')
       .withIndex('by_slug', (q) => q.eq('slug', slug))
@@ -314,7 +312,7 @@ export const getEditorPageBySlug = query({
     return {
       faction: {
         ...row,
-        data: FactionStoredSchema.parse(row.data),
+        data: FactionInputSchema.parse(row.data),
       },
       owner: ownerProfile,
       group,
