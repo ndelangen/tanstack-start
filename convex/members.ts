@@ -105,6 +105,7 @@ export const approve = mutation({
 
     const row = await getMembership(ctx, args.group_id, args.user_id);
     if (!row) throw new Error('Failed to approve group member');
+    if (row.status !== 'pending') throw new Error('Membership is not pending approval');
     await ctx.db.patch(row._id, {
       status: 'active',
       approved_by: actorId,
@@ -128,6 +129,7 @@ export const reject = mutation({
 
     const row = await getMembership(ctx, args.group_id, args.user_id);
     if (!row) throw new Error('Failed to reject group member');
+    if (row.status !== 'pending') throw new Error('Membership is not pending approval');
     await ctx.db.patch(row._id, {
       status: 'removed',
       approved_by: null,
@@ -146,11 +148,14 @@ export const remove = mutation({
   },
   handler: async (ctx, args) => {
     const actorId = await requireAuthUserId(ctx);
-    const canManage = await isActiveGroupMember(ctx, args.group_id, actorId);
-    if (!canManage) throw new Error('Not authorized');
+    const group = await loadGroup(ctx, args.group_id);
+    if (!group) throw new Error('Group not found');
+    if (group.created_by !== actorId) throw new Error('Not authorized');
+    if (args.user_id === group.created_by) throw new Error('Cannot remove the group owner');
 
     const row = await getMembership(ctx, args.group_id, args.user_id);
     if (!row) throw new Error('Failed to remove group member');
+    if (row.status !== 'active') throw new Error('Can only remove active members');
     await ctx.db.patch(row._id, {
       status: 'removed',
       approved_by: null,

@@ -1,0 +1,19 @@
+.memberRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.memberRowMain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+.pendingMeta {
+  color: var(--color-muted);
+  font-size: 0.88rem;
+}

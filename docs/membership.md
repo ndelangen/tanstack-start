@@ -35,4 +35,10 @@ Status transitions: `pending` → `active` (approved) or `removed` (rejected/rem
 
 ## Authorization
 
-Authorization is enforced by Convex policy helpers (`requireAuthUserId`, `isActiveGroupMember`) in `convex/lib/policy.ts`.
+Convex handlers in `convex/members.ts` enforce:
+
+- **`approve` / `reject`**: Caller must be an **active** member of the group (`isActiveGroupMember`). Target row must be **`pending`**.
+- **`remove`**: Only the **group creator** (`groups.created_by`) may remove someone else. Cannot remove the creator. Target must be **`active`** (pending requests are handled with `reject`).
+- **`request` / `add`**: See `convex/members.ts` (authenticated; `add` requires active membership).
+
+Shared helpers live in `convex/lib/policy.ts` (`requireAuthUserId`, `isActiveGroupMember`).

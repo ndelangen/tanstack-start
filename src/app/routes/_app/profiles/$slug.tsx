@@ -1,6 +1,7 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { useAuthActions } from '@convex-dev/auth/react';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import clsx from 'clsx';
-import { ArrowLeft, Pencil, UserPlus } from 'lucide-react';
+import { ArrowLeft, LogOut, Pencil, UserPlus } from 'lucide-react';
 
 import {
   loadProfileBySlug,
@@ -76,6 +77,8 @@ function ProfileDetailPage() {
   const loaderData = Route.useLoaderData();
   const profileData = useProfileBySlug(slug, { initialData: loaderData.profilePage });
   const currentProfile = useCurrentProfile();
+  const { signOut } = useAuthActions();
+  const navigate = useNavigate();
   const profileId = profileData.profile?._id;
 
   if (!profileId || !profileData.profile) {
@@ -83,6 +86,11 @@ function ProfileDetailPage() {
   }
 
   const isSelf = currentProfile.data?._id === profileData.profile._id;
+
+  const handleSignOut = async () => {
+    await signOut();
+    await navigate({ to: '/auth/login' });
+  };
 
   const groupsById = new Map((profileData.groups ?? []).map((g) => [String(g._id), g] as const));
 
@@ -112,6 +120,23 @@ function ProfileDetailPage() {
             ) : null}
           </FormActions>
         </Toolbar.Left>
+        {isSelf ? (
+          <Toolbar.Right>
+            <FormActions>
+              <FormTooltip content="Log out">
+                <UIButton
+                  type="button"
+                  variant="critical"
+                  iconOnly
+                  aria-label="Log out"
+                  onClick={() => void handleSignOut()}
+                >
+                  <LogOut size={16} aria-hidden />
+                </UIButton>
+              </FormTooltip>
+            </FormActions>
+          </Toolbar.Right>
+        ) : null}
       </Toolbar>
 
       <Card

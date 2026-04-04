@@ -58,7 +58,7 @@ export const getBySlug = query({
   },
 });
 
-/** Group detail page: group, memberships, factions in group, and profiles for owner + members (by user_id). */
+/** Group detail page: group, memberships, factions in group, and profiles for owner + every member user_id (each user must have a profile row). */
 export const detailBySlug = query({
   args: { slug: v.string() },
   handler: async (ctx, args) => {
@@ -75,9 +75,7 @@ export const detailBySlug = query({
 
     const factions = await ctx.db
       .query('factions')
-      .withIndex('by_group_deleted', (q) =>
-        q.eq('group_id', group._id).eq('is_deleted', false)
-      )
+      .withIndex('by_group_deleted', (q) => q.eq('group_id', group._id).eq('is_deleted', false))
       .take(500);
 
     const userIds = new Set<Id<'users'>>([group.created_by]);
@@ -91,7 +89,10 @@ export const detailBySlug = query({
         .query('profiles')
         .withIndex('by_user_id', (q) => q.eq('user_id', uid))
         .unique();
-      if (profile) profiles.push(profile);
+      if (!profile) {
+        throw new Error(`Invariant: every user must have a profile (missing for ${uid})`);
+      }
+      profiles.push(profile);
     }
 
     return { group, members, factions, profiles };

@@ -1,14 +1,25 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { UserPlus } from 'lucide-react';
+import { createFileRoute, Link, Outlet, useLocation } from '@tanstack/react-router';
+import { ArrowLeft, Check, Pencil, UserPlus, UserRoundMinus, X } from 'lucide-react';
 
 import { loadGroupDetailBySlug, useGroupDetailBySlug } from '@db/groups';
-import { useRequestGroupMembership } from '@db/members';
+import {
+  useApproveGroupMember,
+  useRejectGroupMember,
+  useRemoveGroupMember,
+  useRequestGroupMembership,
+} from '@db/members';
 import { useCurrentProfile } from '@db/profiles';
+import formStyles from '@app/components/form/Form.module.css';
+import { FormActions } from '@app/components/form/FormActions';
 import { FormTooltip } from '@app/components/form/FormTooltip';
-import { Stack } from '@app/components/generic/layout';
+import { Stack, Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 import { ProfileLink } from '@app/components/profile/ProfileLink';
+import layoutStyles from '@app/components/profile/ProfilePageLayout.module.css';
+import { formatRelativeDate } from '@app/utils/formatRelativeDate';
+
+import pageStyles from './groupSlugPage.module.css';
 
 export const Route = createFileRoute('/_app/groups/$groupSlug')({
   loader: async ({ params }) => {
@@ -37,12 +48,20 @@ function GroupPageHead() {
 }
 
 function GroupDetailPage() {
+  const location = useLocation();
   const { groupSlug } = Route.useParams();
   const loaderData = Route.useLoaderData();
   const groupData = useGroupDetailBySlug(groupSlug, { initialData: loaderData.groupDetail });
   const requestMembership = useRequestGroupMembership();
+  const approveMember = useApproveGroupMember();
+  const rejectMember = useRejectGroupMember();
+  const removeMember = useRemoveGroupMember();
   const profile = useCurrentProfile();
   const viewerUserId = profile.data?.user_id;
+
+  if (location.pathname.endsWith('/edit')) {
+    return <Outlet />;
+  }
 
   if (groupData.isError) {
     return (
@@ -56,22 +75,65 @@ function GroupDetailPage() {
     return null;
   }
 
-  const groupId = groupData.group._id;
+  const group = groupData.group;
+  const groupId = group._id;
   const members = groupData.members ?? [];
-  const activeMembers = members.filter((entry) => entry.status === 'active');
   const profileByUserId = new Map((groupData.profiles ?? []).map((p) => [p.user_id, p]));
-  const ownerProfile = profileByUserId.get(groupData.group.created_by);
+  const ownerProfile = profileByUserId.get(group.created_by);
   const viewerMembership = members.find((entry) => entry.user_id === viewerUserId);
   const membershipStatus =
     viewerMembership && viewerMembership.status !== 'removed' ? viewerMembership.status : 'none';
   const canRequestMembership = membershipStatus === 'none' && !!viewerUserId;
+  const viewerIsOwner = !!viewerUserId && viewerUserId === group.created_by;
+  const viewerCanModeratePending = membershipStatus === 'active';
 
   const factions = groupData.factions ?? [];
 
+  const membersModerationBusy =
+    approveMember.isPending || rejectMember.isPending || removeMember.isPending;
+  const membersModerationError =
+    approveMember.error?.message ??
+    rejectMember.error?.message ??
+    removeMember.error?.message ??
+    null;
+
+  const handleRemoveMember = (memberUserId: string) => {
+    if (!window.confirm('Remove this member from the group?')) return;
+    removeMember.mutate({ groupId, userId: memberUserId });
+  };
+
+  const activeMembers = members.filter((m) => m.status === 'active');
+  const pendingMembers = members.filter((m) => m.status === 'pending');
+  const memberRows = [...activeMembers, ...pendingMembers];
+
   return (
-    <Stack gap={3}>
+    <Stack className={layoutStyles.root} gap={2}>
+      <Toolbar>
+        <Toolbar.Left>
+          <FormActions>
+            <FormTooltip content="Back to profiles">
+              <UIButton variant="nav" to="/profiles" aria-label="Back to profiles">
+                <ArrowLeft size={16} aria-hidden />
+              </UIButton>
+            </FormTooltip>
+            {viewerIsOwner ? (
+              <FormTooltip content="Edit group settings">
+                <UIButton
+                  variant="secondary"
+                  to="/groups/$groupSlug/edit"
+                  params={{ groupSlug }}
+                  aria-label="Edit group settings"
+                >
+                  <Pencil size={16} aria-hidden />
+                </UIButton>
+              </FormTooltip>
+            ) : null}
+          </FormActions>
+        </Toolbar.Left>
+      </Toolbar>
+
       <Card>
-        <h2>{groupData.group.name}</h2>
+        <h2>{group.name}</h2>
         <p>
           Owner:{' '}
           {ownerProfile?.slug ? (
@@ -81,7 +143,7 @@ function GroupDetailPage() {
               avatar_url={ownerProfile.avatar_url}
             />
           ) : (
-            (ownerProfile?.username ?? groupData.group.created_by)
+            (ownerProfile?.username ?? group.created_by)
           )}
         </p>
         <p>
@@ -111,34 +173,97 @@ function GroupDetailPage() {
             </UIButton>
           </FormTooltip>
         )}
-        {requestMembership.isError && <p>{requestMembership.error?.message}</p>}
+        {requestMembership.isError && (
+          <p className={formStyles.error} role="alert">
+            {requestMembership.error?.message}
+          </p>
+        )}
       </Card>
 
       <Card>
         <h3>Members</h3>
-        {activeMembers.length === 0 ? (
-          <p>No active members yet.</p>
+        {memberRows.length === 0 ? (
+          <p>No members yet.</p>
         ) : (
           <ul>
-            {activeMembers.map((entry) => {
-              const profile = profileByUserId.get(entry.user_id);
-              const label = profile?.username ?? entry.user_id;
+            {memberRows.map((entry) => {
+              const memberProfile = profileByUserId.get(entry.user_id)!;
+              const isPending = entry.status === 'pending';
+              const isOwnerRow = entry.user_id === group.created_by;
+
               return (
                 <li key={entry.id}>
-                  {profile?.slug ? (
-                    <ProfileLink
-                      slug={profile.slug}
-                      username={profile.username}
-                      avatar_url={profile.avatar_url}
-                    />
-                  ) : (
-                    <span>{label}</span>
-                  )}
+                  <div className={pageStyles.memberRow}>
+                    <div className={pageStyles.memberRowMain}>
+                      <ProfileLink
+                        slug={memberProfile.slug}
+                        username={memberProfile.username}
+                        avatar_url={memberProfile.avatar_url}
+                      />
+                      {isPending ? (
+                        <>
+                          <span className={pageStyles.pendingMeta}>(pending)</span>
+                          <span className={pageStyles.pendingMeta}>
+                            {formatRelativeDate(entry.requested_at)}
+                          </span>
+                        </>
+                      ) : null}
+                    </div>
+                    {isPending && viewerCanModeratePending ? (
+                      <FormActions>
+                        <FormTooltip content="Approve">
+                          <UIButton
+                            type="button"
+                            variant="confirm"
+                            iconOnly
+                            aria-label="Approve membership"
+                            disabled={membersModerationBusy}
+                            onClick={() => approveMember.mutate({ groupId, userId: entry.user_id })}
+                          >
+                            <Check size={16} aria-hidden />
+                          </UIButton>
+                        </FormTooltip>
+                        <FormTooltip content="Decline">
+                          <UIButton
+                            type="button"
+                            variant="critical"
+                            iconOnly
+                            aria-label="Decline membership"
+                            disabled={membersModerationBusy}
+                            onClick={() => rejectMember.mutate({ groupId, userId: entry.user_id })}
+                          >
+                            <X size={16} aria-hidden />
+                          </UIButton>
+                        </FormTooltip>
+                      </FormActions>
+                    ) : null}
+                    {!isPending && viewerIsOwner && !isOwnerRow ? (
+                      <FormActions>
+                        <FormTooltip content="Remove member">
+                          <UIButton
+                            type="button"
+                            variant="critical"
+                            iconOnly
+                            aria-label="Remove member"
+                            disabled={membersModerationBusy}
+                            onClick={() => handleRemoveMember(entry.user_id)}
+                          >
+                            <UserRoundMinus size={16} aria-hidden />
+                          </UIButton>
+                        </FormTooltip>
+                      </FormActions>
+                    ) : null}
+                  </div>
                 </li>
               );
             })}
           </ul>
         )}
+        {membersModerationError ? (
+          <p className={formStyles.error} role="alert">
+            {membersModerationError}
+          </p>
+        ) : null}
       </Card>
 
       <Card>

@@ -27,9 +27,10 @@ import { Route as AppProfilesSlugRouteImport } from './routes/_app/profiles/$slu
 import { Route as AppGroupsCreateRouteImport } from './routes/_app/groups/create'
 import { Route as AppGroupsGroupSlugRouteImport } from './routes/_app/groups/$groupSlug'
 import { Route as AppFactionsCreateRouteImport } from './routes/_app/factions/create'
-import { Route as AppFactionsFactionIdRouteImport } from './routes/_app/factions/$factionId'
 import { Route as AppAssetsCreateRouteImport } from './routes/_app/assets/create'
 import { Route as AppAdminMigrationsRouteImport } from './routes/_app/admin/migrations'
+import { Route as AppFactionsFactionIdIndexRouteImport } from './routes/_app/factions/$factionId/index'
+import { Route as AppGroupsGroupSlugEditRouteImport } from './routes/_app/groups/$groupSlug/edit'
 import { Route as AppFactionsFactionIdSheetRouteImport } from './routes/_app/factions/$factionId/sheet'
 import { Route as AppFactionsFactionIdEditRouteImport } from './routes/_app/factions/$factionId/edit'
 import { Route as AppRulesetsRulesetSlugFaqCreateRouteImport } from './routes/_app/rulesets/$rulesetSlug/faq/create'
@@ -124,11 +125,6 @@ const AppFactionsCreateRoute = AppFactionsCreateRouteImport.update({
   path: '/factions/create',
   getParentRoute: () => AppRoute,
 } as any)
-const AppFactionsFactionIdRoute = AppFactionsFactionIdRouteImport.update({
-  id: '/factions/$factionId',
-  path: '/factions/$factionId',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppAssetsCreateRoute = AppAssetsCreateRouteImport.update({
   id: '/assets/create',
   path: '/assets/create',
@@ -139,17 +135,28 @@ const AppAdminMigrationsRoute = AppAdminMigrationsRouteImport.update({
   path: '/admin/migrations',
   getParentRoute: () => AppRoute,
 } as any)
+const AppFactionsFactionIdIndexRoute =
+  AppFactionsFactionIdIndexRouteImport.update({
+    id: '/factions/$factionId/',
+    path: '/factions/$factionId/',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppGroupsGroupSlugEditRoute = AppGroupsGroupSlugEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => AppGroupsGroupSlugRoute,
+} as any)
 const AppFactionsFactionIdSheetRoute =
   AppFactionsFactionIdSheetRouteImport.update({
-    id: '/sheet',
-    path: '/sheet',
-    getParentRoute: () => AppFactionsFactionIdRoute,
+    id: '/factions/$factionId/sheet',
+    path: '/factions/$factionId/sheet',
+    getParentRoute: () => AppRoute,
   } as any)
 const AppFactionsFactionIdEditRoute =
   AppFactionsFactionIdEditRouteImport.update({
-    id: '/edit',
-    path: '/edit',
-    getParentRoute: () => AppFactionsFactionIdRoute,
+    id: '/factions/$factionId/edit',
+    path: '/factions/$factionId/edit',
+    getParentRoute: () => AppRoute,
   } as any)
 const AppRulesetsRulesetSlugFaqCreateRoute =
   AppRulesetsRulesetSlugFaqCreateRouteImport.update({
@@ -173,9 +180,8 @@ export interface FileRoutesByFullPath {
   '/privacy/': typeof PrivacyIndexRoute
   '/admin/migrations': typeof AppAdminMigrationsRoute
   '/assets/create': typeof AppAssetsCreateRoute
-  '/factions/$factionId': typeof AppFactionsFactionIdRouteWithChildren
   '/factions/create': typeof AppFactionsCreateRoute
-  '/groups/$groupSlug': typeof AppGroupsGroupSlugRoute
+  '/groups/$groupSlug': typeof AppGroupsGroupSlugRouteWithChildren
   '/groups/create': typeof AppGroupsCreateRoute
   '/profiles/$slug': typeof AppProfilesSlugRoute
   '/profiles/settings': typeof AppProfilesSettingsRoute
@@ -187,6 +193,8 @@ export interface FileRoutesByFullPath {
   '/rulesets/': typeof AppRulesetsIndexRoute
   '/factions/$factionId/edit': typeof AppFactionsFactionIdEditRoute
   '/factions/$factionId/sheet': typeof AppFactionsFactionIdSheetRoute
+  '/groups/$groupSlug/edit': typeof AppGroupsGroupSlugEditRoute
+  '/factions/$factionId/': typeof AppFactionsFactionIdIndexRoute
   '/rulesets/$rulesetSlug/faq/$questionSlug': typeof AppRulesetsRulesetSlugFaqQuestionSlugRoute
   '/rulesets/$rulesetSlug/faq/create': typeof AppRulesetsRulesetSlugFaqCreateRoute
 }
@@ -199,9 +207,8 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyIndexRoute
   '/admin/migrations': typeof AppAdminMigrationsRoute
   '/assets/create': typeof AppAssetsCreateRoute
-  '/factions/$factionId': typeof AppFactionsFactionIdRouteWithChildren
   '/factions/create': typeof AppFactionsCreateRoute
-  '/groups/$groupSlug': typeof AppGroupsGroupSlugRoute
+  '/groups/$groupSlug': typeof AppGroupsGroupSlugRouteWithChildren
   '/groups/create': typeof AppGroupsCreateRoute
   '/profiles/$slug': typeof AppProfilesSlugRoute
   '/profiles/settings': typeof AppProfilesSettingsRoute
@@ -213,6 +220,8 @@ export interface FileRoutesByTo {
   '/rulesets': typeof AppRulesetsIndexRoute
   '/factions/$factionId/edit': typeof AppFactionsFactionIdEditRoute
   '/factions/$factionId/sheet': typeof AppFactionsFactionIdSheetRoute
+  '/groups/$groupSlug/edit': typeof AppGroupsGroupSlugEditRoute
+  '/factions/$factionId': typeof AppFactionsFactionIdIndexRoute
   '/rulesets/$rulesetSlug/faq/$questionSlug': typeof AppRulesetsRulesetSlugFaqQuestionSlugRoute
   '/rulesets/$rulesetSlug/faq/create': typeof AppRulesetsRulesetSlugFaqCreateRoute
 }
@@ -227,9 +236,8 @@ export interface FileRoutesById {
   '/privacy/': typeof PrivacyIndexRoute
   '/_app/admin/migrations': typeof AppAdminMigrationsRoute
   '/_app/assets/create': typeof AppAssetsCreateRoute
-  '/_app/factions/$factionId': typeof AppFactionsFactionIdRouteWithChildren
   '/_app/factions/create': typeof AppFactionsCreateRoute
-  '/_app/groups/$groupSlug': typeof AppGroupsGroupSlugRoute
+  '/_app/groups/$groupSlug': typeof AppGroupsGroupSlugRouteWithChildren
   '/_app/groups/create': typeof AppGroupsCreateRoute
   '/_app/profiles/$slug': typeof AppProfilesSlugRoute
   '/_app/profiles/settings': typeof AppProfilesSettingsRoute
@@ -241,6 +249,8 @@ export interface FileRoutesById {
   '/_app/rulesets/': typeof AppRulesetsIndexRoute
   '/_app/factions/$factionId/edit': typeof AppFactionsFactionIdEditRoute
   '/_app/factions/$factionId/sheet': typeof AppFactionsFactionIdSheetRoute
+  '/_app/groups/$groupSlug/edit': typeof AppGroupsGroupSlugEditRoute
+  '/_app/factions/$factionId/': typeof AppFactionsFactionIdIndexRoute
   '/_app/rulesets/$rulesetSlug/faq/$questionSlug': typeof AppRulesetsRulesetSlugFaqQuestionSlugRoute
   '/_app/rulesets/$rulesetSlug/faq/create': typeof AppRulesetsRulesetSlugFaqCreateRoute
 }
@@ -255,7 +265,6 @@ export interface FileRouteTypes {
     | '/privacy/'
     | '/admin/migrations'
     | '/assets/create'
-    | '/factions/$factionId'
     | '/factions/create'
     | '/groups/$groupSlug'
     | '/groups/create'
@@ -269,6 +278,8 @@ export interface FileRouteTypes {
     | '/rulesets/'
     | '/factions/$factionId/edit'
     | '/factions/$factionId/sheet'
+    | '/groups/$groupSlug/edit'
+    | '/factions/$factionId/'
     | '/rulesets/$rulesetSlug/faq/$questionSlug'
     | '/rulesets/$rulesetSlug/faq/create'
   fileRoutesByTo: FileRoutesByTo
@@ -281,7 +292,6 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/admin/migrations'
     | '/assets/create'
-    | '/factions/$factionId'
     | '/factions/create'
     | '/groups/$groupSlug'
     | '/groups/create'
@@ -295,6 +305,8 @@ export interface FileRouteTypes {
     | '/rulesets'
     | '/factions/$factionId/edit'
     | '/factions/$factionId/sheet'
+    | '/groups/$groupSlug/edit'
+    | '/factions/$factionId'
     | '/rulesets/$rulesetSlug/faq/$questionSlug'
     | '/rulesets/$rulesetSlug/faq/create'
   id:
@@ -308,7 +320,6 @@ export interface FileRouteTypes {
     | '/privacy/'
     | '/_app/admin/migrations'
     | '/_app/assets/create'
-    | '/_app/factions/$factionId'
     | '/_app/factions/create'
     | '/_app/groups/$groupSlug'
     | '/_app/groups/create'
@@ -322,6 +333,8 @@ export interface FileRouteTypes {
     | '/_app/rulesets/'
     | '/_app/factions/$factionId/edit'
     | '/_app/factions/$factionId/sheet'
+    | '/_app/groups/$groupSlug/edit'
+    | '/_app/factions/$factionId/'
     | '/_app/rulesets/$rulesetSlug/faq/$questionSlug'
     | '/_app/rulesets/$rulesetSlug/faq/create'
   fileRoutesById: FileRoutesById
@@ -463,13 +476,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFactionsCreateRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/factions/$factionId': {
-      id: '/_app/factions/$factionId'
-      path: '/factions/$factionId'
-      fullPath: '/factions/$factionId'
-      preLoaderRoute: typeof AppFactionsFactionIdRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/assets/create': {
       id: '/_app/assets/create'
       path: '/assets/create'
@@ -484,19 +490,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminMigrationsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/factions/$factionId/': {
+      id: '/_app/factions/$factionId/'
+      path: '/factions/$factionId'
+      fullPath: '/factions/$factionId/'
+      preLoaderRoute: typeof AppFactionsFactionIdIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/groups/$groupSlug/edit': {
+      id: '/_app/groups/$groupSlug/edit'
+      path: '/edit'
+      fullPath: '/groups/$groupSlug/edit'
+      preLoaderRoute: typeof AppGroupsGroupSlugEditRouteImport
+      parentRoute: typeof AppGroupsGroupSlugRoute
+    }
     '/_app/factions/$factionId/sheet': {
       id: '/_app/factions/$factionId/sheet'
-      path: '/sheet'
+      path: '/factions/$factionId/sheet'
       fullPath: '/factions/$factionId/sheet'
       preLoaderRoute: typeof AppFactionsFactionIdSheetRouteImport
-      parentRoute: typeof AppFactionsFactionIdRoute
+      parentRoute: typeof AppRoute
     }
     '/_app/factions/$factionId/edit': {
       id: '/_app/factions/$factionId/edit'
-      path: '/edit'
+      path: '/factions/$factionId/edit'
       fullPath: '/factions/$factionId/edit'
       preLoaderRoute: typeof AppFactionsFactionIdEditRouteImport
-      parentRoute: typeof AppFactionsFactionIdRoute
+      parentRoute: typeof AppRoute
     }
     '/_app/rulesets/$rulesetSlug/faq/create': {
       id: '/_app/rulesets/$rulesetSlug/faq/create'
@@ -515,18 +535,16 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AppFactionsFactionIdRouteChildren {
-  AppFactionsFactionIdEditRoute: typeof AppFactionsFactionIdEditRoute
-  AppFactionsFactionIdSheetRoute: typeof AppFactionsFactionIdSheetRoute
+interface AppGroupsGroupSlugRouteChildren {
+  AppGroupsGroupSlugEditRoute: typeof AppGroupsGroupSlugEditRoute
 }
 
-const AppFactionsFactionIdRouteChildren: AppFactionsFactionIdRouteChildren = {
-  AppFactionsFactionIdEditRoute: AppFactionsFactionIdEditRoute,
-  AppFactionsFactionIdSheetRoute: AppFactionsFactionIdSheetRoute,
+const AppGroupsGroupSlugRouteChildren: AppGroupsGroupSlugRouteChildren = {
+  AppGroupsGroupSlugEditRoute: AppGroupsGroupSlugEditRoute,
 }
 
-const AppFactionsFactionIdRouteWithChildren =
-  AppFactionsFactionIdRoute._addFileChildren(AppFactionsFactionIdRouteChildren)
+const AppGroupsGroupSlugRouteWithChildren =
+  AppGroupsGroupSlugRoute._addFileChildren(AppGroupsGroupSlugRouteChildren)
 
 interface AppRulesetsRulesetSlugRouteChildren {
   AppRulesetsRulesetSlugFaqQuestionSlugRoute: typeof AppRulesetsRulesetSlugFaqQuestionSlugRoute
@@ -549,9 +567,8 @@ interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppAdminMigrationsRoute: typeof AppAdminMigrationsRoute
   AppAssetsCreateRoute: typeof AppAssetsCreateRoute
-  AppFactionsFactionIdRoute: typeof AppFactionsFactionIdRouteWithChildren
   AppFactionsCreateRoute: typeof AppFactionsCreateRoute
-  AppGroupsGroupSlugRoute: typeof AppGroupsGroupSlugRoute
+  AppGroupsGroupSlugRoute: typeof AppGroupsGroupSlugRouteWithChildren
   AppGroupsCreateRoute: typeof AppGroupsCreateRoute
   AppProfilesSlugRoute: typeof AppProfilesSlugRoute
   AppProfilesSettingsRoute: typeof AppProfilesSettingsRoute
@@ -561,15 +578,17 @@ interface AppRouteChildren {
   AppFactionsIndexRoute: typeof AppFactionsIndexRoute
   AppProfilesIndexRoute: typeof AppProfilesIndexRoute
   AppRulesetsIndexRoute: typeof AppRulesetsIndexRoute
+  AppFactionsFactionIdEditRoute: typeof AppFactionsFactionIdEditRoute
+  AppFactionsFactionIdSheetRoute: typeof AppFactionsFactionIdSheetRoute
+  AppFactionsFactionIdIndexRoute: typeof AppFactionsFactionIdIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppAdminMigrationsRoute: AppAdminMigrationsRoute,
   AppAssetsCreateRoute: AppAssetsCreateRoute,
-  AppFactionsFactionIdRoute: AppFactionsFactionIdRouteWithChildren,
   AppFactionsCreateRoute: AppFactionsCreateRoute,
-  AppGroupsGroupSlugRoute: AppGroupsGroupSlugRoute,
+  AppGroupsGroupSlugRoute: AppGroupsGroupSlugRouteWithChildren,
   AppGroupsCreateRoute: AppGroupsCreateRoute,
   AppProfilesSlugRoute: AppProfilesSlugRoute,
   AppProfilesSettingsRoute: AppProfilesSettingsRoute,
@@ -579,6 +598,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppFactionsIndexRoute: AppFactionsIndexRoute,
   AppProfilesIndexRoute: AppProfilesIndexRoute,
   AppRulesetsIndexRoute: AppRulesetsIndexRoute,
+  AppFactionsFactionIdEditRoute: AppFactionsFactionIdEditRoute,
+  AppFactionsFactionIdSheetRoute: AppFactionsFactionIdSheetRoute,
+  AppFactionsFactionIdIndexRoute: AppFactionsFactionIdIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

@@ -1,15 +1,17 @@
 import { createFileRoute, Link, Outlet, useLocation, useMatches } from '@tanstack/react-router';
-import { UserPlus } from 'lucide-react';
+import { ArrowLeft, Pencil, Printer, UserPlus } from 'lucide-react';
 
 import { loadFaction, useFaction } from '@db/factions';
 import { useRequestGroupMembership } from '@db/members';
 import { useCurrentProfile } from '@db/profiles';
 import { loadRulesetsByFaction, type RulesetEntry, useRulesetsByFaction } from '@db/rulesets';
+import { FormActions } from '@app/components/form/FormActions';
 import { FormTooltip } from '@app/components/form/FormTooltip';
+import { Toolbar } from '@app/components/generic/layout';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 import { ProfileLink } from '@app/components/profile/ProfileLink';
 
-export const Route = createFileRoute('/_app/factions/$factionId')({
+export const Route = createFileRoute('/_app/factions/$factionId/')({
   loader: async ({ params, location }) => {
     const isSheet = location.pathname.endsWith('/sheet');
     const mode = new URLSearchParams(location.search).get('mode') ?? 'db';
@@ -149,13 +151,43 @@ function FactionDetailMain({ factionId }: { factionId: string }) {
 
   return (
     <>
-      {canEdit && (
-        <p>
-          <Link to="/factions/$factionId/edit" params={{ factionId }}>
-            Edit faction
-          </Link>
-        </p>
-      )}
+      <Toolbar>
+        <Toolbar.Left>
+          <FormActions>
+            <FormTooltip content="Back to factions">
+              <UIButton variant="nav" to="/factions" aria-label="Back to factions">
+                <ArrowLeft size={16} aria-hidden />
+              </UIButton>
+            </FormTooltip>
+          </FormActions>
+          {canEdit && (
+            <FormTooltip content="Edit faction">
+              <UIButton
+                variant="secondary"
+                to="/factions/$factionId/edit"
+                params={{ factionId }}
+                aria-label="Edit faction"
+              >
+                <Pencil size={16} aria-hidden />
+              </UIButton>
+            </FormTooltip>
+          )}
+        </Toolbar.Left>
+        <Toolbar.Right>
+          <FormTooltip content="Printable faction sheet">
+            <UIButton
+              variant="nav"
+              to="/factions/$factionId/sheet"
+              params={{ factionId }}
+              search={{ mode: 'db' }}
+              target="_blank"
+              aria-label="Printable faction sheet"
+            >
+              <Printer size={16} aria-hidden />
+            </UIButton>
+          </FormTooltip>
+        </Toolbar.Right>
+      </Toolbar>
 
       <p>
         <Link to="/factions/$factionId/sheet" params={{ factionId }} search={{ mode: 'db' }}>

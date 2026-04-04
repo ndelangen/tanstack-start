@@ -1,0 +1,66 @@
+.shell {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  box-sizing: border-box;
+}
+
+.panel {
+  width: 100%;
+  max-width: 26rem;
+  padding: var(--space-6) var(--space-5);
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--glass-overlay) 88%, transparent) 0%,
+    color-mix(in srgb, var(--glass-surface-2) 75%, transparent) 100%
+  );
+  border: 2px solid color-mix(in srgb, var(--panel-border) 85%, transparent);
+  box-shadow:
+    var(--panel-shadow),
+    0 0 0 1px rgba(255, 255, 255, 0.25) inset;
+  backdrop-filter: blur(var(--glass-blur-md)) saturate(1.25);
+  -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(1.25);
+}
+
+.loggedIn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  text-align: center;
+}
+
+.loggedInTitle {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.loggedInName {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--color-muted);
+}
+
+.homeLink {
+  align-self: center;
+  margin-top: var(--space-2);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--color-link);
+  text-decoration: none;
+}
+
+.homeLink:hover {
+  text-decoration: underline;
+}
+
+.homeLink:focus-visible {
+  outline: none;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 2px var(--color-focus-ring);
+}
