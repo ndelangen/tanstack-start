@@ -13,7 +13,7 @@ import { FormActions } from '@app/components/form/FormActions';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Stack, Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
-import { IconButton } from '@app/components/generic/ui/IconButton';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import {
   ProfileFaqAnswersGiven,
   ProfileFaqQuestionsAsked,
@@ -92,22 +92,22 @@ function ProfileDetailPage() {
         <Toolbar.Left>
           <FormActions>
             <FormTooltip content="Back to profiles">
-              <IconButton variant="nav" to="/profiles" aria-label="Back to profiles">
+              <UIButton variant="nav" to="/profiles" aria-label="Back to profiles">
                 <ArrowLeft size={16} aria-hidden />
-              </IconButton>
+              </UIButton>
             </FormTooltip>
             {isSelf ? (
               <FormTooltip content="Edit profile">
-                <IconButton variant="secondary" to="/profiles/settings" aria-label="Edit profile">
+                <UIButton variant="secondary" to="/profiles/settings" aria-label="Edit profile">
                   <Pencil size={16} aria-hidden />
-                </IconButton>
+                </UIButton>
               </FormTooltip>
             ) : null}
             {isSelf ? (
               <FormTooltip content="Start group">
-                <IconButton variant="confirm" to="/groups/create" aria-label="Start group">
+                <UIButton variant="confirm" to="/groups/create" aria-label="Start group">
                   <UserPlus size={16} aria-hidden />
-                </IconButton>
+                </UIButton>
               </FormTooltip>
             ) : null}
           </FormActions>

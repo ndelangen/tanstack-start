@@ -5,13 +5,12 @@ import { useState } from 'react';
 import { type ProfileEntry, useCurrentProfile, useUpdateCurrentProfile } from '@db/profiles';
 import formStyles from '@app/components/form/Form.module.css';
 import { FormActions } from '@app/components/form/FormActions';
-import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormField } from '@app/components/form/FormField';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { TextField } from '@app/components/form/TextField';
 import { Stack, Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
-import { IconButton } from '@app/components/generic/ui/IconButton';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { profileSlugBaseFromName } from '@app/profile/validation';
 
 import layoutStyles from './ProfilePageLayout.module.css';
@@ -63,19 +62,19 @@ function ProfileSettingsFormFields({ initial }: { initial: ProfileEntry }) {
               </UIButton>
             </FormTooltip>
             <FormTooltip content="View public profile">
-              <IconButton
+              <UIButton
                 variant="secondary"
                 to="/profiles/$slug"
                 params={{ slug: initial.slug }}
                 aria-label="View public profile"
               >
                 <User size={16} aria-hidden />
-              </IconButton>
+              </UIButton>
             </FormTooltip>
             <FormTooltip content="Back to profiles">
-              <IconButton variant="nav" to="/profiles" aria-label="Back to profiles">
+              <UIButton variant="nav" to="/profiles" aria-label="Back to profiles">
                 <ArrowLeft size={16} aria-hidden />
-              </IconButton>
+              </UIButton>
             </FormTooltip>
           </FormActions>
         </Toolbar.Left>

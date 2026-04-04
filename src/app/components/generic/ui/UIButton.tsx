@@ -49,7 +49,7 @@ export function UIButton({
   variant = 'confirm',
   className,
   children,
-  iconOnly = false,
+  iconOnly = true,
   ...rest
 }: UIButtonProps) {
   const cn = clsx(uiButtonClassNames(variant, iconOnly), className);
