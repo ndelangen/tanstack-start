@@ -39,7 +39,9 @@ function FactionListItem({ faction }: { faction: FactionEntry }) {
       className={styles.card}
     >
       <div className={styles.coverSlot}>
-        <FactionToken logo={logo} background={background} />
+        <div className={styles.tokenSquare}>
+          <FactionToken logo={logo} background={background} />
+        </div>
       </div>
       <span className={styles.name}>{name}</span>
     </BlockLink>
