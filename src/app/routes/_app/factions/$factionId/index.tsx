@@ -44,7 +44,23 @@ function canEditFaction(
 }
 
 function FactionPageHead() {
-  const { factionId } = Route.useParams();
+  const factionId = useMatches({
+    select: (matches) => {
+      for (let i = matches.length - 1; i >= 0; i--) {
+        const p = matches[i]?.params as { factionId?: string } | undefined;
+        const id = p?.factionId;
+        if (typeof id === 'string') return id;
+      }
+      return undefined;
+    },
+  });
+  if (factionId === undefined) {
+    return null;
+  }
+  return <FactionPageHeadContent factionId={factionId} />;
+}
+
+function FactionPageHeadContent({ factionId }: { factionId: string }) {
   const loaderData = Route.useLoaderData();
   const factionSeed = loaderData?.faction;
   const { faction, owner, memberships } = useFaction(factionId, { initialData: factionSeed });
@@ -176,7 +192,7 @@ function FactionDetailMain({ factionId }: { factionId: string }) {
         <Toolbar.Right>
           <FormTooltip content="Printable faction sheet">
             <UIButton
-              variant="nav"
+              variant="confirm"
               to="/factions/$factionId/sheet"
               params={{ factionId }}
               search={{ mode: 'db' }}
