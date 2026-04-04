@@ -2,6 +2,7 @@ import { v } from 'convex/values';
 
 import type { Id } from './_generated/dataModel';
 import { type MutationCtx, mutation, type QueryCtx, query } from './_generated/server';
+import { listByUserActiveWithGroupsData } from './lib/memberGroups';
 import { isActiveGroupMember, requireAuthUserId } from './lib/policy';
 import { nowIso } from './lib/utils';
 
@@ -24,27 +25,7 @@ async function loadGroup(ctx: QueryCtx | MutationCtx, groupId: Id<'groups'>) {
 
 export const listByUserActiveWithGroups = query({
   args: { user_id: v.id('users') },
-  handler: async (ctx, args) => {
-    const rows = await ctx.db
-      .query('group_members')
-      .withIndex('by_user_status', (q) => q.eq('user_id', args.user_id).eq('status', 'active'))
-      .take(200);
-    const active = rows;
-    const groups = await Promise.all(active.map((row) => loadGroup(ctx, row.group_id)));
-    return active.map((row, index) => {
-      const group = groups[index];
-      return {
-        ...row,
-        groups: group
-          ? {
-              id: group._id,
-              name: group.name,
-              slug: group.slug,
-            }
-          : null,
-      };
-    });
-  },
+  handler: async (ctx, args) => listByUserActiveWithGroupsData(ctx, args.user_id),
 });
 
 export const listByGroup = query({

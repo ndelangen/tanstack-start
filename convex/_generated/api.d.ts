@@ -15,6 +15,7 @@ import type * as groups from "../groups.js";
 import type * as http from "../http.js";
 import type * as lib_faqRulesetList from "../lib/faqRulesetList.js";
 import type * as lib_ids from "../lib/ids.js";
+import type * as lib_memberGroups from "../lib/memberGroups.js";
 import type * as lib_policy from "../lib/policy.js";
 import type * as lib_profileSummary from "../lib/profileSummary.js";
 import type * as lib_utils from "../lib/utils.js";
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   "lib/faqRulesetList": typeof lib_faqRulesetList;
   "lib/ids": typeof lib_ids;
+  "lib/memberGroups": typeof lib_memberGroups;
   "lib/policy": typeof lib_policy;
   "lib/profileSummary": typeof lib_profileSummary;
   "lib/utils": typeof lib_utils;

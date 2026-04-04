@@ -5,6 +5,7 @@ import { rulesetInputSchema } from '../src/app/rulesets/validation';
 import type { Doc, Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { loadFaqItemsForRuleset } from './lib/faqRulesetList';
+import { listByUserActiveWithGroupsData } from './lib/memberGroups';
 import { canAccessRuleset, isActiveGroupMember, requireAuthUserId } from './lib/policy';
 import { profileSummary } from './lib/profileSummary';
 import { ensureObject, nowIso, slugify } from './lib/utils';
@@ -130,7 +131,15 @@ export const detailPageBySlug = query({
       }
     }
 
-    return { ...base, groupAccess, faqItems };
+    const owner = await profileSummary(ctx, base.ruleset.owner_id);
+
+    const authUserId = await getAuthUserId(ctx);
+    const viewerAssignableMemberships =
+      authUserId != null
+        ? await listByUserActiveWithGroupsData(ctx, authUserId as unknown as Id<'users'>)
+        : null;
+
+    return { ...base, groupAccess, faqItems, owner, viewerAssignableMemberships };
   },
 });
 

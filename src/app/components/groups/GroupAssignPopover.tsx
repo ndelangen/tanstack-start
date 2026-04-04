@@ -1,6 +1,7 @@
 import { Check, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
+import type { UserGroupMembershipWithGroup } from '@db/members';
 import { useCurrentProfile } from '@db/profiles';
 import { FormActions } from '@app/components/form/FormActions';
 import { FormField } from '@app/components/form/FormField';
@@ -16,21 +17,11 @@ export interface GroupAssignPopoverProps {
   onChangeGroup: (groupId: string | null) => Promise<void>;
   title?: string;
   descriptionLines?: string[];
+  /** When set (including `null`), skips `listByUserActiveWithGroups` and uses this data instead. */
+  prefetchedMemberships?: UserGroupMembershipWithGroup[] | null;
 }
 
-function GroupAssignPopoverBody({
-  userId,
-  selectedGroupId,
-  setSelectedGroupId,
-  error,
-  setError,
-  disabled,
-  onChangeGroup,
-  title,
-  descriptionLines,
-  onAssigned,
-}: {
-  userId: string;
+type BodySharedProps = {
   selectedGroupId: string;
   setSelectedGroupId: (id: string) => void;
   error: string | null;
@@ -40,9 +31,25 @@ function GroupAssignPopoverBody({
   title: string;
   descriptionLines: string[];
   onAssigned: () => void;
+};
+
+function GroupAssignPopoverBodyContent({
+  memberships,
+  isPending,
+  selectedGroupId,
+  setSelectedGroupId,
+  error,
+  setError,
+  disabled,
+  onChangeGroup,
+  title,
+  descriptionLines,
+  onAssigned,
+}: BodySharedProps & {
+  memberships: UserGroupMembershipWithGroup[] | undefined;
+  isPending: boolean;
 }) {
-  const memberships = useUserGroupMemberships(userId, { initialData: [] });
-  const accessibleGroups = useUserGroupMembershipGroups(memberships.data);
+  const accessibleGroups = useUserGroupMembershipGroups(memberships);
 
   const memberGroupIdSet = useMemo(
     () => new Set(accessibleGroups.map((group) => String(group.id))),
@@ -107,7 +114,7 @@ function GroupAssignPopoverBody({
           {error}
         </p>
       )}
-      {memberships.isPending ? (
+      {isPending ? (
         <p className={styles.loadFactionHint}>Loading groups...</p>
       ) : groupOptions.length === 0 ? (
         <p className={styles.loadFactionHint}>No groups are available yet.</p>
@@ -142,6 +149,40 @@ function GroupAssignPopoverBody({
   );
 }
 
+function GroupAssignPopoverBodyWithQuery({
+  userId,
+  ...shared
+}: BodySharedProps & { userId: string }) {
+  const memberships = useUserGroupMemberships(userId, { initialData: [] });
+  return (
+    <GroupAssignPopoverBodyContent
+      memberships={memberships.data}
+      isPending={memberships.isPending}
+      {...shared}
+    />
+  );
+}
+
+function GroupAssignPopoverBody({
+  userId,
+  prefetchedMemberships,
+  ...shared
+}: BodySharedProps & {
+  userId: string;
+  prefetchedMemberships?: UserGroupMembershipWithGroup[] | null;
+}) {
+  if (prefetchedMemberships !== undefined) {
+    return (
+      <GroupAssignPopoverBodyContent
+        memberships={prefetchedMemberships ?? []}
+        isPending={false}
+        {...shared}
+      />
+    );
+  }
+  return <GroupAssignPopoverBodyWithQuery userId={userId} {...shared} />;
+}
+
 export function GroupAssignPopover({
   disabled,
   onChangeGroup,
@@ -150,6 +191,7 @@ export function GroupAssignPopover({
     'Groups are used to allow group members to edit this item.',
     'You can create groups on your profile page.',
   ],
+  prefetchedMemberships,
 }: GroupAssignPopoverProps) {
   const [open, setOpen] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState('');
@@ -184,6 +226,7 @@ export function GroupAssignPopover({
       {open && userId ? (
         <GroupAssignPopoverBody
           userId={userId}
+          prefetchedMemberships={prefetchedMemberships}
           selectedGroupId={selectedGroupId}
           setSelectedGroupId={setSelectedGroupId}
           error={error}

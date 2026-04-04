@@ -150,7 +150,7 @@ This document records durable UI decisions for consistency across features.
 - Context: Extracting chunks of JSX into \"helper\" components without a clear responsibility boundary leads to prop bloat, indirection, and harder reasoning, while providing little reuse. We observed this with `RulesetGroupToolbarControl`, which was just a fragment of the ruleset detail toolbar and required many props mirroring route-local state.
 - Rule: Only extract a component when it represents a real concern boundary (behavior or domain concept), not merely a sub-section of a single page's layout. Keep view-only sub-views inline in the route or feature component.
 - Examples:
-  - Good: `GroupAssignPopover` owns \"membership-aware group picking\" (fetches memberships, filters allowed groups, provides search UX) and exposes a small semantic API (`disabled`, `onChangeGroup`, optional text props). Faction and ruleset routes wrap it with thin adapters.
+  - Good: `GroupAssignPopover` owns \"membership-aware group picking\" (filters allowed groups, provides search UX) and exposes a small semantic API (`disabled`, `onChangeGroup`, optional text props, optional `prefetchedMemberships` per DD-013). Faction and ruleset routes wrap it with thin adapters.
   - Good: A reusable search box component that manages debounced navigation and accessible labeling.
   - Bad: A `*ToolbarControl` component that only renders one page's toolbar row and needs many props like `rulesetId`, `rulesetName`, `groupId`, `groupSlug`, `groupName`, `isOwner`, `membershipStatus`, `canRequestMembership`, `onRequestMembership`, `canEditGroup`, `onChangeGroup`.
   - Bad: Moving a long JSX block out of a route into a separate file without reducing responsibility or API surface, just to \"make it shorter\".
@@ -160,3 +160,15 @@ This document records durable UI decisions for consistency across features.
     - Be kept as local helper functions in the same file, not exported feature components.
   - If in doubt, prefer inlining and only extract when a clear responsibility and small prop surface emerge.
 - Changed on: 2026-04-01
+
+## DD-013: One Convex page query plus optional profile
+- Status: accepted
+- Context: Mounting several `useQuery` hooks on the same route (page data plus nested component queries) multiplies subscriptions, complicates loading states, and scatters the authoritative shape of a screen across Convex functions.
+- Rule: Each route should subscribe to **at most one Convex query for page data**, plus **`useCurrentProfile` when needed** for auth-aware UI. Derive UI-ready fields in that page query; avoid child hooks that issue additional Convex queries for the same screen unless an explicit exception is approved.
+- Examples:
+  - Bundle data the page needs into one query (e.g. ruleset `detailPageBySlug` including FAQ, group access, owner, and viewer assignable memberships).
+  - Pass prefetched lists into controls such as `GroupAssignPopover` via `prefetchedMemberships` instead of a second `listByUserActiveWithGroups` subscription on that route.
+- Exceptions:
+  - Mutations are not counted against this limit.
+  - Intentional lazy loading or rare technical constraints require explicit call-out in review.
+- Changed on: 2026-04-04
