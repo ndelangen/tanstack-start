@@ -118,7 +118,7 @@ function ProfileDetailPage() {
         }
       >
         {profileData.memberships && profileData.memberships.length > 0 ? (
-          <Stack as="ul" gap={1} className={styles.list}>
+          <ul className={styles.list}>
             {profileData.memberships.map((m) => {
               const group = groupsById.get(String(m.group_id));
               return (
@@ -135,7 +135,7 @@ function ProfileDetailPage() {
                 </li>
               );
             })}
-          </Stack>
+          </ul>
         ) : (
           <p className={styles.empty}>Not a member of any groups.</p>
         )}
