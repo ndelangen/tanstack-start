@@ -2,6 +2,8 @@ import Discord from '@auth/core/providers/discord';
 import Google from '@auth/core/providers/google';
 import { convexAuth } from '@convex-dev/auth/server';
 
+import { ensureProfileForUser, profileSourcesFromUserDoc } from './lib/profileBootstrap';
+
 const gemini = 'https://www.googleapis.com/auth/generative-language.retriever';
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
@@ -40,6 +42,11 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       }
 
       return siteUrl;
+    },
+    async afterUserCreatedOrUpdated(ctx, { userId }) {
+      const user = await ctx.db.get(userId);
+      if (!user) return;
+      await ensureProfileForUser(ctx, userId, profileSourcesFromUserDoc(user));
     },
   },
 });

@@ -1,4 +1,5 @@
-import { useQuery } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
+import { useEffect, useRef } from 'react';
 
 import { db } from '@db/core';
 import type { FactionEntry } from '@db/factions';
@@ -109,7 +110,26 @@ export function useProfilesAll(options?: { initialData?: ProfileEntry[] }) {
 }
 
 export function useCurrentProfile() {
-  const current = toLiveQueryResult(useQuery(api.profiles.current, {}), true);
+  const userId = useQuery(api.profiles.currentUserId, {});
+  const liveData = useQuery(api.profiles.current, {});
+  const bootstrap = useMutation(api.profiles.bootstrapCurrent);
+  const bootstrapAttemptedRef = useRef(false);
+
+  useEffect(() => {
+    if (userId === undefined || liveData === undefined) return;
+    if (userId === null) {
+      bootstrapAttemptedRef.current = false;
+      return;
+    }
+    if (liveData !== null) return;
+    if (bootstrapAttemptedRef.current) return;
+    bootstrapAttemptedRef.current = true;
+    void bootstrap({}).catch(() => {
+      bootstrapAttemptedRef.current = false;
+    });
+  }, [userId, liveData, bootstrap]);
+
+  const current = toLiveQueryResult(liveData, true);
 
   return {
     ...current,

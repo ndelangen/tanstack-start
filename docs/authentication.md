@@ -6,10 +6,12 @@
 flowchart TD
     User[User] --> Login["Login Page<br/>/auth/login"]
     Login --> ConvexAuth[Convex Auth]
+    ConvexAuth --> UsersRow["users row created/updated"]
+    UsersRow --> ProfileRow["profiles row ensured"]
     ConvexAuth --> Session[Session Created]
     Session --> Mutations[Mutations Check Auth]
     Mutations --> DB[(Database)]
-    
+
     OAuth[OAuth Provider] --> ConvexAuth
 ```
 
@@ -44,7 +46,9 @@ Routes in `src/app/routes/auth/`:
 
 ## Profiles
 
-Profiles are created on first authenticated bootstrap/update mutation in Convex.
+A `profiles` document is created in Convex when an auth user is created or updated: `callbacks.afterUserCreatedOrUpdated` in [`convex/auth.ts`](../convex/auth.ts) calls `ensureProfileForUser` (see [`convex/lib/profileBootstrap.ts`](../convex/lib/profileBootstrap.ts)) using the patched `users` row (`name`, `image`).
+
+If a legacy user has no profile, the client’s `useCurrentProfile()` calls `profiles.bootstrapCurrent` once when `currentUserId` is set and `profiles.current` is still `null`. For bulk repair, missing profiles are backfilled by the **`profiles_from_users_v1`** Convex migration (see [`convex/migrations.ts`](../convex/migrations.ts)), which runs with the rest of the widen migrations via `bun run migrations:deploy` / `bun run migrations:dev-strict` and appears on [`/admin/migrations`](../src/app/routes/_app/admin/migrations.tsx).
 
 **Hooks**: `useCurrentProfile()`, `useProfile(id)`, `useUpdateCurrentProfile()`
 

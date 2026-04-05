@@ -7,6 +7,7 @@ import { api } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import { type MutationCtx, mutation, query } from './_generated/server';
 import { requireAuthUserId } from './lib/policy';
+import { ensureProfileForUser } from './lib/profileBootstrap';
 import { nowIso, slugify } from './lib/utils';
 
 async function createProfileIfMissing(ctx: MutationCtx, userId: Id<'users'>) {
@@ -14,7 +15,9 @@ async function createProfileIfMissing(ctx: MutationCtx, userId: Id<'users'>) {
   const authUserId = await getAuthUserId(ctx);
   const authUser = authUserId ? await ctx.db.get(authUserId) : null;
   const identityName =
-    typeof identity?.name === 'string' && identity.name.length > 0 ? identity.name : null;
+    typeof identity?.name === 'string' && identity.name.trim().length > 0
+      ? identity.name.trim()
+      : null;
   const identityPictureUrl =
     typeof (identity as { pictureUrl?: unknown } | null)?.pictureUrl === 'string' &&
     ((identity as { pictureUrl?: string } | null)?.pictureUrl?.length ?? 0) > 0
@@ -22,74 +25,23 @@ async function createProfileIfMissing(ctx: MutationCtx, userId: Id<'users'>) {
       : null;
   const authUserName =
     authUser && typeof (authUser as { name?: unknown }).name === 'string'
-      ? ((authUser as { name?: string }).name ?? null)
+      ? ((authUser as { name?: string }).name?.trim().length ?? 0) > 0
+        ? (authUser as { name: string }).name.trim()
+        : null
       : null;
   const authUserImage =
     authUser && typeof (authUser as { image?: unknown }).image === 'string'
       ? ((authUser as { image?: string }).image ?? null)
       : null;
 
-  const existing = await ctx.db
-    .query('profiles')
-    .withIndex('by_user_id', (q) => q.eq('user_id', userId))
-    .unique();
-  if (existing) {
-    const fillUsername = existing.username ?? identityName ?? authUserName;
-    const fillAvatar = existing.avatar_url ?? identityPictureUrl ?? authUserImage;
-    const nextSlug = existing.slug;
+  const displayName = identityName ?? authUserName ?? null;
+  const imageUrl =
+    identityPictureUrl ?? (authUserImage && authUserImage.length > 0 ? authUserImage : null);
 
-    if (
-      fillUsername !== existing.username ||
-      fillAvatar !== existing.avatar_url ||
-      nextSlug !== existing.slug
-    ) {
-      await ctx.db.patch(existing._id, {
-        user_id: userId,
-        username: fillUsername ?? null,
-        avatar_url: fillAvatar ?? null,
-        slug: nextSlug,
-        updated_at: nowIso(),
-      });
-      const refreshed = await ctx.db.get(existing._id);
-      if (refreshed) {
-        return refreshed;
-      }
-    }
-    return existing;
-  }
-
-  const username =
-    identityName && identityName.trim().length > 0
-      ? identityName.trim()
-      : authUserName && authUserName.trim().length > 0
-        ? authUserName.trim()
-        : 'nameless';
-  const avatarUrl = identityPictureUrl ?? authUserImage;
-  const baseSlug = slugify(username);
-  if (baseSlug.length === 0) {
-    throw new Error('Failed to generate slug from display name');
-  }
-  let slug = baseSlug;
-  let suffix = 1;
-  while (
-    await ctx.db
-      .query('profiles')
-      .withIndex('by_slug', (q) => q.eq('slug', slug))
-      .unique()
-  ) {
-    suffix += 1;
-    slug = `${baseSlug}-${suffix}`;
-  }
-  const now = nowIso();
-  const _id = await ctx.db.insert('profiles', {
-    user_id: userId,
-    username: username ?? null,
-    avatar_url: avatarUrl ?? null,
-    slug,
-    created_at: now,
-    updated_at: now,
+  return await ensureProfileForUser(ctx, userId, {
+    displayName,
+    imageUrl,
   });
-  return await ctx.db.get(_id);
 }
 
 export const currentUserId = query({
@@ -184,7 +136,10 @@ export const getBySlug = query({
 export const getByUserId = query({
   args: { user_id: v.id('users') },
   handler: async (ctx, args) => {
-    const profile = await ctx.db.get(args.user_id);
+    const profile = await ctx.db
+      .query('profiles')
+      .withIndex('by_user_id', (q) => q.eq('user_id', args.user_id))
+      .unique();
     if (!profile) throw new Error(`Profile with user id ${args.user_id} not found`);
     return profile;
   },

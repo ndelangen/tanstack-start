@@ -17,6 +17,7 @@ import type * as lib_faqRulesetList from "../lib/faqRulesetList.js";
 import type * as lib_ids from "../lib/ids.js";
 import type * as lib_memberGroups from "../lib/memberGroups.js";
 import type * as lib_policy from "../lib/policy.js";
+import type * as lib_profileBootstrap from "../lib/profileBootstrap.js";
 import type * as lib_profileSummary from "../lib/profileSummary.js";
 import type * as lib_utils from "../lib/utils.js";
 import type * as members from "../members.js";
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   "lib/ids": typeof lib_ids;
   "lib/memberGroups": typeof lib_memberGroups;
   "lib/policy": typeof lib_policy;
+  "lib/profileBootstrap": typeof lib_profileBootstrap;
   "lib/profileSummary": typeof lib_profileSummary;
   "lib/utils": typeof lib_utils;
   members: typeof members;

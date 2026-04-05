@@ -62,13 +62,21 @@ The Netlify publish step runs only if Convex deploy, migration verification, and
 
 ## Netlify One-Time Setup
 
-In Netlify UI:
+Production traffic should come **only** from GitHub Actions (`netlify deploy --prod` with a fresh build). The repo’s [`netlify.toml`](../netlify.toml) sets **`ignore`** so pushes to **`main` skip Netlify’s Git hook build** (exit `0` = cancel). That stops duplicate deploys where Netlify shows a preview and you had to click “Publish deploy” for production.
 
-1. **Site configuration -> Build & deploy -> Continuous Deployment**
-   - Disable automatic Git-triggered deploys (or disconnect the repo) so GitHub Actions is your single production deploy path.
-2. **Site configuration -> Build & deploy -> Build settings**
-   - Keep `bun run app:build` and `dist/client` as fallback values for manual Netlify builds.
+In Netlify UI, still verify:
+
+1. **Site configuration → Build & deploy → Branches and deploy contexts**
+   - **Production branch** = `main` (so any Netlify-side behavior stays aligned with Git).
+2. **Site configuration → Build & deploy → Continuous Deployment**
+   - You can leave the repo connected for Deploy Previews on non-`main` branches; `main` builds are ignored in favor of Actions.
 3. Keep redirects from [`public/_redirects`](../public/_redirects) so SPA routes continue working.
+
+If you prefer **no** Netlify Git builds at all (Actions only), disconnect the repo or set `[build] ignore = "exit 0"` and rely solely on the workflow.
+
+## Migrations on every `main` deploy
+
+On push to `main`, [`.github/workflows/deploy-main.yml`](../.github/workflows/deploy-main.yml) runs **`bun run migrations:deploy`** after **`bun run convex:deploy`**. That starts and waits for all widen migrations in [`convex/migration-guards.json`](../convex/migration-guards.json) (including `profiles_from_users_v1`). No separate manual migration step is required when this workflow succeeds.
 
 ## Deployment Flow
 

@@ -45,7 +45,9 @@ Define which user-related fields belong to Convex Auth tables vs app-level profi
 ## Mutation Rules
 
 - Authentication/authorization is enforced with `getAuthUserId()` and `requireAuthUserId()`.
-- `createProfileIfMissing` bootstraps and backfills profile data from auth user data.
+- **On sign-in**, Convex Auth runs `afterUserCreatedOrUpdated`, which ensures a `profiles` row via `ensureProfileForUser` from the `users` document (no reliance on `ctx.auth` identity in that internal mutation).
+- **`createProfileIfMissing`** (used by `bootstrapCurrent` and `updateCurrent`) merges JWT/session identity with the `users` row, then delegates to `ensureProfileForUser` for insert or backfill of missing `username` / `avatar_url`.
+- **`profiles_from_users_v1`** ([`convex/migrations.ts`](../convex/migrations.ts)) walks `users` and creates any missing `profiles` rows using the same rules; it is part of the guarded migration set in [`convex/migration-guards.json`](../convex/migration-guards.json) and runs with deploy / dev-strict (see [`docs/convex-migrations.md`](./convex-migrations.md)).
 - If profile is incomplete (`slug === "user"` or missing username/avatar), bootstrap backfills:
   - `username` from identity/auth user
   - `avatar_url` from identity/auth user image

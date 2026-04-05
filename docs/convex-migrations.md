@@ -65,10 +65,12 @@ Rules:
   - `narrow`: schema narrowing checkpoints that list required completed migration IDs.
 - `requires`: migration IDs that must be `success + isDone=true` before narrow is allowed.
 
-For current slug demos:
+Current widen migrations include:
 
-- `groups_slug_v1`
-- `rulesets_slug_v1`
+- `groups_slug_v1`, `rulesets_slug_v1`, `faq_item_slug_v1` (slug backfills)
+- `profiles_from_users_v1` (ensures every auth `users` row has a `profiles` row)
+
+The `profiles_backfill_guard` narrow-phase entry exists only so deploy polling treats `profiles_from_users_v1` as required alongside schema narrow prerequisites; it is not a schema change.
 
 ## Automated production flow (fail-closed)
 

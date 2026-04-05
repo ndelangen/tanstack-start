@@ -5,6 +5,7 @@ import { v } from 'convex/values';
 import { components, internal } from './_generated/api';
 import type { DataModel, Id } from './_generated/dataModel';
 import { internalMutation, mutation, query } from './_generated/server';
+import { ensureProfileForUser, profileSourcesFromUserDoc } from './lib/profileBootstrap';
 import { nowIso, slugify } from './lib/utils';
 import type { MutationCtx, QueryCtx } from './types';
 
@@ -14,6 +15,7 @@ const MIGRATION_IDS: Record<string, MigrationRef> = {
   groups_slug_v1: internal.migrations.groups_slug_v1,
   rulesets_slug_v1: internal.migrations.rulesets_slug_v1,
   faq_item_slug_v1: internal.migrations.faq_item_slug_v1,
+  profiles_from_users_v1: internal.migrations.profiles_from_users_v1,
 };
 
 type MigrationId = keyof typeof MIGRATION_IDS;
@@ -139,12 +141,27 @@ export const faq_item_slug_v1 = migrations.define({
   },
 });
 
+/** Ensures each auth `users` row has a `profiles` row (idempotent; skips when profile exists). */
+export const profiles_from_users_v1 = migrations.define({
+  table: 'users',
+  batchSize: 50,
+  migrateOne: async (ctx, user) => {
+    const existing = await ctx.db
+      .query('profiles')
+      .withIndex('by_user_id', (q) => q.eq('user_id', user._id))
+      .unique();
+    if (existing) return;
+    await ensureProfileForUser(ctx, user._id, profileSourcesFromUserDoc(user));
+  },
+});
+
 export const run = migrations.runner();
 
 export const runDeployMigrations = migrations.runner([
   internal.migrations.groups_slug_v1,
   internal.migrations.rulesets_slug_v1,
   internal.migrations.faq_item_slug_v1,
+  internal.migrations.profiles_from_users_v1,
 ]);
 
 export const runRequired = mutation({

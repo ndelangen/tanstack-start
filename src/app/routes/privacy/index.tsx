@@ -5,5 +5,5 @@ export const Route = createFileRoute('/privacy/')({
 });
 
 function RouteComponent() {
-  return <div>Hello "/privacy/"!</div>;
+  return <div>Hello "/privacy/"!2</div>;
 }
