@@ -56,7 +56,7 @@ On every push to `main`:
 2. `bun run convex:deploy`
 3. `bun run migrations:deploy` (auto-run + await required Convex migrations)
 4. `bun run app:build`
-5. Deploy `dist/client` to Netlify using API token + site id
+5. Deploy `dist/client` to Netlify with **`deploy --no-build --prod`** (token + site id). **`--no-build`** is required so the CLI does not run `netlify.toml`’s `build.command` via `@netlify/build`; that path can finish as a **draft** deploy and skip updating the production URL even when `--prod` is present.
 
 The Netlify publish step runs only if Convex deploy, migration verification, and build succeed.
 
