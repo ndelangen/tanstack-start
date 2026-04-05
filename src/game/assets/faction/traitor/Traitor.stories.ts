@@ -21,8 +21,8 @@ const meta = preview.meta({
 export const Asset = meta.story({
   args: {
     background: '/generated/utils/background/moritani.jpg',
-    image: 'image/leader/official/tessia.png',
-    logo: 'vector/logo/moritani.svg',
+    image: '/image/leader/official/tessia.png',
+    logo: '/vector/logo/moritani.svg',
     name: 'Vando Terboli',
     strength: '1',
     owner: 'Moritani',
@@ -37,8 +37,8 @@ export const Preview = meta.story({
       opacity: 0,
       strength: 0,
     },
-    image: 'image/leader/official/tessia.png',
-    logo: 'vector/logo/moritani.svg',
+    image: '/image/leader/official/tessia.png',
+    logo: '/vector/logo/moritani.svg',
     name: 'Vando Terboli',
     strength: '1',
     owner: 'Moritani',

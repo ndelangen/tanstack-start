@@ -21,8 +21,8 @@ const meta = preview.meta({
 export const Asset = meta.story({
   args: {
     background: '/generated/utils/background/moritani.jpg',
-    image: 'vector/troop/atreides.svg',
-    star: 'vector/troop_modifier/star-left-red.svg',
+    image: '/vector/troop/atreides.svg',
+    star: '/vector/troop_modifier/star-left-red.svg',
     striped: false,
   },
 });
@@ -35,8 +35,8 @@ export const Preview = meta.story({
       opacity: 0,
       strength: 0,
     },
-    star: 'vector/troop_modifier/star-left-red.svg',
+    star: '/vector/troop_modifier/star-left-red.svg',
     striped: false,
-    image: 'vector/troop/atreides.svg',
+    image: '/vector/troop/atreides.svg',
   },
 });

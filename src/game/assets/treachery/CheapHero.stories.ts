@@ -14,12 +14,12 @@ const meta = preview.meta({
 export const MaleCheapHero = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Cheap Hero',
     decals: [
       {
-        id: 'vector/decal/cheap-hero.svg',
+        id: '/vector/decal/cheap-hero.svg',
         muted: false,
         offset: [0, 20],
         outline: true,
@@ -34,12 +34,12 @@ export const MaleCheapHero = meta.story({
 export const FemaleCheapHero = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Cheap Hero',
     decals: [
       {
-        id: 'vector/decal/cheap-heroine.svg',
+        id: '/vector/decal/cheap-heroine.svg',
         muted: false,
         offset: [0, 20],
         outline: true,

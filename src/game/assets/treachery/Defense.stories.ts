@@ -14,12 +14,12 @@ const meta = preview.meta({
 export const Shield = meta.story({
   args: {
     head: `/generated/utils/background/defense.jpg`,
-    icon: [`/generated/utils/background/striped-defense.jpg`, 'vector/icon/shield.svg'],
+    icon: [`/generated/utils/background/striped-defense.jpg`, '/vector/icon/shield.svg'],
     iconOffset: [0, 8],
     name: 'Shield',
     decals: [
       {
-        id: 'vector/decal/shield.svg',
+        id: '/vector/decal/shield.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -34,12 +34,12 @@ export const Shield = meta.story({
 export const Snooper = meta.story({
   args: {
     head: `/generated/utils/background/defense.jpg`,
-    icon: [`/generated/utils/background/striped-defense.jpg`, 'vector/icon/snooper.svg'],
+    icon: [`/generated/utils/background/striped-defense.jpg`, '/vector/icon/snooper.svg'],
     iconOffset: [0, 8],
     name: 'Snooper',
     decals: [
       {
-        id: 'vector/decal/snooper.svg',
+        id: '/vector/decal/snooper.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -54,12 +54,12 @@ export const Snooper = meta.story({
 export const PortableSnooper = meta.story({
   args: {
     head: `/generated/utils/background/defense.jpg`,
-    icon: [`/generated/utils/background/striped-defense.jpg`, 'vector/icon/snooper.svg'],
+    icon: [`/generated/utils/background/striped-defense.jpg`, '/vector/icon/snooper.svg'],
     iconOffset: [0, 8],
     name: 'Portable Snooper',
     decals: [
       {
-        id: 'vector/decal/portable-snooper.svg',
+        id: '/vector/decal/portable-snooper.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -74,12 +74,12 @@ export const PortableSnooper = meta.story({
 export const Chemistry = meta.story({
   args: {
     head: `/generated/utils/background/defense.jpg`,
-    icon: [`/generated/utils/background/striped-defense.jpg`, 'vector/icon/snooper.svg'],
+    icon: [`/generated/utils/background/striped-defense.jpg`, '/vector/icon/snooper.svg'],
     iconOffset: [0, 8],
     name: 'Chemistry',
     decals: [
       {
-        id: 'vector/decal/chemistry-multicolor.svg',
+        id: '/vector/decal/chemistry-multicolor.svg',
         muted: false,
         offset: [0, 0],
         outline: false,
@@ -94,12 +94,12 @@ export const Chemistry = meta.story({
 export const ShieldSnooper = meta.story({
   args: {
     head: `/generated/utils/background/defense.jpg`,
-    icon: [`/generated/utils/background/striped-defense.jpg`, 'vector/icon/lightning.svg'],
+    icon: [`/generated/utils/background/striped-defense.jpg`, '/vector/icon/lightning.svg'],
     iconOffset: [0, 0],
     name: 'ShieldSnooper',
     decals: [
       {
-        id: 'vector/decal/shield-snooper.svg',
+        id: '/vector/decal/shield-snooper.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -114,12 +114,12 @@ export const ShieldSnooper = meta.story({
 export const SandtroutMembrane = meta.story({
   args: {
     head: `/generated/utils/background/defense.jpg`,
-    icon: [`/generated/utils/background/striped-defense.jpg`, 'vector/icon/lightning.svg'],
+    icon: [`/generated/utils/background/striped-defense.jpg`, '/vector/icon/lightning.svg'],
     iconOffset: [0, 0],
     name: 'Sandtrout Membrane',
     decals: [
       {
-        id: 'vector/decal/membrane.svg',
+        id: '/vector/decal/membrane.svg',
         muted: false,
         offset: [0, 40],
         outline: true,
@@ -134,12 +134,12 @@ export const SandtroutMembrane = meta.story({
 export const DeflectiveShield = meta.story({
   args: {
     head: `/generated/utils/background/defense.jpg`,
-    icon: [`/generated/utils/background/striped-defense.jpg`, 'vector/icon/shield.svg'],
+    icon: [`/generated/utils/background/striped-defense.jpg`, '/vector/icon/shield.svg'],
     iconOffset: [0, 8],
     name: 'Deflective Shield',
     decals: [
       {
-        id: 'vector/decal/deflective-shield.svg',
+        id: '/vector/decal/deflective-shield.svg',
         muted: false,
         offset: [0, 0],
         outline: true,

@@ -14,12 +14,12 @@ const meta = preview.meta({
 export const ErnocSeed = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, 'vector/icon/poison.svg'],
+    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/poison.svg'],
     iconOffset: [0, 0],
     name: 'Ernoc Seed!',
     decals: [
       {
-        id: 'vector/decal/flagella.svg',
+        id: '/vector/decal/flagella.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -34,12 +34,12 @@ export const ErnocSeed = meta.story({
 export const Trishula = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, 'vector/icon/projectile.svg'],
+    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/projectile.svg'],
     iconOffset: [0, 0],
     name: 'Trishula!',
     decals: [
       {
-        id: 'vector/decal/thumper-alt.svg',
+        id: '/vector/decal/thumper-alt.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -54,12 +54,12 @@ export const Trishula = meta.story({
 export const PhrinePen = meta.story({
   args: {
     head: `/generated/utils/background/defense.jpg`,
-    icon: [`/generated/utils/background/striped-defense.jpg`, 'vector/icon/poison.svg'],
+    icon: [`/generated/utils/background/striped-defense.jpg`, '/vector/icon/poison.svg'],
     iconOffset: [0, 8],
     name: 'Snooper!',
     decals: [
       {
-        id: 'vector/decal/injection.svg',
+        id: '/vector/decal/injection.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -74,12 +74,12 @@ export const PhrinePen = meta.story({
 export const Shield = meta.story({
   args: {
     head: `/generated/utils/background/defense.jpg`,
-    icon: [`/generated/utils/background/striped-defense.jpg`, 'vector/icon/shield.svg'],
+    icon: [`/generated/utils/background/striped-defense.jpg`, '/vector/icon/shield.svg'],
     iconOffset: [0, 8],
     name: 'Shield!',
     decals: [
       {
-        id: 'vector/decal/target.svg',
+        id: '/vector/decal/target.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
