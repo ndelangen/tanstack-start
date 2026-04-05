@@ -1,11 +1,15 @@
 import type { ReactNode } from 'react';
 
-import styles from './Form.module.css';
+import { Toolbar } from '@app/components/generic/layout';
 
 interface FormActionsProps {
   children: ReactNode;
 }
 
 export function FormActions({ children }: FormActionsProps) {
-  return <div className={styles.buttons}>{children}</div>;
+  return (
+    <Toolbar>
+      <Toolbar.Left>{children}</Toolbar.Left>
+    </Toolbar>
+  );
 }
