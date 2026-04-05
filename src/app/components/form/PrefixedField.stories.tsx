@@ -14,4 +14,3 @@ export const Default = meta.story({
     children: <TextField appearance="embedded" placeholder="subdomain" />,
   },
 });
-

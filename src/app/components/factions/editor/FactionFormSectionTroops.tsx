@@ -17,7 +17,6 @@ import clsx from 'clsx';
 import { CircleOff, Plus, Rotate3d, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
-import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormField } from '@app/components/form/FormField';
 import { FormTabs } from '@app/components/form/FormTabs';
 import { FormTooltip } from '@app/components/form/FormTooltip';
@@ -25,6 +24,7 @@ import { FormUnitToolbar } from '@app/components/form/FormUnitToolbar';
 import { SortableItem } from '@app/components/form/SortableItem';
 import { SortableReorderHandle } from '@app/components/form/SortableReorderHandle';
 import { TextField } from '@app/components/form/TextField';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { getSortableIds, indexFromSortableId } from '@app/lib/dnd-sortable-ids';
 
 import styles from './FactionEditor.module.css';

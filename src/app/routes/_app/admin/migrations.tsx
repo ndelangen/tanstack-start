@@ -48,18 +48,18 @@ function AdminMigrationsPage() {
         <Stack gap={2}>
           <h2>Live migration status</h2>
           <ButtonGroup>
-              <FormTooltip content="Sync status snapshot to migration_runs table">
-                <UIButton
-                  type="button"
-                  iconOnly
-                  aria-label="Sync migration status"
-                  disabled={syncRuns.isPending}
-                  onClick={() => syncRuns.mutate({})}
-                >
-                  <RefreshCw size={16} aria-hidden />
-                </UIButton>
-              </FormTooltip>
-            </ButtonGroup>
+            <FormTooltip content="Sync status snapshot to migration_runs table">
+              <UIButton
+                type="button"
+                iconOnly
+                aria-label="Sync migration status"
+                disabled={syncRuns.isPending}
+                onClick={() => syncRuns.mutate({})}
+              >
+                <RefreshCw size={16} aria-hidden />
+              </UIButton>
+            </FormTooltip>
+          </ButtonGroup>
           <table>
             <thead>
               <tr>

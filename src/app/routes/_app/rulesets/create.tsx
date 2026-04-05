@@ -82,11 +82,11 @@ function CreateRulesetForm({ ownerUserId }: { ownerUserId: string }) {
           </select>
         </FormField>
         <ButtonGroup>
-            <UIButton type="submit" disabled={createRuleset.isPending || name.trim().length === 0}>
-              <Plus size={16} aria-hidden />
-              <span>{createRuleset.isPending ? 'Creating…' : 'Create'}</span>
-            </UIButton>
-          </ButtonGroup>
+          <UIButton type="submit" disabled={createRuleset.isPending || name.trim().length === 0}>
+            <Plus size={16} aria-hidden />
+            <span>{createRuleset.isPending ? 'Creating…' : 'Create'}</span>
+          </UIButton>
+        </ButtonGroup>
       </Stack>
     </>
   );

@@ -126,16 +126,16 @@ function GroupAssignPopoverBody({
             />
           </FormField>
           <ButtonGroup>
-              <UIButton
-                type="button"
-                iconOnly
-                aria-label="Set selected group"
-                onClick={handleAssignGroup}
-                disabled={disabled}
-              >
-                <Check size={16} aria-hidden />
-              </UIButton>
-            </ButtonGroup>
+            <UIButton
+              type="button"
+              iconOnly
+              aria-label="Set selected group"
+              onClick={handleAssignGroup}
+              disabled={disabled}
+            >
+              <Check size={16} aria-hidden />
+            </UIButton>
+          </ButtonGroup>
         </>
       )}
     </div>

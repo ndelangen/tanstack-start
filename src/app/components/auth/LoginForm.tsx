@@ -30,23 +30,23 @@ export function LoginForm(props: React.ComponentPropsWithoutRef<'div'>) {
         <p>Sign in to your account to continue</p>
         {error && <p role="alert">{error}</p>}
         <ButtonGroup>
-            <UIButton
-              type="button"
-              disabled={loadingProvider !== null}
-              onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleSocialLogin(e, 'discord')}
-            >
-              <LogIn size={16} aria-hidden />
-              <span>{loadingProvider === 'discord' ? 'Logging in...' : 'Continue with Discord'}</span>
-            </UIButton>
-            <UIButton
-              type="button"
-              disabled={loadingProvider !== null}
-              onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleSocialLogin(e, 'google')}
-            >
-              <LogIn size={16} aria-hidden />
-              <span>{loadingProvider === 'google' ? 'Logging in...' : 'Continue with Google'}</span>
-            </UIButton>
-          </ButtonGroup>
+          <UIButton
+            type="button"
+            disabled={loadingProvider !== null}
+            onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleSocialLogin(e, 'discord')}
+          >
+            <LogIn size={16} aria-hidden />
+            <span>{loadingProvider === 'discord' ? 'Logging in...' : 'Continue with Discord'}</span>
+          </UIButton>
+          <UIButton
+            type="button"
+            disabled={loadingProvider !== null}
+            onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleSocialLogin(e, 'google')}
+          >
+            <LogIn size={16} aria-hidden />
+            <span>{loadingProvider === 'google' ? 'Logging in...' : 'Continue with Google'}</span>
+          </UIButton>
+        </ButtonGroup>
       </Stack>
     </div>
   );

@@ -72,26 +72,24 @@ function GroupCreatePage() {
       >
         <h2>Create a new group</h2>
         <ButtonGroup>
-            <FormTooltip content="Save group">
-              <UIButton type="submit" iconOnly aria-label="Save group" disabled={!canSubmit}>
-                <Save size={16} aria-hidden />
-              </UIButton>
-            </FormTooltip>
-            <FormTooltip content="Close create group">
-              <UIButton
-                type="button"
-                variant="secondary"
-                iconOnly
-                aria-label="Close create group"
-                disabled={createGroup.isPending}
-                onClick={() =>
-                  navigate({ to: '/profiles/$slug', params: { slug: profileRow.slug } })
-                }
-              >
-                <X size={16} aria-hidden />
-              </UIButton>
-            </FormTooltip>
-          </ButtonGroup>
+          <FormTooltip content="Save group">
+            <UIButton type="submit" iconOnly aria-label="Save group" disabled={!canSubmit}>
+              <Save size={16} aria-hidden />
+            </UIButton>
+          </FormTooltip>
+          <FormTooltip content="Close create group">
+            <UIButton
+              type="button"
+              variant="secondary"
+              iconOnly
+              aria-label="Close create group"
+              disabled={createGroup.isPending}
+              onClick={() => navigate({ to: '/profiles/$slug', params: { slug: profileRow.slug } })}
+            >
+              <X size={16} aria-hidden />
+            </UIButton>
+          </FormTooltip>
+        </ButtonGroup>
         <FormField
           label="Group name"
           htmlFor="group-name"

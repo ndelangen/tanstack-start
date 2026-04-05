@@ -145,11 +145,11 @@ export function FactionLoadPopoverContent({
       )}
       <ButtonGroup>
         <FormTooltip content="Go to your profile to manage groups and factions">
-            <Link to="/profiles/$slug" params={{ slug: currentProfile.data?.slug ?? '' }}>
-              Manage on profile
-            </Link>
-          </FormTooltip>
-        </ButtonGroup>
+          <Link to="/profiles/$slug" params={{ slug: currentProfile.data?.slug ?? '' }}>
+            Manage on profile
+          </Link>
+        </FormTooltip>
+      </ButtonGroup>
     </div>
   );
 }

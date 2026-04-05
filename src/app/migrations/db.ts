@@ -1,6 +1,7 @@
+import { useQuery } from 'convex/react';
+
 import { db } from '@db/core';
 import { toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
-import { useQuery } from 'convex/react';
 
 import { api } from '../../../convex/_generated/api';
 

@@ -108,13 +108,13 @@ function FaqCreatePage() {
             <MultilineTextField name="answer" rows={3} placeholder="Optional answer..." />
           </FormField>
           <ButtonGroup>
-              <UIButton type="submit" disabled={createFaqItem.isPending}>
-                {createFaqItem.isPending ? 'Asking…' : 'Ask'}
-              </UIButton>
-              {createFaqItem.isError && (
-                <span className={styles.error}>{createFaqItem.error?.message}</span>
-              )}
-            </ButtonGroup>
+            <UIButton type="submit" disabled={createFaqItem.isPending}>
+              {createFaqItem.isPending ? 'Asking…' : 'Ask'}
+            </UIButton>
+            {createFaqItem.isError && (
+              <span className={styles.error}>{createFaqItem.error?.message}</span>
+            )}
+          </ButtonGroup>
         </Stack>
       </Card>
     </>

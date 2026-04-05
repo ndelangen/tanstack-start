@@ -199,32 +199,32 @@ function FaqDetailPage() {
                 />
               </FormField>
               <ButtonGroup>
-                  <FormTooltip content="Save question">
-                    <UIButton
-                      type="button"
-                      iconOnly
-                      aria-label="Save question"
-                      onClick={() => saveQuestion()}
-                      disabled={updateFaqItem.isPending}
-                    >
-                      <Check size={16} aria-hidden />
-                    </UIButton>
-                  </FormTooltip>
-                  <FormTooltip content="Cancel editing question">
-                    <UIButton
-                      variant="secondary"
-                      type="button"
-                      iconOnly
-                      aria-label="Cancel editing question"
-                      onClick={() => setEditingQuestion(false)}
-                    >
-                      <X size={16} aria-hidden />
-                    </UIButton>
-                  </FormTooltip>
-                  {updateFaqItem.isError && (
-                    <span className={styles.error}>{updateFaqItem.error?.message}</span>
-                  )}
-                </ButtonGroup>
+                <FormTooltip content="Save question">
+                  <UIButton
+                    type="button"
+                    iconOnly
+                    aria-label="Save question"
+                    onClick={() => saveQuestion()}
+                    disabled={updateFaqItem.isPending}
+                  >
+                    <Check size={16} aria-hidden />
+                  </UIButton>
+                </FormTooltip>
+                <FormTooltip content="Cancel editing question">
+                  <UIButton
+                    variant="secondary"
+                    type="button"
+                    iconOnly
+                    aria-label="Cancel editing question"
+                    onClick={() => setEditingQuestion(false)}
+                  >
+                    <X size={16} aria-hidden />
+                  </UIButton>
+                </FormTooltip>
+                {updateFaqItem.isError && (
+                  <span className={styles.error}>{updateFaqItem.error?.message}</span>
+                )}
+              </ButtonGroup>
             </Stack>
           ) : (
             <>
@@ -244,32 +244,32 @@ function FaqDetailPage() {
               </div>
               {isQuestionOwner && (
                 <ButtonGroup>
-                    <FormTooltip content="Edit question">
-                      <UIButton
-                        type="button"
-                        iconOnly
-                        aria-label="Edit question"
-                        onClick={startEditQuestion}
-                      >
-                        <Pencil size={16} aria-hidden />
-                      </UIButton>
-                    </FormTooltip>
-                    <FormTooltip content="Delete question">
-                      <UIButton
-                        variant="critical"
-                        type="button"
-                        iconOnly
-                        aria-label="Delete question"
-                        onClick={handleDeleteQuestion}
-                        disabled={deleteFaqItem.isPending}
-                      >
-                        <Trash2 size={16} aria-hidden />
-                      </UIButton>
-                    </FormTooltip>
-                    {deleteFaqItem.isError && (
-                      <span className={styles.error}>{deleteFaqItem.error?.message}</span>
-                    )}
-                  </ButtonGroup>
+                  <FormTooltip content="Edit question">
+                    <UIButton
+                      type="button"
+                      iconOnly
+                      aria-label="Edit question"
+                      onClick={startEditQuestion}
+                    >
+                      <Pencil size={16} aria-hidden />
+                    </UIButton>
+                  </FormTooltip>
+                  <FormTooltip content="Delete question">
+                    <UIButton
+                      variant="critical"
+                      type="button"
+                      iconOnly
+                      aria-label="Delete question"
+                      onClick={handleDeleteQuestion}
+                      disabled={deleteFaqItem.isPending}
+                    >
+                      <Trash2 size={16} aria-hidden />
+                    </UIButton>
+                  </FormTooltip>
+                  {deleteFaqItem.isError && (
+                    <span className={styles.error}>{deleteFaqItem.error?.message}</span>
+                  )}
+                </ButtonGroup>
               )}
             </>
           )}
@@ -303,17 +303,17 @@ function FaqDetailPage() {
               />
             </FormField>
             <ButtonGroup>
-                <FormTooltip content="Add answer">
-                  <UIButton
-                    type="submit"
-                    iconOnly
-                    aria-label="Add answer"
-                    disabled={createFaqAnswer.isPending}
-                  >
-                    <MessageSquarePlus size={16} aria-hidden />
-                  </UIButton>
-                </FormTooltip>
-              </ButtonGroup>
+              <FormTooltip content="Add answer">
+                <UIButton
+                  type="submit"
+                  iconOnly
+                  aria-label="Add answer"
+                  disabled={createFaqAnswer.isPending}
+                >
+                  <MessageSquarePlus size={16} aria-hidden />
+                </UIButton>
+              </FormTooltip>
+            </ButtonGroup>
           </Stack>
         )}
 
@@ -344,32 +344,32 @@ function FaqDetailPage() {
                         />
                       </FormField>
                       <ButtonGroup>
-                          <FormTooltip content="Save answer">
-                            <UIButton
-                              type="button"
-                              iconOnly
-                              aria-label="Save answer"
-                              onClick={() => saveAnswer(a._id)}
-                              disabled={updateFaqAnswer.isPending}
-                            >
-                              <Check size={16} aria-hidden />
-                            </UIButton>
-                          </FormTooltip>
-                          <FormTooltip content="Cancel editing answer">
-                            <UIButton
-                              variant="secondary"
-                              type="button"
-                              iconOnly
-                              aria-label="Cancel editing answer"
-                              onClick={() => setEditingAnswerId(null)}
-                            >
-                              <X size={16} aria-hidden />
-                            </UIButton>
-                          </FormTooltip>
-                          {updateFaqAnswer.isError && (
-                            <span className={styles.error}>{updateFaqAnswer.error?.message}</span>
-                          )}
-                        </ButtonGroup>
+                        <FormTooltip content="Save answer">
+                          <UIButton
+                            type="button"
+                            iconOnly
+                            aria-label="Save answer"
+                            onClick={() => saveAnswer(a._id)}
+                            disabled={updateFaqAnswer.isPending}
+                          >
+                            <Check size={16} aria-hidden />
+                          </UIButton>
+                        </FormTooltip>
+                        <FormTooltip content="Cancel editing answer">
+                          <UIButton
+                            variant="secondary"
+                            type="button"
+                            iconOnly
+                            aria-label="Cancel editing answer"
+                            onClick={() => setEditingAnswerId(null)}
+                          >
+                            <X size={16} aria-hidden />
+                          </UIButton>
+                        </FormTooltip>
+                        {updateFaqAnswer.isError && (
+                          <span className={styles.error}>{updateFaqAnswer.error?.message}</span>
+                        )}
+                      </ButtonGroup>
                     </Stack>
                   ) : (
                     <>

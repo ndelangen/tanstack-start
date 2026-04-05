@@ -243,19 +243,19 @@ function RulesetDetailPage() {
           )}
 
           {isOwner && (
-              <FormTooltip content="Delete ruleset">
-                <UIButton
-                  variant="critical"
-                  type="button"
-                  iconOnly
-                  aria-label="Delete ruleset"
-                  onClick={handleDelete}
-                  disabled={deleteRuleset.isPending}
-                >
-                  <Trash2 size={16} aria-hidden />
-                </UIButton>
-              </FormTooltip>
-            )}
+            <FormTooltip content="Delete ruleset">
+              <UIButton
+                variant="critical"
+                type="button"
+                iconOnly
+                aria-label="Delete ruleset"
+                onClick={handleDelete}
+                disabled={deleteRuleset.isPending}
+              >
+                <Trash2 size={16} aria-hidden />
+              </UIButton>
+            </FormTooltip>
+          )}
         </Toolbar.Right>
       </Toolbar>
       <section className={styles.section}>
