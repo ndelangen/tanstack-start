@@ -21,7 +21,7 @@ const meta = preview.meta({
 export const Jacurutu = meta.story({
   args: {
     background: `url('/generated/utils/background/hiereg.jpg') top left / cover no-repeat`,
-    image: 'vector/icon/seitch.svg',
+    image: '/vector/icon/seitch.svg',
     circle: false,
     size: { width: 150, height: 150 },
     fill: '#000',
@@ -33,7 +33,7 @@ export const Jacurutu = meta.story({
 export const Cistern = meta.story({
   args: {
     background: `url('/generated/utils/background/hiereg.jpg') top left / cover no-repeat`,
-    image: 'vector/decal/cistern.svg',
+    image: '/vector/decal/cistern.svg',
     circle: false,
     size: { width: 150, height: 150 },
     fill: '#000',
@@ -45,7 +45,7 @@ export const Cistern = meta.story({
 export const EcologicalTestingStation = meta.story({
   args: {
     background: `url('/generated/utils/background/hiereg.jpg') top left / cover no-repeat`,
-    image: 'vector/decal/ecological-testing-station.svg',
+    image: '/vector/decal/ecological-testing-station.svg',
     circle: false,
     size: { width: 180, height: 180 },
     fill: '#000',
@@ -57,7 +57,7 @@ export const EcologicalTestingStation = meta.story({
 export const Shrine = meta.story({
   args: {
     background: `url('/generated/utils/background/hiereg.jpg') top left / cover no-repeat`,
-    image: 'vector/decal/shrine.svg',
+    image: '/vector/decal/shrine.svg',
     circle: false,
     size: { width: 180, height: 180 },
     fill: '#000',
@@ -69,7 +69,7 @@ export const Shrine = meta.story({
 export const Ornithopter = meta.story({
   args: {
     background: `url('/generated/utils/background/discovery.jpg') top left / cover no-repeat`,
-    image: 'vector/decal/ornithopter.svg',
+    image: '/vector/decal/ornithopter.svg',
     circle: false,
     size: { width: 210, height: 210 },
     fill: '#000',
@@ -81,7 +81,7 @@ export const Ornithopter = meta.story({
 export const OrgizProcessingPlant = meta.story({
   args: {
     background: `url('/generated/utils/background/discovery.jpg') top left / cover no-repeat`,
-    image: 'vector/decal/orgiz-processing-station.svg',
+    image: '/vector/decal/orgiz-processing-station.svg',
     circle: false,
     size: { width: 160, height: 160 },
     fill: '#000',
@@ -93,7 +93,7 @@ export const OrgizProcessingPlant = meta.story({
 export const TreacheryCash = meta.story({
   args: {
     background: `url('/generated/utils/background/discovery.jpg') top left / cover no-repeat`,
-    image: 'vector/icon/treachery.svg',
+    image: '/vector/icon/treachery.svg',
     circle: false,
     size: { width: 160, height: 160 },
     fill: '#000',
@@ -105,7 +105,7 @@ export const TreacheryCash = meta.story({
 export const SpiceCash = meta.story({
   args: {
     background: `url('/generated/utils/background/discovery.jpg') top left / cover no-repeat`,
-    image: 'vector/icon/spice.svg',
+    image: '/vector/icon/spice.svg',
     circle: false,
     size: { width: 160, height: 160 },
     fill: '#000',

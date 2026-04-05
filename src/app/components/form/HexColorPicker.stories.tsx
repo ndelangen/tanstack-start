@@ -8,8 +8,10 @@ const meta = preview.meta({
 
 export const SolidHex = meta.story({
   args: {
+    pickerId: 'story-hex-picker-swatch',
+    textId: 'story-hex-picker-text',
     value: '#c78346',
-    onChange: () => {},
+    onChange: (_next: string) => {},
     pickerAriaLabel: 'Pick background color',
   },
 });

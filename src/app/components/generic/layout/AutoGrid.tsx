@@ -12,6 +12,8 @@ const gapClass = {
 
 export type AutoGridGap = keyof typeof gapClass;
 
+type AutoGridStyle = CSSProperties & { '--auto-grid-min'?: string };
+
 export type AutoGridProps<T extends ElementType = 'div'> = {
   as?: T;
   /** Passed to `minmax(..., 1fr)`; default `180px`. */
@@ -35,7 +37,7 @@ export function AutoGrid<T extends ElementType = 'div'>({
   ...rest
 }: AutoGridProps<T>) {
   const Component = (as ?? 'div') as ElementType;
-  const gridStyle: CSSProperties = {
+  const gridStyle: AutoGridStyle = {
     '--auto-grid-min': minColumnWidth,
     ...style,
   };

@@ -22,7 +22,7 @@ const meta = preview.meta({
 export const Atomics = meta.story({
   args: {
     background: `url('/generated/utils/background/terror.jpg') top left / cover no-repeat`,
-    image: 'vector/decal/atomics.svg',
+    image: '/vector/decal/atomics.svg',
     circle: false,
     size: { width: 160, height: 160 },
     fill: '#000',
@@ -34,7 +34,7 @@ export const Atomics = meta.story({
 export const Assassination = meta.story({
   args: {
     background: `url('/generated/utils/background/terror.jpg') top left / cover no-repeat`,
-    image: 'vector/decal/assassination.svg',
+    image: '/vector/decal/assassination.svg',
     circle: false,
     size: { width: 150, height: 150 },
     fill: '#000',
@@ -46,7 +46,7 @@ export const Assassination = meta.story({
 export const Extortion = meta.story({
   args: {
     background: `url('/generated/utils/background/terror.jpg') top left / cover no-repeat`,
-    image: 'vector/decal/extortion.svg',
+    image: '/vector/decal/extortion.svg',
     circle: false,
     size: { width: 170, height: 170 },
     fill: '#000',
@@ -58,7 +58,7 @@ export const Extortion = meta.story({
 export const Robbery = meta.story({
   args: {
     background: `url('/generated/utils/background/terror.jpg') top left / cover no-repeat`,
-    image: 'vector/decal/robbery.svg',
+    image: '/vector/decal/robbery.svg',
     circle: false,
     size: { width: 170, height: 170 },
     fill: '#000',
@@ -70,7 +70,7 @@ export const Robbery = meta.story({
 export const Sabotage = meta.story({
   args: {
     background: `url('/generated/utils/background/terror.jpg') top left / cover no-repeat`,
-    image: 'vector/decal/sabotage.svg',
+    image: '/vector/decal/sabotage.svg',
     circle: false,
     size: { width: 150, height: 150 },
     fill: '#000',
@@ -82,7 +82,7 @@ export const Sabotage = meta.story({
 export const SneakAttack = meta.story({
   args: {
     background: `url('/generated/utils/background/terror.jpg') top left / cover no-repeat`,
-    image: 'vector/decal/ornithopter.svg',
+    image: '/vector/decal/ornithopter.svg',
     circle: false,
     size: { width: 180, height: 180 },
     fill: '#000',

@@ -22,16 +22,16 @@ export const Asset = meta.story({
 export const Preview = meta.story({
   args: {
     background: {
-      image: 'image/texture/021.jpg',
+      image: '/image/texture/021.jpg',
       colors: ['red', 'blue'],
       opacity: 0,
       strength: 0,
     },
     leader: {
       name: 'Atreides',
-      image: 'image/leader/official/paul.jpg',
+      image: '/image/leader/official/paul.jpg',
     },
-    logo: 'vector/logo/atreides.svg',
+    logo: '/vector/logo/atreides.svg',
     name: 'Atreides',
   },
 });

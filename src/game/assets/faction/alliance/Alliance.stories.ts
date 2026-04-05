@@ -14,18 +14,18 @@ const meta = preview.meta({
 export const Asset = meta.story({
   args: {
     background: `/generated/utils/background/atreides.jpg`,
-    logo: 'vector/logo/atreides.svg',
+    logo: '/vector/logo/atreides.svg',
     title: 'Atreides',
     decals: [
       {
-        id: 'vector/icon/eye.svg',
+        id: '/vector/icon/eye.svg',
         muted: true,
         offset: [-80, -60],
         outline: false,
         scale: 0.45,
       },
       {
-        id: 'vector/icon/kwisatz.svg',
+        id: '/vector/icon/kwisatz.svg',
         muted: true,
         offset: [220, 50],
         outline: false,
@@ -33,30 +33,30 @@ export const Asset = meta.story({
       },
     ],
     text: "Atreides may use Battle Prescience in their ally's battles.",
-    troop: 'vector/troop/atreides.svg',
+    troop: '/vector/troop/atreides.svg',
   },
 });
 
 export const Preview = meta.story({
   args: {
     background: {
-      image: 'image/texture/021.jpg',
+      image: '/image/texture/021.jpg',
       colors: ['red', 'blue'],
       opacity: 0,
       strength: 0,
     },
-    logo: 'vector/logo/atreides.svg',
+    logo: '/vector/logo/atreides.svg',
     title: 'Atreides',
     decals: [
       {
-        id: 'vector/icon/eye.svg',
+        id: '/vector/icon/eye.svg',
         muted: true,
         offset: [-80, -60],
         outline: false,
         scale: 0.45,
       },
       {
-        id: 'vector/icon/kwisatz.svg',
+        id: '/vector/icon/kwisatz.svg',
         muted: true,
         offset: [220, 50],
         outline: false,
@@ -64,6 +64,6 @@ export const Preview = meta.story({
       },
     ],
     text: "Atreides may use Battle Prescience in their ally's battles.",
-    troop: 'vector/troop/atreides.svg',
+    troop: '/vector/troop/atreides.svg',
   },
 });

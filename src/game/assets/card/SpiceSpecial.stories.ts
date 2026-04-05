@@ -15,19 +15,19 @@ export const ShaiHulud = meta.story({
   args: {
     name: 'Shai-Hulud',
     subName: 'Event',
-    icon: ['/generated/utils/background/striped-spice.jpg', 'vector/icon/shai-hulud.svg'],
+    icon: ['/generated/utils/background/striped-spice.jpg', '/vector/icon/shai-hulud.svg'],
     iconOffset: [0, 20],
     iconScale: 1.3,
     decals: [
       {
-        id: 'vector/decal/shai-hulud-plus.svg',
+        id: '/vector/decal/shai-hulud-plus.svg',
         muted: false,
         outline: false,
         scale: 1,
         offset: [0, 0],
       },
       {
-        id: 'vector/decal/shai-hulud.svg',
+        id: '/vector/decal/shai-hulud.svg',
         muted: false,
         outline: true,
         scale: 0.9,
@@ -43,12 +43,12 @@ export const SandTrout = meta.story({
   args: {
     name: 'Sand Trout',
     subName: 'Event',
-    icon: ['/generated/utils/background/striped-spice.jpg', 'vector/icon/shai-hulud.svg'],
+    icon: ['/generated/utils/background/striped-spice.jpg', '/vector/icon/shai-hulud.svg'],
     iconOffset: [0, 20],
     iconScale: 1.3,
     decals: [
       {
-        id: 'vector/decal/sandtrout.svg',
+        id: '/vector/decal/sandtrout.svg',
         muted: false,
         outline: false,
         scale: 1,
@@ -64,12 +64,12 @@ export const GreatMaker = meta.story({
   args: {
     name: 'Great Maker',
     subName: 'Event',
-    icon: ['/generated/utils/background/striped-spice.jpg', 'vector/icon/shai-hulud.svg'],
+    icon: ['/generated/utils/background/striped-spice.jpg', '/vector/icon/shai-hulud.svg'],
     iconOffset: [0, 20],
     iconScale: 1.3,
     decals: [
       {
-        id: 'vector/decal/great-maker.svg',
+        id: '/vector/decal/great-maker.svg',
         muted: false,
         outline: false,
         scale: 1,

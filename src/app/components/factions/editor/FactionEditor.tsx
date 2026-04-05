@@ -83,8 +83,8 @@ export const FactionEditor = forwardRef<FactionEditorHandle, FactionEditorProps>
               {(name) => (
                 <p className={styles.previewHint}>
                   <Link
-                    to="/preview/sheet/$functionSlug"
-                    params={{ functionSlug: factionSlugBaseFromName(name ?? '') }}
+                    to="/preview/sheet/$factionSlug"
+                    params={{ factionSlug: factionSlugBaseFromName(name ?? '') }}
                     search={{ mode: 'live' }}
                     target="_blank"
                     rel="noreferrer"

@@ -10,18 +10,18 @@ export const NoSnooper = meta.story({
   args: {
     name: 'No Snooper',
     subName: 'Voice',
-    icon: ['/generated/utils/background/striped-defense.jpg', 'vector/icon/snooper.svg'],
+    icon: ['/generated/utils/background/striped-defense.jpg', '/vector/icon/snooper.svg'],
     iconOffset: [0, 8],
     decals: [
       {
-        id: 'vector/decal/snooper.svg',
+        id: '/vector/decal/snooper.svg',
         muted: true,
         offset: [0, 0],
         outline: false,
         scale: 0.7,
       },
       {
-        id: 'vector/decal/block.svg',
+        id: '/vector/decal/block.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -38,18 +38,18 @@ export const MustSnooper = meta.story({
   args: {
     name: 'Must Snooper',
     subName: 'Voice',
-    icon: ['/generated/utils/background/striped-defense.jpg', 'vector/icon/snooper.svg'],
+    icon: ['/generated/utils/background/striped-defense.jpg', '/vector/icon/snooper.svg'],
     iconOffset: [0, 8],
     decals: [
       {
-        id: 'vector/decal/snooper.svg',
+        id: '/vector/decal/snooper.svg',
         muted: true,
         offset: [0, 0],
         outline: false,
         scale: 0.7,
       },
       {
-        id: 'vector/generic/force.svg',
+        id: '/vector/generic/force.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -66,18 +66,18 @@ export const NoShield = meta.story({
   args: {
     name: 'No Shield',
     subName: 'Voice',
-    icon: ['/generated/utils/background/striped-defense.jpg', 'vector/icon/shield.svg'],
+    icon: ['/generated/utils/background/striped-defense.jpg', '/vector/icon/shield.svg'],
     iconOffset: [0, 8],
     decals: [
       {
-        id: 'vector/decal/shield.svg',
+        id: '/vector/decal/shield.svg',
         muted: true,
         offset: [0, 0],
         outline: false,
         scale: 1,
       },
       {
-        id: 'vector/decal/block.svg',
+        id: '/vector/decal/block.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -94,18 +94,18 @@ export const MustShield = meta.story({
   args: {
     name: 'Must Shield',
     subName: 'Voice',
-    icon: ['/generated/utils/background/striped-defense.jpg', 'vector/icon/shield.svg'],
+    icon: ['/generated/utils/background/striped-defense.jpg', '/vector/icon/shield.svg'],
     iconOffset: [0, 8],
     decals: [
       {
-        id: 'vector/decal/shield.svg',
+        id: '/vector/decal/shield.svg',
         muted: true,
         offset: [0, 0],
         outline: false,
         scale: 1,
       },
       {
-        id: 'vector/generic/force.svg',
+        id: '/vector/generic/force.svg',
         muted: false,
         offset: [0, 0],
         outline: true,

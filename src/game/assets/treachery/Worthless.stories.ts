@@ -14,14 +14,14 @@ const meta = preview.meta({
 export const Baliset = meta.story({
   args: {
     head: `/generated/utils/background/worthless.jpg`,
-    icon: [`/generated/utils/background/striped-worthless.jpg`, 'vector/icon/worthless.svg'],
-    iconOffset: [0, 1],
+    icon: [`/generated/utils/background/striped-worthless.jpg`, '/vector/icon/worthless.svg'] as const,
+    iconOffset: [0, 1] as const,
     name: 'Baliset',
     decals: [
       {
-        id: 'vector/decal/baliset.svg',
+        id: '/vector/decal/baliset.svg',
         muted: false,
-        offset: [0, 0],
+        offset: [0, 0] as const,
         outline: true,
         scale: 0.6,
       },
@@ -34,14 +34,14 @@ export const Baliset = meta.story({
 export const JubbaCloak = meta.story({
   args: {
     head: `/generated/utils/background/worthless.jpg`,
-    icon: [`/generated/utils/background/striped-worthless.jpg`, 'vector/icon/worthless.svg'],
-    iconOffset: [0, 1],
+    icon: [`/generated/utils/background/striped-worthless.jpg`, '/vector/icon/worthless.svg'] as const,
+    iconOffset: [0, 1] as const,
     name: 'Jubba Cloak',
     decals: [
       {
-        id: 'vector/decal/jubba-cloak.svg',
+        id: '/vector/decal/jubba-cloak.svg',
         muted: false,
-        offset: [0, 0],
+        offset: [0, 0] as const,
         outline: true,
         scale: 0.7,
       },
@@ -54,14 +54,14 @@ export const JubbaCloak = meta.story({
 export const KullWahad = meta.story({
   args: {
     head: `/generated/utils/background/worthless.jpg`,
-    icon: [`/generated/utils/background/striped-worthless.jpg`, 'vector/icon/worthless.svg'],
-    iconOffset: [0, 1],
+    icon: [`/generated/utils/background/striped-worthless.jpg`, '/vector/icon/worthless.svg'] as const,
+    iconOffset: [0, 1] as const,
     name: 'Kull Wahad',
     decals: [
       {
-        id: 'vector/decal/kull-wahad.svg',
+        id: '/vector/decal/kull-wahad.svg',
         muted: false,
-        offset: [0, 40],
+        offset: [0, 40] as const,
         outline: true,
         scale: 0.9,
       },
@@ -74,14 +74,14 @@ export const KullWahad = meta.story({
 export const Kulon = meta.story({
   args: {
     head: `/generated/utils/background/worthless.jpg`,
-    icon: [`/generated/utils/background/striped-worthless.jpg`, 'vector/icon/worthless.svg'],
-    iconOffset: [0, 1],
+    icon: [`/generated/utils/background/striped-worthless.jpg`, '/vector/icon/worthless.svg'] as const,
+    iconOffset: [0, 1] as const,
     name: 'Kulon',
     decals: [
       {
-        id: 'vector/decal/kulon.svg',
+        id: '/vector/decal/kulon.svg',
         muted: false,
-        offset: [0, 0],
+        offset: [0, 0] as const,
         outline: true,
         scale: 0.7,
       },
@@ -94,14 +94,14 @@ export const Kulon = meta.story({
 export const LaLaLa = meta.story({
   args: {
     head: `/generated/utils/background/worthless.jpg`,
-    icon: [`/generated/utils/background/striped-worthless.jpg`, 'vector/icon/worthless.svg'],
-    iconOffset: [0, 1],
+    icon: [`/generated/utils/background/striped-worthless.jpg`, '/vector/icon/worthless.svg'] as const,
+    iconOffset: [0, 1] as const,
     name: 'La La La',
     decals: [
       {
-        id: 'vector/decal/campfire-multicolor.svg',
+        id: '/vector/decal/campfire-multicolor.svg',
         muted: false,
-        offset: [0, 5],
+        offset: [0, 5] as const,
         outline: false,
         scale: 1,
       },
@@ -114,14 +114,14 @@ export const LaLaLa = meta.story({
 export const TripToGamond = meta.story({
   args: {
     head: `/generated/utils/background/worthless.jpg`,
-    icon: [`/generated/utils/background/striped-worthless.jpg`, 'vector/icon/worthless.svg'],
-    iconOffset: [0, 1],
+    icon: [`/generated/utils/background/striped-worthless.jpg`, '/vector/icon/worthless.svg'] as const,
+    iconOffset: [0, 1] as const,
     name: 'Trip to Gamond',
     decals: [
       {
-        id: 'vector/decal/gamond.svg',
+        id: '/vector/decal/gamond.svg',
         muted: false,
-        offset: [0, 5],
+        offset: [0, 5] as const,
         outline: true,
         scale: 0.8,
       },
@@ -134,14 +134,14 @@ export const TripToGamond = meta.story({
 export const OrangeCatholicBible = meta.story({
   args: {
     head: `/generated/utils/background/worthless.jpg`,
-    icon: [`/generated/utils/background/striped-worthless.jpg`, 'vector/icon/worthless.svg'],
-    iconOffset: [0, 1],
+    icon: [`/generated/utils/background/striped-worthless.jpg`, '/vector/icon/worthless.svg'] as const,
+    iconOffset: [0, 1] as const,
     name: 'O.C. Bible',
     decals: [
       {
-        id: 'vector/decal/bible.svg',
+        id: '/vector/decal/bible.svg',
         muted: false,
-        offset: [0, 5],
+        offset: [0, 5] as const,
         outline: true,
         scale: 0.7,
       },

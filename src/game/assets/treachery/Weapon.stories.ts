@@ -14,20 +14,20 @@ const meta = preview.meta({
 export const Lasgun = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, 'vector/icon/lightning.svg'],
+    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/lightning.svg'] as const,
     name: 'Lasgun',
     decals: [
       {
-        id: 'vector/decal/lasgun-extra.svg',
+        id: '/vector/decal/lasgun-extra.svg',
         muted: false,
-        offset: [0, 100],
+        offset: [0, 100] as const,
         outline: false,
         scale: 0.7,
       },
       {
-        id: 'vector/decal/lasgun.svg',
+        id: '/vector/decal/lasgun.svg',
         muted: false,
-        offset: [0, -50],
+        offset: [0, -50] as const,
         outline: true,
         scale: 0.7,
       },
@@ -40,13 +40,13 @@ export const Lasgun = meta.story({
 export const WeirdingWay = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, 'vector/icon/projectile.svg'],
+    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/projectile.svg'] as const,
     name: 'Weirding Way',
     decals: [
       {
-        id: 'vector/decal/weirding-way-multicolor.svg',
+        id: '/vector/decal/weirding-way-multicolor.svg',
         muted: false,
-        offset: [0, 0],
+        offset: [0, 0] as const,
         outline: false,
         scale: 1.05,
       },
@@ -59,13 +59,13 @@ export const WeirdingWay = meta.story({
 export const BasiliaWeapon = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, 'vector/icon/poison.svg'],
+    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/poison.svg'] as const,
     name: 'Basilia Weapon',
     decals: [
       {
-        id: 'vector/decal/basilia.svg',
+        id: '/vector/decal/basilia.svg',
         muted: false,
-        offset: [0, 0],
+        offset: [0, 0] as const,
         outline: true,
         scale: 0.7,
       },
@@ -78,13 +78,13 @@ export const BasiliaWeapon = meta.story({
 export const Chaumas = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, 'vector/icon/poison.svg'],
+    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/poison.svg'] as const,
     name: 'Chaumas',
     decals: [
       {
-        id: 'vector/decal/chaumas.svg',
+        id: '/vector/decal/chaumas.svg',
         muted: false,
-        offset: [0, 0],
+        offset: [0, 0] as const,
         outline: true,
         scale: 0.7,
       },
@@ -97,13 +97,13 @@ export const Chaumas = meta.story({
 export const Chaumurky = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, 'vector/icon/poison.svg'],
+    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/poison.svg'] as const,
     name: 'Chaumurky',
     decals: [
       {
-        id: 'vector/decal/chaumurky.svg',
+        id: '/vector/decal/chaumurky.svg',
         muted: false,
-        offset: [0, 0],
+        offset: [0, 0] as const,
         outline: true,
         scale: 0.8,
       },
@@ -116,13 +116,13 @@ export const Chaumurky = meta.story({
 export const EllacaDrug = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, 'vector/icon/poison.svg'],
+    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/poison.svg'] as const,
     name: 'Ellaca Drug',
     decals: [
       {
-        id: 'vector/decal/ellaca.svg',
+        id: '/vector/decal/ellaca.svg',
         muted: false,
-        offset: [0, 0],
+        offset: [0, 0] as const,
         outline: true,
         scale: 0.8,
       },
@@ -135,13 +135,13 @@ export const EllacaDrug = meta.story({
 export const GomJabbar = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, 'vector/icon/poison.svg'],
+    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/poison.svg'] as const,
     name: 'Gom Jabbar',
     decals: [
       {
-        id: 'vector/decal/gom-jabbar.svg',
+        id: '/vector/decal/gom-jabbar.svg',
         muted: false,
-        offset: [0, 0],
+        offset: [0, 0] as const,
         outline: true,
         scale: 0.8,
       },
@@ -154,13 +154,13 @@ export const GomJabbar = meta.story({
 export const PoisonTooth = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, 'vector/icon/poison.svg'],
+    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/poison.svg'] as const,
     name: 'Poison Tooth',
     decals: [
       {
-        id: 'vector/decal/poison-tooth.svg',
+        id: '/vector/decal/poison-tooth.svg',
         muted: false,
-        offset: [0, 20],
+        offset: [0, 20] as const,
         outline: true,
         scale: 0.9,
       },
@@ -173,13 +173,13 @@ export const PoisonTooth = meta.story({
 export const PoisonBlade = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, 'vector/icon/lightning.svg'],
+    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/lightning.svg'] as const,
     name: 'Poison Blade',
     decals: [
       {
-        id: 'vector/decal/poison-blade.svg',
+        id: '/vector/decal/poison-blade.svg',
         muted: false,
-        offset: [0, 0],
+        offset: [0, 0] as const,
         outline: true,
         scale: 0.7,
       },
@@ -192,13 +192,13 @@ export const PoisonBlade = meta.story({
 export const ArtilleryStrike = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, 'vector/icon/lightning.svg'],
+    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/lightning.svg'] as const,
     name: 'Artillery Strike',
     decals: [
       {
-        id: 'vector/decal/artillery-strike-multicolor.svg',
+        id: '/vector/decal/artillery-strike-multicolor.svg',
         muted: false,
-        offset: [0, 0],
+        offset: [0, 0] as const,
         outline: false,
         scale: 1,
       },
@@ -211,13 +211,13 @@ export const ArtilleryStrike = meta.story({
 export const MaulaPistol = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, 'vector/icon/projectile.svg'],
+    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/projectile.svg'] as const,
     name: 'Maula Pistol',
     decals: [
       {
-        id: 'vector/decal/maula-pistol.svg',
+        id: '/vector/decal/maula-pistol.svg',
         muted: false,
-        offset: [0, 0],
+        offset: [0, 0] as const,
         outline: true,
         scale: 0.7,
       },
@@ -230,13 +230,13 @@ export const MaulaPistol = meta.story({
 export const Crysknife = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, 'vector/icon/projectile.svg'],
+    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/projectile.svg'] as const,
     name: 'Crysknife',
     decals: [
       {
-        id: 'vector/decal/crysknife.svg',
+        id: '/vector/decal/crysknife.svg',
         muted: false,
-        offset: [0, 0],
+        offset: [0, 0] as const,
         outline: true,
         scale: 0.6,
       },
@@ -249,13 +249,13 @@ export const Crysknife = meta.story({
 export const HunterSeeker = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, 'vector/icon/projectile.svg'],
+    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/projectile.svg'] as const,
     name: 'Hunter Seeker',
     decals: [
       {
-        id: 'vector/decal/hunter-seeker.svg',
+        id: '/vector/decal/hunter-seeker.svg',
         muted: false,
-        offset: [0, 0],
+        offset: [0, 0] as const,
         outline: true,
         scale: 0.7,
       },
@@ -268,13 +268,13 @@ export const HunterSeeker = meta.story({
 export const SlipTip = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, 'vector/icon/projectile.svg'],
+    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/projectile.svg'] as const,
     name: 'Slip Tip',
     decals: [
       {
-        id: 'vector/decal/slip-tip.svg',
+        id: '/vector/decal/slip-tip.svg',
         muted: false,
-        offset: [0, 0],
+        offset: [0, 0] as const,
         outline: true,
         scale: 0.7,
       },
@@ -287,13 +287,13 @@ export const SlipTip = meta.story({
 export const Stunner = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, 'vector/icon/projectile.svg'],
+    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/projectile.svg'] as const,
     name: 'Slip Tip',
     decals: [
       {
-        id: 'vector/decal/stunner.svg',
+        id: '/vector/decal/stunner.svg',
         muted: false,
-        offset: [0, 0],
+        offset: [0, 0] as const,
         outline: true,
         scale: 0.6,
       },
@@ -306,13 +306,13 @@ export const Stunner = meta.story({
 export const StoneBurner = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, 'vector/icon/lightning.svg'],
+    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/lightning.svg'] as const,
     name: 'Stone Burner',
     decals: [
       {
-        id: 'vector/decal/stone-burner-alt-multicolor.svg',
+        id: '/vector/decal/stone-burner-alt-multicolor.svg',
         muted: false,
-        offset: [0, 0],
+        offset: [0, 0] as const,
         outline: false,
         scale: 1.05,
       },
@@ -325,13 +325,13 @@ export const StoneBurner = meta.story({
 export const MirrorWeapon = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, 'vector/icon/lightning.svg'],
+    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/lightning.svg'] as const,
     name: 'Mirror Weapon',
     decals: [
       {
-        id: 'vector/decal/mirror-weapon.svg',
+        id: '/vector/decal/mirror-weapon.svg',
         muted: false,
-        offset: [0, 0],
+        offset: [0, 0] as const,
         outline: true,
         scale: 1,
       },
@@ -344,13 +344,13 @@ export const MirrorWeapon = meta.story({
 export const SlowDart = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, 'vector/icon/lightning.svg'],
+    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/lightning.svg'] as const,
     name: 'Slow Dart',
     decals: [
       {
-        id: 'vector/decal/cutter-ray.svg',
+        id: '/vector/decal/cutter-ray.svg',
         muted: false,
-        offset: [0, 0],
+        offset: [0, 0] as const,
         outline: true,
         scale: 0.7,
       },

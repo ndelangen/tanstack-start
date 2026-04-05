@@ -14,12 +14,12 @@ const meta = preview.meta({
 export const Supplies = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Supplies!',
     decals: [
       {
-        id: 'vector/decal/supplies.svg',
+        id: '/vector/decal/supplies.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -34,12 +34,12 @@ export const Supplies = meta.story({
 export const Mercenaries = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Mercenaries',
     decals: [
       {
-        id: 'vector/decal/mercenaries.svg',
+        id: '/vector/decal/mercenaries.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -54,12 +54,12 @@ export const Mercenaries = meta.story({
 export const ConeOfSilence = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Cone of Silence',
     decals: [
       {
-        id: 'vector/decal/cone-of-silence.svg',
+        id: '/vector/decal/cone-of-silence.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -74,12 +74,12 @@ export const ConeOfSilence = meta.story({
 export const BreakConditioning = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Break Conditioning',
     decals: [
       {
-        id: 'vector/decal/break-conditioning.svg',
+        id: '/vector/decal/break-conditioning.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -94,12 +94,12 @@ export const BreakConditioning = meta.story({
 export const Amal = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Amal',
     decals: [
       {
-        id: 'vector/decal/amal.svg',
+        id: '/vector/decal/amal.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -114,12 +114,12 @@ export const Amal = meta.story({
 export const FamilyAtomics = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Family Atomics',
     decals: [
       {
-        id: 'vector/decal/family-atomics.svg',
+        id: '/vector/decal/family-atomics.svg',
         muted: false,
         offset: [0, 0],
         outline: false,
@@ -134,12 +134,12 @@ export const FamilyAtomics = meta.story({
 export const Hajr = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Family Atomics',
     decals: [
       {
-        id: 'vector/decal/hajr.svg',
+        id: '/vector/decal/hajr.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -154,12 +154,12 @@ export const Hajr = meta.story({
 export const Harvester = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Harvester',
     decals: [
       {
-        id: 'vector/decal/harvester-alt-multicolor.svg',
+        id: '/vector/decal/harvester-alt-multicolor.svg',
         muted: false,
         offset: [0, 0],
         outline: false,
@@ -174,12 +174,12 @@ export const Harvester = meta.story({
 export const Karama = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Karama',
     decals: [
       {
-        id: 'vector/icon/karama.svg',
+        id: '/vector/icon/karama.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -194,12 +194,12 @@ export const Karama = meta.story({
 export const Thumper = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Thumper',
     decals: [
       {
-        id: 'vector/decal/thumper-multicolor.svg',
+        id: '/vector/decal/thumper-multicolor.svg',
         muted: false,
         offset: [0, 0],
         outline: false,
@@ -214,12 +214,12 @@ export const Thumper = meta.story({
 export const TleilaxuGhola = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Tleilaxu Ghola',
     decals: [
       {
-        id: 'vector/decal/tleilaxu-ghola.svg',
+        id: '/vector/decal/tleilaxu-ghola.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -234,12 +234,12 @@ export const TleilaxuGhola = meta.story({
 export const TruthTrance = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Truth Trance',
     decals: [
       {
-        id: 'vector/decal/truth-trance.svg',
+        id: '/vector/decal/truth-trance.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -254,12 +254,12 @@ export const TruthTrance = meta.story({
 export const WeatherControl = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Weather Control',
     decals: [
       {
-        id: 'vector/decal/weather-control.svg',
+        id: '/vector/decal/weather-control.svg',
         muted: false,
         offset: [0, 20],
         outline: true,
@@ -274,12 +274,12 @@ export const WeatherControl = meta.story({
 export const SwordMaster = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Sword Master',
     decals: [
       {
-        id: 'vector/decal/sword-master.svg',
+        id: '/vector/decal/sword-master.svg',
         muted: false,
         offset: [0, 30],
         outline: true,
@@ -294,12 +294,12 @@ export const SwordMaster = meta.story({
 export const BodyGuard = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Body Guard',
     decals: [
       {
-        id: 'vector/decal/body-guard.svg',
+        id: '/vector/decal/body-guard.svg',
         muted: false,
         offset: [0, 30],
         outline: true,
@@ -314,12 +314,12 @@ export const BodyGuard = meta.story({
 export const JuiceOfSapho = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Juice of Sapho',
     decals: [
       {
-        id: 'vector/decal/flask.svg',
+        id: '/vector/decal/flask.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -334,12 +334,12 @@ export const JuiceOfSapho = meta.story({
 export const JuiceOfSaphoAlt = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Juice of Sapho',
     decals: [
       {
-        id: 'vector/decal/juice-of-sapho-multicolor.svg',
+        id: '/vector/decal/juice-of-sapho-multicolor.svg',
         muted: false,
         offset: [0, 0],
         outline: false,
@@ -354,12 +354,12 @@ export const JuiceOfSaphoAlt = meta.story({
 export const ResidualPoison = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Residual Poison',
     decals: [
       {
-        id: 'vector/decal/residual-poison-multicolor.svg',
+        id: '/vector/decal/residual-poison-multicolor.svg',
         muted: false,
         offset: [0, 35],
         outline: false,
@@ -374,12 +374,12 @@ export const ResidualPoison = meta.story({
 export const Ornithopter = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Ornithopter',
     decals: [
       {
-        id: 'vector/decal/ornithopter.svg',
+        id: '/vector/decal/ornithopter.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -394,12 +394,12 @@ export const Ornithopter = meta.story({
 export const Ornithopters = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Ornithopters',
     decals: [
       {
-        id: 'vector/decal/ornithopters.svg',
+        id: '/vector/decal/ornithopters.svg',
         muted: false,
         offset: [72, 0],
         outline: true,
@@ -414,12 +414,12 @@ export const Ornithopters = meta.story({
 export const SemutaDrug = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Semuta Drug',
     decals: [
       {
-        id: 'vector/decal/semuta-drug.svg',
+        id: '/vector/decal/semuta-drug.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -434,12 +434,12 @@ export const SemutaDrug = meta.story({
 export const NullentropyBox = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Nullentropy Box',
     decals: [
       {
-        id: 'vector/decal/box-multicolor.svg',
+        id: '/vector/decal/box-multicolor.svg',
         muted: false,
         offset: [0, 0],
         outline: false,
@@ -454,12 +454,12 @@ export const NullentropyBox = meta.story({
 export const Distrance = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/hand-alt.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/hand-alt.svg'],
     iconOffset: [0, 2],
     name: 'Distrans',
     decals: [
       {
-        id: 'vector/decal/distrance.svg',
+        id: '/vector/decal/distrance.svg',
         muted: false,
         offset: [0, 0],
         outline: false,

@@ -91,17 +91,17 @@ export const Asset = meta.story({
 export const Preview = meta.story({
   args: {
     name: 'Atreides',
-    logo: 'vector/logo/atreides.svg',
+    logo: '/vector/logo/atreides.svg',
     themeColor: '#730a8e',
     background: {
-      image: 'image/texture/021.jpg',
+      image: '/image/texture/021.jpg',
       colors: ['red', 'blue'],
       opacity: 0,
       strength: 0,
     },
     troops: [
       {
-        image: 'vector/troop/atreides.svg',
+        image: '/vector/troop/atreides.svg',
         name: 'Regular troop',
         description: 'Atreides regular troop',
         striped: false,
@@ -165,27 +165,27 @@ export const Preview = meta.story({
     leaders: [
       {
         name: 'Dr. Yueh',
-        image: 'image/leader/official/dryeuh.png',
+        image: '/image/leader/official/dryeuh.png',
         strength: '1',
       },
       {
         name: 'Duncan Idaho',
-        image: 'image/leader/official/duncan.png',
+        image: '/image/leader/official/duncan.png',
         strength: '2',
       },
       {
         name: 'Gurney Halleck',
-        image: 'image/leader/official/gurney.png',
+        image: '/image/leader/official/gurney.png',
         strength: '4',
       },
       {
         name: 'Thufir Hawat',
-        image: 'image/leader/official/thufir.png',
+        image: '/image/leader/official/thufir.png',
         strength: '5',
       },
       {
         name: 'Lady Jessica',
-        image: 'image/leader/official/jessica.png',
+        image: '/image/leader/official/jessica.png',
         strength: '5',
       },
     ],

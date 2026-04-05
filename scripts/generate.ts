@@ -26,15 +26,15 @@ async function getFiles(path: string) {
 }
 
 // images
-const leaders = await getFiles('image/leader');
+const leaders = await getFiles('/image/leader');
 
 // vectors
-const generic = await getFiles('vector/generic');
-const decal = await getFiles('vector/decal');
-const icon = await getFiles('vector/icon');
-const logo = await getFiles('vector/logo');
-const troop = await getFiles('vector/troop');
-const troop_modifier = await getFiles('vector/troop_modifier');
+const generic = await getFiles('/vector/generic');
+const decal = await getFiles('/vector/decal');
+const icon = await getFiles('/vector/icon');
+const logo = await getFiles('/vector/logo');
+const troop = await getFiles('/vector/troop');
+const troop_modifier = await getFiles('/vector/troop_modifier');
 
 const generated = (await recursiveReaddirFiles(join(import.meta.dirname, '..', 'generated')))
   .map((f) => relative(join(import.meta.dirname, '..'), f.path))

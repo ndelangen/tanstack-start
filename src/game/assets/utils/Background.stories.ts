@@ -8,7 +8,7 @@ const meta = preview.meta({
 
 export const Duo1 = meta.story({
   args: {
-    image: 'image/texture/021.jpg',
+    image: '/image/texture/021.jpg',
     colors: ['red', 'blue'],
     opacity: 0,
     strength: 0,
@@ -17,7 +17,7 @@ export const Duo1 = meta.story({
 
 export const Duo2 = meta.story({
   args: {
-    image: 'image/texture/021.jpg',
+    image: '/image/texture/021.jpg',
     colors: ['red', 'blue'],
     opacity: 120,
     strength: 0,
@@ -26,7 +26,7 @@ export const Duo2 = meta.story({
 
 export const Duo3 = meta.story({
   args: {
-    image: 'image/texture/011.jpg',
+    image: '/image/texture/011.jpg',
     colors: ['hotpink', 'deepskyblue'],
     opacity: 70,
     strength: -100,
@@ -35,7 +35,7 @@ export const Duo3 = meta.story({
 
 export const Linear1 = meta.story({
   args: {
-    image: 'image/texture/011.jpg',
+    image: '/image/texture/011.jpg',
     colors: [
       {
         type: 'linear',
@@ -53,7 +53,7 @@ export const Linear1 = meta.story({
 });
 export const Linear2 = meta.story({
   args: {
-    image: 'image/texture/011.jpg',
+    image: '/image/texture/011.jpg',
     colors: [
       {
         type: 'linear',
@@ -71,7 +71,7 @@ export const Linear2 = meta.story({
 });
 export const Linear3 = meta.story({
   args: {
-    image: 'image/texture/052.jpg',
+    image: '/image/texture/052.jpg',
     colors: [
       'blue',
       {
@@ -89,7 +89,7 @@ export const Linear3 = meta.story({
 });
 export const Radial1 = meta.story({
   args: {
-    image: 'image/texture/052.jpg',
+    image: '/image/texture/052.jpg',
     colors: [
       'blue',
       {
@@ -108,7 +108,7 @@ export const Radial1 = meta.story({
 
 export const Radial2 = meta.story({
   args: {
-    image: 'image/texture/054.jpg',
+    image: '/image/texture/054.jpg',
     colors: [
       'white',
       {
@@ -133,7 +133,7 @@ export const Radial2 = meta.story({
 
 export const Atreides = meta.story({
   args: {
-    image: 'image/texture/015.jpg',
+    image: '/image/texture/015.jpg',
     colors: ['#4B4C0D', '#262B04'],
     opacity: 50,
     strength: 0,
@@ -142,7 +142,7 @@ export const Atreides = meta.story({
 
 export const Ixian = meta.story({
   args: {
-    image: 'image/texture/004.jpg',
+    image: '/image/texture/004.jpg',
     colors: ['#D4BE6B', '#A88E2A'],
     opacity: 20,
     strength: 0,
@@ -151,7 +151,7 @@ export const Ixian = meta.story({
 
 export const BeneGesserit = meta.story({
   args: {
-    image: 'image/texture/020.jpg',
+    image: '/image/texture/020.jpg',
     colors: ['#3A4491', '#101D65'],
     opacity: 150,
     strength: -100,
@@ -160,7 +160,7 @@ export const BeneGesserit = meta.story({
 
 export const BeneTleilaxu = meta.story({
   args: {
-    image: 'image/texture/031.jpg',
+    image: '/image/texture/031.jpg',
     colors: ['#6E008F', '#2D006B'],
     opacity: 120,
     strength: -80,
@@ -169,7 +169,7 @@ export const BeneTleilaxu = meta.story({
 
 export const Emperor = meta.story({
   args: {
-    image: 'image/texture/030.jpg',
+    image: '/image/texture/030.jpg',
     colors: ['#A40008', '#8D0006'],
     opacity: -150,
     strength: 0,
@@ -178,7 +178,7 @@ export const Emperor = meta.story({
 
 export const Fremen = meta.story({
   args: {
-    image: 'image/texture/054.jpg',
+    image: '/image/texture/054.jpg',
     colors: ['#F6A834', '#CF7317'],
     opacity: 120,
     strength: -100,
@@ -187,7 +187,7 @@ export const Fremen = meta.story({
 
 export const Guild = meta.story({
   args: {
-    image: 'image/texture/007.jpg',
+    image: '/image/texture/007.jpg',
     colors: ['#D83C13', '#B41C0C'],
     opacity: 400,
     strength: -100,
@@ -196,7 +196,7 @@ export const Guild = meta.story({
 
 export const Iduali = meta.story({
   args: {
-    image: 'image/texture/009.jpg',
+    image: '/image/texture/009.jpg',
     colors: ['#5B2802', '#470200'],
     opacity: 100,
     strength: -100,
@@ -205,7 +205,7 @@ export const Iduali = meta.story({
 
 export const Harkonnen = meta.story({
   args: {
-    image: 'image/texture/059.jpg',
+    image: '/image/texture/059.jpg',
     colors: ['#191311', '#000000'],
     opacity: 140,
     strength: -10,
@@ -214,7 +214,7 @@ export const Harkonnen = meta.story({
 
 export const Moritani = meta.story({
   args: {
-    image: 'image/texture/057.jpg',
+    image: '/image/texture/057.jpg',
     colors: ['#0B4D64', '#05333D'],
     opacity: 1040,
     strength: -67,
@@ -223,7 +223,7 @@ export const Moritani = meta.story({
 
 export const Ginaz = meta.story({
   args: {
-    image: 'image/texture/056.jpg',
+    image: '/image/texture/056.jpg',
     colors: ['#425A61', '#273739'],
     opacity: 1400,
     strength: -10,
@@ -232,7 +232,7 @@ export const Ginaz = meta.story({
 
 export const Landsraad = meta.story({
   args: {
-    image: 'image/texture/036.jpg',
+    image: '/image/texture/036.jpg',
     colors: ['#520E2D', '#410D25'],
     opacity: 400,
     strength: -100,
@@ -241,7 +241,7 @@ export const Landsraad = meta.story({
 
 export const Richese = meta.story({
   args: {
-    image: 'image/texture/029.jpg',
+    image: '/image/texture/029.jpg',
     colors: ['#B5B0A5', '#7C786D'],
     opacity: 200,
     strength: -77,
@@ -250,7 +250,7 @@ export const Richese = meta.story({
 
 export const Ecaz = meta.story({
   args: {
-    image: 'image/texture/044.jpg',
+    image: '/image/texture/044.jpg',
     colors: ['#7F3D81', '#581858'],
     opacity: 250,
     strength: -85,
@@ -259,7 +259,7 @@ export const Ecaz = meta.story({
 
 export const CHOAM = meta.story({
   args: {
-    image: 'image/texture/075.jpg',
+    image: '/image/texture/075.jpg',
     colors: [
       {
         type: 'linear',
@@ -285,7 +285,7 @@ export const CHOAM = meta.story({
 
 export const Discovery = meta.story({
   args: {
-    image: 'image/texture/052.jpg',
+    image: '/image/texture/052.jpg',
     colors: [
       'black',
       {
@@ -304,7 +304,7 @@ export const Discovery = meta.story({
 
 export const Hiereg = meta.story({
   args: {
-    image: 'image/texture/052.jpg',
+    image: '/image/texture/052.jpg',
     colors: [
       'black',
       {
@@ -323,7 +323,7 @@ export const Hiereg = meta.story({
 
 export const Terror = meta.story({
   args: {
-    image: 'image/texture/038.jpg',
+    image: '/image/texture/038.jpg',
     colors: [
       'black',
       {
@@ -342,7 +342,7 @@ export const Terror = meta.story({
 
 export const Spice = meta.story({
   args: {
-    image: 'image/texture/001.jpg',
+    image: '/image/texture/001.jpg',
     colors: [
       'black',
       {
@@ -361,7 +361,7 @@ export const Spice = meta.story({
 
 export const TechTeal = meta.story({
   args: {
-    image: 'image/texture/003.jpg',
+    image: '/image/texture/003.jpg',
     colors: [
       'black',
       {
@@ -380,7 +380,7 @@ export const TechTeal = meta.story({
 
 export const TechPurple = meta.story({
   args: {
-    image: 'image/texture/003.jpg',
+    image: '/image/texture/003.jpg',
     colors: [
       'black',
       {
@@ -399,7 +399,7 @@ export const TechPurple = meta.story({
 
 export const TechYellow = meta.story({
   args: {
-    image: 'image/texture/003.jpg',
+    image: '/image/texture/003.jpg',
     colors: [
       '#5E3C16',
       {
@@ -418,7 +418,7 @@ export const TechYellow = meta.story({
 
 export const TechSun = meta.story({
   args: {
-    image: 'image/texture/003.jpg',
+    image: '/image/texture/003.jpg',
     colors: [
       '#7E0002',
       {
@@ -437,7 +437,7 @@ export const TechSun = meta.story({
 
 export const TechRed = meta.story({
   args: {
-    image: 'image/texture/003.jpg',
+    image: '/image/texture/003.jpg',
     colors: [
       'black',
       {
@@ -456,7 +456,7 @@ export const TechRed = meta.story({
 
 export const TechMaroon = meta.story({
   args: {
-    image: 'image/texture/003.jpg',
+    image: '/image/texture/003.jpg',
     colors: [
       'black',
       {
@@ -475,7 +475,7 @@ export const TechMaroon = meta.story({
 
 export const TechOrange = meta.story({
   args: {
-    image: 'image/texture/003.jpg',
+    image: '/image/texture/003.jpg',
     colors: [
       'black',
       {
@@ -494,7 +494,7 @@ export const TechOrange = meta.story({
 
 export const TechBlue = meta.story({
   args: {
-    image: 'image/texture/003.jpg',
+    image: '/image/texture/003.jpg',
     colors: [
       'black',
       {
@@ -513,7 +513,7 @@ export const TechBlue = meta.story({
 
 export const TechPink = meta.story({
   args: {
-    image: 'image/texture/003.jpg',
+    image: '/image/texture/003.jpg',
     colors: [
       'black',
       {
@@ -532,7 +532,7 @@ export const TechPink = meta.story({
 
 export const TechWhite = meta.story({
   args: {
-    image: 'image/texture/003.jpg',
+    image: '/image/texture/003.jpg',
     colors: [
       'black',
       {
@@ -551,7 +551,7 @@ export const TechWhite = meta.story({
 
 export const TechGreen = meta.story({
   args: {
-    image: 'image/texture/003.jpg',
+    image: '/image/texture/003.jpg',
     colors: [
       'black',
       {
@@ -570,7 +570,7 @@ export const TechGreen = meta.story({
 
 export const Moss = meta.story({
   args: {
-    image: 'image/texture/009.jpg',
+    image: '/image/texture/009.jpg',
     colors: ['#4E431D', '#31260D'],
     opacity: 200,
     strength: 0,
@@ -579,7 +579,7 @@ export const Moss = meta.story({
 
 export const Traitor = meta.story({
   args: {
-    image: 'image/texture/082.jpg',
+    image: '/image/texture/082.jpg',
     colors: ['#3D3438', '#040404'],
     opacity: 0,
     strength: -100,
@@ -588,7 +588,7 @@ export const Traitor = meta.story({
 
 export const Alliance = meta.story({
   args: {
-    image: 'image/texture/082.jpg',
+    image: '/image/texture/082.jpg',
     colors: ['#4D4724', '#302B16'],
     opacity: 50,
     strength: -100,
@@ -597,7 +597,7 @@ export const Alliance = meta.story({
 
 export const Weapon = meta.story({
   args: {
-    image: 'image/texture/082.jpg',
+    image: '/image/texture/082.jpg',
     colors: ['#8F2C1C', '#621D1A'],
     opacity: 50,
     strength: -100,
@@ -606,7 +606,7 @@ export const Weapon = meta.story({
 
 export const Defense = meta.story({
   args: {
-    image: 'image/texture/082.jpg',
+    image: '/image/texture/082.jpg',
     colors: ['#29335E', '#0A153C'],
     opacity: 60,
     strength: -100,
@@ -615,7 +615,7 @@ export const Defense = meta.story({
 
 export const Storm = meta.story({
   args: {
-    image: 'image/texture/082.jpg',
+    image: '/image/texture/082.jpg',
     colors: ['#582705', '#875818'],
     opacity: 50,
     strength: 0,
@@ -624,7 +624,7 @@ export const Storm = meta.story({
 
 export const Spice2 = meta.story({
   args: {
-    image: 'image/texture/082.jpg',
+    image: '/image/texture/082.jpg',
     colors: ['#7A4421', '#56210B'],
     opacity: 30,
     strength: -100,
@@ -633,7 +633,7 @@ export const Spice2 = meta.story({
 
 export const Spice3 = meta.story({
   args: {
-    image: 'image/texture/082.jpg',
+    image: '/image/texture/082.jpg',
     colors: ['#3C6066', '#2A4046'],
     opacity: 80,
     strength: -100,
@@ -642,7 +642,7 @@ export const Spice3 = meta.story({
 
 export const Special = meta.story({
   args: {
-    image: 'image/texture/082.jpg',
+    image: '/image/texture/082.jpg',
     colors: ['#474620', '#27260C'],
     opacity: 60,
     strength: -100,
@@ -651,7 +651,7 @@ export const Special = meta.story({
 
 export const Worthless = meta.story({
   args: {
-    image: 'image/texture/082.jpg',
+    image: '/image/texture/082.jpg',
     colors: ['#887849', '#6F6034'],
     opacity: 80,
     strength: -100,
@@ -660,7 +660,7 @@ export const Worthless = meta.story({
 
 export const Fate = meta.story({
   args: {
-    image: 'image/texture/082.jpg',
+    image: '/image/texture/082.jpg',
     colors: ['#7E275A', '#C54E90'],
     opacity: 80,
     strength: -100,
@@ -669,7 +669,7 @@ export const Fate = meta.story({
 
 export const StripedWeapon = meta.story({
   args: {
-    image: 'image/texture/076.jpg',
+    image: '/image/texture/076.jpg',
     colors: [
       {
         type: 'linear',
@@ -695,7 +695,7 @@ export const StripedWeapon = meta.story({
 
 export const StripedDefense = meta.story({
   args: {
-    image: 'image/texture/076.jpg',
+    image: '/image/texture/076.jpg',
     colors: [
       {
         type: 'linear',
@@ -721,7 +721,7 @@ export const StripedDefense = meta.story({
 
 export const StripedSpecial = meta.story({
   args: {
-    image: 'image/texture/076.jpg',
+    image: '/image/texture/076.jpg',
     colors: [
       {
         type: 'linear',
@@ -747,7 +747,7 @@ export const StripedSpecial = meta.story({
 
 export const StripedWorthless = meta.story({
   args: {
-    image: 'image/texture/076.jpg',
+    image: '/image/texture/076.jpg',
     colors: [
       {
         type: 'linear',
@@ -773,7 +773,7 @@ export const StripedWorthless = meta.story({
 
 export const StripedFate = meta.story({
   args: {
-    image: 'image/texture/076.jpg',
+    image: '/image/texture/076.jpg',
     colors: [
       {
         type: 'linear',
@@ -799,7 +799,7 @@ export const StripedFate = meta.story({
 
 export const StripedAlliance = meta.story({
   args: {
-    image: 'image/texture/076.jpg',
+    image: '/image/texture/076.jpg',
     colors: [
       {
         type: 'linear',
@@ -825,7 +825,7 @@ export const StripedAlliance = meta.story({
 
 export const StripedSpice = meta.story({
   args: {
-    image: 'image/texture/076.jpg',
+    image: '/image/texture/076.jpg',
     colors: [
       {
         type: 'linear',

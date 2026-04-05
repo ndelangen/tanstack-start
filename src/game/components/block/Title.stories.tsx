@@ -13,6 +13,7 @@ const meta = preview.meta({
 
 export const Simple = meta.story({
   args: {
+    color: 'rgba(255,0,0)',
     children: 'A short title',
   },
 });
@@ -33,6 +34,7 @@ export const CustomColor = meta.story({
 
 export const ContrastCheck = meta.story({
   args: {
+    color: '#000000',
     children: 'A short title',
   },
   render: ({ children }) => (
@@ -49,19 +51,20 @@ export const ContrastCheck = meta.story({
 
 export const Sizes = meta.story({
   args: {
+    color: '#000000',
     children: 'A short title',
   },
-  render: ({ children }) => (
+  render: ({ children, color }) => (
     <Fragment>
-      <Title color="#000000" size="large">
+      <Title color={color} size="large">
         {children}
       </Title>
       <hr />
-      <Title color="#000000" size="medium">
+      <Title color={color} size="medium">
         {children}
       </Title>
       <hr />
-      <Title color="#000000" size="small">
+      <Title color={color} size="small">
         {children}
       </Title>
     </Fragment>
