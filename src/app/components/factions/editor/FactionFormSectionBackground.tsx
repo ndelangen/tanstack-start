@@ -1,11 +1,11 @@
 import { Eye } from 'lucide-react';
 
 import { ColorLayerField } from '@app/components/form/ColorLayerField';
-import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormField } from '@app/components/form/FormField';
 import { FormPopover } from '@app/components/form/FormPopover';
 import { LabeledRangeInput } from '@app/components/form/LabeledRangeInput';
 import { TextField } from '@app/components/form/TextField';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 
 import styles from './FactionEditor.module.css';
 import { assetPathToPublicUrl, isPreviewableAssetPath } from './factionFormAssetUtils';
@@ -27,12 +27,7 @@ export function FactionFormSectionBackground({ form }: { form: FactionFormApi })
               {isPreviewableAssetPath(field.state.value) && (
                 <FormPopover
                   trigger={
-                    <UIButton
-                      type="button"
-                      variant="secondary"
-                      iconOnly
-                      aria-label="Preview image"
-                    >
+                    <UIButton type="button" variant="secondary" iconOnly aria-label="Preview image">
                       <Eye size={16} aria-hidden />
                     </UIButton>
                   }

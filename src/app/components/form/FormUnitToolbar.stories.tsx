@@ -2,6 +2,7 @@ import preview from '@sb/preview';
 import { Trash2 } from 'lucide-react';
 
 import { UIButton } from '@app/components/generic/ui/UIButton';
+
 import { FormUnitToolbar } from './FormUnitToolbar';
 
 const meta = preview.meta({
@@ -19,4 +20,3 @@ export const Default = meta.story({
     ),
   },
 });
-

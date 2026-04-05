@@ -1,5 +1,18 @@
-import { createFileRoute, Link, Outlet, useMatches, useNavigate } from '@tanstack/react-router';
-import { MessageCircleQuestionMark, Search, Trash2, UserPlus, UserRoundMinus } from 'lucide-react';
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  useLocation,
+  useMatches,
+  useNavigate,
+} from '@tanstack/react-router';
+import {
+  MessageCircleQuestionMark,
+  Pencil,
+  Trash2,
+  UserPlus,
+  UserRoundMinus,
+} from 'lucide-react';
 
 import { useRequestGroupMembership } from '@db/members';
 import { useCurrentProfile } from '@db/profiles';
@@ -12,7 +25,7 @@ import {
 import { FaqList } from '@app/components/faq/FaqList';
 import { FormActions } from '@app/components/form/FormActions';
 import { FormTooltip } from '@app/components/form/FormTooltip';
-import { Toolbar } from '@app/components/generic/layout';
+import { Toolbar, ToolbarSearchField } from '@app/components/generic/layout';
 import { BlockCover } from '@app/components/generic/surfaces';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
@@ -36,22 +49,49 @@ export const Route = createFileRoute('/_app/rulesets/$rulesetSlug')({
   },
   component: RulesetDetailPage,
   staticData: {
-    PageHead: () => (
+    PageHead: RulesetPageHead,
+  },
+});
+
+function RulesetPageHead() {
+  const { rulesetSlug } = Route.useParams();
+  const loaderData = Route.useLoaderData();
+  const detailSeed = loaderData.notFound ? undefined : loaderData.detailPage;
+  const page = useRulesetDetailPage(rulesetSlug, { initialData: detailSeed });
+
+  if (loaderData.notFound || !page.ruleset) {
+    return (
       <div>
         <h1>Ruleset</h1>
         <p>
           <Link to="/rulesets">Back to rulesets</Link>
         </p>
       </div>
-    ),
-  },
-});
+    );
+  }
+
+  const r = page.ruleset;
+  return (
+    <div className={styles.pageHead}>
+      <div className={styles.rulesetHeadCover}>
+        <BlockCover src={r.image_cover} alt={`Cover for ${r.name}`} />
+      </div>
+      <div className={styles.pageHeadText}>
+        <h1 className={styles.rulesetTitle}>{r.name}</h1>
+        <p className={styles.pageHeadMeta}>
+          <Link to="/rulesets">Back to rulesets</Link>
+        </p>
+      </div>
+    </div>
+  );
+}
 
 function RulesetDetailPage() {
   const { rulesetSlug } = Route.useParams();
   const search = Route.useSearch();
   const loaderData = Route.useLoaderData();
   const navigate = useNavigate();
+  const location = useLocation();
   const matches = useMatches();
   const hasFaqChildRoute = matches.some((m) => m.pathname.includes('/faq/'));
   const detailSeed = loaderData.notFound ? undefined : loaderData.detailPage;
@@ -77,7 +117,7 @@ function RulesetDetailPage() {
     return null;
   }
 
-  if (hasFaqChildRoute) {
+  if (hasFaqChildRoute || location.pathname.endsWith('/edit')) {
     return <Outlet />;
   }
 
@@ -130,20 +170,27 @@ function RulesetDetailPage() {
               </UIButton>
             </FormTooltip>
           )}
-          <div className={styles.searchWrapper}>
-            <Search className={styles.searchIcon} size={18} aria-hidden />
-            <input
-              type="search"
-              className={styles.searchInput}
-              value={search.q ?? ''}
-              onChange={(e) => handleFaqSearchChange(e.target.value)}
-              placeholder="Search questions..."
-              aria-label="Search FAQ questions"
-            />
-          </div>
+          <ToolbarSearchField
+            value={search.q ?? ''}
+            onValueChange={handleFaqSearchChange}
+            placeholder="Search questions..."
+            aria-label="Search FAQ questions"
+          />
         </Toolbar.Left>
         <Toolbar.Center></Toolbar.Center>
         <Toolbar.Right>
+          {isOwner && (
+            <FormTooltip content="Edit ruleset">
+              <UIButton
+                variant="secondary"
+                to="/rulesets/$rulesetSlug/edit"
+                params={{ rulesetSlug: r.slug }}
+                aria-label="Edit ruleset"
+              >
+                <Pencil size={16} aria-hidden />
+              </UIButton>
+            </FormTooltip>
+          )}
           {isOwner &&
             (r.group_id == null ? (
               <GroupAssignPopover
@@ -204,10 +251,6 @@ function RulesetDetailPage() {
         </Toolbar.Right>
       </Toolbar>
       <section className={styles.section}>
-        <div className={styles.coverWrapper}>
-          <BlockCover src={r.image_cover} alt={`Cover for ${r.name}`} />
-        </div>
-        <h2>{r.name}</h2>
         <p>
           Owner:{' '}
           {page.owner ? (

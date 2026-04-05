@@ -262,13 +262,11 @@ export const update = mutation({
     const ruleset = await getRulesetById(ctx, args.id);
     if (!ruleset || ruleset.is_deleted) throw new Error(`Ruleset with id ${args.id} not found`);
 
-    const permitted = await canAccessRuleset(ctx, ruleset, userId);
-    if (!permitted) throw new Error('Not authorized');
+    if (ruleset.owner_id !== userId) {
+      throw new Error('Only the ruleset owner can update this ruleset');
+    }
 
     if (args.group_id !== undefined) {
-      if (ruleset.owner_id !== userId) {
-        throw new Error('Only the ruleset owner can change its group');
-      }
       if (args.group_id !== null) {
         const canUseGroup = await isActiveGroupMember(ctx, args.group_id, userId);
         if (!canUseGroup) throw new Error('Not authorized for group');

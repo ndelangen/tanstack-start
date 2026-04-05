@@ -21,11 +21,11 @@ import {
 } from '@app/components/profile/ProfileFaqActivity';
 import layoutStyles from '@app/components/profile/ProfilePageLayout.module.css';
 
-import styles from './ProfileDetail.module.css';
+import styles from '../ProfileDetail.module.css';
 
-export const Route = createFileRoute('/_app/profiles/$slug')({
+export const Route = createFileRoute('/_app/profiles/$profileSlug/')({
   loader: async ({ params }) => {
-    const profilePage = await loadProfileBySlug(params.slug);
+    const profilePage = await loadProfileBySlug(params.profileSlug);
     return { profilePage };
   },
   component: ProfileDetailPage,
@@ -35,9 +35,9 @@ export const Route = createFileRoute('/_app/profiles/$slug')({
 });
 
 function ProfilePageHead() {
-  const { slug } = Route.useParams();
+  const { profileSlug } = Route.useParams();
   const loaderData = Route.useLoaderData() as { profilePage?: ProfilePageData } | undefined;
-  const profileData = useProfileBySlug(slug, { initialData: loaderData?.profilePage });
+  const profileData = useProfileBySlug(profileSlug, { initialData: loaderData?.profilePage });
   const currentProfile = useCurrentProfile();
 
   if (!profileData.profile) {
@@ -73,9 +73,9 @@ function ProfilePageHead() {
 }
 
 function ProfileDetailPage() {
-  const { slug } = Route.useParams();
+  const { profileSlug } = Route.useParams();
   const loaderData = Route.useLoaderData();
-  const profileData = useProfileBySlug(slug, { initialData: loaderData.profilePage });
+  const profileData = useProfileBySlug(profileSlug, { initialData: loaderData.profilePage });
   const currentProfile = useCurrentProfile();
   const { signOut } = useAuthActions();
   const navigate = useNavigate();
@@ -106,7 +106,12 @@ function ProfileDetailPage() {
             </FormTooltip>
             {isSelf ? (
               <FormTooltip content="Edit profile">
-                <UIButton variant="secondary" to="/profiles/settings" aria-label="Edit profile">
+                <UIButton
+                  variant="secondary"
+                  to="/profiles/$profileSlug/edit"
+                  params={{ profileSlug }}
+                  aria-label="Edit profile"
+                >
                   <Pencil size={16} aria-hidden />
                 </UIButton>
               </FormTooltip>

@@ -38,8 +38,8 @@ export interface PageProps {
   content: React.ReactNode;
 }
 
-const el = document.documentElement;
 const update = () => {
+  const el = document.documentElement;
   const scrollHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
   const maxScroll = Math.max(0, scrollHeight - window.innerHeight);
   const remainingScroll = Math.max(0, maxScroll - window.scrollY);
@@ -54,6 +54,8 @@ export function Page({ head, content }: PageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const el = document.documentElement;
+
     let rafId: number | null = null;
     const scheduleUpdate = () => {
       if (rafId !== null) return;
@@ -84,6 +86,8 @@ export function Page({ head, content }: PageProps) {
   }, []);
 
   useEffect(() => {
+    const el = document.documentElement;
+
     el.dataset.route = location.pathname;
     el.setAttribute('data-initial-animate', '');
   }, [location.pathname]);

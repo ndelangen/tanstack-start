@@ -33,8 +33,8 @@ export const ProfileLink = ({
 
   return (
     <Link
-      to="/profiles/$slug"
-      params={{ slug }}
+      to="/profiles/$profileSlug"
+      params={{ profileSlug: slug }}
       className={clsx(styles.link, className)}
       style={style}
       title={title}

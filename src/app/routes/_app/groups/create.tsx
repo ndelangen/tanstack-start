@@ -62,8 +62,8 @@ function GroupCreatePage() {
               onSuccess: () => {
                 setSubmitError(null);
                 navigate({
-                  to: '/profiles/$slug',
-                  params: { slug: profileRow.slug },
+                  to: '/profiles/$profileSlug',
+                  params: { profileSlug: profileRow.slug },
                 });
               },
               onError: (error) => setSubmitError(error.message),
@@ -87,7 +87,10 @@ function GroupCreatePage() {
                 aria-label="Close create group"
                 disabled={createGroup.isPending}
                 onClick={() =>
-                  navigate({ to: '/profiles/$slug', params: { slug: profileRow.slug } })
+                  navigate({
+                    to: '/profiles/$profileSlug',
+                    params: { profileSlug: profileRow.slug },
+                  })
                 }
               >
                 <X size={16} aria-hidden />

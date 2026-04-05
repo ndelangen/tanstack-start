@@ -1,61 +1,9 @@
-.topBar {
+.toolbar {
   margin-bottom: 1.5rem;
-  padding: 1rem 1.25rem;
-  background-color: var(--panel-bg);
-  border-radius: var(--panel-radius);
-  box-shadow: var(--panel-shadow);
-  backdrop-filter: blur(8px);
-  border: 2px solid var(--panel-border);
-  box-sizing: border-box;
 }
 
-.searchRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem 1rem;
-}
-
-.searchWrapper {
-  position: relative;
-  flex: 1;
-  min-width: min(100%, 220px);
-  max-width: 420px;
-}
-
-.searchIcon {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--color-muted, #666);
-  pointer-events: none;
-}
-
-.searchInput {
-  display: block;
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  padding-left: 2.25rem;
-  font-size: 1rem;
-  font-family: inherit;
-  background-color: var(--input-bg, rgba(255, 255, 255, 0.95));
-  border: 1px solid var(--input-border, rgba(0, 0, 0, 0.15));
-  border-radius: 6px;
-  box-sizing: border-box;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
-}
-
-.searchInput:focus {
-  outline: none;
-  border-color: var(--panel-border, #735c47);
-  box-shadow: 0 0 0 2px rgba(244, 207, 139, 0.3);
-}
-
-.searchInput::placeholder {
-  color: var(--color-muted, #666);
+.toolbarSearch {
+  max-width: min(100%, 26.25rem);
 }
 
 .meta {
@@ -65,11 +13,6 @@
 }
 
 .empty {
-  margin: 0;
-  color: var(--color-muted, #735c47);
-}
-
-.noResults {
   margin: 0;
   color: var(--color-muted, #735c47);
 }

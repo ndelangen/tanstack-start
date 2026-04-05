@@ -46,7 +46,9 @@ export function LoginForm(props: ComponentPropsWithoutRef<'div'>) {
             type="button"
             className={`${styles.providerButton} ${styles.discord}`}
             disabled={loadingProvider !== null}
-            aria-label={loadingProvider === 'discord' ? 'Signing in with Discord…' : 'Continue with Discord'}
+            aria-label={
+              loadingProvider === 'discord' ? 'Signing in with Discord…' : 'Continue with Discord'
+            }
             onClick={(e) => void handleSocialLogin(e, 'discord')}
           >
             <SiDiscord size={26} aria-hidden />
@@ -55,7 +57,9 @@ export function LoginForm(props: ComponentPropsWithoutRef<'div'>) {
             type="button"
             className={`${styles.providerButton} ${styles.google}`}
             disabled={loadingProvider !== null}
-            aria-label={loadingProvider === 'google' ? 'Signing in with Google…' : 'Continue with Google'}
+            aria-label={
+              loadingProvider === 'google' ? 'Signing in with Google…' : 'Continue with Google'
+            }
             onClick={(e) => void handleSocialLogin(e, 'google')}
           >
             <GoogleColoredMark width={26} height={26} />

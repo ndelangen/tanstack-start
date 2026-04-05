@@ -7,7 +7,7 @@ import '@app/components/factions/sheet/FactionSheetDocument.css';
 import { FactionSheetView } from '@app/components/factions/sheet/FactionSheetView';
 import { useFactionSheetPostMessage } from '@app/hooks/useFactionSheetPostMessage';
 
-export const Route = createFileRoute('/_app/factions/$factionId/sheet')({
+export const Route = createFileRoute('/_app/preview/sheet/$factionSlug')({
   validateSearch: (params: Record<string, unknown>): { mode: 'db' | 'live' } => {
     return params.mode === 'live' ? { mode: 'live' } : { mode: 'db' };
   },
@@ -17,15 +17,15 @@ export const Route = createFileRoute('/_app/factions/$factionId/sheet')({
     if (mode === 'live') {
       return undefined;
     }
-    return await loadFactionBySlug(params.factionId);
+    return await loadFactionBySlug(params.factionSlug);
   },
   component: FactionSheetPage,
 });
 
 function FactionSheetDbMode() {
-  const { factionId } = Route.useParams();
+  const { factionSlug } = Route.useParams();
   const loaderData = Route.useLoaderData();
-  const { faction } = useFaction(factionId, { initialData: loaderData });
+  const { faction } = useFaction(factionSlug, { initialData: loaderData });
 
   useEffect(() => {
     document.documentElement.dataset.factionSheet = '';

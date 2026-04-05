@@ -1,7 +1,6 @@
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 1.5rem;
+.noResults {
+  margin: 0;
+  color: var(--color-muted, #735c47);
 }
 
 .card {
@@ -18,20 +17,17 @@
   justify-content: center;
 }
 
-/**
- * Token backgrounds use SVG gradients in objectBoundingBox space; a non-square
- * slot skews diagonal splits (they look like simple vertical/horizontal cuts).
- * Sheet preview uses a square logo box — match that so list tiles match the editor.
- */
-.tokenSquare {
+.token {
   position: relative;
   height: 100%;
   width: auto;
   max-width: 100%;
   aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
 }
 
-.tokenSquare > * {
+.token > * {
   position: absolute;
   inset: 0;
   width: 100%;

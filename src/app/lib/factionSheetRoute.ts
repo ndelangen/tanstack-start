@@ -1,4 +1,4 @@
-/** True when pathname is `/factions/:factionId/sheet` (bare layout, no Page chrome). */
+/** True when pathname is `/preview/sheet/:functionSlug` (bare layout, no Page chrome). */
 export function isFactionSheetBarePath(pathname: string): boolean {
-  return /^\/factions\/[^/]+\/sheet\/?$/.test(pathname);
+  return /^\/preview\/sheet\/[^/]+\/?$/.test(pathname);
 }

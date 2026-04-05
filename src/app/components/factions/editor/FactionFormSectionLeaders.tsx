@@ -18,7 +18,6 @@ import { Plus, Trash2 } from 'lucide-react';
 import { useLayoutEffect, useState } from 'react';
 
 import type { Faction } from '@db/factions';
-import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormField } from '@app/components/form/FormField';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { FormUnitToolbar } from '@app/components/form/FormUnitToolbar';
@@ -26,6 +25,7 @@ import { SortableItem } from '@app/components/form/SortableItem';
 import { SortableReorderHandle } from '@app/components/form/SortableReorderHandle';
 import { SuggestField } from '@app/components/form/SuggestField';
 import { TextField } from '@app/components/form/TextField';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { getSortableIds, indexFromSortableId } from '@app/lib/dnd-sortable-ids';
 import { LEADERS } from '@game/data/generated';
 

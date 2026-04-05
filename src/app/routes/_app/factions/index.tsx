@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import Fuse from 'fuse.js';
-import { Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { loadFactionsAll, useFactionsAll } from '@db/factions';
 import { useCurrentProfile } from '@db/profiles';
 import { FactionList } from '@app/components/factions/FactionList';
+import { Toolbar, ToolbarSearchField } from '@app/components/generic/layout';
 
 import styles from './FactionsIndex.module.css';
 
@@ -26,7 +26,7 @@ function FactionsIndexPageHead() {
         </Link>
         {' · '}
         {slug ? (
-          <Link to="/profiles/$slug" params={{ slug }}>
+          <Link to="/profiles/$profileSlug" params={{ profileSlug: slug }}>
             My factions
           </Link>
         ) : (
@@ -80,32 +80,26 @@ function FactionsPage() {
 
   return (
     <>
-      <div className={styles.topBar}>
-        <div className={styles.searchRow}>
-          <div className={styles.searchWrapper}>
-            <Search className={styles.searchIcon} size={18} aria-hidden />
-            <input
-              type="search"
-              className={styles.searchInput}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by name or slug…"
-              aria-label="Search factions"
-            />
-          </div>
+      <Toolbar className={styles.toolbar}>
+        <Toolbar.Left>
+          <ToolbarSearchField
+            className={styles.toolbarSearch}
+            value={searchQuery}
+            onValueChange={setSearchQuery}
+            placeholder="Search by name or slug…"
+            aria-label="Search factions"
+          />
+        </Toolbar.Left>
+        <Toolbar.Right>
           <span className={styles.meta}>
             {filtered.length === list.length
               ? `${list.length} faction${list.length === 1 ? '' : 's'}`
               : `${filtered.length} of ${list.length} shown`}
           </span>
-        </div>
-      </div>
+        </Toolbar.Right>
+      </Toolbar>
 
-      {filtered.length > 0 ? (
-        <FactionList factions={filtered} />
-      ) : (
-        <p className={styles.noResults}>No factions match your search.</p>
-      )}
+      <FactionList factions={filtered} />
     </>
   );
 }

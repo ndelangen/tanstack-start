@@ -33,7 +33,7 @@ export function FactionSheetPreviewIframe({ faction }: { faction: Faction }) {
   factionRef.current = faction;
 
   const slug = factionSlugBaseFromName(faction.name);
-  const iframeSrc = `/factions/${encodeURIComponent(slug)}/sheet?mode=live`;
+  const iframeSrc = `/preview/sheet/${encodeURIComponent(slug)}?mode=live`;
 
   const factionSnapshot = useMemo(() => JSON.stringify(faction), [faction]);
 

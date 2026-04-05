@@ -1,12 +1,41 @@
+.pageHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  width: 100%;
+  max-width: 42rem;
+  margin: 0 auto;
+}
+
+.rulesetHeadCover {
+  width: 5.5rem;
+  flex-shrink: 0;
+}
+
+.pageHeadText {
+  min-width: 0;
+  text-align: left;
+}
+
+.rulesetTitle {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-text, #2e2927);
+}
+
+.pageHeadMeta {
+  margin: var(--space-1) 0 0 0;
+  font-size: 0.88rem;
+}
+
 .section {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   margin-bottom: 1.5rem;
-}
-
-.coverWrapper {
-  max-width: 200px;
 }
 
 .sectionTitle {
@@ -16,43 +45,6 @@
 .error {
   font-size: 0.9rem;
   color: var(--color-error, #c33);
-}
-
-.searchWrapper {
-  position: relative;
-  min-width: min(100%, 18rem);
-  flex: 1 1 18rem;
-}
-
-.searchIcon {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--color-muted, #666);
-  pointer-events: none;
-}
-
-.searchInput {
-  display: block;
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  padding-left: 2.25rem;
-  font-size: 1rem;
-  font-family: inherit;
-  background-color: var(--input-bg, rgba(255, 255, 255, 0.95));
-  border: 1px solid var(--input-border, rgba(0, 0, 0, 0.15));
-  border-radius: 6px;
-  box-sizing: border-box;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
-}
-
-.searchInput:focus {
-  outline: none;
-  border-color: var(--panel-border, #735c47);
-  box-shadow: 0 0 0 2px rgba(244, 207, 139, 0.3);
 }
 
 .toolbarGroupAccess {

@@ -35,7 +35,11 @@ function ProfileSettingsFormFields({ initial }: { initial: ProfileEntry }) {
       {
         onSuccess: (entry) => {
           if (prevSlug !== entry.slug) {
-            navigate({ to: '/profiles/$slug', params: { slug: entry.slug }, replace: true });
+            navigate({
+              to: '/profiles/$profileSlug',
+              params: { profileSlug: entry.slug },
+              replace: true,
+            });
           }
         },
       }
@@ -64,8 +68,8 @@ function ProfileSettingsFormFields({ initial }: { initial: ProfileEntry }) {
             <FormTooltip content="View public profile">
               <UIButton
                 variant="secondary"
-                to="/profiles/$slug"
-                params={{ slug: initial.slug }}
+                to="/profiles/$profileSlug"
+                params={{ profileSlug: initial.slug }}
                 aria-label="View public profile"
               >
                 <User size={16} aria-hidden />

@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useLocation, useMatches } from '@tanstack/react-router';
+import { createFileRoute, Link, Outlet, useMatches } from '@tanstack/react-router';
 import { ArrowLeft, Pencil, Printer, UserPlus } from 'lucide-react';
 
 import { loadFaction, useFaction } from '@db/factions';
@@ -12,16 +12,9 @@ import { UIButton } from '@app/components/generic/ui/UIButton';
 import { ProfileLink } from '@app/components/profile/ProfileLink';
 
 export const Route = createFileRoute('/_app/factions/$factionId/')({
-  loader: async ({ params, location }) => {
-    const isSheet = location.pathname.endsWith('/sheet');
-    const mode = new URLSearchParams(location.search).get('mode') ?? 'db';
-
-    if (isSheet && mode === 'live') {
-      return { faction: undefined, rulesets: [] };
-    }
-
+  loader: async ({ params }) => {
     const faction = await loadFaction(params.factionId);
-    const rulesets = isSheet ? [] : await loadRulesetsByFaction(faction.faction._id);
+    const rulesets = await loadRulesetsByFaction(faction.faction._id);
 
     return { faction, rulesets };
   },
@@ -87,7 +80,7 @@ function FactionPageHeadContent({ factionId }: { factionId: string }) {
         </Link>
         {' · '}
         {myProfileSlug ? (
-          <Link to="/profiles/$slug" params={{ slug: myProfileSlug }}>
+          <Link to="/profiles/$profileSlug" params={{ profileSlug: myProfileSlug }}>
             My factions
           </Link>
         ) : (
@@ -140,9 +133,7 @@ function FactionDetailMain({ factionId }: { factionId: string }) {
   const profile = useCurrentProfile();
   const requestMembership = useRequestGroupMembership();
 
-  const isChildOnlyRoute = matches.some(
-    (m) => m.pathname.endsWith('/edit') || m.pathname.endsWith('/sheet')
-  );
+  const isChildOnlyRoute = matches.some((m) => m.pathname.endsWith('/edit'));
 
   if (!factionRow) {
     return null;
@@ -193,8 +184,8 @@ function FactionDetailMain({ factionId }: { factionId: string }) {
           <FormTooltip content="Printable faction sheet">
             <UIButton
               variant="confirm"
-              to="/factions/$factionId/sheet"
-              params={{ factionId }}
+              to="/preview/sheet/$factionSlug"
+              params={{ factionSlug: factionId }}
               search={{ mode: 'db' }}
               target="_blank"
               aria-label="Printable faction sheet"
@@ -206,7 +197,11 @@ function FactionDetailMain({ factionId }: { factionId: string }) {
       </Toolbar>
 
       <p>
-        <Link to="/factions/$factionId/sheet" params={{ factionId }} search={{ mode: 'db' }}>
+        <Link
+          to="/preview/sheet/$factionSlug"
+          params={{ factionSlug: factionId }}
+          search={{ mode: 'db' }}
+        >
           Printable faction sheet
         </Link>{' '}
         (opens without site chrome; use the browser print dialog for PDF)
@@ -277,23 +272,5 @@ function FactionDetailMain({ factionId }: { factionId: string }) {
 
 function FactionDetailPage() {
   const { factionId } = Route.useParams();
-  const location = useLocation();
-  const isSheet = location.pathname.endsWith('/sheet');
-  const searchObject =
-    location.search && typeof location.search === 'object'
-      ? (location.search as Record<string, unknown>)
-      : null;
-  const sheetModeFromObject =
-    searchObject && typeof searchObject.mode === 'string' ? searchObject.mode : null;
-  const sheetModeFromString = new URLSearchParams(
-    typeof location.search === 'string' ? location.search : ''
-  ).get('mode');
-  const sheetMode = sheetModeFromObject ?? sheetModeFromString ?? 'db';
-  const isLiveSheet = isSheet && sheetMode === 'live';
-
-  if (isLiveSheet) {
-    return <Outlet />;
-  }
-
   return <FactionDetailMain factionId={factionId} />;
 }
