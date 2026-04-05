@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, useLocation, useMatches } from '@tanstack/reac
 import React from 'react';
 
 import { useCurrentProfile } from '@db/profiles';
+import { AuthNav } from '@app/components/auth/AuthNav';
 import { Page } from '@app/components/generic/surfaces/Page';
 import { isFactionSheetBarePath } from '@app/lib/factionSheetRoute';
 
@@ -24,5 +25,5 @@ function AppLayout() {
     return <Outlet />;
   }
 
-  return <Page head={pageHead} content={<Outlet />} />;
+  return <Page head={pageHead} content={<Outlet />} navSlot={<AuthNav />} />;
 }
