@@ -18,7 +18,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { useLayoutEffect, useState } from 'react';
 
 import type { Faction } from '@db/factions';
-import { FormButton } from '@app/components/form/FormButton';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormField } from '@app/components/form/FormField';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { FormUnitToolbar } from '@app/components/form/FormUnitToolbar';
@@ -96,15 +96,15 @@ export function FactionFormSectionLeaders({ form }: { form: FactionFormApi }) {
                             }
                             actions={
                               <FormTooltip content="Remove leader">
-                                <FormButton
+                                <UIButton
                                   type="button"
-                                  variant="danger"
+                                  variant="critical"
                                   iconOnly
                                   aria-label="Remove leader"
                                   onClick={() => lf.removeValue(i)}
                                 >
                                   <Trash2 size={16} aria-hidden />
-                                </FormButton>
+                                </UIButton>
                               </FormTooltip>
                             }
                           />
@@ -185,7 +185,7 @@ export function FactionFormSectionLeaders({ form }: { form: FactionFormApi }) {
               </SortableContext>
             </DndContext>
             <FormTooltip content="Add leader">
-              <FormButton
+              <UIButton
                 type="button"
                 variant="secondary"
                 iconOnly
@@ -198,7 +198,7 @@ export function FactionFormSectionLeaders({ form }: { form: FactionFormApi }) {
                 }}
               >
                 <Plus size={16} aria-hidden />
-              </FormButton>
+              </UIButton>
             </FormTooltip>
           </>
         );

@@ -1,13 +1,13 @@
 import preview from '@sb/preview';
 import { Save, Trash2 } from 'lucide-react';
 
-import { FormButton } from './FormButton';
+import { UIButton } from './UIButton';
 
 const meta = preview.meta({
-  component: FormButton,
+  component: UIButton,
 });
 
-export const Primary = meta.story({
+export const Confirm = meta.story({
   args: {
     children: 'Save changes',
     type: 'button',
@@ -22,11 +22,11 @@ export const Secondary = meta.story({
   },
 });
 
-export const Danger = meta.story({
+export const Critical = meta.story({
   args: {
     children: 'Delete',
     type: 'button',
-    variant: 'danger',
+    variant: 'critical',
   },
 });
 
@@ -39,13 +39,12 @@ export const IconOnly = meta.story({
   },
 });
 
-export const IconOnlyDanger = meta.story({
+export const IconOnlyCritical = meta.story({
   args: {
     'aria-label': 'Delete',
     type: 'button',
     iconOnly: true,
-    variant: 'danger',
+    variant: 'critical',
     children: <Trash2 size={16} aria-hidden />,
   },
 });
-

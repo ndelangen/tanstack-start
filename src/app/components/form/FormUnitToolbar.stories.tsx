@@ -1,7 +1,7 @@
 import preview from '@sb/preview';
 import { Trash2 } from 'lucide-react';
 
-import { FormButton } from './FormButton';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormUnitToolbar } from './FormUnitToolbar';
 
 const meta = preview.meta({
@@ -13,9 +13,9 @@ export const Default = meta.story({
     leading: <span>Item A</span>,
     center: <span>Unit toolbar center text</span>,
     actions: (
-      <FormButton type="button" variant="danger" iconOnly aria-label="Remove item">
+      <UIButton type="button" variant="critical" iconOnly aria-label="Remove item">
         <Trash2 size={16} aria-hidden />
-      </FormButton>
+      </UIButton>
     ),
   },
 });

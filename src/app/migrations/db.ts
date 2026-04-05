@@ -1,9 +1,10 @@
+import { db } from '@db/core';
 import { toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
 import { useQuery } from 'convex/react';
 
 import { api } from '../../../convex/_generated/api';
 
-type MigrationStatusRow = {
+export type MigrationStatusRow = {
   name: string;
   state: 'inProgress' | 'success' | 'failed' | 'canceled' | 'unknown';
   isDone: boolean;
@@ -13,7 +14,7 @@ type MigrationStatusRow = {
   error?: string;
 };
 
-type MigrationRunSnapshot = {
+export type MigrationRunSnapshot = {
   _id: string;
   migration_id: string;
   state: 'inProgress' | 'success' | 'failed' | 'canceled' | 'unknown';
@@ -25,14 +26,33 @@ type MigrationRunSnapshot = {
   updated_at: string;
 };
 
-export function useMigrationStatuses(ids?: string[]) {
-  const liveData = useQuery(api.migrations.getStatus, { ids });
-  return toLiveQueryResult<MigrationStatusRow[]>(liveData as MigrationStatusRow[] | undefined);
+export type AdminMigrationDashboardData = {
+  statuses: MigrationStatusRow[];
+  snapshots: MigrationRunSnapshot[];
+};
+
+export async function loadAdminMigrationDashboard(
+  ids?: string[]
+): Promise<AdminMigrationDashboardData> {
+  return await db.query<AdminMigrationDashboardData>(api.migrations.adminDashboard, {
+    ids,
+  });
 }
 
-export function useMigrationRunSnapshots() {
-  const liveData = useQuery(api.migrations.listRunSnapshots, {});
-  return toLiveQueryResult<MigrationRunSnapshot[]>(liveData as MigrationRunSnapshot[] | undefined);
+export function useAdminMigrationDashboard(options?: {
+  initialData?: AdminMigrationDashboardData;
+  ids?: string[];
+}) {
+  const args = options?.ids ? { ids: options.ids } : {};
+  const liveData = useQuery(api.migrations.adminDashboard, args) as
+    | AdminMigrationDashboardData
+    | undefined;
+  const result = toLiveQueryResult(liveData, true, () => options?.initialData);
+  return {
+    ...result,
+    statuses: result.data?.statuses ?? [],
+    snapshots: result.data?.snapshots ?? [],
+  };
 }
 
 export function useSyncMigrationRuns() {

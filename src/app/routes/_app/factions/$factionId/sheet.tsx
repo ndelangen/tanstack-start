@@ -22,16 +22,10 @@ export const Route = createFileRoute('/_app/factions/$factionId/sheet')({
   component: FactionSheetPage,
 });
 
-function FactionSheetPage() {
+function FactionSheetDbMode() {
   const { factionId } = Route.useParams();
-  const { mode } = Route.useSearch();
   const loaderData = Route.useLoaderData();
-  const initialData = mode === 'db' ? loaderData : undefined;
-  const { faction } = useFaction(factionId, {
-    enabled: mode === 'db',
-    initialData,
-  });
-  const factionFromMessage = useFactionSheetPostMessage(mode === 'live');
+  const { faction } = useFaction(factionId, { initialData: loaderData });
 
   useEffect(() => {
     document.documentElement.dataset.factionSheet = '';
@@ -40,20 +34,38 @@ function FactionSheetPage() {
     };
   }, []);
 
-  if (mode === 'live') {
-    if (!factionFromMessage) {
-      return (
-        <p style={{ margin: '1rem', fontFamily: 'system-ui, sans-serif' }}>
-          Live preview: waiting for faction data via <code>postMessage</code> (same origin).
-        </p>
-      );
-    }
-    return <FactionSheetView faction={factionFromMessage} />;
-  }
-
   if (!faction) {
     return null;
   }
 
   return <FactionSheetView faction={faction.data} />;
+}
+
+function FactionSheetLiveMode() {
+  const factionFromMessage = useFactionSheetPostMessage(true);
+
+  useEffect(() => {
+    document.documentElement.dataset.factionSheet = '';
+    return () => {
+      delete document.documentElement.dataset.factionSheet;
+    };
+  }, []);
+
+  if (!factionFromMessage) {
+    return (
+      <p style={{ margin: '1rem', fontFamily: 'system-ui, sans-serif' }}>
+        Live preview: waiting for faction data via <code>postMessage</code> (same origin).
+      </p>
+    );
+  }
+
+  return <FactionSheetView faction={factionFromMessage} />;
+}
+
+function FactionSheetPage() {
+  const { mode } = Route.useSearch();
+  if (mode === 'live') {
+    return <FactionSheetLiveMode />;
+  }
+  return <FactionSheetDbMode />;
 }

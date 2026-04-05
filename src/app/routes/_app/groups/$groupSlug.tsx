@@ -1,30 +1,19 @@
-import { createFileRoute, getRouteApi, Link } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { UserPlus } from 'lucide-react';
 
-import { loadFactionsByGroup, useFactionsByGroup } from '@db/factions';
-import { loadGroupBySlug, useGroupBySlug } from '@db/groups';
-import { loadGroupMembers, useGroupMembers, useRequestGroupMembership } from '@db/members';
-import {
-  loadProfilesAll,
-  useCurrentProfile,
-  useProfilesAll,
-} from '@db/profiles';
-import { FormButton } from '@app/components/form/FormButton';
+import { loadGroupDetailBySlug, useGroupDetailBySlug } from '@db/groups';
+import { useRequestGroupMembership } from '@db/members';
+import { useCurrentProfile } from '@db/profiles';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
+import { UIButton } from '@app/components/generic/ui/UIButton';
+import { ProfileLink } from '@app/components/profile/ProfileLink';
 
 export const Route = createFileRoute('/_app/groups/$groupSlug')({
   loader: async ({ params }) => {
-    const [profiles, groupPage] = await Promise.all([
-      loadProfilesAll(),
-      loadGroupBySlug(params.groupSlug),
-    ]);
-    const [members, factions] = await Promise.all([
-      loadGroupMembers(groupPage.group._id),
-      loadFactionsByGroup(groupPage.group._id),
-    ]);
-    return { profiles, groupPage, members, factions };
+    const groupDetail = await loadGroupDetailBySlug(params.groupSlug);
+    return { groupDetail };
   },
   component: GroupDetailPage,
   staticData: {
@@ -32,12 +21,10 @@ export const Route = createFileRoute('/_app/groups/$groupSlug')({
   },
 });
 
-const appRouteApi = getRouteApi('/_app');
-
 function GroupPageHead() {
   const { groupSlug } = Route.useParams();
   const loaderData = Route.useLoaderData();
-  const groupData = useGroupBySlug(groupSlug, { initialData: loaderData.groupPage });
+  const groupData = useGroupDetailBySlug(groupSlug, { initialData: loaderData.groupDetail });
 
   return (
     <div>
@@ -51,19 +38,11 @@ function GroupPageHead() {
 
 function GroupDetailPage() {
   const { groupSlug } = Route.useParams();
-  const appLoaderData = appRouteApi.useLoaderData();
   const loaderData = Route.useLoaderData();
-  const groupData = useGroupBySlug(groupSlug, { initialData: loaderData.groupPage });
-  const currentProfile = useCurrentProfile({
-    initialCurrent: appLoaderData.currentProfile,
-    initialCurrentUserId: appLoaderData.currentUserId,
-  });
-  const profiles = useProfilesAll({ initialData: loaderData.profiles });
-  const members = useGroupMembers(groupData.group?._id ?? '', { initialData: loaderData.members });
-  const factions = useFactionsByGroup(groupData.group?._id ?? '', {
-    initialData: loaderData.factions,
-  });
+  const groupData = useGroupDetailBySlug(groupSlug, { initialData: loaderData.groupDetail });
   const requestMembership = useRequestGroupMembership();
+  const profile = useCurrentProfile();
+  const viewerUserId = profile.data?.user_id;
 
   if (groupData.isError) {
     return (
@@ -78,15 +57,16 @@ function GroupDetailPage() {
   }
 
   const groupId = groupData.group._id;
-  const activeMembers = (members.data ?? []).filter((entry) => entry.status === 'active');
-  const profileById = new Map((profiles.data ?? []).map((entry) => [entry.id, entry]));
-  const ownerProfile = profileById.get(groupData.group.created_by);
-  const viewerMembership = (members.data ?? []).find(
-    (entry) => entry.user_id === currentProfile.data?.id
-  );
+  const members = groupData.members ?? [];
+  const activeMembers = members.filter((entry) => entry.status === 'active');
+  const profileByUserId = new Map((groupData.profiles ?? []).map((p) => [p.user_id, p]));
+  const ownerProfile = profileByUserId.get(groupData.group.created_by);
+  const viewerMembership = members.find((entry) => entry.user_id === viewerUserId);
   const membershipStatus =
     viewerMembership && viewerMembership.status !== 'removed' ? viewerMembership.status : 'none';
-  const canRequestMembership = membershipStatus === 'none' && !!currentProfile.data?.id;
+  const canRequestMembership = membershipStatus === 'none' && !!viewerUserId;
+
+  const factions = groupData.factions ?? [];
 
   return (
     <Stack gap={3}>
@@ -95,11 +75,13 @@ function GroupDetailPage() {
         <p>
           Owner:{' '}
           {ownerProfile?.slug ? (
-            <Link to="/profiles/$slug" params={{ slug: ownerProfile.slug }}>
-              {ownerProfile.username ?? ownerProfile.slug}
-            </Link>
+            <ProfileLink
+              slug={ownerProfile.slug}
+              username={ownerProfile.username}
+              avatar_url={ownerProfile.avatar_url}
+            />
           ) : (
-                    (ownerProfile?.username ?? groupData.group.created_by)
+            (ownerProfile?.username ?? groupData.group.created_by)
           )}
         </p>
         <p>
@@ -111,14 +93,14 @@ function GroupDetailPage() {
               : 'Not a member'}
         </p>
         {membershipStatus === 'pending' && <p>Your request is awaiting approval.</p>}
-        {!currentProfile.data?.id && (
+        {!profile.isPending && !viewerUserId && (
           <p>
             <Link to="/auth/login">Log in</Link> to request membership.
           </p>
         )}
         {canRequestMembership && (
           <FormTooltip content="Request membership">
-            <FormButton
+            <UIButton
               type="button"
               iconOnly
               aria-label="Request membership"
@@ -126,7 +108,7 @@ function GroupDetailPage() {
               onClick={() => requestMembership.mutate(groupId)}
             >
               <UserPlus size={16} aria-hidden />
-            </FormButton>
+            </UIButton>
           </FormTooltip>
         )}
         {requestMembership.isError && <p>{requestMembership.error?.message}</p>}
@@ -139,14 +121,16 @@ function GroupDetailPage() {
         ) : (
           <ul>
             {activeMembers.map((entry) => {
-              const profile = profileById.get(entry.user_id);
+              const profile = profileByUserId.get(entry.user_id);
               const label = profile?.username ?? entry.user_id;
               return (
                 <li key={entry.id}>
                   {profile?.slug ? (
-                    <Link to="/profiles/$slug" params={{ slug: profile.slug }}>
-                      {label}
-                    </Link>
+                    <ProfileLink
+                      slug={profile.slug}
+                      username={profile.username}
+                      avatar_url={profile.avatar_url}
+                    />
                   ) : (
                     <span>{label}</span>
                   )}
@@ -159,13 +143,13 @@ function GroupDetailPage() {
 
       <Card>
         <h3>Factions</h3>
-        {!factions.data || factions.data.length === 0 ? (
+        {factions.length === 0 ? (
           <p>No factions in this group yet.</p>
         ) : (
           <ul>
-            {factions.data.map((faction) => (
-              <li key={faction.id}>
-                <Link to="/factions/$factionId" params={{ factionId: faction.data.slug }}>
+            {factions.map((faction) => (
+              <li key={faction._id}>
+                <Link to="/factions/$factionId" params={{ factionId: faction.slug }}>
                   {faction.data.name}
                 </Link>
               </li>

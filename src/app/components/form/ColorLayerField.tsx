@@ -1,7 +1,8 @@
 import { Plus, Trash2 } from 'lucide-react';
 
+import { UIButton } from '@app/components/generic/ui/UIButton';
+
 import styles from './ColorLayerField.module.css';
-import { FormButton } from './FormButton';
 import { FormTooltip } from './FormTooltip';
 import { HexColorPicker } from './HexColorPicker';
 import { TextField } from './TextField';
@@ -279,21 +280,21 @@ function GradientEditor({
             />
           </label>
           <FormTooltip content={`Remove stop ${i + 1}`}>
-            <FormButton
+            <UIButton
               type="button"
-              variant="danger"
+              variant="critical"
               iconOnly
               aria-label={`Remove stop ${i + 1}`}
               disabled={value.stops.length <= 2}
               onClick={() => removeStop(i)}
             >
               <Trash2 size={16} aria-hidden />
-            </FormButton>
+            </UIButton>
           </FormTooltip>
         </div>
       ))}
       <FormTooltip content="Add gradient stop">
-        <FormButton
+        <UIButton
           type="button"
           variant="secondary"
           iconOnly
@@ -301,7 +302,7 @@ function GradientEditor({
           onClick={addStop}
         >
           <Plus size={16} aria-hidden />
-        </FormButton>
+        </UIButton>
       </FormTooltip>
     </div>
   );

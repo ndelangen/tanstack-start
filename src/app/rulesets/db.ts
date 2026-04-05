@@ -1,7 +1,9 @@
+import { useQuery } from 'convex/react';
+
 import { db } from '@db/core';
+import type { FaqAnswerEntry, FaqItemWithDetails } from '@db/faq';
 import { toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
 import { rulesetInputSchema } from '@app/rulesets/validation';
-import { useQuery } from 'convex/react';
 
 import { api } from '../../../convex/_generated/api';
 import type { Doc } from '../../../convex/_generated/dataModel';
@@ -24,6 +26,29 @@ export type RulesetPageData = {
   factions: { factionId: string; name: string; urlSlug: string }[];
   canAccess: boolean;
 };
+
+export type RulesetDetailPageData = RulesetPageData & {
+  groupAccess: {
+    group: Doc<'groups'>;
+    members: Array<{
+      membership: Doc<'group_members'>;
+      profile: FaqItemWithDetails['asker_profile'];
+    }>;
+  } | null;
+  faqItems: FaqItemWithDetails[];
+};
+
+type FaqItemConvexRow = Omit<FaqItemWithDetails, 'id' | 'faq_answers'> & {
+  faq_answers: Omit<FaqAnswerEntry, 'id'>[];
+};
+
+function mapFaqItemsFromConvex(items: FaqItemConvexRow[]): FaqItemWithDetails[] {
+  return items.map((item) => ({
+    ...item,
+    id: item._id,
+    faq_answers: item.faq_answers.map((answer) => ({ ...answer, id: answer._id })),
+  }));
+}
 
 function toRulesetEntry(entry: RulesetRow): RulesetEntry {
   return {
@@ -55,6 +80,23 @@ export async function loadRulesetBySlug(slug: string): Promise<RulesetPageData> 
   };
 }
 
+export async function loadRulesetDetailPage(slug: string): Promise<RulesetDetailPageData> {
+  const raw = await db.query<{
+    ruleset: RulesetRow;
+    factions: { factionId: string; name: string; urlSlug: string }[];
+    canAccess: boolean;
+    groupAccess: RulesetDetailPageData['groupAccess'];
+    faqItems: FaqItemConvexRow[];
+  }>(api.rulesets.detailPageBySlug, { slug });
+  return {
+    ruleset: toRulesetEntry(raw.ruleset),
+    factions: raw.factions,
+    canAccess: raw.canAccess,
+    groupAccess: raw.groupAccess,
+    faqItems: mapFaqItemsFromConvex(raw.faqItems),
+  };
+}
+
 export async function loadRulesetFactions(rulesetId: string): Promise<string[]> {
   return await db.query<string[]>(api.rulesets.factionIds, { ruleset_id: rulesetId });
 }
@@ -73,10 +115,10 @@ export async function loadCanAccessRuleset(rulesetId: string): Promise<boolean> 
 }
 
 export function useCanAccessRuleset(rulesetId: string) {
-  const enabled = Boolean(rulesetId);
-  const args = enabled ? ({ ruleset_id: rulesetId } as never) : 'skip';
-  const liveData = useQuery(api.rulesets.canAccess, args) as boolean | undefined;
-  return toLiveQueryResult(liveData, enabled);
+  const liveData = useQuery(api.rulesets.canAccess, { ruleset_id: rulesetId } as never) as
+    | boolean
+    | undefined;
+  return toLiveQueryResult(liveData, true);
 }
 
 export async function loadRulesetsByFaction(factionId: string): Promise<RulesetEntry[]> {
@@ -96,10 +138,8 @@ export function useRulesetsAll(options?: { initialData?: RulesetEntry[] }) {
 }
 
 export function useRuleset(id: string) {
-  const enabled = Boolean(id);
-  const args = enabled ? ({ id } as never) : 'skip';
-  const liveData = useQuery(api.rulesets.get, args) as RulesetRow | undefined;
-  const result = toLiveQueryResult(liveData, enabled);
+  const liveData = useQuery(api.rulesets.get, { id } as never) as RulesetRow | undefined;
+  const result = toLiveQueryResult(liveData, true);
   return {
     ...result,
     data: result.data
@@ -113,15 +153,12 @@ export function useRuleset(id: string) {
 }
 
 export function useRulesetBySlug(slug: string, options?: { initialData?: RulesetPageData }) {
-  const enabled = Boolean(slug);
-  const liveData = useQuery(api.rulesets.getBySlug, enabled ? { slug } : 'skip');
-  const result = toLiveQueryResult<
-    {
-      ruleset: RulesetRow;
-      factions: { factionId: string; name: string; urlSlug: string }[];
-      canAccess: boolean;
-    } | null
-  >(liveData, enabled, () => (options?.initialData as never) ?? undefined);
+  const liveData = useQuery(api.rulesets.getBySlug, { slug });
+  const result = toLiveQueryResult<{
+    ruleset: RulesetRow;
+    factions: { factionId: string; name: string; urlSlug: string }[];
+    canAccess: boolean;
+  } | null>(liveData, true, () => (options?.initialData as never) ?? undefined);
   return {
     ...result,
     ruleset: result.data ? toRulesetEntry(result.data.ruleset) : undefined,
@@ -130,23 +167,47 @@ export function useRulesetBySlug(slug: string, options?: { initialData?: Ruleset
   };
 }
 
+export function useRulesetDetailPage(
+  slug: string,
+  options?: { initialData?: RulesetDetailPageData }
+) {
+  const liveData = useQuery(api.rulesets.detailPageBySlug, { slug });
+  const normalized: RulesetDetailPageData | undefined =
+    liveData === undefined
+      ? undefined
+      : {
+          ruleset: toRulesetEntry(liveData.ruleset),
+          factions: liveData.factions,
+          canAccess: liveData.canAccess,
+          groupAccess: liveData.groupAccess,
+          faqItems: mapFaqItemsFromConvex(liveData.faqItems as FaqItemConvexRow[]),
+        };
+  const result = toLiveQueryResult(normalized, true, () => options?.initialData);
+  return {
+    ...result,
+    ruleset: result.data?.ruleset,
+    factions: result.data?.factions,
+    canAccess: result.data?.canAccess ?? false,
+    groupAccess: result.data?.groupAccess ?? null,
+    faqItems: result.data?.faqItems ?? [],
+  };
+}
+
 export function useRulesetFactions(rulesetId: string) {
-  const enabled = Boolean(rulesetId);
-  const args = enabled ? ({ ruleset_id: rulesetId } as never) : 'skip';
-  const liveData = useQuery(api.rulesets.factionIds, args) as string[] | undefined;
-  return toLiveQueryResult(liveData, enabled);
+  const liveData = useQuery(api.rulesets.factionIds, { ruleset_id: rulesetId } as never) as
+    | string[]
+    | undefined;
+  return toLiveQueryResult(liveData, true);
 }
 
 export function useRulesetFactionsWithDetails(
   rulesetId: string,
   options?: { initialData?: { factionId: string; name: string; urlSlug: string }[] }
 ) {
-  const enabled = Boolean(rulesetId);
-  const args = enabled ? ({ ruleset_id: rulesetId } as never) : 'skip';
-  const liveData = useQuery(api.rulesets.factionDetails, args) as
+  const liveData = useQuery(api.rulesets.factionDetails, { ruleset_id: rulesetId } as never) as
     | { factionId: string; name: string; urlSlug: string }[]
     | undefined;
-  const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
+  const result = toLiveQueryResult(liveData, true, () => options?.initialData ?? undefined);
   return {
     ...result,
     data: result.data,
@@ -154,13 +215,13 @@ export function useRulesetFactionsWithDetails(
 }
 
 export function useRulesetsByFaction(
-  factionRowId: string | undefined,
+  factionRowId: string,
   options?: { initialData?: RulesetEntry[] }
 ) {
-  const enabled = Boolean(factionRowId);
-  const args = enabled ? ({ faction_id: factionRowId ?? '' } as never) : 'skip';
-  const liveData = useQuery(api.rulesets.listByFaction, args) as RulesetRow[] | undefined;
-  const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
+  const liveData = useQuery(api.rulesets.listByFaction, {
+    faction_id: factionRowId,
+  } as never) as RulesetRow[] | undefined;
+  const result = toLiveQueryResult(liveData, true, () => options?.initialData ?? undefined);
   return {
     ...result,
     data: result.data?.map(toRulesetEntry),

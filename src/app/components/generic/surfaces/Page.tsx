@@ -2,6 +2,7 @@ import { Link, useLocation } from '@tanstack/react-router';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { useCurrentProfile } from '@db/profiles';
+import { ProfileLink } from '@app/components/profile/ProfileLink';
 
 import './Page.css';
 
@@ -13,29 +14,15 @@ function AuthNav() {
   const profile = useCurrentProfile();
 
   if (profile.data) {
-    const initials =
-      profile.data.username
-        ?.slice(0, 2)
-        .toUpperCase()
-        .replace(/[^A-Z]/g, '') || '?';
-
     return (
-      <Link
-        to="/profiles/$slug"
-        params={{ slug: profile.data.slug }}
+      <ProfileLink
+        slug={profile.data.slug}
+        username={profile.data.username}
+        avatar_url={profile.data.avatar_url}
         className={styles.avatarLink}
         title={profile.data.username ?? 'Profile'}
-      >
-        {profile.data.avatar_url ? (
-          <img
-            src={profile.data.avatar_url}
-            alt={profile.data.username ?? 'Avatar'}
-            className={styles.avatar}
-          />
-        ) : (
-          <span className={styles.avatarPlaceholder}>{initials}</span>
-        )}
-      </Link>
+        showUsername={false}
+      />
     );
   }
 

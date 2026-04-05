@@ -1,7 +1,8 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 
 import { loadProfilesAll, useProfilesAll } from '@db/profiles';
 import { Card } from '@app/components/generic/surfaces/Card';
+import { ProfileLink } from '@app/components/profile/ProfileLink';
 
 import styles from './ProfilesIndex.module.css';
 
@@ -19,31 +20,15 @@ function ProfilesPage() {
       {profiles.data && profiles.data.length > 0 ? (
         <Card>
           <ul className={styles.list}>
-            {profiles.data.map((profile) => {
-              const initials =
-                profile.username
-                  ?.slice(0, 2)
-                  .toUpperCase()
-                  .replace(/[^A-Z]/g, '') || '?';
-              return (
-                <li key={profile.id} className={styles.row}>
-                  <Link to="/profiles/$slug" params={{ slug: profile.slug }}>
-                    {profile.avatar_url ? (
-                      <img
-                        src={profile.avatar_url}
-                        alt={profile.username ?? 'Avatar'}
-                        className={styles.avatar}
-                      />
-                    ) : (
-                      <span className={styles.avatarPlaceholder}>{initials}</span>
-                    )}
-                  </Link>
-                  <Link to="/profiles/$slug" params={{ slug: profile.slug }}>
-                    {profile.username ?? 'Unknown'}
-                  </Link>
-                </li>
-              );
-            })}
+            {profiles.data.map((profile) => (
+              <li key={profile._id} className={styles.row}>
+                <ProfileLink
+                  slug={profile.slug}
+                  username={profile.username}
+                  avatar_url={profile.avatar_url}
+                />
+              </li>
+            ))}
           </ul>
         </Card>
       ) : (

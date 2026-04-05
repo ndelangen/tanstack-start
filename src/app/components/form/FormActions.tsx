@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import btnStyles from './FormButton.module.css';
+import btnStyles from '@app/components/generic/ui/UIButton.module.css';
 
 interface FormActionsProps {
   children: ReactNode;

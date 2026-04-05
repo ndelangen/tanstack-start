@@ -3,15 +3,15 @@ import { LogIn } from 'lucide-react';
 import { useState } from 'react';
 
 import { FormActions } from '@app/components/form/FormActions';
-import { FormButton } from '@app/components/form/FormButton';
 import { Stack } from '@app/components/generic/layout';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 
 export function LoginForm(props: React.ComponentPropsWithoutRef<'div'>) {
   const { signIn } = useAuthActions();
   const [error, setError] = useState<string | null>(null);
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
 
-  const handleSocialLogin = async (e: React.FormEvent, provider: 'discord' | 'google') => {
+  const handleSocialLogin = async (e: React.SyntheticEvent, provider: 'discord' | 'google') => {
     e.preventDefault();
     setLoadingProvider(provider);
     setError(null);
@@ -31,22 +31,22 @@ export function LoginForm(props: React.ComponentPropsWithoutRef<'div'>) {
         <p>Sign in to your account to continue</p>
         {error && <p role="alert">{error}</p>}
         <FormActions>
-          <FormButton
+          <UIButton
             type="button"
             disabled={loadingProvider !== null}
-            onClick={(e) => handleSocialLogin(e, 'discord')}
+            onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleSocialLogin(e, 'discord')}
           >
             <LogIn size={16} aria-hidden />
             <span>{loadingProvider === 'discord' ? 'Logging in...' : 'Continue with Discord'}</span>
-          </FormButton>
-          <FormButton
+          </UIButton>
+          <UIButton
             type="button"
             disabled={loadingProvider !== null}
-            onClick={(e) => handleSocialLogin(e, 'google')}
+            onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleSocialLogin(e, 'google')}
           >
             <LogIn size={16} aria-hidden />
             <span>{loadingProvider === 'google' ? 'Logging in...' : 'Continue with Google'}</span>
-          </FormButton>
+          </UIButton>
         </FormActions>
       </Stack>
     </div>

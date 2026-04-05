@@ -2,6 +2,7 @@ import { getAuthUserId } from '@convex-dev/auth/server';
 import { v } from 'convex/values';
 
 import { profileUserEditFormSchema } from '../src/app/profile/validation';
+import { FactionInputSchema } from '../src/game/schema/faction';
 import { api } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import { type MutationCtx, mutation, query } from './_generated/server';
@@ -158,12 +159,24 @@ export const getBySlug = query({
       profile_id: profile.user_id,
     });
 
+    const factionRows = await ctx.db
+      .query('factions')
+      .withIndex('by_owner_deleted', (q) =>
+        q.eq('owner_id', profile.user_id).eq('is_deleted', false)
+      )
+      .take(500);
+    const factions = factionRows.map((row) => ({
+      ...row,
+      data: FactionInputSchema.parse(row.data),
+    }));
+
     return {
       profile,
       memberships,
       groups,
       faqAsked,
       faqAnswers,
+      factions,
     };
   },
 });

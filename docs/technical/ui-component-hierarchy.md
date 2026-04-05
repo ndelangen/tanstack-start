@@ -31,7 +31,7 @@ CSS Modules provide **scoped class names** and hook into design tokens (`var(--â
 
 ### Shared control styles
 
-Low-level icon/button chrome lives under **`src/app/components/generic/ui/`** (`IconButton`). Field-control chrome lives under **`src/app/components/form/`** (`TextField.module.css`).
+Low-level button chrome lives under **`src/app/components/generic/ui/`** (`UIButton`, `IconButton`). Field-control chrome lives under **`src/app/components/form/`** (`TextField.module.css`).
 
 Form-specific layout and labels stay in `form/Form.module.css` and form components; they compose primitives in Reactâ€”**without** importing another module's CSS directly.
 
@@ -67,6 +67,7 @@ All controls above are wrapper-agnostic primitives. When a label/hint/error is n
 ```mermaid
 flowchart TB
   subgraph ui [ui primitives]
+    UIButtonTSX[UIButton.tsx]
     IconButtonTSX[IconButton.tsx]
   end
   subgraph form [form layer]
@@ -77,12 +78,12 @@ flowchart TB
     SuggestField[SuggestField]
     ColorLayerField[ColorLayerField]
     PrefixedField[PrefixedField]
-    FormBtn[FormButton]
     FormModuleCSS[Form.module.css]
   end
   subgraph features [features routes]
     Routes[Features and routes]
   end
+  UIButtonTSX --> IconButtonTSX
   TextFieldBase --> TextField
   TextFieldBase --> Multiline
   TextFieldBase --> OptionPicker
@@ -92,7 +93,7 @@ flowchart TB
   FormModuleCSS --> TextField
   FormModuleCSS --> OptionPicker
   FormModuleCSS --> PrefixedField
-  IconButtonTSX --> FormBtn
+  UIButtonTSX --> ColorLayerField
   TextField --> Routes
   Multiline --> Routes
   OptionPicker --> Routes

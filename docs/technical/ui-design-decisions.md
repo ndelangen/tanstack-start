@@ -138,8 +138,8 @@ This document records durable UI decisions for consistency across features.
 - Context: Parallel paths (`components/ui` plus `components/generic/ui`) made shared components hard to discover and caused duplicate usage patterns.
 - Rule: Shared components must use one canonical path: controls via `@app/components/form/...`, other shared primitives via `@app/components/generic/...`.
 - Examples:
-  - `Button` and `IconButton` live in `generic/ui`.
-  - `TextField` and `FormButton` live in `form`.
+  - `UIButton` and `IconButton` live in `generic/ui`.
+  - `TextField` lives in `form`.
   - `Card`, `Page`, and `Block` live in `generic/surfaces`.
 - Exceptions:
   - None by default.

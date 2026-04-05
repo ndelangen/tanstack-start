@@ -1,6 +1,6 @@
 import preview from '@sb/preview';
 
-import { FormButton } from './FormButton';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormPopover } from './FormPopover';
 
 const meta = preview.meta({
@@ -10,9 +10,9 @@ const meta = preview.meta({
 export const Default = meta.story({
   args: {
     trigger: (
-      <FormButton type="button" variant="secondary">
+      <UIButton type="button" variant="secondary">
         Open popover
-      </FormButton>
+      </UIButton>
     ),
     children: (
       <div style={{ maxWidth: 260 }}>

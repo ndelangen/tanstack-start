@@ -1,7 +1,7 @@
 import { v } from 'convex/values';
 
 import { groupInputSchema } from '../src/app/groups/validation';
-import type { Id } from './_generated/dataModel';
+import type { Doc, Id } from './_generated/dataModel';
 import type { MutationCtx, QueryCtx } from './_generated/server';
 import { mutation, query } from './_generated/server';
 import { requireAuthUserId } from './lib/policy';
@@ -55,6 +55,46 @@ export const getBySlug = query({
       group,
       members,
     };
+  },
+});
+
+/** Group detail page: group, memberships, factions in group, and profiles for owner + members (by user_id). */
+export const detailBySlug = query({
+  args: { slug: v.string() },
+  handler: async (ctx, args) => {
+    const group = await ctx.db
+      .query('groups')
+      .withIndex('by_slug', (q) => q.eq('slug', args.slug))
+      .unique();
+    if (!group) throw new Error(`Group with slug ${args.slug} not found`);
+
+    const members = await ctx.db
+      .query('group_members')
+      .withIndex('by_group', (q) => q.eq('group_id', group._id))
+      .take(500);
+
+    const factions = await ctx.db
+      .query('factions')
+      .withIndex('by_group_deleted', (q) =>
+        q.eq('group_id', group._id).eq('is_deleted', false)
+      )
+      .take(500);
+
+    const userIds = new Set<Id<'users'>>([group.created_by]);
+    for (const m of members) {
+      userIds.add(m.user_id);
+    }
+
+    const profiles: Doc<'profiles'>[] = [];
+    for (const uid of userIds) {
+      const profile = await ctx.db
+        .query('profiles')
+        .withIndex('by_user_id', (q) => q.eq('user_id', uid))
+        .unique();
+      if (profile) profiles.push(profile);
+    }
+
+    return { group, members, factions, profiles };
   },
 });
 

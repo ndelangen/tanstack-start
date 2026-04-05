@@ -1,8 +1,13 @@
-import { createFileRoute, getRouteApi } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import clsx from 'clsx';
 import { ArrowLeft, Pencil, UserPlus } from 'lucide-react';
 
-import { loadProfileBySlug, useCurrentProfile, useProfileBySlug } from '@db/profiles';
+import {
+  loadProfileBySlug,
+  type ProfilePageData,
+  useCurrentProfile,
+  useProfileBySlug,
+} from '@db/profiles';
 import { FactionList } from '@app/components/factions/FactionList';
 import { FormActions } from '@app/components/form/FormActions';
 import { FormTooltip } from '@app/components/form/FormTooltip';
@@ -28,17 +33,11 @@ export const Route = createFileRoute('/_app/profiles/$slug')({
   },
 });
 
-const appRouteApi = getRouteApi('/_app');
-
 function ProfilePageHead() {
   const { slug } = Route.useParams();
-  const appLoaderData = appRouteApi.useLoaderData();
-  const loaderData = Route.useLoaderData() as { profilePage?: unknown } | undefined;
-  const profileData = useProfileBySlug(slug, { initialData: loaderData?.profilePage as any });
-  const currentProfile = useCurrentProfile({
-    initialCurrent: appLoaderData.currentProfile,
-    initialCurrentUserId: appLoaderData.currentUserId,
-  });
+  const loaderData = Route.useLoaderData() as { profilePage?: ProfilePageData } | undefined;
+  const profileData = useProfileBySlug(slug, { initialData: loaderData?.profilePage });
+  const currentProfile = useCurrentProfile();
 
   if (!profileData.profile) {
     return null;
@@ -74,13 +73,9 @@ function ProfilePageHead() {
 
 function ProfileDetailPage() {
   const { slug } = Route.useParams();
-  const appLoaderData = appRouteApi.useLoaderData();
   const loaderData = Route.useLoaderData();
   const profileData = useProfileBySlug(slug, { initialData: loaderData.profilePage });
-  const currentProfile = useCurrentProfile({
-    initialCurrent: appLoaderData.currentProfile,
-    initialCurrentUserId: appLoaderData.currentUserId,
-  });
+  const currentProfile = useCurrentProfile();
   const profileId = profileData.profile?._id;
 
   if (!profileId || !profileData.profile) {
@@ -88,6 +83,8 @@ function ProfileDetailPage() {
   }
 
   const isSelf = currentProfile.data?._id === profileData.profile._id;
+
+  const groupsById = new Map((profileData.groups ?? []).map((g) => [String(g._id), g] as const));
 
   return (
     <Stack className={layoutStyles.root} gap={2}>
@@ -124,11 +121,22 @@ function ProfileDetailPage() {
       >
         {profileData.memberships && profileData.memberships.length > 0 ? (
           <ul className={styles.list}>
-            {profileData.memberships.map((m) => (
-              <li key={m.group_id}>
-                <span>{m.group_id}</span>
-              </li>
-            ))}
+            {profileData.memberships.map((m) => {
+              const group = groupsById.get(String(m.group_id));
+              return (
+                <li key={m._id}>
+                  {group?.slug ? (
+                    <Link to="/groups/$groupSlug" params={{ groupSlug: group.slug }}>
+                      {group.name}
+                    </Link>
+                  ) : group ? (
+                    <span>{group.name}</span>
+                  ) : (
+                    <span title={m.group_id}>Unknown group</span>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <p className={styles.empty}>Not a member of any groups.</p>
@@ -171,9 +179,8 @@ function ProfileDetailPage() {
           </h3>
         }
       >
-        {Array.isArray(loaderData.profilePage.factions) &&
-        loaderData.profilePage.factions.length > 0 ? (
-          <FactionList factions={loaderData.profilePage.factions as any} />
+        {profileData.factions && profileData.factions.length > 0 ? (
+          <FactionList factions={profileData.factions} />
         ) : (
           <p className={styles.empty}>No factions owned.</p>
         )}

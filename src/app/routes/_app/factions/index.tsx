@@ -4,36 +4,48 @@ import { Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { loadFactionsAll, useFactionsAll } from '@db/factions';
+import { useCurrentProfile } from '@db/profiles';
 import { FactionList } from '@app/components/factions/FactionList';
 
 import styles from './FactionsIndex.module.css';
+
+function FactionsIndexPageHead() {
+  const profile = useCurrentProfile();
+  const slug = profile.data?.slug;
+
+  return (
+    <div>
+      <h1>Factions</h1>
+      <p>
+        <Link
+          to="/factions"
+          activeProps={{ style: { fontWeight: 'bold' } }}
+          activeOptions={{ exact: true }}
+        >
+          All factions
+        </Link>
+        {' · '}
+        {slug ? (
+          <Link to="/profiles/$slug" params={{ slug }}>
+            My factions
+          </Link>
+        ) : (
+          <Link to="/auth/login">Log in for my factions</Link>
+        )}
+        {' · '}
+        <Link to="/factions/create" activeProps={{ style: { fontWeight: 'bold' } }}>
+          Create a new faction
+        </Link>
+      </p>
+    </div>
+  );
+}
 
 export const Route = createFileRoute('/_app/factions/')({
   loader: async () => ({ factions: await loadFactionsAll() }),
   component: FactionsPage,
   staticData: {
-    PageHead: () => (
-      <div>
-        <h1>Factions</h1>
-        <p>
-          <Link
-            to="/factions"
-            activeProps={{ style: { fontWeight: 'bold' } }}
-            activeOptions={{ exact: true }}
-          >
-            All factions
-          </Link>
-          {' · '}
-          <Link to="/factions/mine" activeProps={{ style: { fontWeight: 'bold' } }}>
-            My factions
-          </Link>
-          {' · '}
-          <Link to="/factions/create" activeProps={{ style: { fontWeight: 'bold' } }}>
-            Create a new faction
-          </Link>
-        </p>
-      </div>
-    ),
+    PageHead: FactionsIndexPageHead,
   },
 });
 
@@ -47,7 +59,7 @@ function FactionsPage() {
   const fuse = useMemo(
     () =>
       new Fuse(list, {
-        keys: ['data.name', 'data.slug'],
+        keys: ['data.name', 'slug'],
         threshold: 0.35,
       }),
     [list]

@@ -1,6 +1,7 @@
 import { useQuery } from 'convex/react';
 
 import { db } from '@db/core';
+import type { FactionEntry } from '@db/factions';
 import { toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
 import { type ProfileUserEditInput, profileUserEditFormSchema } from '@app/profile/validation';
 
@@ -16,7 +17,7 @@ export type ProfilePageData = {
   groups: Doc<'groups'>[];
   faqAsked: unknown[];
   faqAnswers: unknown[];
-  factions?: unknown[];
+  factions: FactionEntry[];
 };
 
 export async function loadProfileBySlug(slug: string): Promise<ProfilePageData> {
@@ -26,6 +27,7 @@ export async function loadProfileBySlug(slug: string): Promise<ProfilePageData> 
     groups: Doc<'groups'>[];
     faqAsked: import('../faq/db').FaqItemAskedByWithRuleset[];
     faqAnswers: import('../faq/db').FaqAnswerWithParent[];
+    factions: FactionEntry[];
   }>(api.profiles.getBySlug, { slug });
 
   return {
@@ -63,11 +65,9 @@ export async function loadCurrentProfile(): Promise<ProfileEntry | null> {
   return entry;
 }
 
-export function useProfile(id: string, options?: { enabled?: boolean }) {
-  const enabled = (options?.enabled ?? true) && id != null && id !== '';
-  const args = enabled ? ({ id } as never) : 'skip';
-  const liveData = useQuery(api.profiles.getById, args) as ProfileRow | null | undefined;
-  const result = toLiveQueryResult(liveData, enabled);
+export function useProfile(id: string) {
+  const liveData = useQuery(api.profiles.getById, { id } as never) as ProfileRow | null | undefined;
+  const result = toLiveQueryResult(liveData, true);
   return {
     ...result,
     data: result.data ?? undefined,
@@ -78,18 +78,17 @@ export function useProfileBySlug(
   slug: string,
   options?: {
     initialData?: ProfilePageData;
-    enabled?: boolean;
   }
 ) {
-  const enabled = options?.enabled ?? slug.trim().length > 0;
-  const liveData = useQuery(api.profiles.getBySlug, enabled ? { slug } : 'skip');
+  const liveData = useQuery(api.profiles.getBySlug, { slug });
   const result = toLiveQueryResult<{
     profile: ProfileRow;
     memberships: Doc<'group_members'>[];
     groups: Doc<'groups'>[];
     faqAsked: import('../faq/db').FaqItemAskedByWithRuleset[];
     faqAnswers: import('../faq/db').FaqAnswerWithParent[];
-  } | null>(liveData, enabled, () => (options?.initialData as never) ?? undefined);
+    factions: FactionEntry[];
+  } | null>(liveData, true, () => (options?.initialData as never) ?? undefined);
   return {
     ...result,
     profile: result.data ? result.data.profile : undefined,
@@ -97,6 +96,7 @@ export function useProfileBySlug(
     groups: result.data?.groups,
     faqAsked: result.data?.faqAsked,
     faqAnswers: result.data?.faqAnswers,
+    factions: result.data?.factions,
   };
 }
 
@@ -108,15 +108,8 @@ export function useProfilesAll(options?: { initialData?: ProfileEntry[] }) {
   };
 }
 
-export function useCurrentProfile(options?: {
-  initialCurrent?: ProfileEntry | null;
-  initialCurrentUserId?: string | null;
-}) {
-  const current = toLiveQueryResult(
-    useQuery(api.profiles.current, {}),
-    true,
-    () => options?.initialCurrent ?? undefined
-  );
+export function useCurrentProfile() {
+  const current = toLiveQueryResult(useQuery(api.profiles.current, {}), true);
 
   return {
     ...current,

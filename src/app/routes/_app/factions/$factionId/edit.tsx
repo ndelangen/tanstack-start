@@ -1,8 +1,14 @@
-import { createFileRoute, getRouteApi, Link, useNavigate } from '@tanstack/react-router';
-import { RotateCcw, Save, Trash2, X } from 'lucide-react';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { RotateCcw, Save, Trash2, UserRoundMinus, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 
-import { type Faction, useDeleteFaction, useFaction, useSetFactionGroup, useUpdateFaction } from '@db/factions';
+import {
+  type Faction,
+  useDeleteFaction,
+  useFaction,
+  useSetFactionGroup,
+  useUpdateFaction,
+} from '@db/factions';
 import { useCurrentProfile } from '@db/profiles';
 import {
   FactionEditor,
@@ -11,10 +17,10 @@ import {
 import styles from '@app/components/factions/editor/FactionEditor.module.css';
 import { FactionGroupPopover } from '@app/components/factions/editor/FactionGroupPopover';
 import { FactionLoadPopover } from '@app/components/factions/editor/FactionLoadPopover';
-import { FormButton } from '@app/components/form/FormButton';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { loadFaction } from '@app/factions/db';
 import { FactionInputSchema } from '@game/schema/faction';
 
@@ -22,8 +28,6 @@ export const Route = createFileRoute('/_app/factions/$factionId/edit')({
   loader: async ({ params }) => await loadFaction(params.factionId),
   component: FactionEditPage,
 });
-
-const appRouteApi = getRouteApi('/_app');
 
 function formatZodIssues(err: { issues: readonly { path: PropertyKey[]; message: string }[] }) {
   return err.issues
@@ -33,22 +37,16 @@ function formatZodIssues(err: { issues: readonly { path: PropertyKey[]; message:
 
 function FactionEditPage() {
   const { factionId } = Route.useParams();
-  const appLoaderData = appRouteApi.useLoaderData();
   const loaderData = Route.useLoaderData();
   const navigate = useNavigate();
   const editorRef = useRef<FactionEditorHandle | null>(null);
   const updateFaction = useUpdateFaction();
   const deleteFaction = useDeleteFaction();
   const setFactionGroup = useSetFactionGroup();
-  const profile = useCurrentProfile({
-    initialCurrent: appLoaderData.currentProfile,
-  });
+  const profile = useCurrentProfile();
   const [editorErrors, setEditorErrors] = useState<string[]>([]);
 
-  const { faction, group } = useFaction(factionId, {
-    enabled: !!factionId,
-    initialData: loaderData,
-  });
+  const { faction, group } = useFaction(factionId, { initialData: loaderData });
   if (!profile?.data?.user_id) {
     return (
       <Card>
@@ -68,8 +66,6 @@ function FactionEditPage() {
     return null;
   }
 
-  const { slug: _ignored, ...initialFactionInput } = faction.data;
-
   const canDelete = faction.owner_id === profile.data.user_id;
   const canAssignGroup = canDelete;
 
@@ -82,7 +78,7 @@ function FactionEditPage() {
     setEditorErrors([]);
     void (async () => {
       const entry = await updateFaction.mutateAsync({ input: parsed.data, id: faction._id });
-      const newSlug = entry.data.slug;
+      const newSlug = entry.slug;
       if (newSlug !== factionId) {
         navigate({
           to: '/factions/$factionId/edit',
@@ -98,7 +94,7 @@ function FactionEditPage() {
       <Toolbar>
         <Toolbar.Left>
           <FormTooltip content="Save changes">
-            <FormButton
+            <UIButton
               type="button"
               iconOnly
               aria-label="Save changes"
@@ -106,17 +102,16 @@ function FactionEditPage() {
               onClick={() => editorRef.current?.submit()}
             >
               <Save size={16} aria-hidden />
-            </FormButton>
+            </UIButton>
           </FormTooltip>
           <FactionLoadPopover
             disabled={false}
-            currentValues={initialFactionInput}
-            onLoaded={() => {
-              // Page will handle reloading the editor via props/remount if desired.
-              // For now this is a no-op placeholder; routes can wire a callback later if needed.
+            currentPublicSlug={faction.slug}
+            onLoaded={(loaded) => {
+              editorRef.current?.load(loaded);
             }}
           />
-          {canAssignGroup && (
+          {canAssignGroup && !group && (
             <FactionGroupPopover
               disabled={false}
               onChangeGroup={async (nextGroupId) => {
@@ -124,18 +119,32 @@ function FactionEditPage() {
               }}
             />
           )}
+          {canAssignGroup && group && (
+            <FormTooltip content="Remove group">
+              <UIButton
+                type="button"
+                iconOnly
+                aria-label="Remove group"
+                disabled={false}
+                variant="critical"
+                onClick={() => setFactionGroup.mutateAsync({ id: faction._id, groupId: null })}
+              >
+                <UserRoundMinus size={16} aria-hidden />
+              </UIButton>
+            </FormTooltip>
+          )}
 
           <FormTooltip content="Reset unsaved edits">
-            <FormButton
+            <UIButton
               type="button"
-              variant="danger"
+              variant="critical"
               iconOnly
               aria-label="Reset unsaved edits"
               disabled={false}
-              onClick={() => editorRef.current?.resetToInitial()}
+              onClick={() => editorRef.current?.load()}
             >
               <RotateCcw size={16} aria-hidden />
-            </FormButton>
+            </UIButton>
           </FormTooltip>
         </Toolbar.Left>
 
@@ -147,9 +156,9 @@ function FactionEditPage() {
             </div>
           ) : null}
           <FormTooltip content="Close editor">
-            <FormButton
+            <UIButton
               type="button"
-              variant="danger"
+              variant="critical"
               iconOnly
               aria-label="Close editor"
               disabled={false}
@@ -161,13 +170,13 @@ function FactionEditPage() {
               }
             >
               <X size={16} aria-hidden />
-            </FormButton>
+            </UIButton>
           </FormTooltip>
           {canDelete && (
             <FormTooltip content="Delete faction">
-              <FormButton
+              <UIButton
                 type="button"
-                variant="danger"
+                variant="critical"
                 iconOnly
                 aria-label="Delete faction"
                 disabled={false}
@@ -180,7 +189,7 @@ function FactionEditPage() {
                 }}
               >
                 <Trash2 size={16} aria-hidden />
-              </FormButton>
+              </UIButton>
             </FormTooltip>
           )}
         </Toolbar.Right>

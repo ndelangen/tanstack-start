@@ -1,7 +1,9 @@
+import { useQuery } from 'convex/react';
+
 import { db } from '@db/core';
+import { type FactionEntry, factionRowsToEntries } from '@db/factions';
 import { toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
 import { groupInputSchema } from '@app/groups/validation';
-import { useQuery } from 'convex/react';
 
 import { api } from '../../../convex/_generated/api';
 import type { Doc } from '../../../convex/_generated/dataModel';
@@ -16,6 +18,30 @@ export type GroupPageData = {
   members: Doc<'group_members'>[];
 };
 
+export type GroupMemberWithId = Doc<'group_members'> & { id: Doc<'group_members'>['_id'] };
+
+export type GroupDetailPageData = {
+  group: GroupEntry;
+  members: GroupMemberWithId[];
+  factions: FactionEntry[];
+  profiles: Doc<'profiles'>[];
+};
+
+export async function loadGroupDetailBySlug(slug: string): Promise<GroupDetailPageData> {
+  const result = await db.query<{
+    group: GroupRow;
+    members: Doc<'group_members'>[];
+    factions: Doc<'factions'>[];
+    profiles: Doc<'profiles'>[];
+  }>(api.groups.detailBySlug, { slug });
+  return {
+    group: { ...result.group, id: result.group._id },
+    members: result.members.map((m) => ({ ...m, id: m._id })),
+    factions: factionRowsToEntries(result.factions),
+    profiles: result.profiles,
+  };
+}
+
 export async function loadGroupBySlug(slug: string): Promise<GroupPageData> {
   const result = await db.query<{
     group: GroupRow;
@@ -27,33 +53,62 @@ export async function loadGroupBySlug(slug: string): Promise<GroupPageData> {
   };
 }
 
+/** Call only when `id` is a real group id (mount a child component if the id is optional). */
 export function useGroup(id: string) {
-  const enabled = Boolean(id);
-  const args = enabled ? ({ id } as never) : 'skip';
-  const liveData = useQuery(api.groups.getById, args) as GroupRow | undefined;
-  const result = toLiveQueryResult(liveData, enabled);
+  const liveData = useQuery(api.groups.getById, { id } as never) as GroupRow | undefined;
+  const result = toLiveQueryResult(liveData, true);
   return {
     ...result,
     data: result.data ? { ...result.data, id: result.data._id } : undefined,
   };
 }
 
-export function useGroupBySlug(
-  slug: string | undefined,
-  options?: { initialData?: GroupPageData; enabled?: boolean }
-) {
-  const enabled = options?.enabled ?? Boolean(slug);
-  const liveData = useQuery(api.groups.getBySlug, enabled ? { slug: slug ?? '' } : 'skip');
-  const result = toLiveQueryResult<
-    {
-      group: GroupRow;
-      members: Doc<'group_members'>[];
-    } | null
-  >(liveData, enabled, () => (options?.initialData as never) ?? undefined);
+export function useGroupBySlug(slug: string, options?: { initialData?: GroupPageData }) {
+  const liveData = useQuery(api.groups.getBySlug, { slug });
+  const result = toLiveQueryResult<{
+    group: GroupRow;
+    members: Doc<'group_members'>[];
+  } | null>(liveData, true, () => (options?.initialData as never) ?? undefined);
   return {
     ...result,
-    group: result.data ? ({ ...result.data.group, id: result.data.group._id } as GroupEntry) : undefined,
+    group: result.data
+      ? ({ ...result.data.group, id: result.data.group._id } as GroupEntry)
+      : undefined,
     members: result.data?.members,
+  };
+}
+
+function normalizeGroupDetailFromConvex(raw: {
+  group: GroupRow;
+  members: Doc<'group_members'>[];
+  factions: Doc<'factions'>[];
+  profiles: Doc<'profiles'>[];
+}): GroupDetailPageData {
+  return {
+    group: { ...raw.group, id: raw.group._id },
+    members: raw.members.map((m) => ({ ...m, id: m._id })),
+    factions: factionRowsToEntries(raw.factions),
+    profiles: raw.profiles,
+  };
+}
+
+export function useGroupDetailBySlug(
+  slug: string,
+  options?: { initialData?: GroupDetailPageData }
+) {
+  const liveData = useQuery(api.groups.detailBySlug, { slug });
+  const normalizedLive = liveData ? normalizeGroupDetailFromConvex(liveData) : undefined;
+  const result = toLiveQueryResult<GroupDetailPageData | undefined>(
+    normalizedLive,
+    true,
+    () => options?.initialData
+  );
+  return {
+    ...result,
+    group: result.data?.group,
+    members: result.data?.members,
+    factions: result.data?.factions,
+    profiles: result.data?.profiles,
   };
 }
 
@@ -66,11 +121,12 @@ export function useGroupsAll(options?: { initialData?: GroupEntry[] }) {
   };
 }
 
+/** Call only when `createdBy` is a real user id (e.g. mount a child after profile is known). */
 export function useGroupsByCreator(createdBy: string) {
-  const enabled = Boolean(createdBy);
-  const args = enabled ? ({ created_by: createdBy } as never) : 'skip';
-  const liveData = useQuery(api.groups.listByCreator, args) as GroupRow[] | undefined;
-  const result = toLiveQueryResult(liveData, enabled);
+  const liveData = useQuery(api.groups.listByCreator, { created_by: createdBy } as never) as
+    | GroupRow[]
+    | undefined;
+  const result = toLiveQueryResult(liveData, true);
   return {
     ...result,
     data: result.data?.map((entry) => ({ ...entry, id: entry._id })),

@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 
 import type { FaqItemWithDetails } from '@db/faq';
 import { Stack } from '@app/components/generic/layout';
+import { ProfileLink } from '@app/components/profile/ProfileLink';
 import { formatRelativeDate } from '@app/utils/formatRelativeDate';
 
 import { FaqItemList, FaqItemListRow } from './FaqItemList';
@@ -45,7 +46,7 @@ export function FaqList({ items, rulesetSlug, searchQuery }: FaqListProps) {
             const hasAcceptedAnswer = item.accepted_answer_id != null;
 
             return (
-              <FaqItemListRow key={item.id}>
+              <FaqItemListRow key={item._id}>
                 <Link
                   to="/rulesets/$rulesetSlug/faq/$questionSlug"
                   params={{ rulesetSlug, questionSlug: item.slug }}
@@ -66,27 +67,12 @@ export function FaqList({ items, rulesetSlug, searchQuery }: FaqListProps) {
                   {item.asker_profile && (
                     <>
                       <span>·</span>
-                      <Link
-                        to="/profiles/$slug"
-                        params={{ slug: item.asker_profile.slug }}
+                      <ProfileLink
+                        slug={item.asker_profile.slug}
+                        username={item.asker_profile.username}
+                        avatar_url={item.asker_profile.avatar_url}
                         className={styles.askerLink}
-                      >
-                        {item.asker_profile.avatar_url ? (
-                          <img
-                            src={item.asker_profile.avatar_url}
-                            alt=""
-                            className={styles.avatar}
-                          />
-                        ) : (
-                          <span className={styles.avatarPlaceholder}>
-                            {item.asker_profile.username
-                              ?.slice(0, 2)
-                              .toUpperCase()
-                              .replace(/[^A-Z]/g, '') ?? '?'}
-                          </span>
-                        )}
-                        <span>{item.asker_profile.username ?? 'Unknown'}</span>
-                      </Link>
+                      />
                     </>
                   )}
                   <span>·</span>

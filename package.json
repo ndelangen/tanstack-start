@@ -14,6 +14,7 @@
     "netlify": "bunx netlify",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit",
+    "check:convex-skip": "node scripts/assert-no-convex-skip-in-domain-db.mjs",
     "generate": "bun run ./scripts/generate.ts",
     "migrations:dev-strict": "bun run ./scripts/migration-guards.ts dev-strict 300000 2000",
     "migrations:run-local-required": "bun run migrations:dev-strict",

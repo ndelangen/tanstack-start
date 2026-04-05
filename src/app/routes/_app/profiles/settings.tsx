@@ -1,4 +1,4 @@
-import { createFileRoute, getRouteApi, Link } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 
 import { useCurrentProfile } from '@db/profiles';
 import { Card } from '@app/components/generic/surfaces/Card';
@@ -11,8 +11,6 @@ export const Route = createFileRoute('/_app/profiles/settings')({
   },
 });
 
-const appRouteApi = getRouteApi('/_app');
-
 function ProfileSettingsPageHead() {
   return (
     <div>
@@ -22,11 +20,7 @@ function ProfileSettingsPageHead() {
 }
 
 function ProfileSettingsPage() {
-  const appLoaderData = appRouteApi.useLoaderData();
-  const profile = useCurrentProfile({
-    initialCurrent: appLoaderData.currentProfile,
-    initialCurrentUserId: appLoaderData.currentUserId,
-  });
+  const profile = useCurrentProfile();
 
   if (!profile.data) {
     return (

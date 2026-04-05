@@ -2,15 +2,18 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 
-import { useCreateRuleset } from '@db/rulesets';
 import { useGroupsByCreator } from '@db/groups';
+import { useCurrentProfile } from '@db/profiles';
+import { useCreateRuleset } from '@db/rulesets';
 import { FormActions } from '@app/components/form/FormActions';
-import { FormButton } from '@app/components/form/FormButton';
 import { FormField } from '@app/components/form/FormField';
 import { TextField } from '@app/components/form/TextField';
 import { Stack } from '@app/components/generic/layout';
+import { Card } from '@app/components/generic/surfaces/Card';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 
 export const Route = createFileRoute('/_app/rulesets/create')({
+  loader: async () => ({}),
   component: CreateRulesetPage,
   staticData: {
     PageHead: () => (
@@ -24,12 +27,12 @@ export const Route = createFileRoute('/_app/rulesets/create')({
   },
 });
 
-function CreateRulesetPage() {
+function CreateRulesetForm({ ownerUserId }: { ownerUserId: string }) {
   const navigate = useNavigate();
   const createRuleset = useCreateRuleset();
   const [name, setName] = useState('');
   const [groupId, setGroupId] = useState<string | null>(null);
-  const groups = useGroupsByCreator('');
+  const groups = useGroupsByCreator(ownerUserId);
 
   return (
     <>
@@ -69,9 +72,7 @@ function CreateRulesetPage() {
             id="ruleset-group"
             name="group"
             value={groupId ?? ''}
-            onChange={(event) =>
-              setGroupId(event.target.value === '' ? null : event.target.value)
-            }
+            onChange={(event) => setGroupId(event.target.value === '' ? null : event.target.value)}
           >
             <option value="">No group</option>
             {groups.data?.map((group) => (
@@ -82,12 +83,31 @@ function CreateRulesetPage() {
           </select>
         </FormField>
         <FormActions>
-          <FormButton type="submit" disabled={createRuleset.isPending || name.trim().length === 0}>
+          <UIButton type="submit" disabled={createRuleset.isPending || name.trim().length === 0}>
             <Plus size={16} aria-hidden />
             <span>{createRuleset.isPending ? 'Creating…' : 'Create'}</span>
-          </FormButton>
+          </UIButton>
         </FormActions>
       </Stack>
     </>
   );
+}
+
+function CreateRulesetPage() {
+  const profile = useCurrentProfile();
+
+  if (!profile.data?.user_id) {
+    return (
+      <Card>
+        <p>
+          <Link to="/auth/login">Log in</Link> to create a ruleset.
+        </p>
+        <p>
+          <Link to="/rulesets">Back to rulesets</Link>
+        </p>
+      </Card>
+    );
+  }
+
+  return <CreateRulesetForm ownerUserId={profile.data.user_id} />;
 }
