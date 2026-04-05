@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 
 import { loadProfilesAll, useProfilesAll } from '@db/profiles';
+import { Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { ProfileLink } from '@app/components/profile/ProfileLink';
 
@@ -19,7 +20,7 @@ function ProfilesPage() {
     <div className={styles.root}>
       {profiles.data && profiles.data.length > 0 ? (
         <Card>
-          <ul className={styles.list}>
+          <Stack as="ul" gap={2} className={styles.list}>
             {profiles.data.map((profile) => (
               <li key={profile._id} className={styles.row}>
                 <ProfileLink
@@ -29,7 +30,7 @@ function ProfilesPage() {
                 />
               </li>
             ))}
-          </ul>
+          </Stack>
         </Card>
       ) : (
         <p className={styles.empty}>No profiles yet.</p>

@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import clsx from 'clsx';
 import { ArrowLeft, Pencil, UserPlus } from 'lucide-react';
 
 import {
@@ -62,8 +61,10 @@ function ProfilePageHead() {
           <span className={styles.avatarPlaceholder}>{initials}</span>
         )}
         <div>
-          <h2 className={styles.displayName}>{profileData.profile.username ?? 'Unknown'}</h2>
-          {isSelf && <p className={styles.selfHint}>This is you!</p>}
+          <Stack gap={1}>
+            <h2 className={styles.displayName}>{profileData.profile.username ?? 'Unknown'}</h2>
+            {isSelf && <p className={styles.selfHint}>This is you!</p>}
+          </Stack>
         </div>
       </div>
     </div>
@@ -113,7 +114,7 @@ function ProfileDetailPage() {
 
       <Card
         header={
-          <h3 className={clsx(styles.sectionTitle, styles.sectionTitleCardHeader)}>Groups</h3>
+          <h3 className={styles.sectionTitle}>Groups</h3>
         }
       >
         {profileData.memberships && profileData.memberships.length > 0 ? (
@@ -142,7 +143,7 @@ function ProfileDetailPage() {
 
       <Card
         header={
-          <h3 className={clsx(styles.sectionTitle, styles.sectionTitleCardHeader)}>
+          <h3 className={styles.sectionTitle}>
             Questions asked
           </h3>
         }
@@ -156,7 +157,7 @@ function ProfileDetailPage() {
 
       <Card
         header={
-          <h3 className={clsx(styles.sectionTitle, styles.sectionTitleCardHeader)}>FAQ answers</h3>
+          <h3 className={styles.sectionTitle}>FAQ answers</h3>
         }
       >
         {profileData.faqAnswers && profileData.faqAnswers.length > 0 ? (
@@ -171,7 +172,7 @@ function ProfileDetailPage() {
 
       <Card
         header={
-          <h3 className={clsx(styles.sectionTitle, styles.sectionTitleCardHeader)}>
+          <h3 className={styles.sectionTitle}>
             Factions owned
           </h3>
         }
