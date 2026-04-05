@@ -1,5 +1,10 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
 .topBar {
-  margin-bottom: 1.5rem;
   padding: 1rem 1.25rem;
   background-color: var(--panel-bg);
   border-radius: var(--panel-radius);

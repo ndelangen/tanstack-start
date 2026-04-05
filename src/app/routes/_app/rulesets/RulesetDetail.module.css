@@ -1,8 +1,13 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
 .section {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  margin-bottom: 1.5rem;
 }
 
 .coverWrapper {

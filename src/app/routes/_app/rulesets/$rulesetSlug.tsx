@@ -190,7 +190,7 @@ function RulesetDetailPage() {
   };
 
   return (
-    <>
+    <div className={styles.page}>
       <Toolbar>
         <Toolbar.Left>
           {profile?.data?._id && (
@@ -313,6 +313,6 @@ function RulesetDetailPage() {
         faqItems={page.faqItems}
         searchQuery={search.q ?? ''}
       />
-    </>
+    </div>
   );
 }

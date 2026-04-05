@@ -79,7 +79,7 @@ function FactionsPage() {
   }
 
   return (
-    <>
+    <div className={styles.page}>
       <div className={styles.topBar}>
         <div className={styles.searchRow}>
           <div className={styles.searchWrapper}>
@@ -106,6 +106,6 @@ function FactionsPage() {
       ) : (
         <p className={styles.noResults}>No factions match your search.</p>
       )}
-    </>
+    </div>
   );
 }
