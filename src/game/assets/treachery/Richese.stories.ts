@@ -14,12 +14,12 @@ const meta = preview.meta({
 export const Karama = meta.story({
   args: {
     head: `/generated/utils/background/storm.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/logo/richese.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/logo/richese.svg'],
     iconOffset: [0, -5],
     name: 'Richese Karama',
     decals: [
       {
-        id: 'vector/icon/karama.svg',
+        id: '/vector/icon/karama.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -34,12 +34,12 @@ export const Karama = meta.story({
 export const SignetRing = meta.story({
   args: {
     head: `/generated/utils/background/worthless.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/logo/richese.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/logo/richese.svg'],
     iconOffset: [0, -5],
     name: 'Signet Ring',
     decals: [
       {
-        id: 'vector/decal/signet.svg',
+        id: '/vector/decal/signet.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -54,12 +54,12 @@ export const SignetRing = meta.story({
 export const TruthOrDare = meta.story({
   args: {
     head: `/generated/utils/background/storm.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/logo/richese.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/logo/richese.svg'],
     iconOffset: [0, -5],
     name: 'Truth or Dare',
     decals: [
       {
-        id: 'vector/decal/truth-trance.svg',
+        id: '/vector/decal/truth-trance.svg',
         muted: false,
         offset: [0, 0],
         outline: true,

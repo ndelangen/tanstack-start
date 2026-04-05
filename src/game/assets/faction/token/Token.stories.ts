@@ -14,18 +14,18 @@ const meta = preview.meta({
 export const Asset = meta.story({
   args: {
     background: '/generated/utils/background/moritani.jpg',
-    logo: 'vector/logo/moritani.svg',
+    logo: '/vector/logo/moritani.svg',
   },
 });
 
 export const Preview = meta.story({
   args: {
     background: {
-      image: 'image/texture/021.jpg',
+      image: '/image/texture/021.jpg',
       colors: ['red', 'blue'],
       opacity: 0,
       strength: 0,
     },
-    logo: 'vector/logo/moritani.svg',
+    logo: '/vector/logo/moritani.svg',
   },
 });

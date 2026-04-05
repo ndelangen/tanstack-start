@@ -2,10 +2,10 @@ import { Check, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { useCurrentProfile } from '@db/profiles';
-import { FormActions } from '@app/components/form/FormActions';
 import { FormField } from '@app/components/form/FormField';
 import { FormPopover } from '@app/components/form/FormPopover';
 import { SuggestField } from '@app/components/form/SuggestField';
+import { ButtonGroup } from '@app/components/generic/layout';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 import { useUserGroupMembershipGroups, useUserGroupMemberships } from '@app/members/db';
 
@@ -125,7 +125,7 @@ function GroupAssignPopoverBody({
               placeholder="Type group name or slug..."
             />
           </FormField>
-          <FormActions>
+          <ButtonGroup>
             <UIButton
               type="button"
               iconOnly
@@ -135,7 +135,7 @@ function GroupAssignPopoverBody({
             >
               <Check size={16} aria-hidden />
             </UIButton>
-          </FormActions>
+          </ButtonGroup>
         </>
       )}
     </div>

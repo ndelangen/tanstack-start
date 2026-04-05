@@ -17,13 +17,13 @@ import { Plus, Trash2 } from 'lucide-react';
 import { useMemo } from 'react';
 
 import type { Faction } from '@db/factions';
-import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FormField } from '@app/components/form/FormField';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { OptionPicker } from '@app/components/form/OptionPicker';
 import { PrefixedField } from '@app/components/form/PrefixedField';
 import { SortableItem } from '@app/components/form/SortableItem';
 import { SortableReorderHandle } from '@app/components/form/SortableReorderHandle';
+import { UIButton } from '@app/components/generic/ui/UIButton';
 import { TTSColor } from '@game/schema/faction';
 
 import styles from './FactionEditor.module.css';

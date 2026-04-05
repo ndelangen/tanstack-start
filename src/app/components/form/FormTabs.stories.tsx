@@ -1,7 +1,7 @@
 import preview from '@sb/preview';
 import { useState } from 'react';
 
-import { FormTabs, FormTabsPanel, type FormTabsItem } from './FormTabs';
+import { FormTabs, type FormTabsItem, FormTabsPanel } from './FormTabs';
 
 const meta = preview.meta({
   component: FormTabs,
@@ -33,4 +33,3 @@ function TabsExample() {
 export const Default = meta.story({
   render: () => <TabsExample />,
 });
-
