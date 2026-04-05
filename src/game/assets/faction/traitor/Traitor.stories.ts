@@ -32,7 +32,7 @@ export const Asset = meta.story({
 export const Preview = meta.story({
   args: {
     background: {
-      image: 'image/texture/021.jpg',
+      image: '/image/texture/021.jpg',
       colors: ['red', 'blue'],
       opacity: 0,
       strength: 0,
