@@ -75,9 +75,7 @@ export const detailBySlug = query({
 
     const factions = await ctx.db
       .query('factions')
-      .withIndex('by_group_deleted', (q) =>
-        q.eq('group_id', group._id).eq('is_deleted', false)
-      )
+      .withIndex('by_group_deleted', (q) => q.eq('group_id', group._id).eq('is_deleted', false))
       .take(500);
 
     const userIds = new Set<Id<'users'>>([group.created_by]);

@@ -19,4 +19,3 @@ export const WithPlaceholder = meta.story({
     placeholder: 'No cover image',
   },
 });
-

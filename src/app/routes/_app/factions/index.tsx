@@ -5,8 +5,8 @@ import { useMemo, useState } from 'react';
 
 import { loadFactionsAll, useFactionsAll } from '@db/factions';
 import { useCurrentProfile } from '@db/profiles';
-import { Stack } from '@app/components/generic/layout';
 import { FactionList } from '@app/components/factions/FactionList';
+import { Stack } from '@app/components/generic/layout';
 
 import styles from './FactionsIndex.module.css';
 

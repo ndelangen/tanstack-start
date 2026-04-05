@@ -1,6 +1,7 @@
 import preview from '@sb/preview';
 
 import { UIButton } from '@app/components/generic/ui/UIButton';
+
 import { FormTooltip } from './FormTooltip';
 
 const meta = preview.meta({
@@ -13,4 +14,3 @@ export const Default = meta.story({
     children: <UIButton type="button">Hover me</UIButton>,
   },
 });
-

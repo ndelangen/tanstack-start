@@ -19,4 +19,3 @@ export const AsLink = meta.story({
     </BlockLink>
   ),
 });
-
