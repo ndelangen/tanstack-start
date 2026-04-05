@@ -2,9 +2,8 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { RefreshCw } from 'lucide-react';
 
 import { useCurrentProfile } from '@db/profiles';
-import { FormActions } from '@app/components/form/FormActions';
 import { FormTooltip } from '@app/components/form/FormTooltip';
-import { Stack } from '@app/components/generic/layout';
+import { Stack, Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 import {
@@ -48,19 +47,21 @@ function AdminMigrationsPage() {
       <Card>
         <Stack gap={2}>
           <h2>Live migration status</h2>
-          <FormActions>
-            <FormTooltip content="Sync status snapshot to migration_runs table">
-              <UIButton
-                type="button"
-                iconOnly
-                aria-label="Sync migration status"
-                disabled={syncRuns.isPending}
-                onClick={() => syncRuns.mutate({})}
-              >
-                <RefreshCw size={16} aria-hidden />
-              </UIButton>
-            </FormTooltip>
-          </FormActions>
+          <Toolbar>
+            <Toolbar.Left>
+              <FormTooltip content="Sync status snapshot to migration_runs table">
+                <UIButton
+                  type="button"
+                  iconOnly
+                  aria-label="Sync migration status"
+                  disabled={syncRuns.isPending}
+                  onClick={() => syncRuns.mutate({})}
+                >
+                  <RefreshCw size={16} aria-hidden />
+                </UIButton>
+              </FormTooltip>
+            </Toolbar.Left>
+          </Toolbar>
           <table>
             <thead>
               <tr>

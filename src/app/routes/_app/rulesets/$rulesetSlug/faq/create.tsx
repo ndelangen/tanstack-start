@@ -3,11 +3,10 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useCreateFaqItem } from '@db/faq';
 import { useCurrentProfile } from '@db/profiles';
 import { loadRulesetBySlug, useRulesetBySlug } from '@db/rulesets';
-import { FormActions } from '@app/components/form/FormActions';
 import { FormField } from '@app/components/form/FormField';
 import { MultilineTextField } from '@app/components/form/MultilineTextField';
 import { TextField } from '@app/components/form/TextField';
-import { Stack } from '@app/components/generic/layout';
+import { Stack, Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 
@@ -108,14 +107,16 @@ function FaqCreatePage() {
           <FormField label="Your answer (optional-you can add or edit it later)">
             <MultilineTextField name="answer" rows={3} placeholder="Optional answer..." />
           </FormField>
-          <FormActions>
-            <UIButton type="submit" disabled={createFaqItem.isPending}>
-              {createFaqItem.isPending ? 'Asking…' : 'Ask'}
-            </UIButton>
-            {createFaqItem.isError && (
-              <span className={styles.error}>{createFaqItem.error?.message}</span>
-            )}
-          </FormActions>
+          <Toolbar>
+            <Toolbar.Left>
+              <UIButton type="submit" disabled={createFaqItem.isPending}>
+                {createFaqItem.isPending ? 'Asking…' : 'Ask'}
+              </UIButton>
+              {createFaqItem.isError && (
+                <span className={styles.error}>{createFaqItem.error?.message}</span>
+              )}
+            </Toolbar.Left>
+          </Toolbar>
         </Stack>
       </Card>
     </>

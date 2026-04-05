@@ -2,10 +2,10 @@ import { Check, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { useCurrentProfile } from '@db/profiles';
-import { FormActions } from '@app/components/form/FormActions';
 import { FormField } from '@app/components/form/FormField';
 import { FormPopover } from '@app/components/form/FormPopover';
 import { SuggestField } from '@app/components/form/SuggestField';
+import { Toolbar } from '@app/components/generic/layout';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 import { useUserGroupMembershipGroups, useUserGroupMemberships } from '@app/members/db';
 
@@ -125,17 +125,19 @@ function GroupAssignPopoverBody({
               placeholder="Type group name or slug..."
             />
           </FormField>
-          <FormActions>
-            <UIButton
-              type="button"
-              iconOnly
-              aria-label="Set selected group"
-              onClick={handleAssignGroup}
-              disabled={disabled}
-            >
-              <Check size={16} aria-hidden />
-            </UIButton>
-          </FormActions>
+          <Toolbar>
+            <Toolbar.Left>
+              <UIButton
+                type="button"
+                iconOnly
+                aria-label="Set selected group"
+                onClick={handleAssignGroup}
+                disabled={disabled}
+              >
+                <Check size={16} aria-hidden />
+              </UIButton>
+            </Toolbar.Left>
+          </Toolbar>
         </>
       )}
     </div>

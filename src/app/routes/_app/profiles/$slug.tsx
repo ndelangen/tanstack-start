@@ -9,7 +9,6 @@ import {
   useProfileBySlug,
 } from '@db/profiles';
 import { FactionList } from '@app/components/factions/FactionList';
-import { FormActions } from '@app/components/form/FormActions';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Stack, Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
@@ -90,27 +89,25 @@ function ProfileDetailPage() {
     <Stack className={layoutStyles.root} gap={2}>
       <Toolbar>
         <Toolbar.Left>
-          <FormActions>
-            <FormTooltip content="Back to profiles">
-              <IconButton variant="nav" to="/profiles" aria-label="Back to profiles">
-                <ArrowLeft size={16} aria-hidden />
+          <FormTooltip content="Back to profiles">
+            <IconButton variant="nav" to="/profiles" aria-label="Back to profiles">
+              <ArrowLeft size={16} aria-hidden />
+            </IconButton>
+          </FormTooltip>
+          {isSelf ? (
+            <FormTooltip content="Edit profile">
+              <IconButton variant="secondary" to="/profiles/settings" aria-label="Edit profile">
+                <Pencil size={16} aria-hidden />
               </IconButton>
             </FormTooltip>
-            {isSelf ? (
-              <FormTooltip content="Edit profile">
-                <IconButton variant="secondary" to="/profiles/settings" aria-label="Edit profile">
-                  <Pencil size={16} aria-hidden />
-                </IconButton>
-              </FormTooltip>
-            ) : null}
-            {isSelf ? (
-              <FormTooltip content="Start group">
-                <IconButton variant="confirm" to="/groups/create" aria-label="Start group">
-                  <UserPlus size={16} aria-hidden />
-                </IconButton>
-              </FormTooltip>
-            ) : null}
-          </FormActions>
+          ) : null}
+          {isSelf ? (
+            <FormTooltip content="Start group">
+              <IconButton variant="confirm" to="/groups/create" aria-label="Start group">
+                <UserPlus size={16} aria-hidden />
+              </IconButton>
+            </FormTooltip>
+          ) : null}
         </Toolbar.Left>
       </Toolbar>
 

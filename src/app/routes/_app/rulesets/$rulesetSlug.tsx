@@ -13,7 +13,6 @@ import {
   useUpdateRuleset,
 } from '@db/rulesets';
 import { FaqList } from '@app/components/faq/FaqList';
-import { FormActions } from '@app/components/form/FormActions';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Toolbar } from '@app/components/generic/layout';
 import { BlockCover } from '@app/components/generic/surfaces';
@@ -243,8 +242,7 @@ function RulesetDetailPage() {
             />
           )}
 
-          <FormActions>
-            {isOwner && (
+          {isOwner && (
               <FormTooltip content="Delete ruleset">
                 <UIButton
                   variant="critical"
@@ -258,7 +256,6 @@ function RulesetDetailPage() {
                 </UIButton>
               </FormTooltip>
             )}
-          </FormActions>
         </Toolbar.Right>
       </Toolbar>
       <section className={styles.section}>
