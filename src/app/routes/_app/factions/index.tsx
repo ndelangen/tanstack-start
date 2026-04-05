@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react';
 import { loadFactionsAll, useFactionsAll } from '@db/factions';
 import { useCurrentProfile } from '@db/profiles';
 import { FactionList } from '@app/components/factions/FactionList';
+import { Stack } from '@app/components/generic/layout';
 
 import styles from './FactionsIndex.module.css';
 
@@ -79,7 +80,7 @@ function FactionsPage() {
   }
 
   return (
-    <>
+    <Stack gap={4}>
       <div className={styles.topBar}>
         <div className={styles.searchRow}>
           <div className={styles.searchWrapper}>
@@ -106,6 +107,6 @@ function FactionsPage() {
       ) : (
         <p className={styles.noResults}>No factions match your search.</p>
       )}
-    </>
+    </Stack>
   );
 }

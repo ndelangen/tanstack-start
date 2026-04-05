@@ -14,7 +14,7 @@ import {
 } from '@db/rulesets';
 import { FaqList } from '@app/components/faq/FaqList';
 import { FormTooltip } from '@app/components/form/FormTooltip';
-import { Toolbar } from '@app/components/generic/layout';
+import { Stack, Toolbar } from '@app/components/generic/layout';
 import { BlockCover } from '@app/components/generic/surfaces';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
@@ -189,7 +189,7 @@ function RulesetDetailPage() {
   };
 
   return (
-    <>
+    <Stack gap={4}>
       <Toolbar>
         <Toolbar.Left>
           {profile?.data?._id && (
@@ -310,6 +310,6 @@ function RulesetDetailPage() {
         faqItems={page.faqItems}
         searchQuery={search.q ?? ''}
       />
-    </>
+    </Stack>
   );
 }
