@@ -21,7 +21,7 @@ const meta = preview.meta({
 export const Decal = meta.story({
   args: {
     background: `url('/generated/utils/background/tech-red.jpg') top left / cover no-repeat`,
-    image: 'vector/decal/amal.svg',
+    image: '/vector/decal/amal.svg',
     circle: false,
     size: { width: 150, height: 150 },
   },
@@ -30,7 +30,7 @@ export const Decal = meta.story({
 export const Generic = meta.story({
   args: {
     background: `url('/generated/utils/background/tech-red.jpg') top left / cover no-repeat`,
-    image: 'vector/icon/ambassador.svg',
+    image: '/vector/icon/ambassador.svg',
     circle: false,
   },
 });
@@ -38,7 +38,7 @@ export const Generic = meta.story({
 export const Top = meta.story({
   args: {
     background: `url('/generated/utils/background/tech-red.jpg') top left / cover no-repeat`,
-    image: 'vector/icon/ambassador.svg',
+    image: '/vector/icon/ambassador.svg',
     circle: false,
     top: 'Top Text',
   },
@@ -47,7 +47,7 @@ export const Top = meta.story({
 export const Bottom1 = meta.story({
   args: {
     background: `url('/generated/utils/background/tech-red.jpg') top left / cover no-repeat`,
-    image: 'vector/icon/ambassador.svg',
+    image: '/vector/icon/ambassador.svg',
     circle: false,
     bottom: 'Bottom text',
   },
@@ -56,7 +56,7 @@ export const Bottom1 = meta.story({
 export const Bottom2 = meta.story({
   args: {
     background: `url('/generated/utils/background/tech-red.jpg') top left / cover no-repeat`,
-    image: 'vector/icon/ambassador.svg',
+    image: '/vector/icon/ambassador.svg',
     circle: false,
     bottom: 'Bottom text\nmultiple lines!',
   },
@@ -65,7 +65,7 @@ export const Bottom2 = meta.story({
 export const All = meta.story({
   args: {
     background: `url('/generated/utils/background/tech-yellow.jpg') top left / cover no-repeat`,
-    image: 'vector/troop/pewpew.svg',
+    image: '/vector/troop/pewpew.svg',
     circle: false,
     top: 'Pew Pew',
     bottom: 'pew pew\nTeam Sparlock!',
@@ -76,7 +76,7 @@ export const All = meta.story({
 export const TechToken = meta.story({
   args: {
     background: `url('/generated/utils/background/moss.jpg') top left / cover no-repeat`,
-    image: 'vector/generic/gear.svg',
+    image: '/vector/generic/gear.svg',
     circle: false,
     top: 'Tech Token',
   },
@@ -85,7 +85,7 @@ export const TechToken = meta.story({
 export const Spice = meta.story({
   args: {
     background: `url('/generated/utils/background/spice.jpg') top left / cover no-repeat`,
-    image: 'vector/icon/spice.svg',
+    image: '/vector/icon/spice.svg',
     circle: false,
     size: { width: 190, height: 190 },
   },

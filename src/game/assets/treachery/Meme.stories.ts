@@ -14,19 +14,19 @@ const meta = preview.meta({
 export const HaHaHa = meta.story({
   args: {
     head: `/generated/utils/background/worthless.jpg`,
-    icon: [`/generated/utils/background/striped-worthless.jpg`, 'vector/icon/traitor.svg'],
+    icon: [`/generated/utils/background/striped-worthless.jpg`, '/vector/icon/traitor.svg'],
     iconOffset: [0, 2],
     name: 'Ha Ha Ha! I win!',
     decals: [
       {
-        id: 'vector/decal/troll.svg',
+        id: '/vector/decal/troll.svg',
         muted: true,
         offset: [165, 0],
         outline: false,
         scale: 0.8,
       },
       {
-        id: 'vector/icon/traitor.svg',
+        id: '/vector/icon/traitor.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
@@ -41,19 +41,19 @@ export const HaHaHa = meta.story({
 export const FlyingShaiHulud = meta.story({
   args: {
     head: `/generated/utils/background/special.jpg`,
-    icon: [`/generated/utils/background/striped-special.jpg`, 'vector/icon/lightning.svg'],
+    icon: [`/generated/utils/background/striped-special.jpg`, '/vector/icon/lightning.svg'],
     iconOffset: [0, 2],
     name: 'Flying Shai-Hulud',
     decals: [
       {
-        id: 'vector/decal/gamond.svg',
+        id: '/vector/decal/gamond.svg',
         muted: true,
         offset: [0, 40],
         outline: false,
         scale: 0.8,
       },
       {
-        id: 'vector/decal/shai-hulud.svg',
+        id: '/vector/decal/shai-hulud.svg',
         muted: false,
         offset: [0, -40],
         outline: true,
@@ -68,26 +68,26 @@ export const FlyingShaiHulud = meta.story({
 export const PoisonKulon = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, 'vector/icon/poison.svg'],
+    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/poison.svg'],
     iconOffset: [0, 0],
     name: 'Poison Kulon',
     decals: [
       {
-        id: 'vector/icon/herb.svg',
+        id: '/vector/icon/herb.svg',
         muted: true,
         offset: [-250, 40],
         outline: false,
         scale: 0.7,
       },
       {
-        id: 'vector/decal/poison-tooth.svg',
+        id: '/vector/decal/poison-tooth.svg',
         muted: true,
         offset: [270, 80],
         outline: false,
         scale: 0.7,
       },
       {
-        id: 'vector/decal/kulon.svg',
+        id: '/vector/decal/kulon.svg',
         muted: false,
         offset: [0, 0],
         outline: true,
