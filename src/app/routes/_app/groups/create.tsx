@@ -4,11 +4,10 @@ import { useState } from 'react';
 
 import { useCreateGroup } from '@db/groups';
 import { useCurrentProfile } from '@db/profiles';
-import { FormActions } from '@app/components/form/FormActions';
 import { FormField } from '@app/components/form/FormField';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { TextField } from '@app/components/form/TextField';
-import { Stack } from '@app/components/generic/layout';
+import { ButtonGroup, Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 
@@ -72,32 +71,30 @@ function GroupCreatePage() {
         }}
       >
         <h2>Create a new group</h2>
-        <div>
-          <FormActions>
-            <FormTooltip content="Save group">
-              <UIButton type="submit" iconOnly aria-label="Save group" disabled={!canSubmit}>
-                <Save size={16} aria-hidden />
-              </UIButton>
-            </FormTooltip>
-            <FormTooltip content="Close create group">
-              <UIButton
-                type="button"
-                variant="secondary"
-                iconOnly
-                aria-label="Close create group"
-                disabled={createGroup.isPending}
-                onClick={() =>
-                  navigate({
-                    to: '/profiles/$profileSlug',
-                    params: { profileSlug: profileRow.slug },
-                  })
-                }
-              >
-                <X size={16} aria-hidden />
-              </UIButton>
-            </FormTooltip>
-          </FormActions>
-        </div>
+        <ButtonGroup>
+          <FormTooltip content="Save group">
+            <UIButton type="submit" iconOnly aria-label="Save group" disabled={!canSubmit}>
+              <Save size={16} aria-hidden />
+            </UIButton>
+          </FormTooltip>
+          <FormTooltip content="Close create group">
+            <UIButton
+              type="button"
+              variant="secondary"
+              iconOnly
+              aria-label="Close create group"
+              disabled={createGroup.isPending}
+              onClick={() =>
+                navigate({
+                  to: '/profiles/$profileSlug',
+                  params: { profileSlug: profileRow.slug },
+                })
+              }
+            >
+              <X size={16} aria-hidden />
+            </UIButton>
+          </FormTooltip>
+        </ButtonGroup>
         <FormField
           label="Group name"
           htmlFor="group-name"

@@ -10,9 +10,8 @@ import {
 } from '@db/members';
 import { useCurrentProfile } from '@db/profiles';
 import formStyles from '@app/components/form/Form.module.css';
-import { FormActions } from '@app/components/form/FormActions';
 import { FormTooltip } from '@app/components/form/FormTooltip';
-import { Stack, Toolbar } from '@app/components/generic/layout';
+import { ButtonGroup, Stack, Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 import { ProfileLink } from '@app/components/profile/ProfileLink';
@@ -110,7 +109,7 @@ function GroupDetailPage() {
     <Stack className={layoutStyles.root} gap={2}>
       <Toolbar>
         <Toolbar.Left>
-          <FormActions>
+          <ButtonGroup>
             <FormTooltip content="Back to profiles">
               <UIButton variant="nav" to="/profiles" aria-label="Back to profiles">
                 <ArrowLeft size={16} aria-hidden />
@@ -128,7 +127,7 @@ function GroupDetailPage() {
                 </UIButton>
               </FormTooltip>
             ) : null}
-          </FormActions>
+          </ButtonGroup>
         </Toolbar.Left>
       </Toolbar>
 
@@ -210,7 +209,7 @@ function GroupDetailPage() {
                       ) : null}
                     </div>
                     {isPending && viewerCanModeratePending ? (
-                      <FormActions>
+                      <ButtonGroup>
                         <FormTooltip content="Approve">
                           <UIButton
                             type="button"
@@ -235,10 +234,10 @@ function GroupDetailPage() {
                             <X size={16} aria-hidden />
                           </UIButton>
                         </FormTooltip>
-                      </FormActions>
+                      </ButtonGroup>
                     ) : null}
                     {!isPending && viewerIsOwner && !isOwnerRow ? (
-                      <FormActions>
+                      <ButtonGroup>
                         <FormTooltip content="Remove member">
                           <UIButton
                             type="button"
@@ -251,7 +250,7 @@ function GroupDetailPage() {
                             <UserRoundMinus size={16} aria-hidden />
                           </UIButton>
                         </FormTooltip>
-                      </FormActions>
+                      </ButtonGroup>
                     ) : null}
                   </div>
                 </li>

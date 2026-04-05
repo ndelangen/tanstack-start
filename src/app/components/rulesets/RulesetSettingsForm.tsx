@@ -4,11 +4,10 @@ import { useState } from 'react';
 
 import { type RulesetEntry, useUpdateRuleset } from '@db/rulesets';
 import formStyles from '@app/components/form/Form.module.css';
-import { FormActions } from '@app/components/form/FormActions';
 import { FormField } from '@app/components/form/FormField';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { TextField } from '@app/components/form/TextField';
-import { Stack, Toolbar } from '@app/components/generic/layout';
+import { ButtonGroup, Stack, Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 
@@ -54,7 +53,7 @@ export function RulesetSettingsForm({ initial }: { initial: RulesetEntry }) {
     <Stack gap={2}>
       <Toolbar>
         <Toolbar.Left>
-          <FormActions>
+          <ButtonGroup>
             <FormTooltip content={updateRuleset.isPending ? 'Saving…' : 'Save'}>
               <UIButton
                 type="submit"
@@ -81,7 +80,7 @@ export function RulesetSettingsForm({ initial }: { initial: RulesetEntry }) {
                 <ArrowLeft size={16} aria-hidden />
               </UIButton>
             </FormTooltip>
-          </FormActions>
+          </ButtonGroup>
         </Toolbar.Left>
       </Toolbar>
 
@@ -122,14 +121,14 @@ export function RulesetSettingsForm({ initial }: { initial: RulesetEntry }) {
             </p>
           )}
 
-          <FormActions>
+          <ButtonGroup>
             <UIButton
               type="submit"
               disabled={updateRuleset.isPending || name.trim().length === 0}
             >
               {updateRuleset.isPending ? 'Saving…' : 'Save changes'}
             </UIButton>
-          </FormActions>
+          </ButtonGroup>
         </Stack>
       </Card>
     </Stack>

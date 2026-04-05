@@ -4,11 +4,11 @@ import { useMemo, useState } from 'react';
 
 import { type Faction, type FactionLoadPickerRow, useFactionLoadPicker } from '@db/factions';
 import { useCurrentProfile } from '@db/profiles';
-import { FormActions } from '@app/components/form/FormActions';
 import { FormField } from '@app/components/form/FormField';
 import { FormPopover } from '@app/components/form/FormPopover';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { SuggestField } from '@app/components/form/SuggestField';
+import { ButtonGroup } from '@app/components/generic/layout';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FactionInputSchema } from '@game/schema/faction';
 
@@ -143,7 +143,7 @@ export function FactionLoadPopoverContent({
           />
         </FormField>
       )}
-      <FormActions>
+      <ButtonGroup>
         <FormTooltip content="Go to your profile to manage groups and factions">
           <Link
             to="/profiles/$profileSlug"
@@ -152,7 +152,7 @@ export function FactionLoadPopoverContent({
             Manage on profile
           </Link>
         </FormTooltip>
-      </FormActions>
+      </ButtonGroup>
     </div>
   );
 }

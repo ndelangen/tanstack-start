@@ -4,11 +4,10 @@ import { useState } from 'react';
 
 import { type ProfileEntry, useCurrentProfile, useUpdateCurrentProfile } from '@db/profiles';
 import formStyles from '@app/components/form/Form.module.css';
-import { FormActions } from '@app/components/form/FormActions';
 import { FormField } from '@app/components/form/FormField';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { TextField } from '@app/components/form/TextField';
-import { Stack, Toolbar } from '@app/components/generic/layout';
+import { ButtonGroup, Stack, Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 import { profileSlugBaseFromName } from '@app/profile/validation';
@@ -53,7 +52,7 @@ function ProfileSettingsFormFields({ initial }: { initial: ProfileEntry }) {
     <div className={layoutStyles.root}>
       <Toolbar>
         <Toolbar.Left>
-          <FormActions>
+          <ButtonGroup>
             <FormTooltip content={update.isPending ? 'Saving…' : 'Save'}>
               <UIButton
                 type="submit"
@@ -80,7 +79,7 @@ function ProfileSettingsFormFields({ initial }: { initial: ProfileEntry }) {
                 <ArrowLeft size={16} aria-hidden />
               </UIButton>
             </FormTooltip>
-          </FormActions>
+          </ButtonGroup>
         </Toolbar.Left>
       </Toolbar>
 

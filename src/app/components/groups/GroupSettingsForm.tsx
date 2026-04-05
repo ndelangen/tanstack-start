@@ -4,11 +4,10 @@ import { useEffect, useState } from 'react';
 
 import { type GroupEntry, useUpdateGroup } from '@db/groups';
 import formStyles from '@app/components/form/Form.module.css';
-import { FormActions } from '@app/components/form/FormActions';
 import { FormField } from '@app/components/form/FormField';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { TextField } from '@app/components/form/TextField';
-import { Stack, Toolbar } from '@app/components/generic/layout';
+import { ButtonGroup, Stack, Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 import layoutStyles from '@app/components/profile/ProfilePageLayout.module.css';
@@ -63,7 +62,7 @@ export function GroupSettingsForm({ initial }: { initial: GroupEntry }) {
     <div className={layoutStyles.root}>
       <Toolbar>
         <Toolbar.Left>
-          <FormActions>
+          <ButtonGroup>
             <FormTooltip content={updateGroup.isPending ? 'Saving…' : 'Save group name'}>
               <UIButton
                 type="submit"
@@ -90,7 +89,7 @@ export function GroupSettingsForm({ initial }: { initial: GroupEntry }) {
                 <ArrowLeft size={16} aria-hidden />
               </UIButton>
             </FormTooltip>
-          </FormActions>
+          </ButtonGroup>
         </Toolbar.Left>
       </Toolbar>
 

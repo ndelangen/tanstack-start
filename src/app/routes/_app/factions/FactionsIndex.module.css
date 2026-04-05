@@ -16,3 +16,8 @@
   margin: 0;
   color: var(--color-muted, #735c47);
 }
+
+.noResults {
+  margin: 0;
+  color: var(--color-muted, #735c47);
+}

@@ -14,6 +14,7 @@ import {
   UserRoundMinus,
 } from 'lucide-react';
 
+import type { FaqItemWithDetails } from '@db/faq';
 import { useRequestGroupMembership } from '@db/members';
 import { useCurrentProfile } from '@db/profiles';
 import {
@@ -23,9 +24,8 @@ import {
   useUpdateRuleset,
 } from '@db/rulesets';
 import { FaqList } from '@app/components/faq/FaqList';
-import { FormActions } from '@app/components/form/FormActions';
 import { FormTooltip } from '@app/components/form/FormTooltip';
-import { Toolbar, ToolbarSearchField } from '@app/components/generic/layout';
+import { Stack, Toolbar, ToolbarSearchField } from '@app/components/generic/layout';
 import { BlockCover } from '@app/components/generic/surfaces';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
@@ -83,6 +83,25 @@ function RulesetPageHead() {
         </p>
       </div>
     </div>
+  );
+}
+
+function RulesetFaqSection({
+  rulesetSlug,
+  faqItems,
+  searchQuery,
+}: {
+  rulesetSlug: string;
+  faqItems: FaqItemWithDetails[];
+  searchQuery: string;
+}) {
+  return (
+    <section className={styles.section}>
+      <h3 className={styles.sectionTitle}>FAQ</h3>
+      <Card>
+        <FaqList items={faqItems} rulesetSlug={rulesetSlug} searchQuery={searchQuery} />
+      </Card>
+    </section>
   );
 }
 
@@ -150,7 +169,7 @@ function RulesetDetailPage() {
   };
 
   return (
-    <>
+    <Stack gap={4}>
       <Toolbar>
         <Toolbar.Left>
           {profile?.data?._id && (
@@ -232,22 +251,20 @@ function RulesetDetailPage() {
               </FormTooltip>
             ))}
 
-          <FormActions>
-            {isOwner && (
-              <FormTooltip content="Delete ruleset">
-                <UIButton
-                  variant="critical"
-                  type="button"
-                  iconOnly
-                  aria-label="Delete ruleset"
-                  onClick={handleDelete}
-                  disabled={deleteRuleset.isPending}
-                >
-                  <Trash2 size={16} aria-hidden />
-                </UIButton>
-              </FormTooltip>
-            )}
-          </FormActions>
+          {isOwner && (
+            <FormTooltip content="Delete ruleset">
+              <UIButton
+                variant="critical"
+                type="button"
+                iconOnly
+                aria-label="Delete ruleset"
+                onClick={handleDelete}
+                disabled={deleteRuleset.isPending}
+              >
+                <Trash2 size={16} aria-hidden />
+              </UIButton>
+            </FormTooltip>
+          )}
         </Toolbar.Right>
       </Toolbar>
       <section className={styles.section}>
@@ -338,12 +355,11 @@ function RulesetDetailPage() {
           </ul>
         </section>
       )}
-      <section className={styles.section}>
-        <h3 className={styles.sectionTitle}>FAQ</h3>
-        <Card>
-          <FaqList items={page.faqItems} rulesetSlug={r.slug} searchQuery={search.q ?? ''} />
-        </Card>
-      </section>
-    </>
+      <RulesetFaqSection
+        rulesetSlug={r.slug}
+        faqItems={page.faqItems}
+        searchQuery={search.q ?? ''}
+      />
+    </Stack>
   );
 }

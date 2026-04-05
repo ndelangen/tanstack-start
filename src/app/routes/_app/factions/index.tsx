@@ -99,7 +99,11 @@ function FactionsPage() {
         </Toolbar.Right>
       </Toolbar>
 
-      <FactionList factions={filtered} />
+      {filtered.length > 0 ? (
+        <FactionList factions={filtered} />
+      ) : (
+        <p className={styles.noResults}>No factions match your search.</p>
+      )}
     </>
   );
 }

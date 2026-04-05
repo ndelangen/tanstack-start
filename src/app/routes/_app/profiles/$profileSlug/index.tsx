@@ -10,9 +10,8 @@ import {
   useProfileBySlug,
 } from '@db/profiles';
 import { FactionList } from '@app/components/factions/FactionList';
-import { FormActions } from '@app/components/form/FormActions';
 import { FormTooltip } from '@app/components/form/FormTooltip';
-import { Stack, Toolbar } from '@app/components/generic/layout';
+import { ButtonGroup, Stack, Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 import {
@@ -98,7 +97,7 @@ function ProfileDetailPage() {
     <Stack className={layoutStyles.root} gap={2}>
       <Toolbar>
         <Toolbar.Left>
-          <FormActions>
+          <ButtonGroup>
             <FormTooltip content="Back to profiles">
               <UIButton variant="nav" to="/profiles" aria-label="Back to profiles">
                 <ArrowLeft size={16} aria-hidden />
@@ -123,23 +122,21 @@ function ProfileDetailPage() {
                 </UIButton>
               </FormTooltip>
             ) : null}
-          </FormActions>
+          </ButtonGroup>
         </Toolbar.Left>
         {isSelf ? (
           <Toolbar.Right>
-            <FormActions>
-              <FormTooltip content="Log out">
-                <UIButton
-                  type="button"
-                  variant="critical"
-                  iconOnly
-                  aria-label="Log out"
-                  onClick={() => void handleSignOut()}
-                >
-                  <LogOut size={16} aria-hidden />
-                </UIButton>
-              </FormTooltip>
-            </FormActions>
+            <FormTooltip content="Log out">
+              <UIButton
+                type="button"
+                variant="critical"
+                iconOnly
+                aria-label="Log out"
+                onClick={() => void handleSignOut()}
+              >
+                <LogOut size={16} aria-hidden />
+              </UIButton>
+            </FormTooltip>
           </Toolbar.Right>
         ) : null}
       </Toolbar>

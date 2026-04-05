@@ -5,9 +5,8 @@ import { loadFaction, useFaction } from '@db/factions';
 import { useRequestGroupMembership } from '@db/members';
 import { useCurrentProfile } from '@db/profiles';
 import { loadRulesetsByFaction, type RulesetEntry, useRulesetsByFaction } from '@db/rulesets';
-import { FormActions } from '@app/components/form/FormActions';
 import { FormTooltip } from '@app/components/form/FormTooltip';
-import { Toolbar } from '@app/components/generic/layout';
+import { ButtonGroup, Toolbar } from '@app/components/generic/layout';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 import { ProfileLink } from '@app/components/profile/ProfileLink';
 
@@ -160,25 +159,25 @@ function FactionDetailMain({ factionId }: { factionId: string }) {
     <>
       <Toolbar>
         <Toolbar.Left>
-          <FormActions>
+          <ButtonGroup>
             <FormTooltip content="Back to factions">
               <UIButton variant="nav" to="/factions" aria-label="Back to factions">
                 <ArrowLeft size={16} aria-hidden />
               </UIButton>
             </FormTooltip>
-          </FormActions>
-          {canEdit && (
-            <FormTooltip content="Edit faction">
-              <UIButton
-                variant="secondary"
-                to="/factions/$factionId/edit"
-                params={{ factionId }}
-                aria-label="Edit faction"
-              >
-                <Pencil size={16} aria-hidden />
-              </UIButton>
-            </FormTooltip>
-          )}
+            {canEdit ? (
+              <FormTooltip content="Edit faction">
+                <UIButton
+                  variant="secondary"
+                  to="/factions/$factionId/edit"
+                  params={{ factionId }}
+                  aria-label="Edit faction"
+                >
+                  <Pencil size={16} aria-hidden />
+                </UIButton>
+              </FormTooltip>
+            ) : null}
+          </ButtonGroup>
         </Toolbar.Left>
         <Toolbar.Right>
           <FormTooltip content="Printable faction sheet">

@@ -16,11 +16,10 @@ import {
 import { useCurrentProfile } from '@db/profiles';
 import { loadRulesetBySlug } from '@db/rulesets';
 import { Answer } from '@app/components/faq/Answer';
-import { FormActions } from '@app/components/form/FormActions';
 import { FormField } from '@app/components/form/FormField';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { MultilineTextField } from '@app/components/form/MultilineTextField';
-import { Stack } from '@app/components/generic/layout';
+import { ButtonGroup, Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 import { ProfileLink } from '@app/components/profile/ProfileLink';
@@ -199,7 +198,7 @@ function FaqDetailPage() {
                   rows={2}
                 />
               </FormField>
-              <FormActions>
+              <ButtonGroup>
                 <FormTooltip content="Save question">
                   <UIButton
                     type="button"
@@ -225,7 +224,7 @@ function FaqDetailPage() {
                 {updateFaqItem.isError && (
                   <span className={styles.error}>{updateFaqItem.error?.message}</span>
                 )}
-              </FormActions>
+              </ButtonGroup>
             </Stack>
           ) : (
             <>
@@ -244,7 +243,7 @@ function FaqDetailPage() {
                 </div>
               </div>
               {isQuestionOwner && (
-                <FormActions>
+                <ButtonGroup>
                   <FormTooltip content="Edit question">
                     <UIButton
                       type="button"
@@ -270,7 +269,7 @@ function FaqDetailPage() {
                   {deleteFaqItem.isError && (
                     <span className={styles.error}>{deleteFaqItem.error?.message}</span>
                   )}
-                </FormActions>
+                </ButtonGroup>
               )}
             </>
           )}
@@ -303,7 +302,7 @@ function FaqDetailPage() {
                 placeholder="Your answer..."
               />
             </FormField>
-            <FormActions>
+            <ButtonGroup>
               <FormTooltip content="Add answer">
                 <UIButton
                   type="submit"
@@ -314,7 +313,7 @@ function FaqDetailPage() {
                   <MessageSquarePlus size={16} aria-hidden />
                 </UIButton>
               </FormTooltip>
-            </FormActions>
+            </ButtonGroup>
           </Stack>
         )}
 
@@ -344,7 +343,7 @@ function FaqDetailPage() {
                           rows={3}
                         />
                       </FormField>
-                      <FormActions>
+                      <ButtonGroup>
                         <FormTooltip content="Save answer">
                           <UIButton
                             type="button"
@@ -370,7 +369,7 @@ function FaqDetailPage() {
                         {updateFaqAnswer.isError && (
                           <span className={styles.error}>{updateFaqAnswer.error?.message}</span>
                         )}
-                      </FormActions>
+                      </ButtonGroup>
                     </Stack>
                   ) : (
                     <>
