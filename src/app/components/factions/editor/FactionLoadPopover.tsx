@@ -8,7 +8,7 @@ import { FormField } from '@app/components/form/FormField';
 import { FormPopover } from '@app/components/form/FormPopover';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { SuggestField } from '@app/components/form/SuggestField';
-import { Toolbar } from '@app/components/generic/layout';
+import { ButtonGroup } from '@app/components/generic/layout';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 import { FactionInputSchema } from '@game/schema/faction';
 
@@ -143,15 +143,13 @@ export function FactionLoadPopoverContent({
           />
         </FormField>
       )}
-      <Toolbar>
-        <Toolbar.Left>
-          <FormTooltip content="Go to your profile to manage groups and factions">
+      <ButtonGroup>
+        <FormTooltip content="Go to your profile to manage groups and factions">
             <Link to="/profiles/$slug" params={{ slug: currentProfile.data?.slug ?? '' }}>
               Manage on profile
             </Link>
           </FormTooltip>
-        </Toolbar.Left>
-      </Toolbar>
+        </ButtonGroup>
     </div>
   );
 }

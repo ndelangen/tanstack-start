@@ -2,7 +2,7 @@ import { useAuthActions } from '@convex-dev/auth/react';
 import { LogIn } from 'lucide-react';
 import { useState } from 'react';
 
-import { Stack, Toolbar } from '@app/components/generic/layout';
+import { ButtonGroup, Stack } from '@app/components/generic/layout';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 
 export function LoginForm(props: React.ComponentPropsWithoutRef<'div'>) {
@@ -29,8 +29,7 @@ export function LoginForm(props: React.ComponentPropsWithoutRef<'div'>) {
         <h2>Welcome!</h2>
         <p>Sign in to your account to continue</p>
         {error && <p role="alert">{error}</p>}
-        <Toolbar>
-          <Toolbar.Left>
+        <ButtonGroup>
             <UIButton
               type="button"
               disabled={loadingProvider !== null}
@@ -47,8 +46,7 @@ export function LoginForm(props: React.ComponentPropsWithoutRef<'div'>) {
               <LogIn size={16} aria-hidden />
               <span>{loadingProvider === 'google' ? 'Logging in...' : 'Continue with Google'}</span>
             </UIButton>
-          </Toolbar.Left>
-        </Toolbar>
+          </ButtonGroup>
       </Stack>
     </div>
   );

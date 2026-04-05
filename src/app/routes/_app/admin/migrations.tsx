@@ -3,7 +3,7 @@ import { RefreshCw } from 'lucide-react';
 
 import { useCurrentProfile } from '@db/profiles';
 import { FormTooltip } from '@app/components/form/FormTooltip';
-import { Stack, Toolbar } from '@app/components/generic/layout';
+import { ButtonGroup, Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 import {
@@ -47,8 +47,7 @@ function AdminMigrationsPage() {
       <Card>
         <Stack gap={2}>
           <h2>Live migration status</h2>
-          <Toolbar>
-            <Toolbar.Left>
+          <ButtonGroup>
               <FormTooltip content="Sync status snapshot to migration_runs table">
                 <UIButton
                   type="button"
@@ -60,8 +59,7 @@ function AdminMigrationsPage() {
                   <RefreshCw size={16} aria-hidden />
                 </UIButton>
               </FormTooltip>
-            </Toolbar.Left>
-          </Toolbar>
+            </ButtonGroup>
           <table>
             <thead>
               <tr>

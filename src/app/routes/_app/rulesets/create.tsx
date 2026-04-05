@@ -7,7 +7,7 @@ import { useCurrentProfile } from '@db/profiles';
 import { useCreateRuleset } from '@db/rulesets';
 import { FormField } from '@app/components/form/FormField';
 import { TextField } from '@app/components/form/TextField';
-import { Stack, Toolbar } from '@app/components/generic/layout';
+import { ButtonGroup, Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 
@@ -81,14 +81,12 @@ function CreateRulesetForm({ ownerUserId }: { ownerUserId: string }) {
             ))}
           </select>
         </FormField>
-        <Toolbar>
-          <Toolbar.Left>
+        <ButtonGroup>
             <UIButton type="submit" disabled={createRuleset.isPending || name.trim().length === 0}>
               <Plus size={16} aria-hidden />
               <span>{createRuleset.isPending ? 'Creating…' : 'Create'}</span>
             </UIButton>
-          </Toolbar.Left>
-        </Toolbar>
+          </ButtonGroup>
       </Stack>
     </>
   );
