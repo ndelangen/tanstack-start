@@ -24,7 +24,10 @@ async function loginWithLocalAuth(baseUrl: string, credentials: Credentials) {
     let navigationError: unknown;
     for (let attempt = 1; attempt <= 30; attempt += 1) {
       try {
-        await page.goto(`${baseUrl}/auth/login`, { waitUntil: 'domcontentloaded', timeout: 10_000 });
+        await page.goto(`${baseUrl}/auth/login`, {
+          waitUntil: 'domcontentloaded',
+          timeout: 10_000,
+        });
         navigationError = null;
         break;
       } catch (error) {

@@ -199,17 +199,17 @@ export function useRulesetDetailPage(
       ? undefined
       : liveData === null
         ? null
-      : {
-          ruleset: toRulesetEntry(liveData.ruleset),
-          factions: liveData.factions,
-          canAccess: liveData.canAccess,
-          owner: liveData.owner,
-          viewerAssignableMemberships: mapViewerAssignableMembershipsFromConvex(
-            liveData.viewerAssignableMemberships as AssignableMembershipConvexRow[] | null
-          ),
-          groupAccess: liveData.groupAccess,
-          faqItems: mapFaqItemsFromConvex(liveData.faqItems as FaqItemConvexRow[]),
-        };
+        : {
+            ruleset: toRulesetEntry(liveData.ruleset),
+            factions: liveData.factions,
+            canAccess: liveData.canAccess,
+            owner: liveData.owner,
+            viewerAssignableMemberships: mapViewerAssignableMembershipsFromConvex(
+              liveData.viewerAssignableMemberships as AssignableMembershipConvexRow[] | null
+            ),
+            groupAccess: liveData.groupAccess,
+            faqItems: mapFaqItemsFromConvex(liveData.faqItems as FaqItemConvexRow[]),
+          };
   const result = toLiveQueryResult(normalized, true, () => options?.initialData);
   return {
     ...result,

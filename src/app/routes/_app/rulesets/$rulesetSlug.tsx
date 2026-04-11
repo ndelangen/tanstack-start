@@ -6,13 +6,7 @@ import {
   useMatches,
   useNavigate,
 } from '@tanstack/react-router';
-import {
-  MessageCircleQuestionMark,
-  Pencil,
-  Trash2,
-  UserPlus,
-  UserRoundMinus,
-} from 'lucide-react';
+import { MessageCircleQuestionMark, Pencil, Trash2, UserPlus, UserRoundMinus } from 'lucide-react';
 
 import type { FaqItemWithDetails } from '@db/faq';
 import { useRequestGroupMembership } from '@db/members';

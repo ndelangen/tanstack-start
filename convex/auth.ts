@@ -13,7 +13,11 @@ function decodeBase64Ascii(value: string): string {
   if (typeof atobFn === 'function') {
     return atobFn(value);
   }
-  const BufferCtor = (globalThis as { Buffer?: { from: (input: string, encoding: string) => { toString: (enc: string) => string } } }).Buffer;
+  const BufferCtor = (
+    globalThis as {
+      Buffer?: { from: (input: string, encoding: string) => { toString: (enc: string) => string } };
+    }
+  ).Buffer;
   if (BufferCtor?.from) {
     return BufferCtor.from(value, 'base64').toString('utf8');
   }

@@ -12,10 +12,7 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   globalSetup: './e2e/global-setup.ts',
-  reporter: [
-    ['list'],
-    ['html', { open: 'never', outputFolder: 'playwright-report' }],
-  ],
+  reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
   use: {
     baseURL: baseUrl,
     headless: process.env.PLAYWRIGHT_HEADLESS === 'true',

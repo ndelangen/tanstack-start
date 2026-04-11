@@ -116,7 +116,9 @@ export function LoginForm(props: ComponentPropsWithoutRef<'div'>) {
                 className={`${styles.providerButton} ${styles.discord}`}
                 disabled={loadingProvider !== null}
                 aria-label={
-                  loadingProvider === 'discord' ? 'Signing in with Discord…' : 'Continue with Discord'
+                  loadingProvider === 'discord'
+                    ? 'Signing in with Discord…'
+                    : 'Continue with Discord'
                 }
                 onClick={(e) => void handleSocialLogin(e, 'discord')}
               >

@@ -122,10 +122,7 @@ export function RulesetSettingsForm({ initial }: { initial: RulesetEntry }) {
           )}
 
           <ButtonGroup>
-            <UIButton
-              type="submit"
-              disabled={updateRuleset.isPending || name.trim().length === 0}
-            >
+            <UIButton type="submit" disabled={updateRuleset.isPending || name.trim().length === 0}>
               {updateRuleset.isPending ? 'Saving…' : 'Save changes'}
             </UIButton>
           </ButtonGroup>

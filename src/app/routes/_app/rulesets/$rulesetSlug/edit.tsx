@@ -2,9 +2,9 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 
 import { useCurrentProfile } from '@db/profiles';
 import { loadRulesetDetailPage, useRulesetDetailPage } from '@db/rulesets';
-import { RulesetSettingsForm } from '@app/components/rulesets/RulesetSettingsForm';
 import { BlockCover } from '@app/components/generic/surfaces';
 import { Card } from '@app/components/generic/surfaces/Card';
+import { RulesetSettingsForm } from '@app/components/rulesets/RulesetSettingsForm';
 
 import styles from '../RulesetDetail.module.css';
 
@@ -25,7 +25,8 @@ export const Route = createFileRoute('/_app/rulesets/$rulesetSlug/edit')({
 function RulesetEditPageHead() {
   const { rulesetSlug } = Route.useParams();
   const loaderData = Route.useLoaderData();
-  const detailSeed = !loaderData.notFound && loaderData.detailPage ? loaderData.detailPage : undefined;
+  const detailSeed =
+    !loaderData.notFound && loaderData.detailPage ? loaderData.detailPage : undefined;
   const page = useRulesetDetailPage(rulesetSlug, { initialData: detailSeed });
 
   if (loaderData.notFound || !page.ruleset) {
@@ -62,7 +63,8 @@ function RulesetEditPageHead() {
 function RulesetEditPage() {
   const { rulesetSlug } = Route.useParams();
   const loaderData = Route.useLoaderData();
-  const detailSeed = !loaderData.notFound && loaderData.detailPage ? loaderData.detailPage : undefined;
+  const detailSeed =
+    !loaderData.notFound && loaderData.detailPage ? loaderData.detailPage : undefined;
   const page = useRulesetDetailPage(rulesetSlug, { initialData: detailSeed });
   const profile = useCurrentProfile();
 

@@ -40,7 +40,10 @@ export const Lasgun = meta.story({
 export const WeirdingWay = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/projectile.svg'] as const,
+    icon: [
+      `/generated/utils/background/striped-weapon.jpg`,
+      '/vector/icon/projectile.svg',
+    ] as const,
     name: 'Weirding Way',
     decals: [
       {
@@ -211,7 +214,10 @@ export const ArtilleryStrike = meta.story({
 export const MaulaPistol = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/projectile.svg'] as const,
+    icon: [
+      `/generated/utils/background/striped-weapon.jpg`,
+      '/vector/icon/projectile.svg',
+    ] as const,
     name: 'Maula Pistol',
     decals: [
       {
@@ -230,7 +236,10 @@ export const MaulaPistol = meta.story({
 export const Crysknife = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/projectile.svg'] as const,
+    icon: [
+      `/generated/utils/background/striped-weapon.jpg`,
+      '/vector/icon/projectile.svg',
+    ] as const,
     name: 'Crysknife',
     decals: [
       {
@@ -249,7 +258,10 @@ export const Crysknife = meta.story({
 export const HunterSeeker = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/projectile.svg'] as const,
+    icon: [
+      `/generated/utils/background/striped-weapon.jpg`,
+      '/vector/icon/projectile.svg',
+    ] as const,
     name: 'Hunter Seeker',
     decals: [
       {
@@ -268,7 +280,10 @@ export const HunterSeeker = meta.story({
 export const SlipTip = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/projectile.svg'] as const,
+    icon: [
+      `/generated/utils/background/striped-weapon.jpg`,
+      '/vector/icon/projectile.svg',
+    ] as const,
     name: 'Slip Tip',
     decals: [
       {
@@ -287,7 +302,10 @@ export const SlipTip = meta.story({
 export const Stunner = meta.story({
   args: {
     head: `/generated/utils/background/weapon.jpg`,
-    icon: [`/generated/utils/background/striped-weapon.jpg`, '/vector/icon/projectile.svg'] as const,
+    icon: [
+      `/generated/utils/background/striped-weapon.jpg`,
+      '/vector/icon/projectile.svg',
+    ] as const,
     name: 'Slip Tip',
     decals: [
       {
