@@ -40,12 +40,11 @@ export const Route = createFileRoute('/_app/rulesets/$rulesetSlug')({
     return typeof q === 'string' ? { q } : {};
   },
   loader: async ({ params }) => {
-    try {
-      const detailPage = await loadRulesetDetailPage(params.rulesetSlug);
-      return { notFound: false as const, detailPage };
-    } catch {
+    const detailPage = await loadRulesetDetailPage(params.rulesetSlug);
+    if (!detailPage) {
       return { notFound: true as const };
     }
+    return { notFound: false as const, detailPage };
   },
   component: RulesetDetailPage,
   staticData: {
@@ -133,7 +132,15 @@ function RulesetDetailPage() {
   }
 
   if (!page.ruleset) {
-    return null;
+    return (
+      <div>
+        <h2>Ruleset not found</h2>
+        <p>This ruleset doesn't exist or was deleted.</p>
+        <p>
+          <Link to="/rulesets">Back to rulesets</Link>
+        </p>
+      </div>
+    );
   }
 
   if (hasFaqChildRoute || location.pathname.endsWith('/edit')) {

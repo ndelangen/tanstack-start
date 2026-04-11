@@ -9,6 +9,7 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as e2e from "../e2e.js";
 import type * as factions from "../factions.js";
 import type * as faq from "../faq.js";
 import type * as groups from "../groups.js";
@@ -35,6 +36,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  e2e: typeof e2e;
   factions: typeof factions;
   faq: typeof faq;
   groups: typeof groups;

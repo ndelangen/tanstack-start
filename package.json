@@ -23,7 +23,10 @@
     "capture": "bun run ./scripts/capture.ts",
     "build-storybook": "storybook build",
     "local-capture": "storybook build && LOCAL=true bun run ./scripts/capture.ts",
-    "storybook": "storybook dev -p 6006"
+    "storybook": "storybook dev -p 6006",
+    "e2e:local": "bash ./scripts/e2e-local.sh",
+    "e2e:test": "bash ./scripts/e2e-playwright.sh",
+    "e2e:seed": "npx convex run e2e:seedBaseline '{\"ownerEmail\":\"e2e-user-a@example.com\"}'"
   },
   "dependencies": {
     "@auth/core": "^0.41.1",
@@ -59,6 +62,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.8",
+    "@playwright/test": "^1.59.1",
     "@storybook/addon-docs": "^10.3.3",
     "@storybook/react-vite": "^10.3.3",
     "@tanstack/devtools-vite": "^0.6.0",

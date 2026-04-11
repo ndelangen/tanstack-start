@@ -95,7 +95,7 @@ export async function loadRulesetBySlug(slug: string): Promise<RulesetPageData> 
   };
 }
 
-export async function loadRulesetDetailPage(slug: string): Promise<RulesetDetailPageData> {
+export async function loadRulesetDetailPage(slug: string): Promise<RulesetDetailPageData | null> {
   const raw = await db.query<{
     ruleset: RulesetRow;
     factions: { factionId: string; name: string; urlSlug: string }[];
@@ -104,7 +104,8 @@ export async function loadRulesetDetailPage(slug: string): Promise<RulesetDetail
     viewerAssignableMemberships: AssignableMembershipConvexRow[] | null;
     groupAccess: RulesetDetailPageData['groupAccess'];
     faqItems: FaqItemConvexRow[];
-  }>(api.rulesets.detailPageBySlug, { slug });
+  } | null>(api.rulesets.detailPageBySlug, { slug });
+  if (!raw) return null;
   return {
     ruleset: toRulesetEntry(raw.ruleset),
     factions: raw.factions,
@@ -193,9 +194,11 @@ export function useRulesetDetailPage(
   options?: { initialData?: RulesetDetailPageData }
 ) {
   const liveData = useQuery(api.rulesets.detailPageBySlug, { slug });
-  const normalized: RulesetDetailPageData | undefined =
+  const normalized: RulesetDetailPageData | null | undefined =
     liveData === undefined
       ? undefined
+      : liveData === null
+        ? null
       : {
           ruleset: toRulesetEntry(liveData.ruleset),
           factions: liveData.factions,
