@@ -13,8 +13,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  verify:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/reusable-verify.yml
+
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: verify
     environment: production
     runs-on: ubuntu-latest
     permissions:

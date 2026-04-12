@@ -7,3 +7,7 @@ supabase/.temp
 storybook-static
 .cache
 .env.local
+.env.e2e.local
+.playwright/
+playwright-report
+test-results

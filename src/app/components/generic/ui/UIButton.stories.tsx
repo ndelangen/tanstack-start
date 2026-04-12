@@ -11,7 +11,7 @@ export const Confirm = meta.story({
   args: {
     children: 'Save changes',
     type: 'button',
-    iconOnly: false
+    iconOnly: false,
   },
 });
 
@@ -20,7 +20,7 @@ export const Secondary = meta.story({
     children: 'Cancel',
     type: 'button',
     variant: 'secondary',
-    iconOnly: false
+    iconOnly: false,
   },
 });
 
@@ -29,7 +29,7 @@ export const Critical = meta.story({
     children: 'Delete',
     type: 'button',
     variant: 'critical',
-    iconOnly: false
+    iconOnly: false,
   },
 });
 

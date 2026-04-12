@@ -1,0 +1,189 @@
+name: Reusable Verify
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2.2.0
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Lint
+        run: bunx @biomejs/biome check .
+
+  convex_skip_guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2.2.0
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Enforce Convex skip guard
+        run: bun run check:convex-skip
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2.2.0
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Typecheck
+        run: bun run typecheck
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2.2.0
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Unit tests
+        run: bun run test
+
+  generate_and_build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2.2.0
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Generate app artifacts
+        run: bun run generate
+      - name: Build app
+        run: bun run app:build
+        env:
+          VITE_CONVEX_URL: https://example.convex.cloud
+
+  storybook:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2.2.0
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Build Storybook
+        run: bun run build-storybook
+
+  migration_static_narrow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2.2.0
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Detect schema narrowing for slug fields
+        id: narrow_check
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_REF="origin/${{ github.base_ref }}"
+            git fetch origin "${{ github.base_ref }}" --depth=1
+            RANGE="$BASE_REF...HEAD"
+          elif [[ -n "${{ github.event.before }}" && "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]]; then
+            RANGE="${{ github.event.before }}...HEAD"
+          else
+            RANGE="HEAD~1...HEAD"
+          fi
+
+          DIFF="$(git diff --unified=0 "$RANGE" -- convex/schema.ts || true)"
+          if echo "$DIFF" | grep -Eq "^-\\s*slug:\\s*v\\.optional\\(v\\.string\\(\\)\\)" && \
+             echo "$DIFF" | grep -Eq "^\\+\\s*slug:\\s*v\\.string\\(\\)"; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Enforce static narrow guard contract
+        if: steps.narrow_check.outputs.changed == 'true'
+        run: |
+          bun -e '
+          const manifest = await Bun.file("convex/migration-guards.json").json();
+          const entries = Array.isArray(manifest.entries) ? manifest.entries : [];
+          if (entries.length === 0) throw new Error("migration-guards.json has no entries");
+          const ids = new Set(entries.map((e) => e.id));
+          const narrowEntries = entries.filter((e) => e.phase === "narrow");
+          if (narrowEntries.length === 0) throw new Error("At least one narrow entry is required when schema narrowing is detected");
+          for (const entry of entries) {
+            if (entry.phase !== "widen" && entry.phase !== "narrow") {
+              throw new Error(`Invalid phase for ${entry.id}`);
+            }
+            for (const req of entry.requires ?? []) {
+              if (!ids.has(req)) throw new Error(`Missing required migration id: ${req}`);
+            }
+          }
+          '
+          echo "Static narrow guard passed."
+
+  e2e_docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2.2.0
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+      - name: Create local E2E env file
+        run: |
+          cat > "$RUNNER_TEMP/.env.e2e.local" <<'EOF'
+          CONVEX_BACKEND_PORT=3210
+          CONVEX_SITE_PORT=3211
+          CONVEX_DASHBOARD_PORT=6791
+          CONVEX_SELF_HOSTED_URL=http://127.0.0.1:3210
+          CONVEX_SELF_HOSTED_ADMIN_KEY=replace-me
+          VITE_CONVEX_URL=http://127.0.0.1:3210
+          E2E_APP_PORT=6001
+          SITE_URL=http://localhost:6001
+          CONVEX_SITE_URL=http://127.0.0.1:3211
+          E2E_LOCAL_AUTH=true
+          VITE_E2E_LOCAL_AUTH=true
+          IS_TEST=true
+          AUTH_E2E_PASSWORD=ci-test-password
+          PLAYWRIGHT_BASE_URL=http://localhost:6001
+          PLAYWRIGHT_HEADLESS=true
+          PLAYWRIGHT_USER_A_EMAIL=e2e-user-a@example.com
+          PLAYWRIGHT_USER_B_EMAIL=e2e-user-b@example.com
+          PLAYWRIGHT_USER_PASSWORD=ci-test-password
+          EOF
+      - name: Run Docker + Playwright E2E
+        run: bun run e2e:local
+        env:
+          E2E_ENV_FILE: ${{ runner.temp }}/.env.e2e.local
+          PLAYWRIGHT_HEADLESS: "true"
+      - name: Upload E2E artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-artifacts-${{ github.run_id }}
+          if-no-files-found: ignore
+          retention-days: 14
+          path: |
+            ${{ github.workspace }}/playwright-report
+            ${{ github.workspace }}/test-results
+            ${{ github.workspace }}/.playwright/vite.log

@@ -59,12 +59,12 @@ export const get = query({
   },
 });
 
-async function rulesetPublicBundleBySlug(ctx: QueryCtx, slug: string) {
+async function rulesetPublicBundleBySlugMaybe(ctx: QueryCtx, slug: string) {
   const row = await ctx.db
     .query('rulesets')
     .withIndex('by_slug', (q) => q.eq('slug', slug))
     .unique();
-  if (!row || row.is_deleted) throw new Error(`Ruleset with slug ${slug} not found`);
+  if (!row || row.is_deleted) return null;
 
   const links = await ctx.db
     .query('ruleset_factions')
@@ -94,6 +94,12 @@ async function rulesetPublicBundleBySlug(ctx: QueryCtx, slug: string) {
   };
 }
 
+async function rulesetPublicBundleBySlug(ctx: QueryCtx, slug: string) {
+  const bundle = await rulesetPublicBundleBySlugMaybe(ctx, slug);
+  if (!bundle) throw new Error(`Ruleset with slug ${slug} not found`);
+  return bundle;
+}
+
 export const getBySlug = query({
   args: { slug: v.string() },
   handler: async (ctx, args) => rulesetPublicBundleBySlug(ctx, args.slug),
@@ -102,7 +108,8 @@ export const getBySlug = query({
 export const detailPageBySlug = query({
   args: { slug: v.string() },
   handler: async (ctx, args) => {
-    const base = await rulesetPublicBundleBySlug(ctx, args.slug);
+    const base = await rulesetPublicBundleBySlugMaybe(ctx, args.slug);
+    if (!base) return null;
     const faqItems = await loadFaqItemsForRuleset(ctx, base.ruleset._id);
 
     let groupAccess: {
