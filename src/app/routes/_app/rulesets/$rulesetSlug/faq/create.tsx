@@ -9,6 +9,8 @@ import { TextField } from '@app/components/form/TextField';
 import { ButtonGroup, Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
+import type { FaqTag } from '@app/faq/tags';
+import { FAQ_TAG_LABELS, FAQ_TAG_VALUES } from '@app/faq/tags';
 
 import styles from '../../RulesetDetail.module.css';
 
@@ -77,9 +79,13 @@ function FaqCreatePage() {
             const answer = (
               formEl.elements.namedItem('answer') as HTMLTextAreaElement
             ).value.trim();
+            const selectedTags = Array.from(
+              formEl.querySelectorAll<HTMLInputElement>('input[name="tags"]:checked')
+            ).map((input) => input.value as FaqTag);
             if (!question) return;
+            if (selectedTags.length === 0) return;
             createFaqItem.mutate(
-              { rulesetId, question, answer: answer || undefined },
+              { rulesetId, question, answer: answer || undefined, tags: selectedTags },
               {
                 onSuccess: (entry) => {
                   formEl.reset();
@@ -106,6 +112,20 @@ function FaqCreatePage() {
           </FormField>
           <FormField label="Your answer (optional-you can add or edit it later)">
             <MultilineTextField name="answer" rows={3} placeholder="Optional answer..." />
+          </FormField>
+          <FormField label="Tags">
+            <Stack as="fieldset" gap={2} style={{ border: 0, margin: 0, padding: 0 }}>
+              <legend style={{ display: 'none' }}>FAQ tags</legend>
+              {FAQ_TAG_VALUES.map((tag) => (
+                <label
+                  key={tag}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  <input type="checkbox" name="tags" value={tag} defaultChecked={tag === 'other'} />
+                  <span>{FAQ_TAG_LABELS[tag]}</span>
+                </label>
+              ))}
+            </Stack>
           </FormField>
           <ButtonGroup>
             <UIButton type="submit" disabled={createFaqItem.isPending}>

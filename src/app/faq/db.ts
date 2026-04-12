@@ -2,7 +2,8 @@ import { useQuery } from 'convex/react';
 
 import { db } from '@db/core';
 import { toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
-import { faqAnswerSchema, faqQuestionSchema } from '@app/faq/validation';
+import { faqAnswerSchema, faqQuestionSchema, faqTagsSchema } from '@app/faq/validation';
+import type { FaqTag } from '@app/faq/tags';
 
 import { api } from '../../../convex/_generated/api';
 import type { Doc } from '../../../convex/_generated/dataModel';
@@ -255,13 +256,13 @@ export function useFaqAnswersByUser(
 
 export function useCreateFaqItem() {
   const mutation = useLiveMutation<
-    { ruleset_id: string; question: string; answer?: string },
+    { ruleset_id: string; question: string; answer?: string; tags: FaqTag[] },
     Omit<FaqItemEntry, 'id'>
   >(api.faq.createItem);
   return {
     ...mutation,
     mutate: (
-      variables: { rulesetId: string; question: string; answer?: string },
+      variables: { rulesetId: string; question: string; answer?: string; tags: FaqTag[] },
       options?: { onSuccess?: (entry: FaqItemEntry) => void; onError?: (error: Error) => void }
     ) =>
       mutation.mutate(
@@ -272,6 +273,7 @@ export function useCreateFaqItem() {
             variables.answer === undefined || variables.answer.trim().length === 0
               ? undefined
               : faqAnswerSchema.parse(variables.answer),
+          tags: faqTagsSchema.parse(variables.tags),
         },
         {
           onSuccess: (entry) => options?.onSuccess?.(entry),
@@ -282,10 +284,12 @@ export function useCreateFaqItem() {
       rulesetId,
       question,
       answer,
+      tags,
     }: {
       rulesetId: string;
       question: string;
       answer?: string;
+      tags: FaqTag[];
     }) => {
       const entry = await mutation.mutateAsync({
         ruleset_id: rulesetId,
@@ -294,6 +298,7 @@ export function useCreateFaqItem() {
           answer === undefined || answer.trim().length === 0
             ? undefined
             : faqAnswerSchema.parse(answer),
+        tags: faqTagsSchema.parse(tags),
       });
       return entry;
     },
@@ -302,7 +307,7 @@ export function useCreateFaqItem() {
 
 export function useUpdateFaqItem() {
   const mutation = useLiveMutation<
-    { id: string; question?: string; accepted_answer_id?: string | null },
+    { id: string; question?: string; tags?: FaqTag[]; accepted_answer_id?: string | null },
     Omit<FaqItemEntry, 'id'>
   >(api.faq.updateItem);
   return {
@@ -318,6 +323,8 @@ export function useUpdateFaqItem() {
             variables.input.question !== undefined
               ? faqQuestionSchema.parse(variables.input.question)
               : undefined,
+          tags:
+            variables.input.tags !== undefined ? faqTagsSchema.parse(variables.input.tags) : undefined,
           accepted_answer_id: variables.input.accepted_answer_id,
         },
         {
@@ -330,6 +337,7 @@ export function useUpdateFaqItem() {
         id,
         question:
           input.question !== undefined ? faqQuestionSchema.parse(input.question) : undefined,
+        tags: input.tags !== undefined ? faqTagsSchema.parse(input.tags) : undefined,
         accepted_answer_id: input.accepted_answer_id,
       });
       return entry;

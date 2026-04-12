@@ -19,19 +19,27 @@ import {
 } from '@db/rulesets';
 import { FaqList } from '@app/components/faq/FaqList';
 import { FormTooltip } from '@app/components/form/FormTooltip';
+import { OptionPicker } from '@app/components/form/OptionPicker';
 import { Stack, Toolbar, ToolbarSearchField } from '@app/components/generic/layout';
 import { BlockCover } from '@app/components/generic/surfaces';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 import { GroupAssignPopover } from '@app/components/groups/GroupAssignPopover';
+import { FAQ_TAG_LABELS, FAQ_TAG_VALUES, type FaqTag } from '@app/faq/tags';
 import { ProfileLink } from '@app/components/profile/ProfileLink';
 
 import styles from './RulesetDetail.module.css';
 
 export const Route = createFileRoute('/_app/rulesets/$rulesetSlug')({
-  validateSearch: (params: Record<string, unknown>): { q?: string } => {
+  validateSearch: (params: Record<string, unknown>): { q?: string; tag?: FaqTag } => {
     const q = params?.q;
-    return typeof q === 'string' ? { q } : {};
+    const tag = params?.tag;
+    return {
+      ...(typeof q === 'string' ? { q } : {}),
+      ...(typeof tag === 'string' && FAQ_TAG_VALUES.includes(tag as FaqTag)
+        ? { tag: tag as FaqTag }
+        : {}),
+    };
   },
   loader: async ({ params }) => {
     const detailPage = await loadRulesetDetailPage(params.rulesetSlug);
@@ -83,16 +91,23 @@ function RulesetFaqSection({
   rulesetSlug,
   faqItems,
   searchQuery,
+  selectedTag,
 }: {
   rulesetSlug: string;
   faqItems: FaqItemWithDetails[];
   searchQuery: string;
+  selectedTag?: FaqTag;
 }) {
   return (
     <section className={styles.section}>
       <h3 className={styles.sectionTitle}>FAQ</h3>
       <Card>
-        <FaqList items={faqItems} rulesetSlug={rulesetSlug} searchQuery={searchQuery} />
+        <FaqList
+          items={faqItems}
+          rulesetSlug={rulesetSlug}
+          searchQuery={searchQuery}
+          selectedTag={selectedTag}
+        />
       </Card>
     </section>
   );
@@ -168,6 +183,13 @@ function RulesetDetailPage() {
       replace: true,
     });
   };
+  const handleFaqTagChange = (value: string) => {
+    navigate({
+      to: '.',
+      search: (prev) => ({ ...prev, tag: value === '__all__' ? undefined : (value as FaqTag) }),
+      replace: true,
+    });
+  };
 
   return (
     <Stack gap={4}>
@@ -195,6 +217,17 @@ function RulesetDetailPage() {
             onValueChange={handleFaqSearchChange}
             placeholder="Search questions..."
             aria-label="Search FAQ questions"
+          />
+          <OptionPicker
+            value={search.tag ?? '__all__'}
+            onValueChange={handleFaqTagChange}
+            options={[
+              { value: '__all__', label: 'All tags' },
+              ...FAQ_TAG_VALUES.map((tag) => ({ value: tag, label: FAQ_TAG_LABELS[tag] })),
+            ]}
+            placeholder="Filter by tag"
+            ariaLabel="Filter FAQ by tag"
+            appearance="embedded"
           />
         </Toolbar.Left>
         <Toolbar.Center></Toolbar.Center>
@@ -360,6 +393,7 @@ function RulesetDetailPage() {
         rulesetSlug={r.slug}
         faqItems={page.faqItems}
         searchQuery={search.q ?? ''}
+        selectedTag={search.tag}
       />
     </Stack>
   );

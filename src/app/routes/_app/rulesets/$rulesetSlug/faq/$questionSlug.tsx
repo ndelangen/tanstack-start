@@ -22,6 +22,7 @@ import { MultilineTextField } from '@app/components/form/MultilineTextField';
 import { ButtonGroup, Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
+import { DEFAULT_FAQ_TAG, FAQ_TAG_LABELS, FAQ_TAG_VALUES, type FaqTag } from '@app/faq/tags';
 import { ProfileLink } from '@app/components/profile/ProfileLink';
 
 import styles from '../../$id/faq/FaqDetail.module.css';
@@ -77,6 +78,7 @@ function FaqDetailPage() {
   const [editingQuestion, setEditingQuestion] = useState(false);
   const [editingAnswerId, setEditingAnswerId] = useState<string | null>(null);
   const [editQuestionValue, setEditQuestionValue] = useState('');
+  const [editTagValues, setEditTagValues] = useState<FaqTag[]>([]);
   const [editAnswerValue, setEditAnswerValue] = useState('');
 
   const item = faqItem.data;
@@ -137,17 +139,36 @@ function FaqDetailPage() {
 
   const startEditQuestion = () => {
     setEditQuestionValue(item.question);
+    setEditTagValues(
+      Array.isArray(item.tags) && item.tags.length > 0 ? (item.tags as FaqTag[]) : [DEFAULT_FAQ_TAG]
+    );
     setEditingQuestion(true);
+  };
+
+  const toggleEditTag = (tag: FaqTag, checked: boolean) => {
+    setEditTagValues((prev) => {
+      if (checked) {
+        return prev.includes(tag) ? prev : [...prev, tag];
+      }
+      return prev.filter((value) => value !== tag);
+    });
   };
 
   const saveQuestion = () => {
     const trimmed = editQuestionValue.trim();
-    if (!trimmed || trimmed === item.question) {
+    if (!trimmed || editTagValues.length === 0) {
+      return;
+    }
+    const currentTags = Array.isArray(item.tags) && item.tags.length > 0 ? item.tags : [DEFAULT_FAQ_TAG];
+    const questionChanged = trimmed !== item.question;
+    const tagsChanged =
+      [...editTagValues].sort().join('|') !== [...currentTags].sort().join('|');
+    if (!questionChanged && !tagsChanged) {
       setEditingQuestion(false);
       return;
     }
     updateFaqItem.mutate(
-      { id: faqItemId, input: { question: trimmed } },
+      { id: faqItemId, input: { question: trimmed, tags: editTagValues } },
       {
         onSuccess: () => setEditingQuestion(false),
       }
@@ -197,6 +218,24 @@ function FaqDetailPage() {
                   onChange={(e) => setEditQuestionValue(e.target.value)}
                   rows={2}
                 />
+              </FormField>
+              <FormField label="Tags">
+                <Stack as="fieldset" gap={2} style={{ border: 0, margin: 0, padding: 0 }}>
+                  <legend style={{ display: 'none' }}>FAQ tags</legend>
+                  {FAQ_TAG_VALUES.map((tag) => (
+                    <label
+                      key={tag}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={editTagValues.includes(tag)}
+                        onChange={(e) => toggleEditTag(tag, e.target.checked)}
+                      />
+                      <span>{FAQ_TAG_LABELS[tag]}</span>
+                    </label>
+                  ))}
+                </Stack>
               </FormField>
               <ButtonGroup>
                 <FormTooltip content="Save question">

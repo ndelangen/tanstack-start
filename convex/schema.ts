@@ -1,6 +1,16 @@
 import { authTables } from '@convex-dev/auth/server';
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
+import { FAQ_TAG_VALUES } from '../src/app/faq/tags';
+
+const faqTagValidator = v.union(
+  v.literal(FAQ_TAG_VALUES[0]),
+  v.literal(FAQ_TAG_VALUES[1]),
+  v.literal(FAQ_TAG_VALUES[2]),
+  v.literal(FAQ_TAG_VALUES[3]),
+  v.literal(FAQ_TAG_VALUES[4]),
+  v.literal(FAQ_TAG_VALUES[5])
+);
 
 export default defineSchema({
   ...authTables,
@@ -99,6 +109,7 @@ export default defineSchema({
     ruleset_id: v.id('rulesets'),
     slug: v.string(),
     question: v.string(),
+    tags: v.optional(v.array(faqTagValidator)),
     asked_by: v.id('users'),
     created_at: v.string(),
     updated_at: v.string(),

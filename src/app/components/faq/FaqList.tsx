@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 
 import type { FaqItemWithDetails } from '@db/faq';
 import { Stack } from '@app/components/generic/layout';
+import { FAQ_TAG_LABELS, type FaqTag } from '@app/faq/tags';
 import { ProfileLink } from '@app/components/profile/ProfileLink';
 import { formatRelativeDate } from '@app/utils/formatRelativeDate';
 
@@ -14,22 +15,19 @@ interface FaqListProps {
   items: FaqItemWithDetails[];
   rulesetSlug: string;
   searchQuery: string;
+  selectedTag?: FaqTag;
 }
 
-export function FaqList({ items, rulesetSlug, searchQuery }: FaqListProps) {
-  const fuse = useMemo(
-    () =>
-      new Fuse(items, {
-        keys: ['question'],
-        threshold: 0.4,
-      }),
-    [items]
-  );
-
+export function FaqList({ items, rulesetSlug, searchQuery, selectedTag }: FaqListProps) {
   const filtered = useMemo(() => {
-    if (!searchQuery.trim()) return items;
-    return fuse.search(searchQuery.trim()).map((r) => r.item);
-  }, [items, searchQuery, fuse]);
+    const tagFiltered = selectedTag
+      ? items.filter((item) => (item.tags ?? []).includes(selectedTag))
+      : items;
+    if (!searchQuery.trim()) return tagFiltered;
+    return new Fuse(tagFiltered, { keys: ['question'], threshold: 0.4 })
+      .search(searchQuery.trim())
+      .map((r) => r.item);
+  }, [items, searchQuery, selectedTag]);
 
   if (items.length === 0) {
     return <p className={styles.empty}>No FAQ items yet.</p>;
@@ -63,6 +61,11 @@ export function FaqList({ items, rulesetSlug, searchQuery }: FaqListProps) {
                     <span className={styles.badge}>
                       {answerCount} {answerCount === 1 ? 'answer' : 'answers'}
                     </span>
+                    {(item.tags ?? []).map((tag) => (
+                      <span key={`${item._id}:${tag}`} className={styles.badge}>
+                        {FAQ_TAG_LABELS[tag as FaqTag]}
+                      </span>
+                    ))}
                   </span>
                   {item.asker_profile && (
                     <>

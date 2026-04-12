@@ -1,6 +1,7 @@
 import { v } from 'convex/values';
 
-import { faqAnswerSchema, faqQuestionSchema } from '../src/app/faq/validation';
+import { faqAnswerSchema, faqQuestionSchema, faqTagsSchema } from '../src/app/faq/validation';
+import { FAQ_TAG_VALUES } from '../src/app/faq/tags';
 import type { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { loadFaqItemsForRuleset } from './lib/faqRulesetList';
@@ -8,6 +9,15 @@ import { canAccessRuleset, requireAuthUserId } from './lib/policy';
 import { profileSummary } from './lib/profileSummary';
 import { nowIso } from './lib/utils';
 import type { MutationCtx, QueryCtx } from './types';
+
+const faqTagValidator = v.union(
+  v.literal(FAQ_TAG_VALUES[0]),
+  v.literal(FAQ_TAG_VALUES[1]),
+  v.literal(FAQ_TAG_VALUES[2]),
+  v.literal(FAQ_TAG_VALUES[3]),
+  v.literal(FAQ_TAG_VALUES[4]),
+  v.literal(FAQ_TAG_VALUES[5])
+);
 
 async function getRuleset(ctx: QueryCtx | MutationCtx, id: Id<'rulesets'>) {
   return await ctx.db.get(id);
@@ -203,6 +213,7 @@ export const createItem = mutation({
     ruleset_id: v.id('rulesets'),
     question: v.string(),
     answer: v.optional(v.string()),
+    tags: v.array(faqTagValidator),
   },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
@@ -214,6 +225,12 @@ export const createItem = mutation({
       throw new Error(msg || 'Invalid FAQ input');
     }
     const normalizedQuestion = parsedQuestion.data;
+    const parsedTags = faqTagsSchema.safeParse(args.tags);
+    if (!parsedTags.success) {
+      const msg = parsedTags.error.issues.map((i) => i.message).join(' ');
+      throw new Error(msg || 'Invalid FAQ input');
+    }
+    const normalizedTags = parsedTags.data;
 
     const now = nowIso();
     const slug = await allocateNextFaqItemSlug(ctx, args.ruleset_id);
@@ -221,6 +238,7 @@ export const createItem = mutation({
       ruleset_id: args.ruleset_id,
       slug,
       question: normalizedQuestion,
+      tags: normalizedTags,
       asked_by: userId,
       created_at: now,
       updated_at: now,
@@ -252,6 +270,7 @@ export const updateItem = mutation({
   args: {
     id: v.id('faq_items'),
     question: v.optional(v.string()),
+    tags: v.optional(v.array(faqTagValidator)),
     accepted_answer_id: v.optional(v.union(v.id('faq_answers'), v.null())),
   },
   handler: async (ctx, args) => {
@@ -267,6 +286,7 @@ export const updateItem = mutation({
     const patch: {
       updated_at: string;
       question?: string;
+      tags?: ((typeof FAQ_TAG_VALUES)[number])[];
       accepted_answer_id?: Id<'faq_answers'> | null;
     } = {
       updated_at: nowIso(),
@@ -282,6 +302,14 @@ export const updateItem = mutation({
     if (args.accepted_answer_id !== undefined) {
       await assertAcceptedAnswerBelongsToItem(ctx, item._id, args.accepted_answer_id);
       patch.accepted_answer_id = args.accepted_answer_id;
+    }
+    if (args.tags !== undefined) {
+      const parsedTags = faqTagsSchema.safeParse(args.tags);
+      if (!parsedTags.success) {
+        const msg = parsedTags.error.issues.map((i) => i.message).join(' ');
+        throw new Error(msg || 'Invalid FAQ input');
+      }
+      patch.tags = parsedTags.data;
     }
 
     await ctx.db.patch(item._id, patch);
