@@ -1,41 +1,14 @@
 import { Link, useLocation } from '@tanstack/react-router';
 import React, { useEffect, useRef, useState } from 'react';
 
-import { useCurrentProfile } from '@db/profiles';
-import { ProfileLink } from '@app/components/profile/ProfileLink';
-
-import './Page.css';
-
 import styles from './Page.module.css';
 
 const SCROLL_VAR = '--scroll-pct';
 
-function AuthNav() {
-  const profile = useCurrentProfile();
-
-  if (profile.data) {
-    return (
-      <ProfileLink
-        slug={profile.data.slug}
-        username={profile.data.username}
-        avatar_url={profile.data.avatar_url}
-        className={styles.avatarLink}
-        title={profile.data.username ?? 'Profile'}
-        showUsername={false}
-      />
-    );
-  }
-
-  return (
-    <Link to="/auth/login" activeProps={{ className: styles.navLinkActive }}>
-      Login
-    </Link>
-  );
-}
-
 export interface PageProps {
   head?: React.ReactNode;
   content: React.ReactNode;
+  navSlot?: React.ReactNode;
 }
 
 const update = () => {
@@ -48,7 +21,7 @@ const update = () => {
   el.style.setProperty(SCROLL_VAR, `${Math.min(100, Math.max(0, pct))}`);
 };
 
-export function Page({ head, content }: PageProps) {
+export function Page({ head, content, navSlot }: PageProps) {
   const tiny = !head;
   const location = useLocation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -134,7 +107,7 @@ export function Page({ head, content }: PageProps) {
               </Link>
             </div>
             <div className={styles.auth}>
-              <AuthNav />
+              {navSlot}
             </div>
           </nav>
           {head && <div className={styles.content}>{head}</div>}
