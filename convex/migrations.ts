@@ -2,13 +2,13 @@ import { Migrations } from '@convex-dev/migrations';
 import type { FunctionReference } from 'convex/server';
 import { v } from 'convex/values';
 
+import { DEFAULT_FAQ_TAG } from '../src/app/faq/tags';
 import { components, internal } from './_generated/api';
 import type { DataModel, Id } from './_generated/dataModel';
 import { internalMutation, mutation, query } from './_generated/server';
 import { ensureProfileForUser, profileSourcesFromUserDoc } from './lib/profileBootstrap';
 import { nowIso, slugify } from './lib/utils';
 import type { MutationCtx, QueryCtx } from './types';
-import { DEFAULT_FAQ_TAG } from '../src/app/faq/tags';
 
 type MigrationRef = FunctionReference<'mutation', 'internal'>;
 

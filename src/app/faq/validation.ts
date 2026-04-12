@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { FAQ_TAG_VALUES } from './tags';
 
 export const faqQuestionSchema = z.string().trim().min(1, 'Question is required');

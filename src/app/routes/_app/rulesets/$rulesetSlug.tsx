@@ -25,8 +25,8 @@ import { BlockCover } from '@app/components/generic/surfaces';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 import { GroupAssignPopover } from '@app/components/groups/GroupAssignPopover';
-import { FAQ_TAG_LABELS, FAQ_TAG_VALUES, type FaqTag } from '@app/faq/tags';
 import { ProfileLink } from '@app/components/profile/ProfileLink';
+import { FAQ_TAG_LABELS, FAQ_TAG_VALUES, type FaqTag } from '@app/faq/tags';
 
 import styles from './RulesetDetail.module.css';
 

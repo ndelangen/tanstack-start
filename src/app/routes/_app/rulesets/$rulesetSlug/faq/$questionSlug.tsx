@@ -22,8 +22,8 @@ import { MultilineTextField } from '@app/components/form/MultilineTextField';
 import { ButtonGroup, Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
-import { DEFAULT_FAQ_TAG, FAQ_TAG_LABELS, FAQ_TAG_VALUES, type FaqTag } from '@app/faq/tags';
 import { ProfileLink } from '@app/components/profile/ProfileLink';
+import { DEFAULT_FAQ_TAG, FAQ_TAG_LABELS, FAQ_TAG_VALUES, type FaqTag } from '@app/faq/tags';
 
 import styles from '../../$id/faq/FaqDetail.module.css';
 
@@ -159,10 +159,10 @@ function FaqDetailPage() {
     if (!trimmed || editTagValues.length === 0) {
       return;
     }
-    const currentTags = Array.isArray(item.tags) && item.tags.length > 0 ? item.tags : [DEFAULT_FAQ_TAG];
+    const currentTags =
+      Array.isArray(item.tags) && item.tags.length > 0 ? item.tags : [DEFAULT_FAQ_TAG];
     const questionChanged = trimmed !== item.question;
-    const tagsChanged =
-      [...editTagValues].sort().join('|') !== [...currentTags].sort().join('|');
+    const tagsChanged = [...editTagValues].sort().join('|') !== [...currentTags].sort().join('|');
     if (!questionChanged && !tagsChanged) {
       setEditingQuestion(false);
       return;

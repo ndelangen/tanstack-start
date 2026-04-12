@@ -1,6 +1,7 @@
 import { authTables } from '@convex-dev/auth/server';
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
+
 import { FAQ_TAG_VALUES } from '../src/app/faq/tags';
 
 const faqTagValidator = v.union(

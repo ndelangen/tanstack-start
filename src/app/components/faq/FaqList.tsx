@@ -4,8 +4,8 @@ import { useMemo } from 'react';
 
 import type { FaqItemWithDetails } from '@db/faq';
 import { Stack } from '@app/components/generic/layout';
-import { FAQ_TAG_LABELS, type FaqTag } from '@app/faq/tags';
 import { ProfileLink } from '@app/components/profile/ProfileLink';
+import { FAQ_TAG_LABELS, type FaqTag } from '@app/faq/tags';
 import { formatRelativeDate } from '@app/utils/formatRelativeDate';
 
 import { FaqItemList, FaqItemListRow } from './FaqItemList';

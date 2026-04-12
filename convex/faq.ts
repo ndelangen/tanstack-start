@@ -1,7 +1,7 @@
 import { v } from 'convex/values';
 
-import { faqAnswerSchema, faqQuestionSchema, faqTagsSchema } from '../src/app/faq/validation';
 import { FAQ_TAG_VALUES } from '../src/app/faq/tags';
+import { faqAnswerSchema, faqQuestionSchema, faqTagsSchema } from '../src/app/faq/validation';
 import type { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { loadFaqItemsForRuleset } from './lib/faqRulesetList';
@@ -286,7 +286,7 @@ export const updateItem = mutation({
     const patch: {
       updated_at: string;
       question?: string;
-      tags?: ((typeof FAQ_TAG_VALUES)[number])[];
+      tags?: (typeof FAQ_TAG_VALUES)[number][];
       accepted_answer_id?: Id<'faq_answers'> | null;
     } = {
       updated_at: nowIso(),

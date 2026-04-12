@@ -2,8 +2,8 @@ import { useQuery } from 'convex/react';
 
 import { db } from '@db/core';
 import { toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
-import { faqAnswerSchema, faqQuestionSchema, faqTagsSchema } from '@app/faq/validation';
 import type { FaqTag } from '@app/faq/tags';
+import { faqAnswerSchema, faqQuestionSchema, faqTagsSchema } from '@app/faq/validation';
 
 import { api } from '../../../convex/_generated/api';
 import type { Doc } from '../../../convex/_generated/dataModel';
@@ -324,7 +324,9 @@ export function useUpdateFaqItem() {
               ? faqQuestionSchema.parse(variables.input.question)
               : undefined,
           tags:
-            variables.input.tags !== undefined ? faqTagsSchema.parse(variables.input.tags) : undefined,
+            variables.input.tags !== undefined
+              ? faqTagsSchema.parse(variables.input.tags)
+              : undefined,
           accepted_answer_id: variables.input.accepted_answer_id,
         },
         {
