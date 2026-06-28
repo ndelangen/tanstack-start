@@ -299,13 +299,9 @@ export type FactionCreatePageData = {
 };
 
 export async function loadFaction(slug: string): Promise<FactionDetailPageData> {
-  const result = await db.query<FactionDetailPageData>(api.factions.getBySlug, {
+  return await db.query<FactionDetailPageData>(api.factions.getBySlug, {
     slug,
   });
-  return {
-    ...result,
-    faction: toFactionEntry(result.faction as unknown as FactionRow),
-  };
 }
 
 export async function loadFactionCreatePageContext(): Promise<FactionCreatePageData> {
