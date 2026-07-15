@@ -6,8 +6,14 @@ supabase/.temp
 .biome
 storybook-static
 .cache
+tmp/asset-publishing-proof/
+.wrangler/
+workers/proof/.dev.vars*
+!workers/proof/.dev.vars.example
 .env.local
 .env.e2e.local
 .playwright/
 playwright-report
 test-results
+.cursor/
+.codex-log/

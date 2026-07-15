@@ -5,6 +5,12 @@ import { createRootRoute, HeadContent, Link, Scripts } from '@tanstack/react-rou
 
 import { convex } from '@db/core';
 
+import '@fontsource/caladea/latin-400.css';
+import '@fontsource/caladea/latin-400-italic.css';
+import '@fontsource/caladea/latin-700.css';
+import '@fontsource/caladea/latin-700-italic.css';
+import '@fontsource/lato/latin.css';
+import '@fontsource/lato/latin-italic.css';
 import '../styles/fonts.css';
 import '../styles/tokens.css';
 
@@ -28,22 +34,7 @@ export const Route = createRootRoute({
         content: 'RPI_TL3TCH_KTbnzwKeXOJ8LY8EklOlsRStyfysz-24',
       },
     ],
-    links: [
-      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-      {
-        rel: 'preconnect',
-        href: 'https://fonts.gstatic.com',
-        crossOrigin: 'anonymous',
-      },
-      {
-        rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css2?family=Caladea:ital,wght@0,400;0,700;1,400;1,700&display=swap',
-      },
-      {
-        rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap',
-      },
-    ],
+    links: [],
   }),
   shellComponent: RootDocument,
   notFoundComponent: NotFound,
