@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { type CaptureEnv, captureCapabilityHeader, handleCaptureRoute } from './capture-route';
 
-const capability = 'render-capability-token-000000001';
+const capability = `${'e'.repeat(400)}.${'s'.repeat(43)}`;
 
 function env(
   assetFetch = vi.fn(async (_request: Request) => new Response('<html>capture</html>'))
