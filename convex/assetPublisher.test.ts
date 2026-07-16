@@ -559,12 +559,12 @@ describe('daily Browser reservation accounting', () => {
     expect(first).toMatchObject({
       status: 'acquired',
       replay: false,
-      browserReservationMs: 480_000,
-      dailyBrowserMs: 480_000,
+      browserReservationMs: 240_000,
+      dailyBrowserMs: 240_000,
     });
     await expect(
       t.mutation(internal.assetPublisher.acquireBatch, { batchToken: BATCH_ONE })
-    ).resolves.toMatchObject({ status: 'acquired', replay: true, dailyBrowserMs: 480_000 });
+    ).resolves.toMatchObject({ status: 'acquired', replay: true, dailyBrowserMs: 240_000 });
     await expect(
       t.mutation(internal.assetPublisher.settleBrowserReservation, {
         batchToken: BATCH_ONE,
@@ -611,13 +611,30 @@ describe('daily Browser reservation accounting', () => {
     expect(state).toMatchObject({
       batch_token: BATCH_ONE,
       browser_reservation_batch_token: BATCH_ONE,
-      daily_browser_ms: 480_000,
+      daily_browser_ms: 240_000,
     });
   });
 
   test('quota fails closed and the next UTC day clears a lost reservation', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
+    const { t: currentAccounting } = await seed();
+    await currentAccounting.run(async (ctx) => {
+      const state = await ctx.db
+        .query('asset_publisher_state')
+        .withIndex('by_key', (q) => q.eq('key', 'singleton'))
+        .unique();
+      if (!state) throw new Error('missing state');
+      await ctx.db.patch(state._id, { daily_browser_ms: 133_485 });
+    });
+    await expect(
+      currentAccounting.mutation(internal.assetPublisher.acquireBatch, { batchToken: BATCH_ONE })
+    ).resolves.toMatchObject({
+      status: 'acquired',
+      dailyBrowserMs: 373_485,
+      browserReservationMs: 240_000,
+    });
+
     const { t: exactAllowance } = await seed();
     await exactAllowance.run(async (ctx) => {
       const state = await ctx.db
@@ -625,14 +642,14 @@ describe('daily Browser reservation accounting', () => {
         .withIndex('by_key', (q) => q.eq('key', 'singleton'))
         .unique();
       if (!state) throw new Error('missing state');
-      await ctx.db.patch(state._id, { daily_browser_ms: 120_000 });
+      await ctx.db.patch(state._id, { daily_browser_ms: 360_000 });
     });
     await expect(
       exactAllowance.mutation(internal.assetPublisher.acquireBatch, { batchToken: BATCH_ONE })
     ).resolves.toMatchObject({
       status: 'acquired',
       dailyBrowserMs: 600_000,
-      browserReservationMs: 480_000,
+      browserReservationMs: 240_000,
     });
 
     const { t: quota } = await seed();
@@ -642,7 +659,7 @@ describe('daily Browser reservation accounting', () => {
         .withIndex('by_key', (q) => q.eq('key', 'singleton'))
         .unique();
       if (!state) throw new Error('missing state');
-      await ctx.db.patch(state._id, { daily_browser_ms: 120_001 });
+      await ctx.db.patch(state._id, { daily_browser_ms: 360_001 });
     });
     await expect(
       quota.mutation(internal.assetPublisher.acquireBatch, { batchToken: BATCH_ONE })
@@ -659,7 +676,7 @@ describe('daily Browser reservation accounting', () => {
     ).resolves.toMatchObject({
       status: 'acquired',
       batchToken: BATCH_TWO,
-      dailyBrowserMs: 480_000,
+      dailyBrowserMs: 240_000,
     });
   });
 
@@ -684,7 +701,7 @@ describe('daily Browser reservation accounting', () => {
     expect(before?.batch_token).toBeUndefined();
     expect(before).toMatchObject({
       browser_reservation_batch_token: BATCH_ONE,
-      daily_browser_ms: 480_000,
+      daily_browser_ms: 240_000,
     });
     await expect(
       t.mutation(internal.assetPublisher.settleBrowserReservation, {
@@ -1118,7 +1135,7 @@ describe('publisher HTTP authorization separation', () => {
         status: 'acquired',
         replay: true,
         batchToken: BATCH_ONE,
-        dailyBrowserMs: 480_000,
+        dailyBrowserMs: 240_000,
       });
       const differentAcquisition = (await (
         await post('/asset-publishing/executor/acquire', {

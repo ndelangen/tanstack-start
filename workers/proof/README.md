@@ -197,8 +197,9 @@ navigation, readiness, bounds validation, PDF generation, and parsing. It is not
 On expiry the consumer immediately starts context/browser closure, waits at most 15 seconds for
 cleanup, records `closed`, `error`, or `cleanup_timed_out`, checkpoints failure, and acknowledges the
 ordinary handled failure. Code rejects a deadline above six minutes, leaving at least 1 minute 45
-seconds including cleanup before the future eight-minute production soft budget and far more before
-the Queue's 15-minute wall limit.
+seconds including cleanup before the then-planned eight-minute production soft budget and far more
+before the Queue's 15-minute wall limit. This proof-only historical bound is independent of the
+current production publisher deadline.
 
 ## One manual Queue message
 

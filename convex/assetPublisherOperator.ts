@@ -2,7 +2,7 @@ import { v } from 'convex/values';
 
 import type { Doc } from './_generated/dataModel';
 import { internalMutation } from './_generated/server';
-import { BROWSER_RESERVATION_MS, FREE_BROWSER_ALLOWANCE_MS } from './lib/assetPublisherLimits';
+import { FREE_BROWSER_ALLOWANCE_MS } from './lib/assetPublisherLimits';
 import { publisherTokenSchema } from './lib/assetPublisherSchemas';
 import {
   assertFirstPublicationCounterReady,
@@ -21,6 +21,9 @@ import type { MutationCtx } from './types';
 const rendererValidator = v.literal(INITIAL_FACTION_SHEET_RENDERER_VERSION);
 const targetPrerequisiteValidator = v.literal(FACTION_SHEET_TARGET_ACTIVATION_PREREQUISITE);
 const storagePrerequisiteValidator = v.literal(FACTION_SHEET_STORAGE_ACTIVATION_PREREQUISITE);
+// This one-shot maintenance contract reconciles the exact stale reservation created by the
+// 2026-07-16 canary. It is historical evidence, not the reservation for new acquisitions.
+const BROWSER_USAGE_RECONCILIATION_RESERVATION_MS = 8 * 60 * 1_000;
 
 async function exactConfigOrNull(ctx: MutationCtx) {
   const configs = await ctx.db
@@ -228,7 +231,7 @@ export const reconcileCurrentBrowserUsage = internalMutation({
       !publisherTokenSchema.safeParse(args.expectedBrowserReservationBatchToken).success ||
       !Number.isSafeInteger(args.expectedDailyBrowserMs) ||
       args.expectedDailyBrowserMs < 0 ||
-      args.expectedBrowserReservedMs !== BROWSER_RESERVATION_MS ||
+      args.expectedBrowserReservedMs !== BROWSER_USAGE_RECONCILIATION_RESERVATION_MS ||
       !Number.isSafeInteger(args.replacementDailyBrowserMs) ||
       args.replacementDailyBrowserMs < 0 ||
       args.replacementDailyBrowserMs > FREE_BROWSER_ALLOWANCE_MS ||

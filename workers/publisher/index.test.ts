@@ -42,7 +42,7 @@ function publisherEnv(): Env {
     CONVEX_RENDER_URL: 'https://convex.invalid/asset-publishing/render',
     SUPPORTED_RENDERER_VERSION: rendererManifest.rendererVersion,
     EXECUTOR_MAX_ITEMS: '1',
-    SOFT_DEADLINE_MS: '480000',
+    SOFT_DEADLINE_MS: '240000',
     UPLOAD_MARGIN_MS: '120000',
     BROWSER_CAPTURE_TIMEOUT_MS: '45000',
     BROWSER_CLEANUP_GRACE_MS: '15000',
@@ -205,8 +205,8 @@ describe('publisher Worker structured-log security boundary', () => {
           replay: false,
           batchToken: TRIGGER_ID,
           leaseExpiresAt: now + 720_000,
-          browserReservationMs: 480_000,
-          dailyBrowserMs: 480_000,
+          browserReservationMs: 240_000,
+          dailyBrowserMs: 240_000,
         });
       }
       if (url.endsWith('/release-batch')) {

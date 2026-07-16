@@ -71,7 +71,7 @@ afterEach(() => {
 });
 
 describe('executeOnePdfProof', () => {
-  test('reserves explicit cleanup margin before the future eight-minute soft budget', () => {
+  test('reserves explicit cleanup margin before the then-planned eight-minute soft budget', () => {
     expect(MAX_BROWSER_CAPTURE_DEADLINE_MS + BROWSER_CLEANUP_GRACE_MS).toBeLessThan(480_000);
   });
 

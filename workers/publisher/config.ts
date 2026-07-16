@@ -47,7 +47,7 @@ export function parsePublisherConfig(env: Env): PublisherConfig {
     throw new Error('Configured renderer must equal the embedded renderer compatibility version');
   }
   const maxItems = integer('EXECUTOR_MAX_ITEMS', env.EXECUTOR_MAX_ITEMS, 1, 1);
-  const softDeadlineMs = integer('SOFT_DEADLINE_MS', env.SOFT_DEADLINE_MS, 1, 480_000);
+  const softDeadlineMs = integer('SOFT_DEADLINE_MS', env.SOFT_DEADLINE_MS, 1, 240_000);
   const uploadMarginMs = integer('UPLOAD_MARGIN_MS', env.UPLOAD_MARGIN_MS, 120_000, 120_000);
   const browserCaptureTimeoutMs = integer(
     'BROWSER_CAPTURE_TIMEOUT_MS',
