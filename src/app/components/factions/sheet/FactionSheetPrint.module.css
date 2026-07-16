@@ -26,11 +26,6 @@
 }
 
 @media print {
-  @page {
-    margin: 0;
-    size: auto;
-  }
-
   .root {
     min-height: unset;
     print-color-adjust: exact;

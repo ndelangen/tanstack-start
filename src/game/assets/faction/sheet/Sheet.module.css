@@ -299,13 +299,15 @@
 
 @media print {
   @page {
-    size: 150mm 195mm;
     margin: 0;
-    padding: 0;
+    size: 150mm 195mm;
   }
 
   .page {
+    width: 150mm;
+    height: 195mm;
+    padding-top: 0;
+    overflow: hidden;
     border-bottom: 0;
-    page-break-after: always;
   }
 }

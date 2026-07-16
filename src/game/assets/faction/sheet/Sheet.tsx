@@ -65,7 +65,7 @@ export const FactionSheet = (props: SheetProps) => {
 
 export function FactionSheetPage1(props: SheetProps) {
   return (
-    <div className={styles.page}>
+    <div className={styles.page} data-faction-sheet-page="1">
       <div className={`${styles.page_title} ${styles.title}`}>{props.name}</div>
       <div className={styles.logo}>
         {isAssetSheet(props) ? (
@@ -121,7 +121,7 @@ export function FactionSheetPage2(props: SheetProps) {
       {props.rules.advantages.filter((r) => !!r.karama).length > 0 ||
       props.troops.length > 0 ||
       props.leaders.length > 0 ? (
-        <div className={styles.page}>
+        <div className={styles.page} data-faction-sheet-page="2">
           <div className={`${styles.page_subtitle} ${styles.subtitle}`}>Karama effects</div>
           <div className={styles.details}>
             <div className={styles.karama}>
@@ -161,7 +161,7 @@ export function FactionSheetPage2(props: SheetProps) {
 
                           {t.back && (
                             <>
-                              <img className={styles.icon} src="vector/icon/flip.svg" alt="Flip" />
+                              <img className={styles.icon} src="/vector/icon/flip.svg" alt="Flip" />
                               <div>to:</div>
                               <div>
                                 <TroopToken
@@ -194,7 +194,7 @@ export function FactionSheetPage2(props: SheetProps) {
 
                         {t.back && (
                           <>
-                            <img className={styles.icon} src="vector/icon/flip.svg" alt="Flip" />
+                            <img className={styles.icon} src="/vector/icon/flip.svg" alt="Flip" />
                             <div>to:</div>
                             <img src={t.back.image} alt={t.back.name} />
                             <section>
