@@ -11,7 +11,7 @@ function env(overrides: Record<string, string> = {}): Env {
     CONVEX_POLL_URL: 'https://convex.example.com/poll',
     CONVEX_EXECUTOR_BASE_URL: 'https://convex.example.com/executor',
     CONVEX_RENDER_URL: 'https://convex.example.com/render',
-    SUPPORTED_RENDERER_VERSION: rendererManifest.rendererId,
+    SUPPORTED_RENDERER_VERSION: rendererManifest.rendererVersion,
     EXECUTOR_MAX_ITEMS: '1',
     SOFT_DEADLINE_MS: '480000',
     UPLOAD_MARGIN_MS: '120000',
@@ -46,9 +46,12 @@ describe('publisher lifecycle configuration', () => {
     ).toThrow(/absolute executor lifecycle deadline/);
   });
 
-  test('rejects a mutable renderer label that does not match the embedded manifest', () => {
+  test.each([
+    rendererManifest.rendererId,
+    'mutable-renderer-alias',
+  ])('rejects unsupported renderer version %s', (rendererVersion) => {
     expect(() =>
-      parsePublisherConfig(env({ SUPPORTED_RENDERER_VERSION: 'mutable-renderer-alias' }))
-    ).toThrow(/embedded immutable renderer manifest/);
+      parsePublisherConfig(env({ SUPPORTED_RENDERER_VERSION: rendererVersion }))
+    ).toThrow(/embedded renderer compatibility version/);
   });
 });

@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { describe, expect, test } from 'vitest';
 
-import { PUBLISHER_RENDERER_CONTRACT } from './renderer-contract';
+import { PUBLISHER_RENDERER_CONTRACT, PUBLISHER_RENDERER_VERSION } from './renderer-contract';
 import {
   computeRendererManifestDigest,
   RENDERER_RUNTIME_CLOSURE_PATHS,
@@ -27,6 +27,11 @@ function entries(overrides: Partial<Record<string, string>> = {}): RendererManif
 }
 
 describe('immutable renderer manifest digest', () => {
+  test('keeps the semantic Convex renderer version explicit in the hashed contract', () => {
+    expect(PUBLISHER_RENDERER_VERSION).toBe('faction-sheet-v1');
+    expect(PUBLISHER_RENDERER_CONTRACT.rendererVersion).toBe(PUBLISHER_RENDERER_VERSION);
+  });
+
   test('is deterministic independent of input order', () => {
     const forward = entries();
     expect(computeRendererManifestDigest(forward)).toBe(
@@ -52,6 +57,15 @@ describe('immutable renderer manifest digest', () => {
       computeRendererManifestDigest(entries(), {
         ...PUBLISHER_RENDERER_CONTRACT,
         pdf: { ...PUBLISHER_RENDERER_CONTRACT.pdf, pageWidthMm: 151 },
+      })
+    ).not.toBe(computeRendererManifestDigest(entries()));
+  });
+
+  test('changes when the semantic renderer version changes', () => {
+    expect(
+      computeRendererManifestDigest(entries(), {
+        ...PUBLISHER_RENDERER_CONTRACT,
+        rendererVersion: 'faction-sheet-v2',
       })
     ).not.toBe(computeRendererManifestDigest(entries()));
   });

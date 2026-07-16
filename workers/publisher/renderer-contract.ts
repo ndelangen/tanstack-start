@@ -1,4 +1,7 @@
+export const PUBLISHER_RENDERER_VERSION = 'faction-sheet-v1' as const;
+
 export const PUBLISHER_RENDERER_CONTRACT = {
+  rendererVersion: PUBLISHER_RENDERER_VERSION,
   viewport: { width: 1_500, height: 1_950, deviceScaleFactor: 1 },
   pdf: {
     pageCount: 2,

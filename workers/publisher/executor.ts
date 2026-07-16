@@ -550,7 +550,7 @@ export async function executeOwnedBatch(
     latestLeaseExpiresAt = claim.leaseExpiresAt;
     telemetry.observeLease('claim', latestLeaseExpiresAt);
     dependencies.fault?.('after_claim');
-    if (claim.rendererVersion !== rendererManifest.rendererId) {
+    if (claim.rendererVersion !== config.supportedRendererVersion) {
       status = 'systemic_stop';
       outcomeError = new Error('Claim renderer is not supported by this deployment');
       return;
@@ -706,7 +706,7 @@ export async function executeOwnedBatch(
     await closeAndSettle();
   }
 
-  if (claim && claim.rendererVersion !== rendererManifest.rendererId) {
+  if (claim && claim.rendererVersion !== config.supportedRendererVersion) {
     await bestEffort(
       async () =>
         await telemetry.convex('release', async () =>
@@ -843,7 +843,7 @@ export async function executeOwnedBatch(
       ? {
           claimCorrelationHash,
           rendererId: rendererManifest.rendererId,
-          rendererMismatch: claim.rendererVersion !== rendererManifest.rendererId,
+          rendererMismatch: claim.rendererVersion !== config.supportedRendererVersion,
           outcome: completed ? 'completed' : staleItem ? 'stale' : 'failed',
           failureClass: invocationFailureClass,
           pdf: {

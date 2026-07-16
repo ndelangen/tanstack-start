@@ -120,7 +120,8 @@ export function publisherBuildIdentity(
     rendererId: rendererManifest.rendererId,
     rendererManifestDigest: rendererManifest.digest,
     configuredRendererVersion,
-    rendererConfigurationMatchesManifest: configuredRendererVersion === rendererManifest.rendererId,
+    rendererConfigurationMatchesManifest:
+      configuredRendererVersion === rendererManifest.rendererVersion,
   };
 }
 

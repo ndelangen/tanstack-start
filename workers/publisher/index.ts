@@ -66,12 +66,13 @@ export const publisherWorker = {
           publisherEnabled: isPublisherEnabled(env),
           cronDispatchEnabled: isCronDispatchEnabled(env),
           maxItems: 1,
-          supportedRendererVersion: rendererManifest.rendererId,
+          supportedRendererVersion: rendererManifest.rendererVersion,
           rendererSupport: {
-            supportedRendererIds: [rendererManifest.rendererId],
+            supportedRendererVersions: [rendererManifest.rendererVersion],
+            rendererId: rendererManifest.rendererId,
             configuredRendererVersion: env.SUPPORTED_RENDERER_VERSION,
             configurationMatchesManifest:
-              String(env.SUPPORTED_RENDERER_VERSION) === rendererManifest.rendererId,
+              String(env.SUPPORTED_RENDERER_VERSION) === rendererManifest.rendererVersion,
           },
           identity,
         },

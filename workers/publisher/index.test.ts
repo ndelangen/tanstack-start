@@ -40,7 +40,7 @@ function publisherEnv(now: number): Env {
     CONVEX_POLL_URL: 'https://convex.invalid/asset-publishing/poll',
     CONVEX_EXECUTOR_BASE_URL: 'https://convex.invalid/asset-publishing/executor',
     CONVEX_RENDER_URL: 'https://convex.invalid/asset-publishing/render',
-    SUPPORTED_RENDERER_VERSION: rendererManifest.rendererId,
+    SUPPORTED_RENDERER_VERSION: rendererManifest.rendererVersion,
     EXECUTOR_MAX_ITEMS: '1',
     SOFT_DEADLINE_MS: '480000',
     UPLOAD_MARGIN_MS: '120000',
@@ -138,25 +138,26 @@ describe('publisher Worker structured-log security boundary', () => {
     );
     await expect(response.json()).resolves.toMatchObject({
       maxItems: 1,
-      supportedRendererVersion: rendererManifest.rendererId,
+      supportedRendererVersion: rendererManifest.rendererVersion,
       identity: {
         workerVersionId: 'worker-version-one',
         workerVersionTag: 'ticket-7a',
         workerVersionTimestamp: '2026-07-16T12:00:00.000Z',
         rendererId: expect.stringMatching(/^faction-sheet\/sha256:[0-9a-f]{64}$/),
         rendererManifestDigest: expect.stringMatching(/^[0-9a-f]{64}$/),
-        configuredRendererVersion: rendererManifest.rendererId,
+        configuredRendererVersion: rendererManifest.rendererVersion,
         rendererConfigurationMatchesManifest: true,
       },
       rendererSupport: {
-        supportedRendererIds: [rendererManifest.rendererId],
-        configuredRendererVersion: rendererManifest.rendererId,
+        supportedRendererVersions: [rendererManifest.rendererVersion],
+        rendererId: rendererManifest.rendererId,
+        configuredRendererVersion: rendererManifest.rendererVersion,
         configurationMatchesManifest: true,
       },
     });
   });
 
-  test('health never advertises a mutable renderer label as supported', async () => {
+  test('health never advertises an unsupported renderer version as compatible', async () => {
     const environment = publisherEnv(Date.now());
     (environment as unknown as { SUPPORTED_RENDERER_VERSION: string }).SUPPORTED_RENDERER_VERSION =
       'mutable-renderer-alias';
@@ -166,9 +167,10 @@ describe('publisher Worker structured-log security boundary', () => {
       { waitUntil: vi.fn() } as unknown as ExecutionContext
     );
     await expect(response.json()).resolves.toMatchObject({
-      supportedRendererVersion: rendererManifest.rendererId,
+      supportedRendererVersion: rendererManifest.rendererVersion,
       rendererSupport: {
-        supportedRendererIds: [rendererManifest.rendererId],
+        supportedRendererVersions: [rendererManifest.rendererVersion],
+        rendererId: rendererManifest.rendererId,
         configuredRendererVersion: 'mutable-renderer-alias',
         configurationMatchesManifest: false,
       },
