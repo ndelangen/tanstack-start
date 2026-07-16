@@ -14,11 +14,9 @@ import {
 } from '../../src/app/capture/publisher-diagnostics';
 import { inspectChromiumPdf } from '../proof/pdf';
 import { captureCapabilityCookie, captureDeadlineCookie } from './capture-route';
+import { PUBLISHER_RENDERER_CONTRACT } from './renderer-contract';
 
-const FIXED_VIEWPORT = { width: 1_500, height: 1_950 };
-const EXPECTED_PAGE_WIDTH_MM = 150;
-const EXPECTED_PAGE_HEIGHT_MM = 195;
-const PAGE_SIZE_TOLERANCE_MM = 0.5;
+const { pdf: PDF_CONTRACT, viewport: VIEWPORT_CONTRACT } = PUBLISHER_RENDERER_CONTRACT;
 
 export type CapturedPdf = {
   bytes: Uint8Array;
@@ -41,10 +39,13 @@ export function assertCapturedPdfOutput(inspection: {
   pageWidthMm: number;
   pageHeightMm: number;
 }): void {
-  if (inspection.pageCount !== 2) throw new Error('Captured PDF must contain exactly two pages');
+  if (inspection.pageCount !== PDF_CONTRACT.pageCount) {
+    throw new Error('Captured PDF must contain exactly two pages');
+  }
   if (
-    Math.abs(inspection.pageWidthMm - EXPECTED_PAGE_WIDTH_MM) > PAGE_SIZE_TOLERANCE_MM ||
-    Math.abs(inspection.pageHeightMm - EXPECTED_PAGE_HEIGHT_MM) > PAGE_SIZE_TOLERANCE_MM
+    Math.abs(inspection.pageWidthMm - PDF_CONTRACT.pageWidthMm) >
+      PDF_CONTRACT.pageSizeToleranceMm ||
+    Math.abs(inspection.pageHeightMm - PDF_CONTRACT.pageHeightMm) > PDF_CONTRACT.pageSizeToleranceMm
   ) {
     throw new Error('Captured PDF MediaBoxes must be 150 mm × 195 mm within 0.5 mm');
   }
@@ -156,12 +157,12 @@ async function assertPageBounds(page: Page, deadline: number): Promise<void> {
   if (margins.some((margin) => margin !== '0px')) {
     throw new Error(`Capture document body margins are not zero: ${margins.join(' ')}`);
   }
-  const width = (EXPECTED_PAGE_WIDTH_MM * 96) / 25.4;
-  const height = (EXPECTED_PAGE_HEIGHT_MM * 96) / 25.4;
+  const width = (PDF_CONTRACT.pageWidthMm * 96) / 25.4;
+  const height = (PDF_CONTRACT.pageHeightMm * 96) / 25.4;
   const pages = page.locator('[data-faction-sheet-page]');
-  if ((await pages.count()) !== 2)
-    throw new Error('Capture route did not render exactly two pages');
-  for (let index = 0; index < 2; index += 1) {
+  if ((await pages.count()) !== PDF_CONTRACT.pageCount)
+    throw new Error(`Capture route did not render exactly ${PDF_CONTRACT.pageCount} pages`);
+  for (let index = 0; index < PDF_CONTRACT.pageCount; index += 1) {
     const bounds = await pages.nth(index).boundingBox({ timeout: remaining(deadline) });
     if (
       !bounds ||
@@ -183,14 +184,18 @@ export class PublisherBrowserSession {
     private readonly captureBaseUrl: string
   ) {}
 
+  sessionId(): string {
+    return this.browser.sessionId();
+  }
+
   async capture(renderCapability: string, timeoutMs: number): Promise<CapturedPdf> {
     const deadline = performance.now() + timeoutMs;
     const lifecycleDeadlineAt = Date.now() + timeoutMs;
     this.context = await this.browser.newContext({
-      deviceScaleFactor: 1,
+      deviceScaleFactor: VIEWPORT_CONTRACT.deviceScaleFactor,
       locale: 'en-US',
       timezoneId: 'UTC',
-      viewport: FIXED_VIEWPORT,
+      viewport: { width: VIEWPORT_CONTRACT.width, height: VIEWPORT_CONTRACT.height },
     });
     await this.context.addCookies(
       publisherCaptureCookies(this.captureBaseUrl, renderCapability, lifecycleDeadlineAt)
@@ -227,10 +232,10 @@ export class PublisherBrowserSession {
     await assertPageBounds(page, deadline);
     assertCaptureDiagnostics(diagnostics);
     const bytes = await page.pdf({
-      displayHeaderFooter: false,
-      margin: { top: 0, right: 0, bottom: 0, left: 0 },
-      preferCSSPageSize: true,
-      printBackground: true,
+      displayHeaderFooter: PDF_CONTRACT.displayHeaderFooter,
+      margin: PDF_CONTRACT.marginMm,
+      preferCSSPageSize: PDF_CONTRACT.preferCssPageSize,
+      printBackground: PDF_CONTRACT.printBackground,
     });
     const inspection = await inspectPublisherPdf(bytes);
     assertCaptureDiagnostics(diagnostics);

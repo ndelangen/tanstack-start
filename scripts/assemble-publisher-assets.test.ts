@@ -52,6 +52,20 @@ describe('publisher Static Assets assembly', () => {
     expect(report.largestAsset.bytes).toBeGreaterThan(0);
   });
 
+  test('canonicalizes only the volatile TanStack root hydration timestamp', () => {
+    const { app, publisher } = fixture();
+    writeFileSync(
+      path.join(app, '_shell.html'),
+      '<script>before;i:"__root__\0",u:1784218854699,s:"success",ssr:!0;after</script>'
+    );
+
+    assemblePublisherAssets(app, publisher);
+
+    const expected = '<script>before;i:"__root__\0",u:0,s:"success",ssr:!0;after</script>';
+    expect(readFileSync(path.join(publisher, '_shell.html'), 'utf8')).toBe(expected);
+    expect(readFileSync(path.join(publisher, 'index.html'), 'utf8')).toBe(expected);
+  });
+
   test('fails closed for oversized files and symbolic links', () => {
     const oversized = fixture();
     writeFileSync(

@@ -10,15 +10,26 @@ import {
   type QueueDependencies,
 } from './queue';
 import type { AssetBucket } from './r2';
+import { rendererManifest } from './renderer-manifest.generated';
+import type { PublisherBuildIdentity } from './telemetry';
 import { fakeR2Object } from './test-helpers';
 
 const NOW = Date.parse('2026-07-16T12:00:00.000Z');
+const identity: PublisherBuildIdentity = {
+  workerVersionId: 'worker-version-one',
+  workerVersionTag: 'ticket-7a',
+  workerVersionTimestamp: '2026-07-16T12:00:00.000Z',
+  rendererId: rendererManifest.rendererId,
+  rendererManifestDigest: rendererManifest.digest,
+  configuredRendererVersion: rendererManifest.rendererId,
+  rendererConfigurationMatchesManifest: true,
+};
 const config: PublisherConfig = {
   captureBaseUrl: 'https://publisher.example.com',
   convexPollUrl: 'https://convex.example.com/poll',
   convexExecutorBaseUrl: 'https://convex.example.com/executor',
   convexRenderUrl: 'https://convex.example.com/render',
-  supportedRendererVersion: 'faction-sheet-v1',
+  supportedRendererVersion: rendererManifest.rendererId,
   maxItems: 1,
   softDeadlineMs: 480_000,
   uploadMarginMs: 120_000,
@@ -54,7 +65,7 @@ function dependencies(acquire: () => Promise<AcquireResult>): QueueDependencies 
     batchToken: 'batch-token-0000000000000001',
     claimToken: 'claim-token-0000000000000001',
     generation: 1,
-    rendererVersion: 'faction-sheet-v1',
+    rendererVersion: rendererManifest.rendererId,
     leaseExpiresAt: NOW + 720_000,
     payloadHash: 'a'.repeat(64),
     renderCapability: 'render-capability-token-000000001',
@@ -86,6 +97,7 @@ function dependencies(acquire: () => Promise<AcquireResult>): QueueDependencies 
       bucket,
       browserAvailable: async () => true,
       openBrowser: async () => ({
+        sessionId: () => 'browser-session-sensitive-0001',
         capture: async () => ({
           bytes: new Uint8Array([1]),
           pageCount: 2,
@@ -100,6 +112,8 @@ function dependencies(acquire: () => Promise<AcquireResult>): QueueDependencies 
       }),
       now: () => NOW,
     },
+    identity,
+    queueName: 'faction-sheet-publisher',
     now: () => NOW,
     log: vi.fn(),
   };
@@ -204,11 +218,8 @@ describe('Queue acknowledgement and retry policy', () => {
       browserReservationMs: 480_000,
       dailyBrowserMs: 480_000,
     };
-    const result = await consumePublisherMessage(
-      delivery.value,
-      config,
-      dependencies(async () => acquired)
-    );
+    const deps = dependencies(async () => acquired);
+    const result = await consumePublisherMessage(delivery.value, config, deps);
     expect(result).toMatchObject({
       action: 'ack',
       reason: 'consumer_owned_outcome',
@@ -216,5 +227,66 @@ describe('Queue acknowledgement and retry policy', () => {
     });
     expect(delivery.ack).toHaveBeenCalledOnce();
     expect(delivery.retry).not.toHaveBeenCalled();
+    expect(deps.log).toHaveBeenCalledTimes(2);
+    const serializedTelemetry = JSON.stringify(vi.mocked(deps.log).mock.calls);
+    expect(serializedTelemetry).toContain('asset_publisher_item_telemetry');
+    expect(serializedTelemetry).toContain('asset_publisher_invocation_telemetry');
+    expect(serializedTelemetry).not.toContain(acquired.batchToken);
+    expect(serializedTelemetry).not.toContain('claim-token-0000000000000001');
+    expect(serializedTelemetry).not.toContain('render-capability-token-000000001');
+    expect(serializedTelemetry).not.toContain('browser-session-sensitive-0001');
+    expect(result.report?.telemetry.batchCorrelationHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(result.report?.telemetry.item?.claimCorrelationHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(result.report?.telemetry.browser.sessionCorrelationHash).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  test('a pre-claim systemic stop emits no item event or failed-item count', async () => {
+    const delivery = message(wakeUp);
+    const acquired: Extract<AcquireResult, { status: 'acquired' }> = {
+      status: 'acquired',
+      replay: false,
+      batchToken: 'batch-token-0000000000000001',
+      leaseExpiresAt: NOW + 720_000,
+      browserReservationMs: 480_000,
+      dailyBrowserMs: 480_000,
+    };
+    const deps = dependencies(async () => acquired);
+    deps.owned.browserAvailable = async () => false;
+    const result = await consumePublisherMessage(delivery.value, config, deps);
+    expect(result.report?.telemetry).toMatchObject({
+      counts: { claimed: 0, completed: 0, stale: 0, failed: 0 },
+      item: null,
+    });
+    expect(deps.log).toHaveBeenCalledOnce();
+    expect(JSON.stringify(vi.mocked(deps.log).mock.calls)).not.toContain(
+      'asset_publisher_item_telemetry'
+    );
+  });
+
+  test('a rejected secret-bearing renderer label cannot survive the report or Queue event', async () => {
+    const delivery = message(wakeUp);
+    const acquired: Extract<AcquireResult, { status: 'acquired' }> = {
+      status: 'acquired',
+      replay: false,
+      batchToken: 'batch-token-0000000000000001',
+      leaseExpiresAt: NOW + 720_000,
+      browserReservationMs: 480_000,
+      dailyBrowserMs: 480_000,
+    };
+    const deps = dependencies(async () => acquired);
+    const secretRenderer = `Bearer SECRET_RENDERER_TOKEN ${'x'.repeat(100_000)}`;
+    const originalClaim = await deps.client.claim(acquired.batchToken);
+    if (originalClaim.status !== 'claimed') throw new Error('Expected claimed fixture');
+    deps.client.claim = async () => ({ ...originalClaim, rendererVersion: secretRenderer });
+    const result = await consumePublisherMessage(delivery.value, config, deps);
+    const serialized = JSON.stringify({ result, logs: vi.mocked(deps.log).mock.calls });
+    expect(result.report?.telemetry.item).toMatchObject({
+      rendererId: rendererManifest.rendererId,
+      rendererMismatch: true,
+      failureClass: 'renderer',
+    });
+    expect(serialized).not.toContain('SECRET_RENDERER_TOKEN');
+    expect(serialized).not.toContain('rendererVersion');
+    expect(serialized).not.toContain('x'.repeat(1_000));
   });
 });

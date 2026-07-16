@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { createCacheSigningSecret } from '../../convex/lib/assetPublisherHttp';
 import { createWakeUp } from './dispatch';
+import { rendererManifest } from './renderer-manifest.generated';
 
 const browserMocks = vi.hoisted(() => ({
   available: vi.fn(),
@@ -39,7 +40,7 @@ function publisherEnv(now: number): Env {
     CONVEX_POLL_URL: 'https://convex.invalid/asset-publishing/poll',
     CONVEX_EXECUTOR_BASE_URL: 'https://convex.invalid/asset-publishing/executor',
     CONVEX_RENDER_URL: 'https://convex.invalid/asset-publishing/render',
-    SUPPORTED_RENDERER_VERSION: 'faction-sheet-v1',
+    SUPPORTED_RENDERER_VERSION: rendererManifest.rendererId,
     EXECUTOR_MAX_ITEMS: '1',
     SOFT_DEADLINE_MS: '480000',
     UPLOAD_MARGIN_MS: '120000',
@@ -56,6 +57,11 @@ function publisherEnv(now: number): Env {
     ASSET_PUBLISHER_POLL_SECRET: 'poll-secret-not-shared',
     ASSET_PUBLISHER_EXECUTOR_SECRET: 'executor-secret-not-shared',
     ASSET_PUBLISHER_CACHE_TOKEN_SECRET: createCacheSigningSecret(),
+    CF_VERSION_METADATA: {
+      id: 'worker-version-one',
+      tag: 'ticket-7a',
+      timestamp: '2026-07-16T12:00:00.000Z',
+    },
     ASSETS: {
       fetch: vi.fn(async () => new Response('<html>spa shell</html>', { status: 200 })),
     },
@@ -67,11 +73,8 @@ function publisherEnv(now: number): Env {
 
 function assertNoSignedUrl(logCalls: unknown[][], signedUrl: string): void {
   const serialized = JSON.stringify(logCalls);
-  expect(serialized).toContain('https://cdn.example.com/<redacted>');
-  expect(serialized.match(/<redacted>/g)).toHaveLength(1);
-  if (signedUrl.startsWith('`')) {
-    expect(serialized).toContain('`https://cdn.example.com/<redacted>`');
-  }
+  expect(serialized).not.toContain('cdn.example.com');
+  expect(serialized).not.toContain(signedUrl);
   for (const secret of SECRETS) expect(serialized).not.toContain(secret);
 }
 
@@ -126,7 +129,53 @@ describe('publisher Worker structured-log security boundary', () => {
     expect(currentEnv.ASSETS.fetch).toHaveBeenCalledOnce();
   });
 
-  test.each(SIGNED_URLS)('Cron redacts a rejected poll URL: %s', async (signedUrl) => {
+  test('health reports exact Worker version and generated renderer identity', async () => {
+    const now = Date.now();
+    const response = await publisherWorker.fetch(
+      new Request('https://publisher.example.com/__asset-publisher/health'),
+      publisherEnv(now),
+      { waitUntil: vi.fn() } as unknown as ExecutionContext
+    );
+    await expect(response.json()).resolves.toMatchObject({
+      maxItems: 1,
+      supportedRendererVersion: rendererManifest.rendererId,
+      identity: {
+        workerVersionId: 'worker-version-one',
+        workerVersionTag: 'ticket-7a',
+        workerVersionTimestamp: '2026-07-16T12:00:00.000Z',
+        rendererId: expect.stringMatching(/^faction-sheet\/sha256:[0-9a-f]{64}$/),
+        rendererManifestDigest: expect.stringMatching(/^[0-9a-f]{64}$/),
+        configuredRendererVersion: rendererManifest.rendererId,
+        rendererConfigurationMatchesManifest: true,
+      },
+      rendererSupport: {
+        supportedRendererIds: [rendererManifest.rendererId],
+        configuredRendererVersion: rendererManifest.rendererId,
+        configurationMatchesManifest: true,
+      },
+    });
+  });
+
+  test('health never advertises a mutable renderer label as supported', async () => {
+    const environment = publisherEnv(Date.now());
+    (environment as unknown as { SUPPORTED_RENDERER_VERSION: string }).SUPPORTED_RENDERER_VERSION =
+      'mutable-renderer-alias';
+    const response = await publisherWorker.fetch(
+      new Request('https://publisher.example.com/__asset-publisher/health'),
+      environment,
+      { waitUntil: vi.fn() } as unknown as ExecutionContext
+    );
+    await expect(response.json()).resolves.toMatchObject({
+      supportedRendererVersion: rendererManifest.rendererId,
+      rendererSupport: {
+        supportedRendererIds: [rendererManifest.rendererId],
+        configuredRendererVersion: 'mutable-renderer-alias',
+        configurationMatchesManifest: false,
+      },
+    });
+  });
+
+  test.each(SIGNED_URLS)('Cron omits a rejected poll diagnostic: %s', async (signedUrl) => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => {
@@ -147,7 +196,7 @@ describe('publisher Worker structured-log security boundary', () => {
 
   test.each(
     SIGNED_URLS
-  )('Queue redacts a consumer-owned error report URL: %s', async (signedUrl) => {
+  )('Queue omits a consumer-owned secret-bearing diagnostic: %s', async (signedUrl) => {
     const now = Date.now();
     const wakeUp = createWakeUp(now, TRIGGER_ID);
     const fetcher = vi.fn(async (input: RequestInfo | URL) => {
@@ -196,6 +245,7 @@ describe('publisher Worker structured-log security boundary', () => {
 
     expect(ack).toHaveBeenCalledOnce();
     expect(infoLog).toHaveBeenCalledOnce();
+    expect(JSON.stringify(infoLog.mock.calls)).not.toContain('asset_publisher_item_telemetry');
     assertNoSignedUrl(infoLog.mock.calls, signedUrl);
   });
 });

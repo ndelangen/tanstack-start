@@ -74,6 +74,10 @@ describe('disabled production deployment shape', () => {
     expect(source).not.toMatch(/Bearer\s+[A-Za-z0-9_-]{16}/);
   });
 
+  test('binds exact Worker version metadata for telemetry identity', () => {
+    expect(config.version_metadata).toEqual({ binding: 'CF_VERSION_METADATA' });
+  });
+
   test('keeps the decimal 8 GB guard and exact timing contract explicit', () => {
     expect(config.vars).toMatchObject({
       SOFT_DEADLINE_MS: '480000',
@@ -114,6 +118,12 @@ describe('disabled production deployment shape', () => {
       'scripts/assemble-publisher-assets.ts'
     );
     expect(packageConfig.scripts['publisher:dry-run']).toContain('bun run publisher:assets');
+    const assemblySource = readFileSync(
+      path.resolve(process.cwd(), 'scripts/assemble-publisher-assets.ts'),
+      'utf8'
+    );
+    expect(assemblySource).toContain('assemblePublisherAssets(appDirectory, publisherDirectory)');
+    expect(assemblySource).toContain('writeRendererManifest(repositoryRoot, publisherDirectory)');
   });
 
   test('ignores publisher secret files while retaining the tracked example', () => {

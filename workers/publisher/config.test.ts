@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { parsePublisherConfig } from './config';
+import { rendererManifest } from './renderer-manifest.generated';
 
 function env(overrides: Record<string, string> = {}): Env {
   return {
@@ -10,7 +11,7 @@ function env(overrides: Record<string, string> = {}): Env {
     CONVEX_POLL_URL: 'https://convex.example.com/poll',
     CONVEX_EXECUTOR_BASE_URL: 'https://convex.example.com/executor',
     CONVEX_RENDER_URL: 'https://convex.example.com/render',
-    SUPPORTED_RENDERER_VERSION: 'faction-sheet-v1',
+    SUPPORTED_RENDERER_VERSION: rendererManifest.rendererId,
     EXECUTOR_MAX_ITEMS: '1',
     SOFT_DEADLINE_MS: '480000',
     UPLOAD_MARGIN_MS: '120000',
@@ -43,5 +44,11 @@ describe('publisher lifecycle configuration', () => {
         env({ BROWSER_CAPTURE_TIMEOUT_MS: '470000', BROWSER_CLEANUP_GRACE_MS: '9000' })
       )
     ).toThrow(/absolute executor lifecycle deadline/);
+  });
+
+  test('rejects a mutable renderer label that does not match the embedded manifest', () => {
+    expect(() =>
+      parsePublisherConfig(env({ SUPPORTED_RENDERER_VERSION: 'mutable-renderer-alias' }))
+    ).toThrow(/embedded immutable renderer manifest/);
   });
 });
