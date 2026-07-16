@@ -180,5 +180,6 @@ describe('disabled production deployment shape', () => {
     expect(workflow).not.toContain('--keep-vars');
     expect(workflow).not.toContain('--triggers');
     expect(workflow).not.toContain('--secrets-file');
+    expect(workflow).not.toContain('name: Generate app artifacts');
   });
 });
