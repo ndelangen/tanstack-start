@@ -1,3 +1,5 @@
+import { sanitizePublisherDiagnostic } from '../../src/app/capture/publisher-diagnostics';
+
 export const PROOF_R2_KEY = 'proof/faction-sheet.pdf';
 export const EXPECTED_PAGE_COUNT = 2;
 export const EXPECTED_PAGE_WIDTH_MM = 150;
@@ -71,7 +73,7 @@ export type ProofReport = {
 };
 
 function messageFrom(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+  return sanitizePublisherDiagnostic(error instanceof Error ? error.message : String(error));
 }
 
 function appendError(current: string | undefined, next: string): string {

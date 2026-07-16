@@ -1,0 +1,106 @@
+import type { Page } from '@cloudflare/playwright';
+import { describe, expect, test, vi } from 'vitest';
+
+import {
+  assertCaptureDiagnostics,
+  assertCapturedPdfOutput,
+  publisherCaptureCookies,
+  registerCaptureDiagnostics,
+} from './browser';
+
+describe('production capture output validation', () => {
+  test('accepts only the two-page 150 mm × 195 mm contract', () => {
+    expect(() =>
+      assertCapturedPdfOutput({ pageCount: 2, pageWidthMm: 149.94, pageHeightMm: 195.07 })
+    ).not.toThrow();
+    expect(() =>
+      assertCapturedPdfOutput({ pageCount: 1, pageWidthMm: 150, pageHeightMm: 195 })
+    ).toThrow(/exactly two pages/);
+    expect(() =>
+      assertCapturedPdfOutput({ pageCount: 2, pageWidthMm: 151, pageHeightMm: 195 })
+    ).toThrow(/MediaBoxes/);
+  });
+
+  test('collects page exceptions, request failures, and HTTP error responses', () => {
+    const listeners = new Map<string, (...args: never[]) => void>();
+    const page = {
+      on: vi.fn((name: string, listener: (...args: never[]) => void) => {
+        listeners.set(name, listener);
+      }),
+    } as unknown as Page;
+    const diagnostics = registerCaptureDiagnostics(page);
+
+    listeners.get('pageerror')?.(new Error('post-ready exception') as never);
+    listeners.get('requestfailed')?.({
+      method: () => 'GET',
+      url: () => 'https://assets.example/missing.svg',
+      failure: () => ({ errorText: 'connection reset' }),
+    } as never);
+    listeners.get('response')?.({
+      status: () => 404,
+      url: () => 'https://assets.example/missing.png',
+      request: () => ({ method: () => 'GET' }),
+    } as never);
+
+    expect(diagnostics.pageErrors).toEqual(['post-ready exception']);
+    expect(diagnostics.requestFailures[0]).toMatch(/connection reset/);
+    expect(diagnostics.httpErrors[0]).toMatch(/HTTP 404/);
+    expect(() => assertCaptureDiagnostics(diagnostics)).toThrow(/page errors/);
+  });
+
+  test('diagnostics never retain signed artwork URL credentials, paths, queries, or fragments', () => {
+    const signedUrl =
+      'https://signed-user:SECRET_PASSWORD@cdn.example.com/private/SECRET_PATH/art.png?token=SECRET_QUERY#SECRET_FRAGMENT';
+    const listeners = new Map<string, (...args: never[]) => void>();
+    const page = {
+      on: vi.fn((name: string, listener: (...args: never[]) => void) => {
+        listeners.set(name, listener);
+      }),
+    } as unknown as Page;
+    const diagnostics = registerCaptureDiagnostics(page);
+    listeners.get('console')?.({
+      type: () => 'error',
+      text: () => `console ${signedUrl}`,
+    } as never);
+    listeners.get('pageerror')?.(new Error(`page ${signedUrl}`) as never);
+    listeners.get('requestfailed')?.({
+      method: () => 'GET',
+      url: () => signedUrl,
+      failure: () => ({ errorText: `network ${signedUrl}` }),
+    } as never);
+    listeners.get('response')?.({
+      status: () => 403,
+      url: () => signedUrl,
+      request: () => ({ method: () => 'GET' }),
+    } as never);
+    const serialized = JSON.stringify(diagnostics);
+    expect(serialized).toContain('https://cdn.example.com/<redacted>');
+    for (const secret of [
+      'signed-user',
+      'SECRET_PASSWORD',
+      'SECRET_PATH',
+      'SECRET_QUERY',
+      'SECRET_FRAGMENT',
+    ]) {
+      expect(serialized).not.toContain(secret);
+    }
+  });
+
+  test('keeps the capability in an HttpOnly host cookie rather than a URL or referrer', () => {
+    const capability = 'render-capability-token-000000001';
+    const cookies = publisherCaptureCookies(
+      'https://publisher.example.com',
+      capability,
+      Date.now() + 30_000
+    );
+    const capabilityCookie = cookies.find((cookie) => cookie.value === capability);
+    expect(capabilityCookie).toMatchObject({
+      url: 'https://publisher.example.com',
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Strict',
+    });
+    expect(capabilityCookie).not.toHaveProperty('domain');
+    expect(capabilityCookie?.url).not.toContain(capability);
+  });
+});

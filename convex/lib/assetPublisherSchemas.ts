@@ -31,6 +31,19 @@ export const pollRequestSchema = z.strictObject({
 
 export const acquireRequestSchema = z.strictObject({
   schemaVersion: z.literal(1),
+  batchToken: publisherTokenSchema,
+});
+
+export const settleBrowserRequestSchema = z.strictObject({
+  schemaVersion: z.literal(1),
+  batchToken: publisherTokenSchema,
+  measuredBrowserMs: z.number().int().min(0).max(900_000),
+});
+
+export const releaseBatchRequestSchema = z.strictObject({
+  schemaVersion: z.literal(1),
+  batchToken: publisherTokenSchema,
+  mode: z.enum(['no_browser', 'after_settlement']),
 });
 
 export const claimRequestSchema = z.strictObject({

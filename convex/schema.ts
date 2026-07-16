@@ -118,7 +118,9 @@ export default defineSchema({
     lease_expires_at: v.number(),
     payload_hash: v.string(),
     payload: v.any(),
-  }).index('by_target_id', ['target_id']),
+  })
+    .index('by_target_id', ['target_id'])
+    .index('by_batch_token', ['batch_token']),
   asset_type_configs: defineTable({
     asset_type: v.literal('faction_sheet'),
     status: v.union(v.literal('disabled'), v.literal('active'), v.literal('paused')),
@@ -133,6 +135,15 @@ export default defineSchema({
     cooldown_until: v.number(),
     daily_browser_utc_date: v.string(),
     daily_browser_ms: v.number(),
+    browser_reservation_batch_token: v.optional(v.string()),
+    browser_reservation_utc_date: v.optional(v.string()),
+    browser_reserved_ms: v.optional(v.number()),
+    last_browser_settlement_batch_token: v.optional(v.string()),
+    last_browser_settlement_ms: v.optional(v.number()),
+    last_browser_release_batch_token: v.optional(v.string()),
+    last_browser_release_mode: v.optional(
+      v.union(v.literal('no_browser'), v.literal('after_settlement'))
+    ),
     next_lane: v.union(v.literal('foreground'), v.literal('rollout')),
   }).index('by_key', ['key']),
   rulesets: defineTable({

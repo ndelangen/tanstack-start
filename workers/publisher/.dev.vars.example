@@ -1,0 +1,2 @@
+ASSET_PUBLISHER_POLL_SECRET=replace-with-distinct-local-poll-secret
+ASSET_PUBLISHER_EXECUTOR_SECRET=replace-with-distinct-local-executor-secret

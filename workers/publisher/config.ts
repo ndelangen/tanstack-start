@@ -1,0 +1,135 @@
+export type PublisherConfig = {
+  captureBaseUrl: string;
+  convexPollUrl: string;
+  convexExecutorBaseUrl: string;
+  convexRenderUrl: string;
+  supportedRendererVersion: string;
+  maxItems: 1;
+  softDeadlineMs: number;
+  uploadMarginMs: number;
+  browserCaptureTimeoutMs: number;
+  browserCleanupGraceMs: number;
+  pdfMaxBytes: number;
+  queueMaxPreOwnershipAttempts: number;
+  queueRetryDelaySeconds: number;
+  r2StorageCeilingBytes: number;
+  r2EstimatedInventoryBytes: number;
+  r2InventoryObservedAtMs: number;
+  r2InventoryMaxAgeMs: number;
+  r2UnaccountedWriteBudgetBytes: number;
+};
+
+const SETTLEMENT_MARGIN_MS = 5_000;
+
+function integer(name: string, value: string, minimum: number, maximum: number): number {
+  if (!/^\d+$/.test(value)) throw new Error(`${name} must be an integer`);
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < minimum || parsed > maximum) {
+    throw new Error(`${name} must be between ${minimum} and ${maximum}`);
+  }
+  return parsed;
+}
+
+function absoluteHttpsUrl(name: string, value: string): string {
+  const url = new URL(value);
+  if (url.protocol !== 'https:' || url.username || url.password || url.hash) {
+    throw new Error(`${name} must be an absolute HTTPS URL without credentials or fragment`);
+  }
+  return url.toString().replace(/\/$/, '');
+}
+
+export function parsePublisherConfig(env: Env): PublisherConfig {
+  if (
+    !env.ASSET_PUBLISHER_POLL_SECRET ||
+    !env.ASSET_PUBLISHER_EXECUTOR_SECRET ||
+    env.ASSET_PUBLISHER_POLL_SECRET === env.ASSET_PUBLISHER_EXECUTOR_SECRET
+  ) {
+    throw new Error('Poll and executor secrets must be present and distinct');
+  }
+  const maxItems = integer('EXECUTOR_MAX_ITEMS', env.EXECUTOR_MAX_ITEMS, 1, 1);
+  const softDeadlineMs = integer('SOFT_DEADLINE_MS', env.SOFT_DEADLINE_MS, 1, 480_000);
+  const uploadMarginMs = integer('UPLOAD_MARGIN_MS', env.UPLOAD_MARGIN_MS, 120_000, 120_000);
+  const browserCaptureTimeoutMs = integer(
+    'BROWSER_CAPTURE_TIMEOUT_MS',
+    env.BROWSER_CAPTURE_TIMEOUT_MS,
+    1,
+    softDeadlineMs
+  );
+  const browserCleanupGraceMs = integer(
+    'BROWSER_CLEANUP_GRACE_MS',
+    env.BROWSER_CLEANUP_GRACE_MS,
+    1,
+    60_000
+  );
+  if (browserCaptureTimeoutMs + browserCleanupGraceMs + SETTLEMENT_MARGIN_MS > softDeadlineMs) {
+    throw new Error(
+      'Browser capture, cleanup, and settlement must fit the absolute executor lifecycle deadline'
+    );
+  }
+  return {
+    captureBaseUrl: absoluteHttpsUrl('CAPTURE_BASE_URL', env.CAPTURE_BASE_URL),
+    convexPollUrl: absoluteHttpsUrl('CONVEX_POLL_URL', env.CONVEX_POLL_URL),
+    convexExecutorBaseUrl: absoluteHttpsUrl(
+      'CONVEX_EXECUTOR_BASE_URL',
+      env.CONVEX_EXECUTOR_BASE_URL
+    ),
+    convexRenderUrl: absoluteHttpsUrl('CONVEX_RENDER_URL', env.CONVEX_RENDER_URL),
+    supportedRendererVersion: env.SUPPORTED_RENDERER_VERSION,
+    maxItems: maxItems as 1,
+    softDeadlineMs,
+    uploadMarginMs,
+    browserCaptureTimeoutMs,
+    browserCleanupGraceMs,
+    pdfMaxBytes: integer('PDF_MAX_BYTES', env.PDF_MAX_BYTES, 1, 10_000_000),
+    queueMaxPreOwnershipAttempts: integer(
+      'QUEUE_MAX_PRE_OWNERSHIP_ATTEMPTS',
+      env.QUEUE_MAX_PRE_OWNERSHIP_ATTEMPTS,
+      1,
+      3
+    ),
+    queueRetryDelaySeconds: integer(
+      'QUEUE_RETRY_DELAY_SECONDS',
+      env.QUEUE_RETRY_DELAY_SECONDS,
+      1,
+      43_200
+    ),
+    r2StorageCeilingBytes: integer(
+      'R2_STORAGE_CEILING_BYTES',
+      env.R2_STORAGE_CEILING_BYTES,
+      1,
+      8_000_000_000
+    ),
+    r2EstimatedInventoryBytes: integer(
+      'R2_ESTIMATED_INVENTORY_BYTES',
+      env.R2_ESTIMATED_INVENTORY_BYTES,
+      0,
+      8_000_000_000
+    ),
+    r2InventoryObservedAtMs: integer(
+      'R2_INVENTORY_OBSERVED_AT_MS',
+      env.R2_INVENTORY_OBSERVED_AT_MS,
+      0,
+      Number.MAX_SAFE_INTEGER
+    ),
+    r2InventoryMaxAgeMs: integer(
+      'R2_INVENTORY_MAX_AGE_MS',
+      env.R2_INVENTORY_MAX_AGE_MS,
+      1,
+      7 * 24 * 60 * 60 * 1_000
+    ),
+    r2UnaccountedWriteBudgetBytes: integer(
+      'R2_UNACCOUNTED_WRITE_BUDGET_BYTES',
+      env.R2_UNACCOUNTED_WRITE_BUDGET_BYTES,
+      1,
+      8_000_000_000
+    ),
+  };
+}
+
+export function isPublisherEnabled(env: Env): boolean {
+  return String(env.PUBLISHER_ENABLED) === 'true';
+}
+
+export function isCronDispatchEnabled(env: Env): boolean {
+  return String(env.CRON_DISPATCH_ENABLED) === 'true';
+}

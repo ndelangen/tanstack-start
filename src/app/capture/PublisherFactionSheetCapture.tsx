@@ -1,11 +1,22 @@
 import { useEffect, useState } from 'react';
+import { z } from 'zod';
 
 import { FactionSheetView } from '@app/components/factions/sheet/FactionSheetView';
+import { type FactionInput, FactionInputSchema } from '@game/schema/faction';
 
-import { proofFaction } from './proofFaction';
 import { publisherErrorMessage, redactPublisherResource } from './publisher-diagnostics';
+import { assertRequiredPublisherFonts } from './publisher-fonts';
 
-const IMAGE_SETTLE_TIMEOUT_MS = 15_000;
+const ASSET_SETTLE_TIMEOUT_MS = 15_000;
+const snapshotSchema = z.strictObject({
+  ok: z.literal(true),
+  payload: z.strictObject({
+    factionId: z.string().min(1),
+    slug: z.string(),
+    faction: FactionInputSchema,
+  }),
+  payloadHash: z.string().regex(/^[0-9a-f]{64}$/),
+});
 
 type CaptureState = 'loading' | 'ready' | 'error';
 
@@ -24,15 +35,12 @@ function svgHref(element: SVGImageElement | SVGUseElement): string | undefined {
   );
 }
 
-function abortError(signal: AbortSignal): unknown {
+function abortReason(signal: AbortSignal): unknown {
   return signal.reason ?? new Error('Capture asset settlement was aborted');
 }
 
 async function settleImage(image: HTMLImageElement, signal: AbortSignal): Promise<void> {
-  if (signal.aborted) {
-    throw signal.reason;
-  }
-
+  if (signal.aborted) throw abortReason(signal);
   if (!image.complete) {
     await new Promise<void>((resolve, reject) => {
       const cleanup = () => {
@@ -42,7 +50,7 @@ async function settleImage(image: HTMLImageElement, signal: AbortSignal): Promis
       };
       const onAbort = () => {
         cleanup();
-        reject(signal.reason);
+        reject(abortReason(signal));
       };
       const onError = () => {
         cleanup();
@@ -52,25 +60,19 @@ async function settleImage(image: HTMLImageElement, signal: AbortSignal): Promis
         cleanup();
         resolve();
       };
-
       image.addEventListener('load', onLoad, { once: true });
       image.addEventListener('error', onError, { once: true });
       signal.addEventListener('abort', onAbort, { once: true });
     });
   }
-
   if (image.naturalWidth === 0) {
     throw new Error(`Image has no decoded pixels: ${imageLabel(image)}`);
   }
-
   await image.decode();
 }
 
 async function settleSvgImage(href: string, signal: AbortSignal): Promise<void> {
-  if (signal.aborted) {
-    throw abortError(signal);
-  }
-
+  if (signal.aborted) throw abortReason(signal);
   const image = new Image();
   image.src = new URL(href, document.baseURI).href;
   const onAbort = () => {
@@ -79,18 +81,14 @@ async function settleSvgImage(href: string, signal: AbortSignal): Promise<void> 
   signal.addEventListener('abort', onAbort, { once: true });
   try {
     await image.decode();
-    if (signal.aborted) {
-      throw abortError(signal);
-    }
+    if (signal.aborted) throw abortReason(signal);
     if (image.naturalWidth === 0 || image.naturalHeight === 0) {
       throw new Error(
         `SVG image has no decoded pixels: ${redactPublisherResource(href, document.baseURI)}`
       );
     }
   } catch (error) {
-    if (signal.aborted) {
-      throw abortError(signal);
-    }
+    if (signal.aborted) throw abortReason(signal);
     throw new Error(
       `SVG image failed to decode: ${redactPublisherResource(href, document.baseURI)}`,
       { cause: error }
@@ -101,77 +99,106 @@ async function settleSvgImage(href: string, signal: AbortSignal): Promise<void> 
 }
 
 async function settleExternalSvgUse(href: string, signal: AbortSignal): Promise<void> {
-  if (signal.aborted) {
-    throw abortError(signal);
-  }
-
+  if (signal.aborted) throw abortReason(signal);
   const resource = new URL(href, document.baseURI);
   const fragment = resource.hash.slice(1);
   resource.hash = '';
   const response = await fetch(resource, { signal, cache: 'force-cache' });
   const safeResource = redactPublisherResource(href, document.baseURI);
-  if (!response.ok) {
-    throw new Error(`SVG use returned HTTP ${response.status}: ${safeResource}`);
-  }
-
+  if (!response.ok) throw new Error(`SVG use returned HTTP ${response.status}: ${safeResource}`);
   const svgText = await response.text();
   const svgDocument = new DOMParser().parseFromString(svgText, 'image/svg+xml');
   if (svgDocument.documentElement.localName !== 'svg' || svgDocument.querySelector('parsererror')) {
     throw new Error(`SVG use returned invalid SVG: ${safeResource}`);
   }
-
   if (fragment) {
     const decodedFragment = decodeURIComponent(fragment);
-    const hasFragment = Array.from(svgDocument.querySelectorAll('[id]')).some(
+    const found = Array.from(svgDocument.querySelectorAll('[id]')).some(
       (element) => element.getAttribute('id') === decodedFragment
     );
-    if (!hasFragment) {
-      throw new Error(`SVG use target is missing: ${safeResource}`);
-    }
+    if (!found) throw new Error(`SVG use target is missing: ${safeResource}`);
   }
 }
 
 async function settleSvgResources(signal: AbortSignal): Promise<void> {
-  const imageHrefs = new Set(
+  const images = new Set(
     Array.from(document.querySelectorAll<SVGImageElement>('svg image'), svgHref).filter(
       (href): href is string => Boolean(href)
     )
   );
-  const externalUseHrefs = new Set(
+  const uses = new Set(
     Array.from(document.querySelectorAll<SVGUseElement>('svg use'), svgHref).filter(
       (href): href is string => Boolean(href && !href.startsWith('#'))
     )
   );
-
   await Promise.all([
-    ...Array.from(imageHrefs, (href) => settleSvgImage(href, signal)),
-    ...Array.from(externalUseHrefs, (href) => settleExternalSvgUse(href, signal)),
+    ...Array.from(images, (href) => settleSvgImage(href, signal)),
+    ...Array.from(uses, (href) => settleExternalSvgUse(href, signal)),
   ]);
 }
 
-export function ProofFactionSheetCapture() {
+function afterPaint(): Promise<void> {
+  return new Promise((resolve) =>
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  );
+}
+
+export function PublisherFactionSheetCapture() {
   const [state, setState] = useState<CaptureState>('loading');
-  const [detail, setDetail] = useState('Waiting for fonts and images');
+  const [detail, setDetail] = useState('Loading exact claimed snapshot');
+  const [faction, setFaction] = useState<FactionInput>();
 
   useEffect(() => {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(
+      () => controller.abort(new Error('Timed out loading exact claimed snapshot')),
+      ASSET_SETTLE_TIMEOUT_MS
+    );
+    void (async () => {
+      try {
+        const response = await fetch('/__asset-publisher/snapshot', {
+          cache: 'no-store',
+          credentials: 'same-origin',
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error(`Claimed snapshot returned HTTP ${response.status}`);
+        const snapshot = snapshotSchema.parse(await response.json());
+        setFaction(snapshot.payload.faction);
+        setDetail(`Rendering exact claimed snapshot ${snapshot.payloadHash}`);
+      } catch (error) {
+        setState('error');
+        setDetail(publisherErrorMessage(error));
+      } finally {
+        window.clearTimeout(timeout);
+      }
+    })();
+    return () => {
+      controller.abort(new Error('Capture route unmounted'));
+      window.clearTimeout(timeout);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!faction) return;
     document.documentElement.dataset.factionSheet = '';
     let disposed = false;
     const controller = new AbortController();
     const timeout = window.setTimeout(
       () => controller.abort(new Error('Timed out waiting for capture assets')),
-      IMAGE_SETTLE_TIMEOUT_MS
+      ASSET_SETTLE_TIMEOUT_MS
     );
-
-    const settle = async () => {
+    void (async () => {
       try {
+        await afterPaint();
         await document.fonts.ready;
+        await assertRequiredPublisherFonts(document.fonts);
         await Promise.all(
           Array.from(document.images, (image) => settleImage(image, controller.signal))
         );
         await settleSvgResources(controller.signal);
         if (!disposed && !controller.signal.aborted) {
           setState('ready');
-          setDetail('Fonts, HTML images, and SVG resources are ready');
+          setDetail('Exact snapshot, fonts, HTML images, and SVG resources are ready');
         }
       } catch (error) {
         if (!disposed) {
@@ -181,24 +208,21 @@ export function ProofFactionSheetCapture() {
       } finally {
         window.clearTimeout(timeout);
       }
-    };
-
-    void settle();
-
+    })();
     return () => {
       disposed = true;
       controller.abort(new Error('Capture route unmounted'));
       window.clearTimeout(timeout);
       delete document.documentElement.dataset.factionSheet;
     };
-  }, []);
+  }, [faction]);
 
   return (
     <>
       <output id="capture-status" data-capture-state={state} aria-live="polite" hidden>
         {detail}
       </output>
-      <FactionSheetView faction={proofFaction} />
+      {faction ? <FactionSheetView faction={faction} /> : null}
     </>
   );
 }

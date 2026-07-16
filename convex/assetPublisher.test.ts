@@ -5,6 +5,7 @@ import { convexTest } from 'convex-test';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { proofFaction } from '../src/app/capture/proofFaction';
+import { ConvexPublisherClient } from '../workers/publisher/convex';
 import { api, internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import schema from './schema';
@@ -319,6 +320,12 @@ describe('publisher batch and exact claim state machine', () => {
     vi.setSystemTime(NOW);
     const { t } = await seed();
     await acquireAndClaim(t);
+    await expect(
+      t.mutation(internal.assetPublisher.settleBrowserReservation, {
+        batchToken: BATCH_ONE,
+        measuredBrowserMs: 10_000,
+      })
+    ).resolves.toMatchObject({ status: 'settled' });
 
     vi.setSystemTime(NOW + 12 * 60 * 1_000 + 1);
     await expect(
@@ -418,6 +425,10 @@ describe('publisher batch and exact claim state machine', () => {
     vi.setSystemTime(NOW);
     const { t } = await seed();
     const claim = await acquireAndClaim(t);
+    await t.mutation(internal.assetPublisher.settleBrowserReservation, {
+      batchToken: BATCH_ONE,
+      measuredBrowserMs: 10_000,
+    });
     await expect(
       t.mutation(internal.assetPublisher.failClaim, { ...exact(claim), error: 'Browser failed' })
     ).resolves.toEqual({ status: 'failed', nextEligibleAt: NOW + 60_000 });
@@ -450,6 +461,306 @@ describe('publisher batch and exact claim state machine', () => {
     expect(target).toMatchObject({ status: 'pending', next_eligible_at: NOW, ...drift });
     expect(target?.last_error).toBeUndefined();
     expect(target?.claim_token).toBeUndefined();
+  });
+});
+
+describe('daily Browser reservation accounting', () => {
+  test('acquire reserves conservatively and exact settlement is idempotent', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const { t } = await seed();
+    const first = await t.mutation(internal.assetPublisher.acquireBatch, {
+      batchToken: BATCH_ONE,
+    });
+    expect(first).toMatchObject({
+      status: 'acquired',
+      replay: false,
+      browserReservationMs: 480_000,
+      dailyBrowserMs: 480_000,
+    });
+    await expect(
+      t.mutation(internal.assetPublisher.acquireBatch, { batchToken: BATCH_ONE })
+    ).resolves.toMatchObject({ status: 'acquired', replay: true, dailyBrowserMs: 480_000 });
+    await expect(
+      t.mutation(internal.assetPublisher.settleBrowserReservation, {
+        batchToken: BATCH_ONE,
+        measuredBrowserMs: 9_114,
+      })
+    ).resolves.toEqual({
+      status: 'settled',
+      replay: false,
+      measuredBrowserMs: 9_114,
+      dailyBrowserMs: 9_114,
+    });
+    await expect(
+      t.mutation(internal.assetPublisher.settleBrowserReservation, {
+        batchToken: BATCH_ONE,
+        measuredBrowserMs: 1,
+      })
+    ).resolves.toEqual({ status: 'settled', replay: true, measuredBrowserMs: 9_114 });
+  });
+
+  test('stale tokens cannot settle or release a newer batch', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const { t } = await seed();
+    await t.mutation(internal.assetPublisher.acquireBatch, { batchToken: BATCH_ONE });
+    await expect(
+      t.mutation(internal.assetPublisher.settleBrowserReservation, {
+        batchToken: BATCH_TWO,
+        measuredBrowserMs: 1,
+      })
+    ).resolves.toEqual({ status: 'stale' });
+    await expect(
+      t.mutation(internal.assetPublisher.releaseBatch, {
+        batchToken: BATCH_TWO,
+        mode: 'no_browser',
+      })
+    ).resolves.toEqual({ status: 'stale' });
+    const state = await t.run(
+      async (ctx) =>
+        await ctx.db
+          .query('asset_publisher_state')
+          .withIndex('by_key', (q) => q.eq('key', 'singleton'))
+          .unique()
+    );
+    expect(state).toMatchObject({
+      batch_token: BATCH_ONE,
+      browser_reservation_batch_token: BATCH_ONE,
+      daily_browser_ms: 480_000,
+    });
+  });
+
+  test('quota fails closed and the next UTC day clears a lost reservation', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const { t: quota } = await seed();
+    await quota.run(async (ctx) => {
+      const state = await ctx.db
+        .query('asset_publisher_state')
+        .withIndex('by_key', (q) => q.eq('key', 'singleton'))
+        .unique();
+      if (!state) throw new Error('missing state');
+      await ctx.db.patch(state._id, { daily_browser_ms: 120_001 });
+    });
+    await expect(
+      quota.mutation(internal.assetPublisher.acquireBatch, { batchToken: BATCH_ONE })
+    ).resolves.toEqual({ status: 'empty', reason: 'browser_quota' });
+
+    const { t } = await seed();
+    await t.mutation(internal.assetPublisher.acquireBatch, { batchToken: BATCH_ONE });
+    vi.setSystemTime(Date.parse('2026-07-17T00:00:01.000Z'));
+    await expect(
+      t.query(internal.assetPublisher.hasEligibleWork, { cutoff: Date.now() })
+    ).resolves.toEqual({ eligibility: 'eligible' });
+    await expect(
+      t.mutation(internal.assetPublisher.acquireBatch, { batchToken: BATCH_TWO })
+    ).resolves.toMatchObject({
+      status: 'acquired',
+      batchToken: BATCH_TWO,
+      dailyBrowserMs: 480_000,
+    });
+  });
+
+  test('completion cannot erase an unsettled reservation and late settlement remains exact', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const { t } = await seed();
+    const claim = await acquireAndClaim(t);
+    await t.mutation(internal.assetPublisher.completeClaim, {
+      ...exact(claim),
+      r2Etag: 'etag-before-settlement',
+      bytes: 1_234,
+      cacheToken: CACHE_ONE,
+    });
+    const before = await t.run(
+      async (ctx) =>
+        await ctx.db
+          .query('asset_publisher_state')
+          .withIndex('by_key', (q) => q.eq('key', 'singleton'))
+          .unique()
+    );
+    expect(before?.batch_token).toBeUndefined();
+    expect(before).toMatchObject({
+      browser_reservation_batch_token: BATCH_ONE,
+      daily_browser_ms: 480_000,
+    });
+    await expect(
+      t.mutation(internal.assetPublisher.settleBrowserReservation, {
+        batchToken: BATCH_ONE,
+        measuredBrowserMs: 8_170,
+      })
+    ).resolves.toMatchObject({ status: 'settled', dailyBrowserMs: 8_170 });
+  });
+
+  test('lost settlement blocks another batch until UTC reset', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const { t } = await seed();
+    await addSecondTarget(t);
+    const claim = await acquireAndClaim(t);
+    await t.mutation(internal.assetPublisher.completeClaim, {
+      ...exact(claim),
+      r2Etag: 'etag-lost-settlement',
+      bytes: 1_234,
+      cacheToken: CACHE_ONE,
+    });
+    await expect(
+      t.query(internal.assetPublisher.hasEligibleWork, { cutoff: NOW })
+    ).resolves.toEqual({ eligibility: 'empty' });
+    await expect(
+      t.mutation(internal.assetPublisher.acquireBatch, { batchToken: BATCH_TWO })
+    ).resolves.toEqual({ status: 'busy', reason: 'browser_reservation' });
+  });
+
+  test('an actual overrun is fully charged and blocks another acquisition', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const { t } = await seed();
+    await addSecondTarget(t);
+    await t.mutation(internal.assetPublisher.acquireBatch, { batchToken: BATCH_ONE });
+    await expect(
+      t.mutation(internal.assetPublisher.settleBrowserReservation, {
+        batchToken: BATCH_ONE,
+        measuredBrowserMs: 700_000,
+      })
+    ).resolves.toMatchObject({
+      status: 'settled',
+      measuredBrowserMs: 700_000,
+      dailyBrowserMs: 700_000,
+      overrun: true,
+    });
+    await expect(
+      t.mutation(internal.assetPublisher.releaseBatch, {
+        batchToken: BATCH_ONE,
+        mode: 'after_settlement',
+      })
+    ).resolves.toMatchObject({ status: 'released' });
+    await expect(
+      t.mutation(internal.assetPublisher.acquireBatch, { batchToken: BATCH_TWO })
+    ).resolves.toEqual({ status: 'empty', reason: 'browser_quota' });
+  });
+
+  test('real executor HTTP client records a post-lifecycle overrun and exhausts quota', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const priorPoll = process.env.ASSET_PUBLISHER_POLL_SECRET;
+    const priorExecutor = process.env.ASSET_PUBLISHER_EXECUTOR_SECRET;
+    process.env.ASSET_PUBLISHER_POLL_SECRET = 'poll-secret';
+    process.env.ASSET_PUBLISHER_EXECUTOR_SECRET = 'executor-secret';
+    try {
+      const { t } = await seed();
+      await addSecondTarget(t);
+      await t.mutation(internal.assetPublisher.acquireBatch, { batchToken: BATCH_ONE });
+      const current = NOW + 481_000;
+      vi.setSystemTime(current);
+      const client = new ConvexPublisherClient({
+        pollUrl: 'https://convex.test/asset-publishing/poll',
+        executorBaseUrl: 'https://convex.test/asset-publishing/executor',
+        pollToken: 'poll-secret',
+        executorToken: 'executor-secret',
+        now: () => current,
+        fetcher: (async (input, init) => {
+          const url = input instanceof Request ? input.url : String(input);
+          return await t.fetch(new URL(url).pathname, init);
+        }) as typeof fetch,
+      });
+      await expect(client.settleBrowser(BATCH_ONE, 481_000, NOW + 510_000)).resolves.toBe(
+        'settled'
+      );
+      const state = await t.run(
+        async (ctx) =>
+          await ctx.db
+            .query('asset_publisher_state')
+            .withIndex('by_key', (q) => q.eq('key', 'singleton'))
+            .unique()
+      );
+      expect(state?.daily_browser_ms).toBe(481_000);
+      await t.mutation(internal.assetPublisher.releaseBatch, {
+        batchToken: BATCH_ONE,
+        mode: 'after_settlement',
+      });
+      await expect(
+        t.mutation(internal.assetPublisher.acquireBatch, { batchToken: BATCH_TWO })
+      ).resolves.toEqual({ status: 'empty', reason: 'browser_quota' });
+    } finally {
+      if (priorPoll === undefined) delete process.env.ASSET_PUBLISHER_POLL_SECRET;
+      else process.env.ASSET_PUBLISHER_POLL_SECRET = priorPoll;
+      if (priorExecutor === undefined) delete process.env.ASSET_PUBLISHER_EXECUTOR_SECRET;
+      else process.env.ASSET_PUBLISHER_EXECUTOR_SECRET = priorExecutor;
+    }
+  });
+
+  test('batch-only refund cannot clear a committed claim or expose a second live target', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const { t } = await seed();
+    await addSecondTarget(t);
+    const claim = await acquireAndClaim(t);
+    await expect(
+      t.mutation(internal.assetPublisher.releaseBatch, {
+        batchToken: BATCH_ONE,
+        mode: 'no_browser',
+      })
+    ).resolves.toEqual({ status: 'stale' });
+    await expect(
+      t.mutation(internal.assetPublisher.acquireBatch, { batchToken: BATCH_TWO })
+    ).resolves.toMatchObject({ status: 'busy' });
+    const live = await t.run(
+      async (ctx) =>
+        await ctx.db
+          .query('asset_targets')
+          .withIndex('by_batch_token', (q) => q.eq('batch_token', BATCH_ONE))
+          .collect()
+    );
+    expect(live).toHaveLength(1);
+    expect(live[0]?._id).toBe(claim.targetId);
+  });
+
+  test('an orphaned exact snapshot also preserves the singleton fence for a second target', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const { t } = await seed();
+    await addSecondTarget(t);
+    const claim = await acquireAndClaim(t);
+    await t.run(async (ctx) => await ctx.db.delete(claim.targetId));
+    await expect(
+      t.mutation(internal.assetPublisher.releaseBatch, {
+        batchToken: BATCH_ONE,
+        mode: 'no_browser',
+      })
+    ).resolves.toEqual({ status: 'stale' });
+    await expect(
+      t.mutation(internal.assetPublisher.acquireBatch, { batchToken: BATCH_TWO })
+    ).resolves.toMatchObject({ status: 'busy' });
+  });
+
+  test('an exact no-browser release refunds an empty claim batch and replays safely', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const { t, targetId } = await seed();
+    await t.mutation(internal.assetPublisher.acquireBatch, { batchToken: BATCH_ONE });
+    if (!targetId) throw new Error('missing target');
+    await t.run(async (ctx) => await ctx.db.delete(targetId));
+    await expect(
+      t.mutation(internal.assetPublisher.claimOne, {
+        batchToken: BATCH_ONE,
+        claimToken: CLAIM_ONE,
+      })
+    ).resolves.toEqual({ status: 'empty' });
+    const release = {
+      batchToken: BATCH_ONE,
+      mode: 'no_browser' as const,
+    };
+    await expect(t.mutation(internal.assetPublisher.releaseBatch, release)).resolves.toEqual({
+      status: 'released',
+      replay: false,
+      dailyBrowserMs: 0,
+    });
+    await expect(t.mutation(internal.assetPublisher.releaseBatch, release)).resolves.toEqual({
+      status: 'released',
+      replay: true,
+    });
   });
 });
 
@@ -567,8 +878,16 @@ describe('publisher HTTP authorization separation', () => {
         rendererVersion: 'faction-sheet-v1',
       };
       const requests = [
-        ['/asset-publishing/executor/acquire', { schemaVersion: 1 }],
+        ['/asset-publishing/executor/acquire', { schemaVersion: 1, batchToken: BATCH_ONE }],
         ['/asset-publishing/executor/claim', { schemaVersion: 1, batchToken: BATCH_ONE }],
+        [
+          '/asset-publishing/executor/settle-browser',
+          { schemaVersion: 1, batchToken: BATCH_ONE, measuredBrowserMs: 1 },
+        ],
+        [
+          '/asset-publishing/executor/release-batch',
+          { schemaVersion: 1, batchToken: BATCH_ONE, mode: 'no_browser' },
+        ],
         ['/asset-publishing/executor/revalidate', exactBody],
         ['/asset-publishing/executor/complete', { ...exactBody, r2Etag: 'etag', bytes: 1_234 }],
         ['/asset-publishing/executor/fail', { ...exactBody, error: 'failed' }],
@@ -641,10 +960,37 @@ describe('publisher HTTP authorization separation', () => {
           body: JSON.stringify(body),
         });
       const acquisition = (await (
-        await post('/asset-publishing/executor/acquire', { schemaVersion: 1 })
+        await post('/asset-publishing/executor/acquire', {
+          schemaVersion: 1,
+          batchToken: BATCH_ONE,
+        })
       ).json()) as { status: string; batchToken?: string };
       expect(acquisition.status).toBe('acquired');
       if (!acquisition.batchToken) throw new Error('missing batch token');
+      const acquisitionReplay = (await (
+        await post('/asset-publishing/executor/acquire', {
+          schemaVersion: 1,
+          batchToken: BATCH_ONE,
+        })
+      ).json()) as {
+        status: string;
+        replay?: boolean;
+        batchToken?: string;
+        dailyBrowserMs?: number;
+      };
+      expect(acquisitionReplay).toMatchObject({
+        status: 'acquired',
+        replay: true,
+        batchToken: BATCH_ONE,
+        dailyBrowserMs: 480_000,
+      });
+      const differentAcquisition = (await (
+        await post('/asset-publishing/executor/acquire', {
+          schemaVersion: 1,
+          batchToken: BATCH_TWO,
+        })
+      ).json()) as { status: string };
+      expect(differentAcquisition.status).toBe('busy');
 
       const claimBody = { schemaVersion: 1, batchToken: acquisition.batchToken };
       const firstResponse = await post('/asset-publishing/executor/claim', claimBody);
@@ -666,6 +1012,17 @@ describe('publisher HTTP authorization separation', () => {
         replay: true,
         targetId: firstClaim.targetId,
         claimToken: firstClaim.claimToken,
+      });
+
+      const settlement = await post('/asset-publishing/executor/settle-browser', {
+        schemaVersion: 1,
+        batchToken: acquisition.batchToken,
+        measuredBrowserMs: 8_170,
+      });
+      expect(settlement.status).toBe(200);
+      await expect(settlement.json()).resolves.toMatchObject({
+        status: 'settled',
+        measuredBrowserMs: 8_170,
       });
 
       const completion = await post('/asset-publishing/executor/complete', {
