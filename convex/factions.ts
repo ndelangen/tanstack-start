@@ -4,6 +4,7 @@ import { v } from 'convex/values';
 import { FactionInputSchema } from '../src/game/schema/faction';
 import type { Doc, Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
+import { parseFactionInput, reconcileFactionSheetTargetForSave } from './lib/factionSheetTargets';
 import { isActiveGroupMember, requireAuthUserId } from './lib/policy';
 import { profileSummary } from './lib/profileSummary';
 import { nowIso, slugify } from './lib/utils';
@@ -30,17 +31,6 @@ async function groupsForFactionAndMemberships(
     }
   }
   return groups;
-}
-
-function normalizeFactionData(input: unknown) {
-  const parsed = FactionInputSchema.safeParse(input);
-  if (!parsed.success) {
-    const firstIssue = parsed.error.issues[0];
-    const issuePath = firstIssue?.path.join('.') ?? 'data';
-    const issueMessage = firstIssue?.message ?? 'Invalid faction data';
-    throw new Error(`Invalid faction data at ${issuePath}: ${issueMessage}`);
-  }
-  return parsed.data;
 }
 
 /** Faction detail page bundle (view, edit, and sheet preview). */
@@ -213,7 +203,7 @@ export const create = mutation({
       if (!canUseGroup) throw new Error('Not authorized for group');
     }
 
-    const data = normalizeFactionData(args.data);
+    const data = parseFactionInput(args.data);
     const slug = slugify(data.name);
     const existing = await ctx.db
       .query('factions')
@@ -233,6 +223,7 @@ export const create = mutation({
       updated_at: now,
       is_deleted: false,
     });
+    await reconcileFactionSheetTargetForSave(ctx, _id);
     const row = await ctx.db.get(_id);
     if (!row) throw new Error('Failed to create faction');
     return row;
@@ -253,7 +244,7 @@ export const update = mutation({
       row.group_id == null ? false : await isActiveGroupMember(ctx, row.group_id, userId);
     if (!isOwner && !isGroupEditor) throw new Error('Not authorized');
 
-    const data = normalizeFactionData(args.data);
+    const data = parseFactionInput(args.data);
     const slug = slugify(data.name);
     const slugOwner = await ctx.db
       .query('factions')
@@ -268,6 +259,7 @@ export const update = mutation({
       slug,
       updated_at: nowIso(),
     });
+    await reconcileFactionSheetTargetForSave(ctx, args.id);
     const updated = await ctx.db.get(args.id);
     if (!updated) throw new Error('Failed to update faction');
     return updated;
