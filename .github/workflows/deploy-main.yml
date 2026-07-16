@@ -50,14 +50,53 @@ jobs:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
           CONVEX_DEPLOYMENT: ${{ secrets.CONVEX_DEPLOYMENT }}
 
-      - name: Build static site
-        run: bun run app:build
+      - name: Preflight exact inert Worker release
+        run: bun run ./scripts/publisher-deployment-contract.ts preflight
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
+
+      - name: Check generated Worker types
+        run: bun run publisher:types:check
+
+      - name: Typecheck Worker release
+        run: bun run publisher:typecheck
+
+      - name: Build unified Worker release
+        run: bun run publisher:assets
         env:
           VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
 
+      - name: Verify assembled Worker assets
+        run: bun run publisher:assets:check
+
+      - name: Verify release build kept merged source exact
+        run: >-
+          git diff --exit-code &&
+          git diff --cached --exit-code &&
+          test -z "$(git ls-files --others --exclude-standard)"
+
+      - name: Dry-run exact Worker release
+        run: bun run publisher:release:dry-run
+
+      - name: Deploy exact Worker release
+        run: >-
+          bunx wrangler deploy
+          --strict
+          --config workers/publisher/wrangler.jsonc
+          --tag "$GITHUB_SHA"
+          --message "GitHub Actions production $GITHUB_SHA"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Smoke inert Worker release
+        run: bun run ./scripts/publisher-deployment-contract.ts smoke
+
       # --no-build: skip netlify.toml build.command; without it the CLI runs @netlify/build first
       # and can publish as a draft even when --prod is set (prebuilt dist/client only).
-      - name: Deploy to Netlify
+      - name: Deploy rollback build to Netlify
         run: npx --yes netlify-cli@latest deploy --dir "./dist/client" --no-build --prod --message "GitHub Actions production deploy"
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}

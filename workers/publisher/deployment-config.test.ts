@@ -146,4 +146,39 @@ describe('disabled production deployment shape', () => {
     };
     expect(biome.files.includes).toContain('!**/workers/publisher/worker-configuration.d.ts');
   });
+
+  test('keeps the main deploy ordered, inert, source-exact, and Netlify-last', () => {
+    const workflow = readFileSync(
+      path.resolve(process.cwd(), '.github/workflows/deploy-main.yml'),
+      'utf8'
+    );
+    const orderedSteps = [
+      'Deploy Convex',
+      'Run and verify required migrations',
+      'Preflight exact inert Worker release',
+      'Check generated Worker types',
+      'Typecheck Worker release',
+      'Build unified Worker release',
+      'Verify assembled Worker assets',
+      'Verify release build kept merged source exact',
+      'Dry-run exact Worker release',
+      'Deploy exact Worker release',
+      'Smoke inert Worker release',
+      'Deploy rollback build to Netlify',
+    ];
+    let previous = -1;
+    for (const step of orderedSteps) {
+      const position = workflow.indexOf(`name: ${step}`);
+      expect(position, `${step} must exist after the prior release gate`).toBeGreaterThan(previous);
+      previous = position;
+    }
+    expect(workflow).toContain('CLOUDFLARE_API_TOKEN: $' + '{{ secrets.CLOUDFLARE_API_TOKEN }}');
+    expect(workflow).toContain('CLOUDFLARE_ACCOUNT_ID: $' + '{{ vars.CLOUDFLARE_ACCOUNT_ID }}');
+    expect(workflow).toContain('VITE_CONVEX_URL: $' + '{{ secrets.VITE_CONVEX_URL }}');
+    expect(workflow).toContain('--strict');
+    expect(workflow).toContain('--tag "$GITHUB_SHA"');
+    expect(workflow).not.toContain('--keep-vars');
+    expect(workflow).not.toContain('--triggers');
+    expect(workflow).not.toContain('--secrets-file');
+  });
 });

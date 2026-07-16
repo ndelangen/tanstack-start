@@ -1,15 +1,16 @@
 # Deployment
 
-## Current production and planned Worker cutover
+## Current production and inert Worker release
 
-Production currently deploys to Netlify as a Single Page Application (SPA). The repository is being
-prepared to move the application, public generated assets, capture surface, and publisher into one
-Cloudflare Worker release unit. This source preparation does not provision or deploy that Worker,
-change `SITE_URL`, or activate publishing.
+The ordered `main` workflow deploys the already-provisioned unified Cloudflare Worker after Convex
+and required migrations. The checked-in release remains inert: both publisher flags are `false`,
+there are zero Cron triggers, and no workflow step changes `SITE_URL`, OAuth configuration, Worker
+mode, secrets, or infrastructure. The final Netlify publish is retained temporarily as the rollback
+build and runs only after the Worker health smoke succeeds.
 
-At the approved cutover, the Cloudflare Worker becomes the only canonical application host. Keep
-the last known-good Netlify release only as rollback infrastructure; do not run Netlify and
-Cloudflare as competing routine production deployers.
+The later canonical-host cutover and publisher activation remain separately approved operations.
+Cloudflare Git Builds stays disconnected so GitHub Actions remains the only ordered release
+authority.
 
 ## Build Process
 
@@ -76,6 +77,12 @@ Set in **GitHub repository secrets** for CI:
 - `JWT_PRIVATE_KEY` / `JWKS` - JWT signing and discovery settings (Convex env)
 - `ASSET_PUBLISHER_ACTIVATION_SECRET` - distinct Convex-only bearer secret for the narrow
   initialize/pause/disable/activate HTTP boundary; never install it in the Worker
+- `CLOUDFLARE_API_TOKEN` - least-privilege Cloudflare token in the protected `production`
+  environment; required before this CI slice may merge
+
+Set as a **GitHub `production` environment variable**:
+
+- `CLOUDFLARE_ACCOUNT_ID` - exact account containing the existing Worker, Queue, and R2 bucket
 
 Keep the same values in Netlify only if you still plan to run manual Netlify builds.
 
@@ -89,17 +96,31 @@ On every push to `main`:
 1. `bun install --frozen-lockfile`
 2. `bun run convex:deploy`
 3. `bun run migrations:deploy` (auto-run + await required Convex migrations)
-4. `bun run app:build`
-5. Deploy `dist/client` to Netlify with **`deploy --no-build --prod`** (token + site id). **`--no-build`** is required so the CLI does not run `netlify.toml`’s `build.command` via `@netlify/build`; that path can finish as a **draft** deploy and skip updating the production URL even when `--prod` is present.
+4. Fail-closed Worker preflight: exact `main` SHA and clean tracked source, required protected CI
+   inputs, stable source-controlled Worker/Queue/R2 names, `false/false` flags, zero Cron, workers.dev
+   origin, renderer version, max items `1`, and required secret names.
+5. Check generated Worker bindings, typecheck, build the SPA and capture bundle once with the
+   protected `VITE_CONVEX_URL`, re-check the assembled asset limits, and reject generated source
+   drift.
+6. Dry-run the exact assembled release, then deploy the checked-in Wrangler configuration in
+   strict mode. The Worker version tag is the full `GITHUB_SHA`.
+7. Smoke the exact checked-in workers.dev health URL and require `false/false`, max items `1`, exact
+   renderer support/manifest agreement, `Cache-Control: no-store`, and the deployed Git SHA tag.
+8. Deploy the already-built `dist/client` to Netlify with **`deploy --no-build --prod`** as the final
+   rollback step. **`--no-build`** prevents a second Netlify-side build.
 
-The Netlify publish step runs only if Convex deploy, migration verification, and build succeed.
-The reusable verification workflow also builds and dry-runs the unified Worker release without
-deploying it.
+Wrangler receives only protected `secrets.CLOUDFLARE_API_TOKEN` and
+`vars.CLOUDFLARE_ACCOUNT_ID`. It does not receive flags, routes, Cron overrides, or a secrets file.
+Wrangler validates the three checked-in required Worker secret names against the existing Worker;
+the workflow never lists, reads, rotates, or installs their values. Explicit Queue and R2 names in
+`workers/publisher/wrangler.jsonc` prevent automatic resource naming or substitution.
 
-The future approved cutover keeps the same release authority and order: verify → tolerant Convex
-deploy → required migrations → unified Worker build → infrastructure/readiness checks → Worker
-deploy → smoke tests → separately guarded activation. Only after that cutover should routine
-Netlify publication be removed; retain its last known-good release for rollback.
+The sole external prerequisite for merging this slice is a least-privilege token installed as
+`CLOUDFLARE_API_TOKEN` in the protected GitHub `production` environment and scoped to the one
+Cloudflare account. Follow the current Cloudflare token-permission reference and validate the
+smallest permission set needed to update the existing Worker and Queue bindings; do not grant or
+exercise resource provisioning, secret-management, billing, domain, or unrelated-resource access.
+Do not merge while the token is absent.
 
 ## Netlify One-Time Setup
 
@@ -124,14 +145,18 @@ On push to `main`, [`.github/workflows/deploy-main.yml`](../.github/workflows/de
 ```mermaid
 flowchart LR
     Git[Push main] --> GHA[GitHub Actions]
-    GHA --> ConvexDeploy[Run convex deploy]
-    ConvexDeploy --> Build[Run app build]
-    Build --> NetlifyDeploy[Deploy dist/client]
-    NetlifyDeploy --> Live[Live Site]
+    GHA --> ConvexDeploy[Deploy tolerant Convex state]
+    ConvexDeploy --> Migrations[Run and verify required migrations]
+    Migrations --> Preflight[Fail-closed inert Worker preflight]
+    Preflight --> Build[Build one unified release]
+    Build --> DryRun[Wrangler dry-run]
+    DryRun --> WorkerDeploy[Strict Worker deploy tagged with Git SHA]
+    WorkerDeploy --> Smoke[Inert workers.dev health smoke]
+    Smoke --> NetlifyDeploy[Refresh Netlify rollback build last]
 ```
 
-No checked-in workflow currently provisions Cloudflare resources, installs publisher secrets,
-deploys the Worker, changes `SITE_URL`, or activates Cron/Convex publishing.
+No checked-in workflow provisions Cloudflare resources, installs or reads publisher secrets,
+changes `SITE_URL`, changes OAuth, arms Cron, activates publishing, or sends Queue work.
 
 ## Convex Breaking Migrations (Required)
 
