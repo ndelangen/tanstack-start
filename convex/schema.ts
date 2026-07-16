@@ -95,6 +95,10 @@ export default defineSchema({
     claim_payload_hash: v.optional(v.string()),
     last_completed_batch_token: v.optional(v.string()),
     last_completed_claim_token: v.optional(v.string()),
+    work_lane: v.optional(v.union(v.literal('foreground'), v.literal('rollout'))),
+    rollout_id: v.optional(v.id('asset_rollouts')),
+    rollout_item_id: v.optional(v.id('asset_rollout_items')),
+    foreground_updated_at: v.optional(v.number()),
   })
     .index('by_faction_id_and_asset_type', ['faction_id', 'asset_type'])
     .index('by_asset_type_and_status_and_next_eligible_at', [
@@ -120,6 +124,28 @@ export default defineSchema({
       'lease_expires_at',
     ])
     .index('by_asset_type_and_published_generation', ['asset_type', 'published_generation'])
+    .index('by_asset_type', ['asset_type'])
+    .index('by_type_lane_status_eligible', [
+      'asset_type',
+      'work_lane',
+      'status',
+      'next_eligible_at',
+    ])
+    .index('by_type_lane_status_lease', ['asset_type', 'work_lane', 'status', 'lease_expires_at'])
+    .index('by_type_lane_admitted_status_eligible', [
+      'asset_type',
+      'work_lane',
+      'first_publication_admitted',
+      'status',
+      'next_eligible_at',
+    ])
+    .index('by_type_lane_admitted_status_lease', [
+      'asset_type',
+      'work_lane',
+      'first_publication_admitted',
+      'status',
+      'lease_expires_at',
+    ])
     .index('by_batch_token', ['batch_token']),
   asset_claim_snapshots: defineTable({
     target_id: v.id('asset_targets'),
@@ -139,6 +165,7 @@ export default defineSchema({
     asset_type: v.literal('faction_sheet'),
     status: v.union(v.literal('disabled'), v.literal('active'), v.literal('paused')),
     active_renderer_version: v.string(),
+    active_rollout_id: v.optional(v.id('asset_rollouts')),
     updated_at: v.number(),
   }).index('by_asset_type', ['asset_type']),
   asset_publisher_state: defineTable({
@@ -159,7 +186,65 @@ export default defineSchema({
       v.union(v.literal('no_browser'), v.literal('after_settlement'))
     ),
     next_lane: v.union(v.literal('foreground'), v.literal('rollout')),
+    lane_sequence_position: v.optional(v.number()),
   }).index('by_key', ['key']),
+  asset_rollouts: defineTable({
+    asset_type: v.literal('faction_sheet'),
+    target_renderer_version: v.string(),
+    rollback_of_rollout_id: v.optional(v.id('asset_rollouts')),
+    status: v.union(
+      v.literal('discovering'),
+      v.literal('running'),
+      v.literal('paused'),
+      v.literal('cancelling'),
+      v.literal('cancelled'),
+      v.literal('completed'),
+      v.literal('completed_with_errors')
+    ),
+    cutoff_creation_time: v.number(),
+    discovery_cursor: v.optional(v.string()),
+    discovery_sealed_at: v.optional(v.number()),
+    discovery_pages: v.number(),
+    discovery_continuations: v.number(),
+    discovered: v.number(),
+    pending: v.number(),
+    leased: v.number(),
+    succeeded: v.number(),
+    superseded: v.number(),
+    cancelled: v.number(),
+    terminal_errors: v.number(),
+    created_at: v.number(),
+    updated_at: v.number(),
+  })
+    .index('by_asset_type_and_status', ['asset_type', 'status'])
+    .index('by_status_and_updated_at', ['status', 'updated_at']),
+  asset_rollout_items: defineTable({
+    rollout_id: v.id('asset_rollouts'),
+    target_id: v.id('asset_targets'),
+    enrolled_generation: v.number(),
+    enrolled_renderer_version: v.string(),
+    previous_renderer_version: v.optional(v.string()),
+    state: v.union(
+      v.literal('pending'),
+      v.literal('leased'),
+      v.literal('succeeded'),
+      v.literal('superseded'),
+      v.literal('cancelled'),
+      v.literal('terminal_error')
+    ),
+    retry_count: v.number(),
+    next_eligible_at: v.number(),
+    last_error: v.optional(v.string()),
+    created_at: v.number(),
+    updated_at: v.number(),
+  })
+    .index('by_rollout_id_and_target_id', ['rollout_id', 'target_id'])
+    .index('by_rollout_id_and_state_and_next_eligible_at', [
+      'rollout_id',
+      'state',
+      'next_eligible_at',
+    ])
+    .index('by_target_id_and_rollout_id', ['target_id', 'rollout_id']),
   rulesets: defineTable({
     name: v.string(),
     slug: v.string(),

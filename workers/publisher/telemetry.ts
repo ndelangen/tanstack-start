@@ -214,7 +214,7 @@ function queueSchema(value: unknown): Record<string, unknown> {
     messageId: boundedText(source.messageId, 128),
     attempt: nonnegativeInteger(source.attempt),
     name: boundedText(source.name, 128),
-    lane: source.lane === 'foreground' ? 'foreground' : null,
+    lane: source.lane === 'foreground' || source.lane === 'rollout' ? source.lane : null,
     triggerId: boundedText(source.triggerId, 128),
   };
 }

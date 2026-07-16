@@ -1,9 +1,13 @@
 import { FactionInputSchema } from '../../src/game/schema/faction';
 import type { Id } from '../_generated/dataModel';
+import { supersedeRolloutForSave } from '../assetRollouts';
 import type { MutationCtx } from '../types';
+import {
+  FACTION_SHEET_ASSET_TYPE,
+  INITIAL_FACTION_SHEET_RENDERER_VERSION,
+} from './assetPublisherConstants';
 
-export const FACTION_SHEET_ASSET_TYPE = 'faction_sheet' as const;
-export const INITIAL_FACTION_SHEET_RENDERER_VERSION = 'faction-sheet-v1';
+export { FACTION_SHEET_ASSET_TYPE, INITIAL_FACTION_SHEET_RENDERER_VERSION };
 
 export function parseFactionInput(input: unknown) {
   const parsed = FactionInputSchema.safeParse(input);
@@ -88,12 +92,19 @@ export async function reconcileFactionSheetTargetForSave(
       status: 'pending',
       next_eligible_at: now,
       attempt_count: 0,
+      work_lane: 'foreground',
+      foreground_updated_at: now,
     });
   }
 
+  await supersedeRolloutForSave(ctx, target, now);
   await ctx.db.patch(target._id, {
     desired_generation: target.desired_generation + 1,
     desired_renderer_version: config.active_renderer_version,
+    work_lane: 'foreground',
+    rollout_id: undefined,
+    rollout_item_id: undefined,
+    foreground_updated_at: now,
     ...(target.status === 'leased'
       ? {}
       : {
@@ -123,6 +134,8 @@ export async function ensureFactionSheetTargetForBackfill(
     status: 'pending',
     next_eligible_at: Date.now(),
     attempt_count: 0,
+    work_lane: 'foreground',
+    foreground_updated_at: Date.now(),
   });
 }
 

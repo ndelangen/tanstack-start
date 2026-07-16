@@ -12,6 +12,7 @@ type ClaimOverrides = {
   claimToken?: string;
   renderCapability?: string;
   replay?: boolean;
+  workLane?: unknown;
 };
 
 async function claimedResponse(overrides: ClaimOverrides = {}) {
@@ -48,6 +49,7 @@ async function claimedResponse(overrides: ClaimOverrides = {}) {
     payloadHash: 'a'.repeat(64),
     renderCapability,
     renderCapabilityExpiresAt: 2_000_000_000_000,
+    ...(overrides.workLane !== undefined ? { workLane: overrides.workLane } : {}),
   };
 }
 
@@ -100,6 +102,16 @@ describe('Convex claimed target parsing', () => {
       'Convex claimed target response is invalid'
     );
     expect(() => parseClaim({ ...response, claimToken: 'c'.repeat(257) })).toThrow(
+      'Convex claimed target response is invalid'
+    );
+  });
+
+  test('accepts only the bounded foreground/rollout lane projection', async () => {
+    const rollout = await claimedResponse({ workLane: 'rollout' });
+    expect(parseClaim(rollout)).toMatchObject({ status: 'claimed', workLane: 'rollout' });
+    const foreground = await claimedResponse({ workLane: 'foreground' });
+    expect(parseClaim(foreground)).toMatchObject({ status: 'claimed', workLane: 'foreground' });
+    expect(() => parseClaim({ ...rollout, workLane: 'operator-selected-lane' })).toThrow(
       'Convex claimed target response is invalid'
     );
   });

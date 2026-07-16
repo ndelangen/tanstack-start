@@ -32,6 +32,7 @@ export type ClaimedTarget = ExactClaim & {
   payloadHash: string;
   renderCapability: string;
   renderCapabilityExpiresAt: number;
+  workLane?: 'foreground' | 'rollout';
 };
 
 export type ClaimResult = ClaimedTarget | { status: 'empty' | 'stale' | 'conflict' };
@@ -135,7 +136,8 @@ export function parseClaim(value: unknown): ClaimResult {
     typeof body.payloadHash !== 'string' ||
     !/^[0-9a-f]{64}$/.test(body.payloadHash) ||
     !isRenderCapability(body.renderCapability) ||
-    !finite(body.renderCapabilityExpiresAt)
+    !finite(body.renderCapabilityExpiresAt) ||
+    (body.workLane !== undefined && body.workLane !== 'foreground' && body.workLane !== 'rollout')
   ) {
     throw new Error('Convex claimed target response is invalid');
   }
@@ -153,6 +155,9 @@ export function parseClaim(value: unknown): ClaimResult {
     payloadHash: body.payloadHash,
     renderCapability: body.renderCapability,
     renderCapabilityExpiresAt: body.renderCapabilityExpiresAt,
+    ...(body.workLane === 'rollout' || body.workLane === 'foreground'
+      ? { workLane: body.workLane }
+      : {}),
   };
 }
 
