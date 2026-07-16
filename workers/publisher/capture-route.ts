@@ -3,12 +3,11 @@ import {
   serializePublisherLogEvent,
 } from '../../src/app/capture/publisher-diagnostics';
 import { readBoundedJson, runWithDeadline } from './http';
+import { isRenderCapability } from './render-capability';
 
 const CAPABILITY_HEADER = 'X-Asset-Render-Capability';
 const CAPABILITY_COOKIE = '__Host-asset_render_capability';
 const DEADLINE_COOKIE = '__Host-asset_render_deadline';
-const MIN_CAPABILITY_BYTES = 16;
-const MAX_CAPABILITY_BYTES = 8_192;
 const MAX_SNAPSHOT_BYTES = 1_000_000;
 const SNAPSHOT_DEADLINE_MS = 30_000;
 
@@ -30,9 +29,7 @@ function capability(request: Request): string | undefined {
     .find((part) => part.startsWith(`${CAPABILITY_COOKIE}=`))
     ?.slice(CAPABILITY_COOKIE.length + 1);
   const value = header ?? cookie;
-  if (!value) return undefined;
-  const length = new TextEncoder().encode(value).byteLength;
-  return length >= MIN_CAPABILITY_BYTES && length <= MAX_CAPABILITY_BYTES ? value : undefined;
+  return isRenderCapability(value) ? value : undefined;
 }
 
 function cookie(request: Request, name: string): string | undefined {

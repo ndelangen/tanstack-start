@@ -1,6 +1,7 @@
 import { publisherErrorMessage } from '../../src/app/capture/publisher-diagnostics';
 import type { PublisherWakeUp } from './dispatch';
 import { postJson } from './http';
+import { isRenderCapability } from './render-capability';
 
 export type AcquireResult =
   | { status: 'empty'; reason: 'disabled' | 'no_eligible_work' | 'browser_quota' }
@@ -133,7 +134,7 @@ export function parseClaim(value: unknown): ClaimResult {
     !finite(body.leaseExpiresAt) ||
     typeof body.payloadHash !== 'string' ||
     !/^[0-9a-f]{64}$/.test(body.payloadHash) ||
-    !token(body.renderCapability) ||
+    !isRenderCapability(body.renderCapability) ||
     !finite(body.renderCapabilityExpiresAt)
   ) {
     throw new Error('Convex claimed target response is invalid');
