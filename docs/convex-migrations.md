@@ -69,8 +69,15 @@ Current widen migrations include:
 
 - `groups_slug_v1`, `rulesets_slug_v1`, `faq_item_slug_v1` (slug backfills)
 - `profiles_from_users_v1` (ensures every auth `users` row has a `profiles` row)
+- `faction_sheet_targets_backfill_v1` (creates one pending target for each active faction)
+- `faction_sheet_targets_verify_v1` (bounded proof of zero missing or duplicate active-faction targets)
 
 The `profiles_backfill_guard` narrow-phase entry exists only so deploy polling treats `profiles_from_users_v1` as required alongside schema narrow prerequisites; it is not a schema change.
+
+The faction-sheet target guard requires both its backfill and verification pass. Before either pass
+starts for the first time, `migrations:runRequired` seeds the singleton faction-sheet config as
+disabled. Faction create/update mutations use the same disabled-safe, transactional ensure path, so
+the function-deploy window before required migrations run cannot fail saves or activate publishing.
 
 ## Automated production flow (fail-closed)
 
