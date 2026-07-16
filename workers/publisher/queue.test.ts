@@ -38,11 +38,6 @@ const config: PublisherConfig = {
   pdfMaxBytes: 2_000_000,
   queueMaxPreOwnershipAttempts: 2,
   queueRetryDelaySeconds: 60,
-  r2StorageCeilingBytes: 8_000_000_000,
-  r2EstimatedInventoryBytes: 1_000,
-  r2InventoryObservedAtMs: NOW,
-  r2InventoryMaxAgeMs: 60_000,
-  r2UnaccountedWriteBudgetBytes: 200_000_000,
 };
 
 function message(body: unknown, attempts = 1) {

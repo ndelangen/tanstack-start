@@ -10,6 +10,11 @@ import {
   failureSchema,
   publisherTokenSchema,
 } from './lib/assetPublisherSchemas';
+import {
+  exactFirstPublicationCounterOrNull,
+  MAX_FIRST_PUBLISHED_FACTION_SHEETS,
+  validFirstPublicationCount,
+} from './lib/factionSheetPublicationGuard';
 import type { MutationCtx, QueryCtx } from './types';
 
 export const ASSET_TYPE = 'faction_sheet' as const;
@@ -45,41 +50,85 @@ async function assetTypeConfig(ctx: PublisherReadCtx) {
     .unique();
 }
 
-async function firstEligibleTarget(ctx: PublisherReadCtx, cutoff: number) {
-  const pending = await ctx.db
-    .query('asset_targets')
-    .withIndex('by_asset_type_and_status_and_next_eligible_at', (q) =>
-      q.eq('asset_type', ASSET_TYPE).eq('status', 'pending').lte('next_eligible_at', cutoff)
-    )
-    .take(1);
+async function firstEligibleTarget(ctx: PublisherReadCtx, cutoff: number, admittedOnly: boolean) {
+  const pending = admittedOnly
+    ? await ctx.db
+        .query('asset_targets')
+        .withIndex('by_asset_type_and_admitted_and_status_and_next_eligible_at', (q) =>
+          q
+            .eq('asset_type', ASSET_TYPE)
+            .eq('first_publication_admitted', true)
+            .eq('status', 'pending')
+            .lte('next_eligible_at', cutoff)
+        )
+        .take(1)
+    : await ctx.db
+        .query('asset_targets')
+        .withIndex('by_asset_type_and_status_and_next_eligible_at', (q) =>
+          q.eq('asset_type', ASSET_TYPE).eq('status', 'pending').lte('next_eligible_at', cutoff)
+        )
+        .take(1);
   if (pending[0]) return pending[0];
 
-  const cooldown = await ctx.db
-    .query('asset_targets')
-    .withIndex('by_asset_type_and_status_and_next_eligible_at', (q) =>
-      q.eq('asset_type', ASSET_TYPE).eq('status', 'cooldown').lte('next_eligible_at', cutoff)
-    )
-    .take(1);
+  const cooldown = admittedOnly
+    ? await ctx.db
+        .query('asset_targets')
+        .withIndex('by_asset_type_and_admitted_and_status_and_next_eligible_at', (q) =>
+          q
+            .eq('asset_type', ASSET_TYPE)
+            .eq('first_publication_admitted', true)
+            .eq('status', 'cooldown')
+            .lte('next_eligible_at', cutoff)
+        )
+        .take(1)
+    : await ctx.db
+        .query('asset_targets')
+        .withIndex('by_asset_type_and_status_and_next_eligible_at', (q) =>
+          q.eq('asset_type', ASSET_TYPE).eq('status', 'cooldown').lte('next_eligible_at', cutoff)
+        )
+        .take(1);
   if (cooldown[0]) return cooldown[0];
 
-  const expiredLease = await ctx.db
-    .query('asset_targets')
-    .withIndex('by_asset_type_and_status_and_lease_expires_at', (q) =>
-      q.eq('asset_type', ASSET_TYPE).eq('status', 'leased').lte('lease_expires_at', cutoff)
-    )
-    .take(1);
+  const expiredLease = admittedOnly
+    ? await ctx.db
+        .query('asset_targets')
+        .withIndex('by_asset_type_and_admitted_and_status_and_lease_expires_at', (q) =>
+          q
+            .eq('asset_type', ASSET_TYPE)
+            .eq('first_publication_admitted', true)
+            .eq('status', 'leased')
+            .lte('lease_expires_at', cutoff)
+        )
+        .take(1)
+    : await ctx.db
+        .query('asset_targets')
+        .withIndex('by_asset_type_and_status_and_lease_expires_at', (q) =>
+          q.eq('asset_type', ASSET_TYPE).eq('status', 'leased').lte('lease_expires_at', cutoff)
+        )
+        .take(1);
   return expiredLease[0] ?? null;
 }
 
 async function hasEligibleWorkAt(ctx: PublisherReadCtx, cutoff: number, now: number) {
-  const [state, config] = await Promise.all([publisherState(ctx), assetTypeConfig(ctx)]);
+  const [state, config, counter] = await Promise.all([
+    publisherState(ctx),
+    assetTypeConfig(ctx),
+    exactFirstPublicationCounterOrNull(ctx),
+  ]);
   if (state?.status !== 'active' || config?.status !== 'active') return false;
+  if (!counter || !validFirstPublicationCount(counter.value)) return false;
   if (state.cooldown_until > cutoff) return false;
   if (state.browser_reservation_batch_token && state.daily_browser_utc_date === utcDate(now)) {
     return false;
   }
   if (state.batch_token && (state.batch_lease_expires_at ?? 0) > now) return false;
-  return (await firstEligibleTarget(ctx, cutoff)) !== null;
+  return (
+    (await firstEligibleTarget(
+      ctx,
+      cutoff,
+      counter.value >= MAX_FIRST_PUBLISHED_FACTION_SHEETS
+    )) !== null
+  );
 }
 
 function utcDate(at: number): string {
@@ -211,8 +260,17 @@ export const acquireBatch = internalMutation({
       throw new Error('Invalid publisher batch token');
     }
     const now = Date.now();
-    const [state, config] = await Promise.all([publisherState(ctx), assetTypeConfig(ctx)]);
-    if (state?.status !== 'active' || config?.status !== 'active') {
+    const [state, config, counter] = await Promise.all([
+      publisherState(ctx),
+      assetTypeConfig(ctx),
+      exactFirstPublicationCounterOrNull(ctx),
+    ]);
+    if (
+      state?.status !== 'active' ||
+      config?.status !== 'active' ||
+      !counter ||
+      !validFirstPublicationCount(counter.value)
+    ) {
       return { status: 'empty' as const, reason: 'disabled' as const };
     }
     if (
@@ -240,7 +298,10 @@ export const acquireBatch = internalMutation({
     if (reservationBatchToken) {
       return { status: 'busy' as const, reason: 'browser_reservation' as const };
     }
-    if (state.cooldown_until > now || !(await firstEligibleTarget(ctx, now))) {
+    if (
+      state.cooldown_until > now ||
+      !(await firstEligibleTarget(ctx, now, counter.value >= MAX_FIRST_PUBLISHED_FACTION_SHEETS))
+    ) {
       return { status: 'empty' as const, reason: 'no_eligible_work' as const };
     }
     if (dailyBrowserMs + BROWSER_RESERVATION_MS > FREE_BROWSER_ALLOWANCE_MS) {
@@ -399,10 +460,16 @@ export const claimOne = internalMutation({
       throw new Error('Invalid publisher claim token');
     }
     const now = Date.now();
-    const [state, config] = await Promise.all([publisherState(ctx), assetTypeConfig(ctx)]);
+    const [state, config, counter] = await Promise.all([
+      publisherState(ctx),
+      assetTypeConfig(ctx),
+      exactFirstPublicationCounterOrNull(ctx),
+    ]);
     if (
       state?.status !== 'active' ||
       config?.status !== 'active' ||
+      !counter ||
+      !validFirstPublicationCount(counter.value) ||
       state.batch_token !== args.batchToken ||
       (state.batch_lease_expires_at ?? 0) <= now
     ) {
@@ -475,7 +542,11 @@ export const claimOne = internalMutation({
       });
     }
 
-    const target = await firstEligibleTarget(ctx, now);
+    const target = await firstEligibleTarget(
+      ctx,
+      now,
+      counter.value >= MAX_FIRST_PUBLISHED_FACTION_SHEETS
+    );
     if (!target || target.status === 'leased') return { status: 'empty' as const };
     const faction = await ctx.db.get('factions', target.faction_id);
     if (!faction) throw new Error('Publisher target faction is missing');
@@ -527,13 +598,14 @@ export const claimOne = internalMutation({
   },
 });
 
-export const revalidateClaim = internalQuery({
+export const revalidateClaim = internalMutation({
   args: exactClaimArgs,
   handler: async (ctx, args) => {
     parseExactClaim(args);
     const now = Date.now();
     const target = await ctx.db.get('asset_targets', args.targetId);
     const state = await publisherState(ctx);
+    const counter = await exactFirstPublicationCounterOrNull(ctx);
     if (
       !target ||
       !state ||
@@ -554,6 +626,22 @@ export const revalidateClaim = internalQuery({
     );
     if (leaseExpiresAt - now < MIN_UPLOAD_LEASE_MARGIN_MS) {
       return { status: 'insufficient_lease' as const, leaseExpiresAt };
+    }
+    if (!counter || !validFirstPublicationCount(counter.value)) {
+      return { status: 'storage_guard' as const };
+    }
+    if (target.first_publication_admitted !== true) {
+      if (
+        target.first_publication_admitted !== false ||
+        target.published_generation !== undefined
+      ) {
+        return { status: 'storage_guard' as const };
+      }
+      if (counter.value >= MAX_FIRST_PUBLISHED_FACTION_SHEETS) {
+        return { status: 'storage_limit' as const };
+      }
+      await ctx.db.patch(target._id, { first_publication_admitted: true });
+      await ctx.db.patch(counter._id, { value: counter.value + 1 });
     }
     return {
       status: 'valid' as const,
@@ -585,6 +673,9 @@ export const completeClaim = internalMutation({
     }
     const target = await ctx.db.get('asset_targets', args.targetId);
     if (!target) return { status: 'stale' as const };
+    if (target.first_publication_admitted !== true) {
+      throw new Error('First publication was not transactionally admitted');
+    }
     if (
       target.last_completed_batch_token === args.batchToken &&
       target.last_completed_claim_token === args.claimToken &&

@@ -8,6 +8,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 import { proofFaction } from '../src/app/capture/proofFaction';
 import { api, internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
+import { FACTION_SHEET_PUBLICATION_COUNTER_KEY } from './lib/factionSheetPublicationGuard';
 import schema from './schema';
 
 const modules = import.meta.glob('./**/*.ts');
@@ -106,6 +107,23 @@ describe('faction save target reconciliation', () => {
     });
   });
 
+  test('the first-publication cap never rejects or couples a faction save to Cloudflare', async () => {
+    const { t, asUser } = await authenticatedTest();
+    await t.run(
+      async (ctx) =>
+        await ctx.db.insert('counters', {
+          key: FACTION_SHEET_PUBLICATION_COUNTER_KEY,
+          value: 3_500,
+        })
+    );
+
+    const faction = await createFaction(asUser, 'Saved At Structural Cap');
+    await expect(targetFor(t, faction._id)).resolves.toMatchObject({
+      status: 'pending',
+      first_publication_admitted: false,
+    });
+  });
+
   test('rapid saves advance one target monotonically and use the latest configured renderer', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
@@ -165,6 +183,10 @@ describe('faction save target reconciliation', () => {
         daily_browser_ms: 0,
         next_lane: 'foreground',
       });
+      await ctx.db.insert('counters', {
+        key: FACTION_SHEET_PUBLICATION_COUNTER_KEY,
+        value: 0,
+      });
     });
     const faction = await createFaction(asUser);
     await t.mutation(internal.assetPublisher.acquireBatch, { batchToken: BATCH });
@@ -208,7 +230,7 @@ describe('faction save target reconciliation', () => {
     );
     expect((after.faction?.data as { name: string }).name).toBe('Atreides After Claim');
     await expect(
-      t.query(internal.assetPublisher.revalidateClaim, {
+      t.mutation(internal.assetPublisher.revalidateClaim, {
         targetId: claim.targetId,
         batchToken: claim.batchToken,
         claimToken: claim.claimToken,
@@ -328,6 +350,118 @@ describe('faction save target reconciliation', () => {
 });
 
 describe('faction-sheet target migrations', () => {
+  test('publication-admission initialization refuses non-disabled publisher state', async () => {
+    const t = convexTest(schema, modules);
+    migrationsTest.register(t);
+    await t.run(async (ctx) => {
+      await ctx.db.insert('asset_type_configs', {
+        asset_type: 'faction_sheet',
+        status: 'disabled',
+        active_renderer_version: 'faction-sheet-v1',
+        updated_at: NOW,
+      });
+      await ctx.db.insert('asset_publisher_state', {
+        key: 'singleton',
+        status: 'active',
+        cooldown_until: 0,
+        daily_browser_utc_date: '2026-07-16',
+        daily_browser_ms: 0,
+        next_lane: 'foreground',
+      });
+    });
+
+    await expect(
+      t.mutation(api.migrations.runRequired, {
+        ids: ['faction_sheet_publication_admissions_v1'],
+      })
+    ).rejects.toThrow('requires disabled publisher state');
+    await expect(t.run(async (ctx) => await ctx.db.query('counters').take(1))).resolves.toEqual([]);
+  });
+
+  test('initializes the structural counter disabled-first and backfills admissions idempotently', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const t = convexTest(schema, modules);
+    migrationsTest.register(t);
+    await t.run(async (ctx) => {
+      const userId = await ctx.db.insert('users', { name: 'Storage migration owner' });
+      await ctx.db.insert('asset_type_configs', {
+        asset_type: 'faction_sheet',
+        status: 'disabled',
+        active_renderer_version: 'faction-sheet-v1',
+        updated_at: NOW,
+      });
+      for (const [index, state] of ['published', 'admitted', 'fresh'].entries()) {
+        const factionId = await ctx.db.insert('factions', {
+          owner_id: userId,
+          data: { ...proofFaction, name: `Storage ${state}` },
+          slug: `storage-${state}`,
+          created_at: new Date(NOW).toISOString(),
+          updated_at: new Date(NOW).toISOString(),
+          is_deleted: false,
+          group_id: null,
+        });
+        await ctx.db.insert('asset_targets', {
+          faction_id: factionId,
+          asset_type: 'faction_sheet',
+          desired_generation: 1,
+          desired_renderer_version: 'faction-sheet-v1',
+          ...(index === 0
+            ? {
+                published_generation: 1,
+                published_renderer_version: 'faction-sheet-v1',
+                published_cache_token: 'existing-token',
+                published_r2_etag: 'existing-etag',
+                published_bytes: 1_234,
+                published_at: NOW,
+              }
+            : {}),
+          ...(index === 1 ? { first_publication_admitted: true } : {}),
+          status: index === 0 ? 'current' : 'pending',
+          next_eligible_at: NOW,
+          attempt_count: 0,
+        });
+      }
+    });
+
+    const ids = ['faction_sheet_publication_admissions_v1'];
+    await t.mutation(api.migrations.runRequired, { ids });
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    await expect(
+      t.query(api.migrations.assertReadyForNarrow, { required: ids })
+    ).resolves.toMatchObject({ ok: true, required: ids });
+    await expect(
+      t.run(async (ctx) => ({
+        state: await ctx.db.query('asset_publisher_state').take(2),
+        counter: await ctx.db
+          .query('counters')
+          .withIndex('by_key', (q) => q.eq('key', FACTION_SHEET_PUBLICATION_COUNTER_KEY))
+          .unique(),
+        targets: await ctx.db.query('asset_targets').take(4),
+      }))
+    ).resolves.toMatchObject({
+      state: [{ status: 'disabled' }],
+      counter: { value: 2 },
+      targets: expect.arrayContaining([
+        expect.objectContaining({ published_generation: 1, first_publication_admitted: true }),
+        expect.objectContaining({ first_publication_admitted: true }),
+        expect.objectContaining({ first_publication_admitted: false }),
+      ]),
+    });
+
+    await t.mutation(api.migrations.runRequired, { ids });
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    await expect(
+      t.run(
+        async (ctx) =>
+          await ctx.db
+            .query('counters')
+            .withIndex('by_key', (q) => q.eq('key', FACTION_SHEET_PUBLICATION_COUNTER_KEY))
+            .unique()
+      )
+    ).resolves.toMatchObject({ value: 2 });
+  });
+
   test('backfill is active-only, bounded, idempotent, and followed by zero-defect verification', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(NOW);

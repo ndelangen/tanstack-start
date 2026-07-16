@@ -28,11 +28,6 @@ const config: PublisherConfig = {
   pdfMaxBytes: 2_000_000,
   queueMaxPreOwnershipAttempts: 2,
   queueRetryDelaySeconds: 60,
-  r2StorageCeilingBytes: 8_000_000_000,
-  r2EstimatedInventoryBytes: 1_000,
-  r2InventoryObservedAtMs: NOW,
-  r2InventoryMaxAgeMs: 60_000,
-  r2UnaccountedWriteBudgetBytes: 200_000_000,
 };
 const acquisition: Extract<AcquireResult, { status: 'acquired' }> = {
   status: 'acquired',
@@ -65,7 +60,7 @@ function r2Object(): R2Object {
 function setup(
   options: {
     claimResult?: typeof claim | { status: 'empty' | 'stale' | 'conflict' };
-    revalidateStatus?: 'valid' | 'stale' | 'insufficient_lease';
+    revalidateStatus?: 'valid' | 'stale' | 'insufficient_lease' | 'storage_guard' | 'storage_limit';
     browserAvailable?: boolean;
     close?: () => Promise<void>;
     complete?: () => Promise<'completed' | 'stale'>;
@@ -92,6 +87,12 @@ function setup(
     if (options.revalidateStatus === 'stale') return { status: 'stale' as const };
     if (options.revalidateStatus === 'insufficient_lease') {
       return { status: 'insufficient_lease' as const, leaseExpiresAt: NOW + 1 };
+    }
+    if (
+      options.revalidateStatus === 'storage_guard' ||
+      options.revalidateStatus === 'storage_limit'
+    ) {
+      return { status: options.revalidateStatus };
     }
     return {
       status: 'valid' as const,
@@ -439,6 +440,17 @@ describe('one-item owned batch execution', () => {
     expect(spies.put).not.toHaveBeenCalled();
   });
 
+  test.each([
+    'storage_guard',
+    'storage_limit',
+  ] as const)('a %s admission rejection releases the exact claim before R2', async (revalidateStatus) => {
+    const { dependencies, spies } = setup({ revalidateStatus });
+    const report = await executeOwnedBatch(dependencies, config, acquisition, NOW);
+    expect(report.status).toBe('stale');
+    expect(spies.release).toHaveBeenCalledOnce();
+    expect(spies.put).not.toHaveBeenCalled();
+  });
+
   test('R2 failure and completion failure checkpoint a recoverable exact failure', async () => {
     const r2 = setup({ put: async () => await Promise.reject(new Error('R2 unavailable')) });
     expect((await executeOwnedBatch(r2.dependencies, config, acquisition, NOW)).status).toBe(
@@ -663,6 +675,20 @@ describe('one-item owned batch execution', () => {
     expect(report.status).toBe('systemic_stop');
     expect(report).toMatchObject({ browserClosed: true, browserSettled: true });
     expect(report.error).toBe('asset publisher quota or reservation');
+  });
+
+  test.each([
+    'storage_guard',
+    'storage_limit',
+  ] as const)('the real client accepts the bounded %s revalidation response', async (status) => {
+    const client = new ConvexPublisherClient({
+      pollUrl: 'https://convex.example.com/poll',
+      executorBaseUrl: 'https://convex.example.com/executor',
+      pollToken: 'poll-token',
+      executorToken: 'executor-token',
+      fetcher: async () => Response.json({ ok: true, status }),
+    });
+    await expect(client.revalidate(claim)).resolves.toEqual({ status });
   });
 
   test('an overrun beyond the settlement window keeps the reservation unsettled', async () => {

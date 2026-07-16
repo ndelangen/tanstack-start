@@ -18,7 +18,6 @@ describe('disabled production deployment shape', () => {
       PUBLISHER_ENABLED: 'false',
       CRON_DISPATCH_ENABLED: 'false',
       CAPTURE_BASE_URL: 'https://publisher.invalid',
-      R2_INVENTORY_OBSERVED_AT_MS: '0',
       EXECUTOR_MAX_ITEMS: '1',
     });
     expect(config.workers_dev).toBe(false);
@@ -78,16 +77,17 @@ describe('disabled production deployment shape', () => {
     expect(config.version_metadata).toEqual({ binding: 'CF_VERSION_METADATA' });
   });
 
-  test('keeps the decimal 8 GB guard and exact timing contract explicit', () => {
+  test('keeps the exact PDF storage bound and timing contract explicit', () => {
     expect(config.vars).toMatchObject({
       SOFT_DEADLINE_MS: '480000',
       UPLOAD_MARGIN_MS: '120000',
-      R2_STORAGE_CEILING_BYTES: '8000000000',
-      R2_UNACCOUNTED_WRITE_BUDGET_BYTES: '200000000',
       PDF_MAX_BYTES: '2000000',
       BROWSER_CAPTURE_TIMEOUT_MS: '45000',
       BROWSER_CLEANUP_GRACE_MS: '15000',
     });
+    expect(JSON.stringify(config.vars)).not.toMatch(
+      /R2_(?:STORAGE|ESTIMATED|INVENTORY|UNACCOUNTED)/
+    );
   });
 
   test('keeps the SPA asset-first and reserves only published, capture, and operational paths', () => {

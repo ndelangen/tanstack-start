@@ -20,11 +20,6 @@ function env(overrides: Record<string, string> = {}): Env {
     PDF_MAX_BYTES: '2000000',
     QUEUE_MAX_PRE_OWNERSHIP_ATTEMPTS: '2',
     QUEUE_RETRY_DELAY_SECONDS: '60',
-    R2_STORAGE_CEILING_BYTES: '8000000000',
-    R2_ESTIMATED_INVENTORY_BYTES: '0',
-    R2_INVENTORY_OBSERVED_AT_MS: '0',
-    R2_INVENTORY_MAX_AGE_MS: '86400000',
-    R2_UNACCOUNTED_WRITE_BUDGET_BYTES: '200000000',
     ...overrides,
   } as unknown as Env;
 }
@@ -53,5 +48,12 @@ describe('publisher lifecycle configuration', () => {
     expect(() =>
       parsePublisherConfig(env({ SUPPORTED_RENDERER_VERSION: rendererVersion }))
     ).toThrow(/embedded renderer compatibility version/);
+  });
+
+  test('keeps the structural storage proof at the exact 2,000,000-byte PDF cap', () => {
+    expect(parsePublisherConfig(env()).pdfMaxBytes).toBe(2_000_000);
+    expect(() => parsePublisherConfig(env({ PDF_MAX_BYTES: '2000001' }))).toThrow(
+      'PDF_MAX_BYTES must be between 2000000 and 2000000'
+    );
   });
 });

@@ -6,10 +6,12 @@ This is the production-shaped, one-item publisher surface. It is checked in iner
 - the Cron trigger list is empty;
 - Queue and R2 names are deliberately unprovisioned placeholders;
 - Convex and capture hosts use the reserved `.invalid` domain;
-- estimated R2 inventory has no observation time, so writes fail closed;
 - the configured renderer is the inert `unprovisioned` label and cannot authorize a claim because
-  execution requires the exact generated immutable renderer manifest id;
+  execution requires the embedded semantic compatibility version `faction-sheet-v1`; the separate
+  SHA-256 renderer id identifies the exact assembled release for telemetry and canary checks;
 - poll and executor secrets are distinct required bindings and are not checked in.
+- the Convex-only activation secret is distinct from every publisher boundary secret and is not
+  checked in; it authenticates only initialize, pause, disable, and guarded activate operations.
 - the cache-token signing secret is a required binding shared out-of-band with Convex and is not
   checked in or provisioned by this ticket. It has the exact canonical shape `s1.<43 base64url
   characters>`: version `s1`, a dot, and the unpadded canonical base64url encoding of 32 bytes from
@@ -38,9 +40,13 @@ single-flight request coalescing: concurrent misses may each perform one R2 `get
 performs more than one. Full successful tokenized GETs alone are inserted into cache; tokenless,
 partial, conditional-negative, missing, and error responses are never inserted.
 
-The 200 MB unaccounted-write budget covers 96 scheduled one-item attempts per 24-hour inventory
-window at the 2 MB PDF ceiling, plus 8 MB margin. Changing the schedule, item maximum, PDF ceiling,
-or inventory refresh cadence requires recalculating this guard before activation.
+Storage is structurally bounded instead of estimated from a timestamp. A dedicated private bucket
+holds exactly one stable `factions/<id>/sheet.pdf` object per admitted faction. Convex reserves a
+first-publication slot transactionally immediately before upload and admits at most 3,500 targets.
+The Worker accepts exactly the 2,000,000-byte PDF cap, so admitted objects account for at most
+7,000,000,000 PDF bytes. Slot reservations are conservative and survive upload/completion failure;
+already-admitted stable objects may still be overwritten at the cap. Faction saves never consult
+this counter and remain immediate.
 
 The Worker intentionally has no `limits.cpu_ms` block. Current Queue documentation describes a
 30-second default consumer CPU limit, while the real Workers Free proof rejected a custom limit and
@@ -73,8 +79,7 @@ bun run publisher:startup
 ```
 
 Do not deploy this configuration. Ticket 6 must explicitly create/verify the private bucket and
-Queue, configure the real hosts and immutable renderer version, supply a fresh estimated-inventory
-observation below the 8 GB decimal ceiling with enough room for the configured unaccounted-write
-budget, install distinct secrets, verify Browser/Queue/R2 Free
-plan guardrails and alerts, deploy inert, run one-item health checks, and only then add the approved
+Queue, configure the real hosts and immutable renderer version, complete and verify the disabled-first
+publication-admission migration/counter, install distinct secrets, verify Browser/Queue/R2 plan
+guardrails and alerts, deploy inert, run one-item health checks, and only then add the approved
 15-minute Cron and activate Convex/Worker configuration in the ordered release workflow.

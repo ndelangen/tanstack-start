@@ -71,6 +71,8 @@ Current widen migrations include:
 - `profiles_from_users_v1` (ensures every auth `users` row has a `profiles` row)
 - `faction_sheet_targets_backfill_v1` (creates one pending target for each active faction)
 - `faction_sheet_targets_verify_v1` (bounded proof of zero missing or duplicate active-faction targets)
+- `faction_sheet_publication_admissions_v1` (backfills the structural first-publication marker after
+  initializing its bounded counter while the publisher is disabled)
 
 The `profiles_backfill_guard` narrow-phase entry exists only so deploy polling treats `profiles_from_users_v1` as required alongside schema narrow prerequisites; it is not a schema change.
 
@@ -78,6 +80,12 @@ The faction-sheet target guard requires both its backfill and verification pass.
 starts for the first time, `migrations:runRequired` seeds the singleton faction-sheet config as
 disabled. Faction create/update mutations use the same disabled-safe, transactional ensure path, so
 the function-deploy window before required migrations run cannot fail saves or activate publishing.
+
+The publication-admission guard also creates the missing publisher singleton disabled, initializes
+the persisted counter from at most 3,501 already-admitted/published targets, and fails if the
+footprint exceeds 3,500 or disagrees with an existing counter. New save/backfill targets dual-write
+`first_publication_admitted: false`. Activation remains blocked until the marker migration succeeds
+and the bounded admitted-target count exactly matches the persisted counter.
 
 ## Automated production flow (fail-closed)
 

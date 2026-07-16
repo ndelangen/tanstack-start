@@ -629,10 +629,8 @@ export async function executeOwnedBatch(
             put: async (key, value, options) =>
               await telemetry.r2('put', async () => dependencies.bucket.put(key, value, options)),
           },
-          config,
           claim as ClaimedTarget,
-          capture.bytes,
-          dependencies.now()
+          capture.bytes
         ),
       browserOperationDeadlineAt,
       dependencies.now,
