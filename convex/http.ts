@@ -20,6 +20,8 @@ import {
   exactClaimRequestSchema,
   failRequestSchema,
   pollRequestSchema,
+  releaseBatchRequestSchema,
+  settleBrowserRequestSchema,
 } from './lib/assetPublisherSchemas';
 import {
   handleAssetPublishingProofCheckpoint,
@@ -88,7 +90,7 @@ http.route({
       schema: acquireRequestSchema,
       execute: async (body) => {
         const result = await ctx.runMutation(internal.assetPublisher.acquireBatch, {
-          batchToken: randomPublisherToken(),
+          batchToken: body.batchToken,
         });
         return { ok: true, schemaVersion: body.schemaVersion, ...result };
       },
@@ -128,6 +130,42 @@ http.route({
         );
         return { ok: true, ...result, renderCapability, renderCapabilityExpiresAt: expiresAt };
       },
+    });
+  }),
+});
+
+http.route({
+  path: '/asset-publishing/executor/settle-browser',
+  method: 'POST',
+  handler: httpAction(async (ctx, request) => {
+    return await handleAuthenticatedJson(request, {
+      expectedSecret: publisherBoundarySecret('executor'),
+      schema: settleBrowserRequestSchema,
+      execute: async (body) => ({
+        ok: true,
+        ...(await ctx.runMutation(internal.assetPublisher.settleBrowserReservation, {
+          batchToken: body.batchToken,
+          measuredBrowserMs: body.measuredBrowserMs,
+        })),
+      }),
+    });
+  }),
+});
+
+http.route({
+  path: '/asset-publishing/executor/release-batch',
+  method: 'POST',
+  handler: httpAction(async (ctx, request) => {
+    return await handleAuthenticatedJson(request, {
+      expectedSecret: publisherBoundarySecret('executor'),
+      schema: releaseBatchRequestSchema,
+      execute: async (body) => ({
+        ok: true,
+        ...(await ctx.runMutation(internal.assetPublisher.releaseBatch, {
+          batchToken: body.batchToken,
+          mode: body.mode,
+        })),
+      }),
     });
   }),
 });

@@ -10,6 +10,8 @@ tmp/asset-publishing-proof/
 .wrangler/
 workers/proof/.dev.vars*
 !workers/proof/.dev.vars.example
+workers/publisher/.dev.vars*
+!workers/publisher/.dev.vars.example
 .env.local
 .env.e2e.local
 .playwright/

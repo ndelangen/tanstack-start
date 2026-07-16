@@ -3,6 +3,10 @@ import path from 'node:path';
 
 import { chromium, type Page } from 'playwright';
 
+import {
+  redactPublisherResource,
+  sanitizePublisherDiagnostic,
+} from '../../src/app/capture/publisher-diagnostics';
 import { EXPECTED_PAGE_COUNT, EXPECTED_PAGE_HEIGHT_MM, EXPECTED_PAGE_WIDTH_MM } from './core';
 import { inspectChromiumPdf } from './pdf';
 
@@ -87,15 +91,23 @@ async function writeReferencePdf(bytes: Uint8Array, outputPath: string, identity
 function collectPageErrors(page: Page): string[] {
   const errors: string[] = [];
   page.on('console', (message) => {
-    if (message.type() === 'error') errors.push(`console: ${message.text()}`);
+    if (message.type() === 'error') {
+      errors.push(`console: ${sanitizePublisherDiagnostic(message.text())}`);
+    }
   });
-  page.on('pageerror', (error) => errors.push(`page: ${error.message}`));
+  page.on('pageerror', (error) =>
+    errors.push(`page: ${sanitizePublisherDiagnostic(error.message)}`)
+  );
   page.on('requestfailed', (request) =>
-    errors.push(`request: ${request.url()}: ${request.failure()?.errorText ?? 'failed'}`)
+    errors.push(
+      `request: ${redactPublisherResource(request.url())}: ${sanitizePublisherDiagnostic(
+        request.failure()?.errorText ?? 'failed'
+      )}`
+    )
   );
   page.on('response', (response) => {
     if (response.status() >= 400) {
-      errors.push(`response: ${response.status()} ${response.url()}`);
+      errors.push(`response: ${response.status()} ${redactPublisherResource(response.url())}`);
     }
   });
   return errors;

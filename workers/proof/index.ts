@@ -6,6 +6,10 @@ import type {
   Page,
 } from '@cloudflare/playwright';
 
+import {
+  redactPublisherResource,
+  sanitizePublisherDiagnostic,
+} from '../../src/app/capture/publisher-diagnostics';
 import { handleProofCaptureAsset } from './capture-route';
 import { acquireDefaultLimitExperimentClaim } from './claim';
 import { sendConvexProofCheckpoint } from './convex';
@@ -90,7 +94,9 @@ function requestFailureLabel(request: {
   failure(): { errorText: string } | null;
 }): string {
   const failure = request.failure();
-  return `${request.method()} ${request.url()}: ${failure?.errorText ?? 'unknown failure'}`;
+  return `${request.method()} ${redactPublisherResource(request.url())}: ${sanitizePublisherDiagnostic(
+    failure?.errorText ?? 'unknown failure'
+  )}`;
 }
 
 function factionSheetPages(page: Page) {
@@ -242,7 +248,7 @@ async function openProofBrowser(env: Env): Promise<ProofBrowser> {
     const page = await context.newPage();
     page.on('console', (message: ConsoleMessage) => {
       if (message.type() === 'error') {
-        consoleErrors.push(message.text());
+        consoleErrors.push(sanitizePublisherDiagnostic(message.text()));
       }
     });
     page.on('requestfailed', (request) => requestFailures.push(requestFailureLabel(request)));

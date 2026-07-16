@@ -4,6 +4,7 @@ import { describe, expect, test, vi } from 'vitest';
 import { z } from 'zod';
 
 import {
+  createCacheSigningSecret,
   createCacheToken,
   createRenderCapability,
   handleAuthenticatedJson,
@@ -126,17 +127,71 @@ describe('publisher HTTP capabilities', () => {
   });
 
   test('cache tokens carry at least 128 random bits and verify only for their faction/type', async () => {
-    const token = await createCacheToken('faction-id', 'faction_sheet', 'cache-secret');
+    const cacheSigningSecret = createCacheSigningSecret();
+    const tokens = await Promise.all(
+      Array.from(
+        { length: 32 },
+        async () => await createCacheToken('faction-id', 'faction_sheet', cacheSigningSecret)
+      )
+    );
+    expect(new Set(tokens).size).toBe(tokens.length);
+    const token = tokens[0];
+    if (!token) throw new Error('missing generated cache token');
     const [, nonce] = token.split('.');
-    expect(nonce?.length).toBeGreaterThanOrEqual(22);
+    expect(nonce).toHaveLength(22);
+    expect(token).toMatch(/^v1\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}$/);
     await expect(
-      verifyCacheToken(token, 'faction-id', 'faction_sheet', 'cache-secret')
+      verifyCacheToken(token, 'faction-id', 'faction_sheet', cacheSigningSecret)
     ).resolves.toBe(true);
     await expect(
-      verifyCacheToken(token, 'other-faction', 'faction_sheet', 'cache-secret')
+      verifyCacheToken(token, 'other-faction', 'faction_sheet', cacheSigningSecret)
     ).resolves.toBe(false);
     await expect(verifyCacheToken(token, 'faction-id', 'faction_sheet', undefined)).resolves.toBe(
       false
     );
+    await expect(
+      verifyCacheToken(`${token}a`, 'faction-id', 'faction_sheet', cacheSigningSecret)
+    ).resolves.toBe(false);
+    await expect(
+      verifyCacheToken(
+        `${token.slice(0, -1)}${token.endsWith('a') ? 'b' : 'a'}`,
+        'faction-id',
+        'faction_sheet',
+        cacheSigningSecret
+      )
+    ).resolves.toBe(false);
+  });
+
+  test('cache signing secrets are exact canonical 256-bit values and fail closed otherwise', async () => {
+    const secret = createCacheSigningSecret();
+    expect(secret).toMatch(/^s1\.[A-Za-z0-9_-]{43}$/);
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+    const encoded = secret.slice(3);
+    const finalIndex = alphabet.indexOf(encoded.at(-1) ?? '');
+    const noncanonicalAlias = `${secret.slice(0, -1)}${alphabet[finalIndex ^ 1]}`;
+    const malformed = [
+      undefined,
+      '',
+      's1.short',
+      `s1.${'a'.repeat(22)}`,
+      `s1.${'a'.repeat(42)}`,
+      `s1.${'a'.repeat(44)}`,
+      noncanonicalAlias,
+    ];
+    for (const candidate of malformed) {
+      await expect(
+        verifyCacheToken('not-a-token', 'faction-id', 'faction_sheet', candidate)
+      ).resolves.toBe(false);
+      if (candidate !== undefined) {
+        await expect(createCacheToken('faction-id', 'faction_sheet', candidate)).rejects.toThrow(
+          /signing secret/
+        );
+      }
+    }
+
+    const token = await createCacheToken('faction-id', 'faction_sheet', secret);
+    await expect(
+      verifyCacheToken(token, 'faction-id', 'faction_sheet', createCacheSigningSecret())
+    ).resolves.toBe(false);
   });
 });

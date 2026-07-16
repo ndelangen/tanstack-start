@@ -7,6 +7,8 @@ import {
 
 const encoder = new TextEncoder();
 export const MAX_PUBLISHER_JSON_BODY_BYTES = 16 * 1_024;
+export const CACHE_TOKEN_PATTERN = /^v1\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}$/;
+export const CACHE_SIGNING_SECRET_PATTERN = /^s1\.[A-Za-z0-9_-]{43}$/;
 
 export class InvalidPublisherRequestError extends Error {}
 
@@ -33,15 +35,21 @@ function fromBase64Url(value: string): Uint8Array | null {
   }
 }
 
-async function hmac(secret: string, message: string): Promise<Uint8Array> {
+async function hmacBytes(secret: Uint8Array, message: string): Promise<Uint8Array> {
+  const secretCopy = new Uint8Array(secret.byteLength);
+  secretCopy.set(secret);
   const key = await crypto.subtle.importKey(
     'raw',
-    encoder.encode(secret),
+    secretCopy,
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign']
   );
   return new Uint8Array(await crypto.subtle.sign('HMAC', key, encoder.encode(message)));
+}
+
+async function hmac(secret: string, message: string): Promise<Uint8Array> {
+  return await hmacBytes(encoder.encode(secret), message);
 }
 
 async function verifyHmac(
@@ -59,6 +67,41 @@ async function verifyHmac(
   const signatureCopy = new Uint8Array(signature.byteLength);
   signatureCopy.set(signature);
   return await crypto.subtle.verify('HMAC', key, signatureCopy, encoder.encode(message));
+}
+
+async function verifyHmacBytes(
+  secret: Uint8Array,
+  message: string,
+  signature: Uint8Array
+): Promise<boolean> {
+  const secretCopy = new Uint8Array(secret.byteLength);
+  secretCopy.set(secret);
+  const key = await crypto.subtle.importKey(
+    'raw',
+    secretCopy,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['verify']
+  );
+  const signatureCopy = new Uint8Array(signature.byteLength);
+  signatureCopy.set(signature);
+  return await crypto.subtle.verify('HMAC', key, signatureCopy, encoder.encode(message));
+}
+
+function cacheSigningSecretBytes(secret: string | undefined): Uint8Array | null {
+  if (!secret || !CACHE_SIGNING_SECRET_PATTERN.test(secret)) return null;
+  const encoded = secret.slice(3);
+  const bytes = fromBase64Url(encoded);
+  if (bytes?.byteLength !== 32 || toBase64Url(bytes) !== encoded) return null;
+  return bytes;
+}
+
+export function createCacheSigningSecret(): string {
+  return `s1.${toBase64Url(crypto.getRandomValues(new Uint8Array(32)))}`;
+}
+
+export function isValidCacheSigningSecret(secret: string | undefined): boolean {
+  return cacheSigningSecretBytes(secret) !== null;
 }
 
 export function randomPublisherToken(byteLength = 24): string {
@@ -195,9 +238,11 @@ export async function createCacheToken(
   assetType: 'faction_sheet',
   secret: string
 ): Promise<string> {
+  const secretBytes = cacheSigningSecretBytes(secret);
+  if (!secretBytes) throw new Error('Cache-token signing secret is invalid');
   const nonce = randomPublisherToken(16);
   const unsigned = `v1.${nonce}`;
-  const signature = await hmac(secret, `${unsigned}|${factionId}|${assetType}`);
+  const signature = await hmacBytes(secretBytes, `${unsigned}|${factionId}|${assetType}`);
   return `${unsigned}.${toBase64Url(signature)}`;
 }
 
@@ -207,13 +252,21 @@ export async function verifyCacheToken(
   assetType: 'faction_sheet',
   secret: string | undefined
 ): Promise<boolean> {
-  if (!secret) return false;
+  const secretBytes = cacheSigningSecretBytes(secret);
+  if (!secretBytes || !CACHE_TOKEN_PATTERN.test(token)) return false;
   const [version, nonce, encodedSignature, extra] = token.split('.');
   if (version !== 'v1' || !nonce || !encodedSignature || extra) return false;
   const nonceBytes = fromBase64Url(nonce);
   const signature = fromBase64Url(encodedSignature);
-  if (!nonceBytes || nonceBytes.byteLength < 16 || !signature) return false;
-  return await verifyHmac(secret, `v1.${nonce}|${factionId}|${assetType}`, signature);
+  if (
+    nonceBytes?.byteLength !== 16 ||
+    toBase64Url(nonceBytes) !== nonce ||
+    signature?.byteLength !== 32 ||
+    toBase64Url(signature) !== encodedSignature
+  ) {
+    return false;
+  }
+  return await verifyHmacBytes(secretBytes, `v1.${nonce}|${factionId}|${assetType}`, signature);
 }
 
 export function publisherJson(body: unknown, status = 200): Response {

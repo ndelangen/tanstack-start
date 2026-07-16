@@ -16,7 +16,7 @@ export const exactClaimSchema = z.strictObject({
 export const completionMetadataSchema = z.strictObject({
   r2Etag: z.string().trim().min(1).max(512),
   bytes: z.number().int().positive(),
-  cacheToken: z.string().regex(/^v1\.[A-Za-z0-9_-]{22,}\.[A-Za-z0-9_-]{43,}$/),
+  cacheToken: z.string().regex(/^v1\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}$/),
 });
 
 export const failureSchema = z.strictObject({
@@ -31,6 +31,19 @@ export const pollRequestSchema = z.strictObject({
 
 export const acquireRequestSchema = z.strictObject({
   schemaVersion: z.literal(1),
+  batchToken: publisherTokenSchema,
+});
+
+export const settleBrowserRequestSchema = z.strictObject({
+  schemaVersion: z.literal(1),
+  batchToken: publisherTokenSchema,
+  measuredBrowserMs: z.number().int().min(0).max(900_000),
+});
+
+export const releaseBatchRequestSchema = z.strictObject({
+  schemaVersion: z.literal(1),
+  batchToken: publisherTokenSchema,
+  mode: z.enum(['no_browser', 'after_settlement']),
 });
 
 export const claimRequestSchema = z.strictObject({
