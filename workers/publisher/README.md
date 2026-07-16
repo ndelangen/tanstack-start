@@ -7,6 +7,8 @@ This is the production-shaped, one-item publisher surface. It is checked in iner
 - Queue and R2 names are deliberately unprovisioned placeholders;
 - Convex and capture hosts use the reserved `.invalid` domain;
 - estimated R2 inventory has no observation time, so writes fail closed;
+- the configured renderer is the inert `unprovisioned` label and cannot authorize a claim because
+  execution requires the exact generated immutable renderer manifest id;
 - poll and executor secrets are distinct required bindings and are not checked in.
 - the cache-token signing secret is a required binding shared out-of-band with Convex and is not
   checked in or provisioned by this ticket. It has the exact canonical shape `s1.<43 base64url
@@ -46,12 +48,18 @@ successfully measured the actual default at 270 ms CPU for one PDF. Ticket 6 mus
 no-custom-limit configuration and re-measure the production one-item path rather than infer a Free
 allowance from the generic documentation.
 
+See [MEASUREMENT.md](./MEASUREMENT.md) for the pre-measurement telemetry contract, the production
+metrics Ticket 6 must join from Cloudflare, and the Ticket 7 rollout/scaling work that remains
+blocked. Promotion reports are recommendation-only; `EXECUTOR_MAX_ITEMS` remains exactly `1`.
+
 ## Local checks
 
 `publisher:assets` first builds the complete TanStack SPA, then builds the isolated capture bundle,
 combines both outputs into `workers/publisher/dist`, omits Netlify's `_redirects`, creates the
 Cloudflare SPA `index.html` as an exact copy of `_shell.html`, and enforces the Workers Free asset
-count plus the 25 MiB per-file limit. Set `VITE_CONVEX_URL` to the intended build-time Convex URL.
+count plus the 25 MiB per-file limit. Assembly canonicalizes the volatile TanStack root hydration
+timestamp so identical inputs produce one stable release and renderer identity. Set
+`VITE_CONVEX_URL` to the intended build-time Convex URL.
 
 ```bash
 bun run publisher:types

@@ -9,13 +9,15 @@ import { ConvexPublisherClient } from './convex';
 import { handlePublicAssetRequest } from './delivery';
 import { createWakeUp, dispatchWakeUp } from './dispatch';
 import { consumePublisherMessage } from './queue';
+import { rendererManifest } from './renderer-manifest.generated';
+import { boundedPublisherTelemetryEvent, publisherBuildIdentity } from './telemetry';
 
 function log(event: Record<string, unknown>): void {
-  console.log(serializePublisherLogEvent(event));
+  console.log(serializePublisherLogEvent(boundedPublisherTelemetryEvent(event)));
 }
 
 function logError(event: Record<string, unknown>): void {
-  console.error(serializePublisherLogEvent(event));
+  console.error(serializePublisherLogEvent(boundedPublisherTelemetryEvent(event)));
 }
 
 function client(env: Env, config: ReturnType<typeof parsePublisherConfig>) {
@@ -54,13 +56,24 @@ export const publisherWorker = {
     if (capture) return capture;
     const pathname = new URL(request.url).pathname;
     if (pathname === '/__asset-publisher/health') {
+      const identity = publisherBuildIdentity(
+        env.CF_VERSION_METADATA,
+        env.SUPPORTED_RENDERER_VERSION
+      );
       return Response.json(
         {
           ok: true,
           publisherEnabled: isPublisherEnabled(env),
           cronDispatchEnabled: isCronDispatchEnabled(env),
           maxItems: 1,
-          supportedRendererVersion: env.SUPPORTED_RENDERER_VERSION,
+          supportedRendererVersion: rendererManifest.rendererId,
+          rendererSupport: {
+            supportedRendererIds: [rendererManifest.rendererId],
+            configuredRendererVersion: env.SUPPORTED_RENDERER_VERSION,
+            configurationMatchesManifest:
+              String(env.SUPPORTED_RENDERER_VERSION) === rendererManifest.rendererId,
+          },
+          identity,
         },
         { headers: { 'Cache-Control': 'no-store' } }
       );
@@ -99,12 +112,17 @@ export const publisherWorker = {
         event: 'asset_publisher_cron',
         result: 'failed',
         triggerId: wakeUp.triggerId,
+        failureClass: 'operational_failure',
         error: publisherErrorMessage(error),
       });
     }
   },
 
   async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
+    const identity = publisherBuildIdentity(
+      env.CF_VERSION_METADATA,
+      env.SUPPORTED_RENDERER_VERSION
+    );
     const [message, ...extras] = batch.messages;
     for (const extra of extras) {
       extra.ack();
@@ -113,6 +131,13 @@ export const publisherWorker = {
         messageId: extra.id,
         action: 'ack',
         reason: 'oversized_batch',
+        identity,
+        queue: {
+          name: batch.queue,
+          messageId: extra.id,
+          attempt: extra.attempts,
+          lane: 'foreground',
+        },
       });
     }
     if (!message) return;
@@ -123,6 +148,13 @@ export const publisherWorker = {
         messageId: message.id,
         action: 'ack',
         reason: 'disabled',
+        identity,
+        queue: {
+          name: batch.queue,
+          messageId: message.id,
+          attempt: message.attempts,
+          lane: 'foreground',
+        },
       });
       return;
     }
@@ -138,12 +170,21 @@ export const publisherWorker = {
         action: 'ack',
         reason: 'invalid_config',
         error: publisherErrorMessage(error),
+        identity,
+        queue: {
+          name: batch.queue,
+          messageId: message.id,
+          attempt: message.attempts,
+          lane: 'foreground',
+        },
       });
       return;
     }
     const publisher = client(env, config);
     await consumePublisherMessage(message, config, {
       client: publisher,
+      identity,
+      queueName: batch.queue,
       now: () => Date.now(),
       log,
       owned: {

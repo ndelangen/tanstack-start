@@ -6,6 +6,7 @@ import {
   readdirSync,
   readFileSync,
   statSync,
+  writeFileSync,
 } from 'node:fs';
 import path from 'node:path';
 
@@ -17,6 +18,13 @@ export type PublisherAssetReport = {
   totalBytes: number;
   largestAsset: { path: string; bytes: number };
 };
+
+export function normalizePublisherShell(shell: string): string {
+  return shell.replace(
+    /(i:"__root__\0",u:)\d+(,s:"success",ssr:!0)/g,
+    (_match, prefix: string, suffix: string) => `${prefix}0${suffix}`
+  );
+}
 
 function assertDirectory(directory: string, label: string) {
   if (!existsSync(directory) || !statSync(directory).isDirectory()) {
@@ -105,6 +113,8 @@ export function assemblePublisherAssets(
 
   const shell = path.join(publisherDirectory, '_shell.html');
   if (!existsSync(shell)) throw new Error('Application build is missing the TanStack SPA shell');
+  const normalizedShell = normalizePublisherShell(readFileSync(shell, 'utf8'));
+  writeFileSync(shell, normalizedShell);
   copyFileSync(shell, path.join(publisherDirectory, 'index.html'));
   return inspectPublisherAssets(publisherDirectory);
 }

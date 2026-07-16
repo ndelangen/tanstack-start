@@ -1,3 +1,5 @@
+import { rendererManifest } from './renderer-manifest.generated';
+
 export type PublisherConfig = {
   captureBaseUrl: string;
   convexPollUrl: string;
@@ -46,6 +48,9 @@ export function parsePublisherConfig(env: Env): PublisherConfig {
   ) {
     throw new Error('Poll and executor secrets must be present and distinct');
   }
+  if (String(env.SUPPORTED_RENDERER_VERSION) !== rendererManifest.rendererId) {
+    throw new Error('Configured renderer must equal the embedded immutable renderer manifest id');
+  }
   const maxItems = integer('EXECUTOR_MAX_ITEMS', env.EXECUTOR_MAX_ITEMS, 1, 1);
   const softDeadlineMs = integer('SOFT_DEADLINE_MS', env.SOFT_DEADLINE_MS, 1, 480_000);
   const uploadMarginMs = integer('UPLOAD_MARGIN_MS', env.UPLOAD_MARGIN_MS, 120_000, 120_000);
@@ -74,7 +79,7 @@ export function parsePublisherConfig(env: Env): PublisherConfig {
       env.CONVEX_EXECUTOR_BASE_URL
     ),
     convexRenderUrl: absoluteHttpsUrl('CONVEX_RENDER_URL', env.CONVEX_RENDER_URL),
-    supportedRendererVersion: env.SUPPORTED_RENDERER_VERSION,
+    supportedRendererVersion: rendererManifest.rendererId,
     maxItems: maxItems as 1,
     softDeadlineMs,
     uploadMarginMs,

@@ -10,6 +10,7 @@ import {
 import { executeOwnedBatch, type FailurePoint, type OwnedBatchDependencies } from './executor';
 import { postJson } from './http';
 import type { AssetBucket } from './r2';
+import { rendererManifest } from './renderer-manifest.generated';
 import { fakeR2Object } from './test-helpers';
 
 const NOW = Date.parse('2026-07-16T12:00:00.000Z');
@@ -18,7 +19,7 @@ const config: PublisherConfig = {
   convexPollUrl: 'https://convex.example.com/poll',
   convexExecutorBaseUrl: 'https://convex.example.com/executor',
   convexRenderUrl: 'https://convex.example.com/render',
-  supportedRendererVersion: 'faction-sheet-v1',
+  supportedRendererVersion: rendererManifest.rendererId,
   maxItems: 1,
   softDeadlineMs: 480_000,
   uploadMarginMs: 120_000,
@@ -50,7 +51,7 @@ const claim: ClaimedTarget = {
   batchToken: acquisition.batchToken,
   claimToken: 'claim-token-0000000000000001',
   generation: 1,
-  rendererVersion: 'faction-sheet-v1',
+  rendererVersion: rendererManifest.rendererId,
   leaseExpiresAt: acquisition.leaseExpiresAt,
   payloadHash: 'a'.repeat(64),
   renderCapability: 'render-capability-token-000000001',
@@ -171,6 +172,27 @@ describe('one-item owned batch execution', () => {
     expect(spies.revalidate).toHaveBeenCalledBefore(spies.put);
     expect(spies.put).toHaveBeenCalledBefore(spies.complete);
     expect(spies.complete).toHaveBeenCalledBefore(spies.settleBrowser);
+    expect(report.telemetry).toMatchObject({
+      configuredMaxItems: 1,
+      effectiveMaxItems: 1,
+      platform: {
+        cpuMs: null,
+        wallMs: null,
+        memoryBytes: null,
+        subrequests: null,
+        source: 'cloudflare_analytics_required',
+      },
+      logicalCalls: {
+        convex: { claim: 1, revalidate: 1, complete: 1, settleBrowser: 1 },
+        r2: { head: 1, put: 1 },
+        cache: { match: 0, put: 0 },
+      },
+      minimumLeaseMarginMs: 720_000,
+      item: {
+        outcome: 'completed',
+        pdf: { bytes: 3, pages: 2, widthMm: 150, heightMm: 195 },
+      },
+    });
   });
 
   test('empty and duplicate/busy-fenced claims close without upload', async () => {
@@ -192,11 +214,185 @@ describe('one-item owned batch execution', () => {
     const { dependencies, spies } = setup({ browserAvailable: false });
     const report = await executeOwnedBatch(dependencies, config, acquisition, NOW);
     expect(report).toMatchObject({ status: 'systemic_stop', browserOpened: false });
+    expect(report.telemetry).toMatchObject({
+      counts: { claimed: 0, completed: 0, stale: 0, failed: 0 },
+      invocationFailureClass: 'browser_unavailable',
+      browser: { outcome: 'not_opened' },
+      item: null,
+    });
     expect(spies.releaseBatch).toHaveBeenCalledWith(
       acquisition.batchToken,
       'no_browser',
       expect.any(Number)
     );
+    expect(spies.openBrowser).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    ['closed', async (): Promise<void> => undefined, 'late_opened_closed'],
+    [
+      'close failure',
+      async (): Promise<void> => await Promise.reject(new Error('close failed')),
+      'late_opened_close_failed',
+    ],
+    [
+      'close timeout',
+      async (): Promise<void> => await new Promise<void>(() => {}),
+      'late_opened_close_timeout',
+    ],
+  ] as const)('records a late-opened Browser session with %s', async (_label, close, outcome) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    try {
+      const { dependencies } = setup({ now: Date.now });
+      dependencies.openBrowser = async () => {
+        await new Promise((resolve) => setTimeout(resolve, 110));
+        return {
+          sessionId: () => 'late-browser-session-sensitive',
+          capture: async () => {
+            throw new Error('late session must never capture');
+          },
+          close,
+        };
+      };
+      const execution = executeOwnedBatch(
+        dependencies,
+        {
+          ...config,
+          softDeadlineMs: 6_000,
+          browserCaptureTimeoutMs: 100,
+          browserCleanupGraceMs: 100,
+        },
+        acquisition,
+        NOW
+      );
+      await vi.advanceTimersByTimeAsync(outcome === 'late_opened_close_timeout' ? 6_000 : 200);
+      const report = await execution;
+      expect(report).toMatchObject({
+        status: 'systemic_stop',
+        browserOpened: true,
+        telemetry: {
+          counts: { claimed: 0, completed: 0, stale: 0, failed: 0 },
+          browser: {
+            outcome,
+            sessionCorrelationHash: expect.stringMatching(/^[0-9a-f]{64}$/),
+          },
+          item: null,
+        },
+      });
+      expect(report.telemetry.browser.closeAttemptMs).toBeGreaterThanOrEqual(0);
+      expect(JSON.stringify(report)).not.toContain('late-browser-session-sensitive');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test('a launch resolving beyond the former late grace is closed exactly once without phase overlap', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    try {
+      const { dependencies } = setup({ now: Date.now });
+      const close = vi.fn(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 31));
+      });
+      dependencies.openBrowser = async () => {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        return {
+          sessionId: () => 'beyond-former-grace-session',
+          capture: async () => {
+            throw new Error('late session must never capture');
+          },
+          close,
+        };
+      };
+      const execution = executeOwnedBatch(
+        dependencies,
+        {
+          ...config,
+          softDeadlineMs: 6_000,
+          browserCaptureTimeoutMs: 100,
+          browserCleanupGraceMs: 100,
+        },
+        acquisition,
+        NOW
+      );
+      await vi.advanceTimersByTimeAsync(281);
+      const report = await execution;
+      expect(close).toHaveBeenCalledOnce();
+      expect(report.telemetry).toMatchObject({
+        phasesMs: { browserLaunch: 100, lateBrowserWait: 150, lateBrowserClose: 31 },
+        browser: { outcome: 'late_opened_closed', openToCloseMs: 31, closeAttemptMs: 31 },
+        counts: { claimed: 0, failed: 0 },
+        item: null,
+      });
+      expect(report.telemetry.phasesMs.browserLaunch).not.toBe(281);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test('an unresolved late launch is observably fenced and retains one attached close continuation', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    try {
+      const { dependencies } = setup({ now: Date.now });
+      const close = vi.fn(async () => undefined);
+      let resolveBrowser:
+        | ((browser: Awaited<ReturnType<typeof dependencies.openBrowser>>) => void)
+        | undefined;
+      dependencies.openBrowser = async () =>
+        await new Promise((resolve) => {
+          resolveBrowser = resolve;
+        });
+      const execution = executeOwnedBatch(
+        dependencies,
+        {
+          ...config,
+          softDeadlineMs: 6_000,
+          browserCaptureTimeoutMs: 100,
+          browserCleanupGraceMs: 100,
+        },
+        acquisition,
+        NOW
+      );
+      await vi.advanceTimersByTimeAsync(1_000);
+      const report = await execution;
+      expect(report).toMatchObject({
+        status: 'systemic_stop',
+        browserOpened: false,
+        browserClosed: false,
+        browserSettled: false,
+        telemetry: {
+          phasesMs: { browserLaunch: 100, lateBrowserWait: 900 },
+          browser: { outcome: 'late_launch_unresolved_fenced' },
+          counts: { claimed: 0, failed: 0 },
+          item: null,
+        },
+      });
+      resolveBrowser?.({
+        sessionId: () => 'post-fence-late-session',
+        capture: async () => {
+          throw new Error('late session must never capture');
+        },
+        close,
+      });
+      await vi.advanceTimersByTimeAsync(0);
+      expect(close).toHaveBeenCalledOnce();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test('an invalid reservation remains a systemic stop without changing batch ownership', async () => {
+    const { dependencies, spies } = setup();
+    const report = await executeOwnedBatch(
+      dependencies,
+      { ...config, browserCleanupGraceMs: 5_000 },
+      { ...acquisition, browserReservationMs: 10_000 },
+      NOW
+    );
+    expect(report).toMatchObject({ status: 'systemic_stop', browserOpened: false });
+    expect(spies.releaseBatch).not.toHaveBeenCalled();
     expect(spies.openBrowser).not.toHaveBeenCalled();
   });
 
@@ -221,6 +417,20 @@ describe('one-item owned batch execution', () => {
     expect(spies.settleBrowser).not.toHaveBeenCalled();
   });
 
+  test('a post-completion close failure remains an invocation cleanup failure, not an item failure', async () => {
+    const { dependencies } = setup({
+      close: async () => await Promise.reject(new Error('provider close failed')),
+    });
+    const report = await executeOwnedBatch(dependencies, config, acquisition, NOW);
+    expect(report).toMatchObject({ status: 'systemic_stop', completed: true });
+    expect(report.telemetry).toMatchObject({
+      counts: { claimed: 1, completed: 1, stale: 0, failed: 0 },
+      invocationFailureClass: 'cleanup_failure',
+      browser: { outcome: 'close_failed' },
+      item: { outcome: 'completed' },
+    });
+  });
+
   test('a save observed during capture is rejected before R2', async () => {
     const { dependencies, spies } = setup({ revalidateStatus: 'stale' });
     const report = await executeOwnedBatch(dependencies, config, acquisition, NOW);
@@ -240,6 +450,57 @@ describe('one-item owned batch execution', () => {
     const report = await executeOwnedBatch(completion.dependencies, config, acquisition, NOW);
     expect(report).toMatchObject({ status: 'failed', uploaded: true, completed: false });
     expect(completion.spies.fail).toHaveBeenCalled();
+  });
+
+  test('lease telemetry samples post-write, post-completion, and cleanup margins', async () => {
+    let current = NOW;
+    const { dependencies } = setup({
+      now: () => current,
+      put: async () => {
+        current += 200_000;
+        return r2Object();
+      },
+      complete: async () => {
+        current += 100_000;
+        return 'completed';
+      },
+    });
+    const report = await executeOwnedBatch(dependencies, config, acquisition, NOW);
+    expect(report.status).toBe('completed');
+    expect(report.telemetry).toMatchObject({
+      minimumLeaseMarginMs: 420_000,
+      leaseMarginsMs: {
+        claim: 720_000,
+        lastPreUpload: 720_000,
+        postR2: 520_000,
+        postCompletion: 420_000,
+        cleanupStart: 420_000,
+      },
+    });
+  });
+
+  test('the embedded renderer manifest is the only claim authorization identity', async () => {
+    const rejectedRenderer = `Bearer SECRET_RENDERER_TOKEN ${'x'.repeat(100_000)}`;
+    const { dependencies, spies } = setup({
+      claimResult: { ...claim, rendererVersion: rejectedRenderer },
+    });
+    const report = await executeOwnedBatch(dependencies, config, acquisition, NOW);
+    expect(report).toMatchObject({
+      status: 'systemic_stop',
+      telemetry: {
+        counts: { claimed: 1, completed: 0, stale: 0, failed: 1 },
+        invocationFailureClass: 'renderer',
+        item: {
+          rendererId: rendererManifest.rendererId,
+          rendererMismatch: true,
+          failureClass: 'renderer',
+        },
+      },
+    });
+    expect(JSON.stringify(report)).not.toContain('SECRET_RENDERER_TOKEN');
+    expect(JSON.stringify(report)).not.toContain('rendererVersion');
+    expect(spies.capture).not.toHaveBeenCalled();
+    expect(spies.release).toHaveBeenCalledOnce();
   });
 
   test('an oversized PDF fails before R2 and is checkpointed', async () => {
@@ -281,13 +542,17 @@ describe('one-item owned batch execution', () => {
     expect(spies.fail).toHaveBeenCalled();
   });
 
-  test('returned reports redact signed artwork URLs before structured logging', async () => {
+  test('returned reports retain only a bounded failure class for secret-bearing errors', async () => {
     const signedUrl =
       'https://signed-user:SECRET_PASSWORD@cdn.example.com/private/SECRET_PATH/art.png?token=SECRET_QUERY#SECRET_FRAGMENT';
     const { dependencies } = setup({ captureError: new Error(`Capture failed: ${signedUrl}`) });
     const report = await executeOwnedBatch(dependencies, config, acquisition, NOW);
     const serialized = JSON.stringify(report);
-    expect(serialized).toContain('https://cdn.example.com/<redacted>');
+    expect(report).toMatchObject({
+      error: 'asset publisher operational failure',
+      telemetry: { invocationFailureClass: 'operational_failure' },
+    });
+    expect(serialized).not.toContain('cdn.example.com');
     for (const secret of [
       'signed-user',
       'SECRET_PASSWORD',
@@ -296,6 +561,37 @@ describe('one-item owned batch execution', () => {
       'SECRET_FRAGMENT',
     ]) {
       expect(serialized).not.toContain(secret);
+    }
+  });
+
+  test('Browser, R2, and Convex failures cannot echo tokens or oversized diagnostics', async () => {
+    const sentinels = [
+      acquisition.batchToken,
+      claim.claimToken,
+      claim.renderCapability,
+      'browser-session-sensitive-0001',
+      'Bearer SECRET_BEARER_TOKEN',
+      'POLL_SECRET_SENTINEL',
+      'EXECUTOR_SECRET_SENTINEL',
+      'PAYLOAD_SECRET_SENTINEL',
+    ];
+    const adversarial = `${sentinels.join(' ')} ${'x'.repeat(100_000)}`;
+    const scenarios = [
+      setup({ captureError: new Error(adversarial) }),
+      setup({ put: async () => await Promise.reject(new Error(adversarial)) }),
+      setup({ complete: async () => await Promise.reject(new Error(adversarial)) }),
+    ];
+    for (const { dependencies, spies } of scenarios) {
+      const report = await executeOwnedBatch(dependencies, config, acquisition, NOW);
+      const serialized = JSON.stringify(report);
+      expect(report.error).toBe('asset publisher operational failure');
+      expect(spies.fail).toHaveBeenCalledWith(
+        expect.any(Object),
+        'asset publisher operational failure',
+        expect.any(Number)
+      );
+      for (const sentinel of sentinels) expect(serialized).not.toContain(sentinel);
+      expect(serialized).not.toContain('x'.repeat(1_000));
     }
   });
 
@@ -313,7 +609,7 @@ describe('one-item owned batch execution', () => {
     expect(report).toMatchObject({ status: 'failed', browserClosed: true, browserSettled: true });
     expect(spies.fail).toHaveBeenCalledWith(
       expect.objectContaining({ targetId: claim.targetId, claimToken: claim.claimToken }),
-      expect.stringMatching(/recovered the exact claim/),
+      'asset publisher operational failure',
       expect.any(Number)
     );
     expect(spies.releaseBatch).not.toHaveBeenCalled();
@@ -366,7 +662,7 @@ describe('one-item owned batch execution', () => {
     });
     expect(report.status).toBe('systemic_stop');
     expect(report).toMatchObject({ browserClosed: true, browserSettled: true });
-    expect(report.error).toMatch(/481000 ms > 480000 ms/);
+    expect(report.error).toBe('asset publisher quota or reservation');
   });
 
   test('an overrun beyond the settlement window keeps the reservation unsettled', async () => {
@@ -458,7 +754,7 @@ describe('one-item owned batch execution', () => {
       const report = await execution;
       expect(report).toMatchObject({
         status: 'systemic_stop',
-        error: expect.stringMatching(/deadline/i),
+        error: 'asset publisher timeout',
       });
       expect(openBrowser).toHaveBeenCalledOnce();
       expect(spies.close).toHaveBeenCalledOnce();
