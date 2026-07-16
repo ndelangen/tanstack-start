@@ -77,6 +77,7 @@ export default defineSchema({
     published_r2_etag: v.optional(v.string()),
     published_bytes: v.optional(v.number()),
     published_at: v.optional(v.number()),
+    first_publication_admitted: v.optional(v.boolean()),
     status: v.union(
       v.literal('pending'),
       v.literal('leased'),
@@ -106,6 +107,19 @@ export default defineSchema({
       'status',
       'lease_expires_at',
     ])
+    .index('by_asset_type_and_admitted_and_status_and_next_eligible_at', [
+      'asset_type',
+      'first_publication_admitted',
+      'status',
+      'next_eligible_at',
+    ])
+    .index('by_asset_type_and_admitted_and_status_and_lease_expires_at', [
+      'asset_type',
+      'first_publication_admitted',
+      'status',
+      'lease_expires_at',
+    ])
+    .index('by_asset_type_and_published_generation', ['asset_type', 'published_generation'])
     .index('by_batch_token', ['batch_token']),
   asset_claim_snapshots: defineTable({
     target_id: v.id('asset_targets'),

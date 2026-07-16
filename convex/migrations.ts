@@ -7,6 +7,12 @@ import { components, internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import { internalMutation, mutation, query } from './_generated/server';
 import {
+  assertFirstPublicationCounterReady,
+  ensureDisabledPublisherState,
+  FACTION_SHEET_STORAGE_ACTIVATION_PREREQUISITE,
+  initializeFirstPublicationCounterDisabled,
+} from './lib/factionSheetPublicationGuard';
+import {
   assertExactlyOneFactionSheetTarget,
   ensureFactionSheetConfig,
   ensureFactionSheetTargetForBackfill,
@@ -28,6 +34,8 @@ const MIGRATION_IDS: Record<string, MigrationRef> = {
   profiles_from_users_v1: internal.migrations.profiles_from_users_v1,
   faction_sheet_targets_backfill_v1: internal.migrations.faction_sheet_targets_backfill_v1,
   faction_sheet_targets_verify_v1: internal.migrations.faction_sheet_targets_verify_v1,
+  faction_sheet_publication_admissions_v1:
+    internal.migrations.faction_sheet_publication_admissions_v1,
 };
 
 type MigrationId = keyof typeof MIGRATION_IDS;
@@ -41,6 +49,7 @@ const migrations = new Migrations(components.migrations, {
 const FACTION_SHEET_TARGET_MIGRATION_IDS = [
   'faction_sheet_targets_backfill_v1',
   'faction_sheet_targets_verify_v1',
+  FACTION_SHEET_STORAGE_ACTIVATION_PREREQUISITE,
 ] as const;
 
 async function resolveUniqueGroupSlug(
@@ -208,6 +217,26 @@ export const faction_sheet_targets_verify_v1 = migrations.define({
   },
 });
 
+/**
+ * Widen-phase marker backfill for the structural R2 object admission guard.
+ * The disabled-first runner initializes the counter from the bounded union of
+ * already-published and already-admitted targets before this pass begins.
+ */
+export const faction_sheet_publication_admissions_v1 = migrations.define({
+  table: 'asset_targets',
+  batchSize: 25,
+  migrateOne: async (_ctx, target) => {
+    if (target.published_generation !== undefined) {
+      return target.first_publication_admitted === true
+        ? undefined
+        : { first_publication_admitted: true };
+    }
+    if (target.first_publication_admitted === undefined) {
+      return { first_publication_admitted: false };
+    }
+  },
+});
+
 export const run = migrations.runner();
 
 export const runDeployMigrations = migrations.runner([
@@ -218,6 +247,7 @@ export const runDeployMigrations = migrations.runner([
   internal.migrations.profiles_from_users_v1,
   internal.migrations.faction_sheet_targets_backfill_v1,
   internal.migrations.faction_sheet_targets_verify_v1,
+  internal.migrations.faction_sheet_publication_admissions_v1,
 ]);
 
 export const runRequired = mutation({
@@ -244,6 +274,13 @@ export const runRequired = mutation({
           throw new Error(
             `Faction-sheet target migration requires disabled configuration; found ${config.status}`
           );
+        }
+        if (
+          requestedFactionSheetIds.includes(FACTION_SHEET_STORAGE_ACTIVATION_PREREQUISITE) &&
+          !completed.has(FACTION_SHEET_STORAGE_ACTIVATION_PREREQUISITE)
+        ) {
+          await ensureDisabledPublisherState(ctx);
+          await initializeFirstPublicationCounterDisabled(ctx);
         }
       }
     }
@@ -376,6 +413,9 @@ export const assertReadyForNarrow = query({
           `Narrow blocked: expected exactly one faction-sheet config, found ${configs.length}`
         );
       }
+    }
+    if (args.required.includes(FACTION_SHEET_STORAGE_ACTIVATION_PREREQUISITE)) {
+      await assertFirstPublicationCounterReady(ctx);
     }
     return {
       ok: true,

@@ -20,6 +20,7 @@ import type * as http from "../http.js";
 import type * as lib_assetPublisherHttp from "../lib/assetPublisherHttp.js";
 import type * as lib_assetPublisherSchemas from "../lib/assetPublisherSchemas.js";
 import type * as lib_assetPublishingProof from "../lib/assetPublishingProof.js";
+import type * as lib_factionSheetPublicationGuard from "../lib/factionSheetPublicationGuard.js";
 import type * as lib_factionSheetTargets from "../lib/factionSheetTargets.js";
 import type * as lib_faqRulesetList from "../lib/faqRulesetList.js";
 import type * as lib_ids from "../lib/ids.js";
@@ -54,6 +55,7 @@ declare const fullApi: ApiFromModules<{
   "lib/assetPublisherHttp": typeof lib_assetPublisherHttp;
   "lib/assetPublisherSchemas": typeof lib_assetPublisherSchemas;
   "lib/assetPublishingProof": typeof lib_assetPublishingProof;
+  "lib/factionSheetPublicationGuard": typeof lib_factionSheetPublicationGuard;
   "lib/factionSheetTargets": typeof lib_factionSheetTargets;
   "lib/faqRulesetList": typeof lib_faqRulesetList;
   "lib/ids": typeof lib_ids;

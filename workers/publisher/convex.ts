@@ -232,6 +232,7 @@ export class ConvexPublisherClient {
   ): Promise<
     | { status: 'stale' }
     | { status: 'insufficient_lease'; leaseExpiresAt: number }
+    | { status: 'storage_guard' | 'storage_limit' }
     | {
         status: 'valid';
         leaseExpiresAt: number;
@@ -244,6 +245,9 @@ export class ConvexPublisherClient {
       await this.postExecutor('revalidate', { schemaVersion: 1, ...claim }, deadlineAt)
     );
     if (body.status === 'stale') return { status: 'stale' };
+    if (body.status === 'storage_guard' || body.status === 'storage_limit') {
+      return { status: body.status };
+    }
     if (body.status === 'insufficient_lease' && finite(body.leaseExpiresAt)) {
       return { status: 'insufficient_lease', leaseExpiresAt: body.leaseExpiresAt };
     }

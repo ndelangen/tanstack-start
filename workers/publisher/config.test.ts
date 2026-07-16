@@ -11,7 +11,7 @@ function env(overrides: Record<string, string> = {}): Env {
     CONVEX_POLL_URL: 'https://convex.example.com/poll',
     CONVEX_EXECUTOR_BASE_URL: 'https://convex.example.com/executor',
     CONVEX_RENDER_URL: 'https://convex.example.com/render',
-    SUPPORTED_RENDERER_VERSION: rendererManifest.rendererId,
+    SUPPORTED_RENDERER_VERSION: rendererManifest.rendererVersion,
     EXECUTOR_MAX_ITEMS: '1',
     SOFT_DEADLINE_MS: '480000',
     UPLOAD_MARGIN_MS: '120000',
@@ -20,11 +20,6 @@ function env(overrides: Record<string, string> = {}): Env {
     PDF_MAX_BYTES: '2000000',
     QUEUE_MAX_PRE_OWNERSHIP_ATTEMPTS: '2',
     QUEUE_RETRY_DELAY_SECONDS: '60',
-    R2_STORAGE_CEILING_BYTES: '8000000000',
-    R2_ESTIMATED_INVENTORY_BYTES: '0',
-    R2_INVENTORY_OBSERVED_AT_MS: '0',
-    R2_INVENTORY_MAX_AGE_MS: '86400000',
-    R2_UNACCOUNTED_WRITE_BUDGET_BYTES: '200000000',
     ...overrides,
   } as unknown as Env;
 }
@@ -46,9 +41,19 @@ describe('publisher lifecycle configuration', () => {
     ).toThrow(/absolute executor lifecycle deadline/);
   });
 
-  test('rejects a mutable renderer label that does not match the embedded manifest', () => {
+  test.each([
+    rendererManifest.rendererId,
+    'mutable-renderer-alias',
+  ])('rejects unsupported renderer version %s', (rendererVersion) => {
     expect(() =>
-      parsePublisherConfig(env({ SUPPORTED_RENDERER_VERSION: 'mutable-renderer-alias' }))
-    ).toThrow(/embedded immutable renderer manifest/);
+      parsePublisherConfig(env({ SUPPORTED_RENDERER_VERSION: rendererVersion }))
+    ).toThrow(/embedded renderer compatibility version/);
+  });
+
+  test('keeps the structural storage proof at the exact 2,000,000-byte PDF cap', () => {
+    expect(parsePublisherConfig(env()).pdfMaxBytes).toBe(2_000_000);
+    expect(() => parsePublisherConfig(env({ PDF_MAX_BYTES: '2000001' }))).toThrow(
+      'PDF_MAX_BYTES must be between 2000000 and 2000000'
+    );
   });
 });

@@ -19,6 +19,7 @@ import {
   completeRequestSchema,
   exactClaimRequestSchema,
   failRequestSchema,
+  operatorRequestSchema,
   pollRequestSchema,
   releaseBatchRequestSchema,
   settleBrowserRequestSchema,
@@ -27,6 +28,11 @@ import {
   handleAssetPublishingProofCheckpoint,
   handleAssetPublishingProofEligibility,
 } from './lib/assetPublishingProof';
+import {
+  FACTION_SHEET_STORAGE_ACTIVATION_PREREQUISITE,
+  FACTION_SHEET_TARGET_ACTIVATION_PREREQUISITE,
+} from './lib/factionSheetPublicationGuard';
+import { INITIAL_FACTION_SHEET_RENDERER_VERSION } from './lib/factionSheetTargets';
 
 const http = httpRouter();
 
@@ -37,6 +43,18 @@ function publisherBoundarySecret(boundary: 'poll' | 'executor') {
   const executor = process.env.ASSET_PUBLISHER_EXECUTOR_SECRET;
   if (!poll || !executor || poll === executor) return undefined;
   return boundary === 'poll' ? poll : executor;
+}
+
+function activationBoundarySecret() {
+  const activation = process.env.ASSET_PUBLISHER_ACTIVATION_SECRET;
+  const otherPublisherSecrets = [
+    process.env.ASSET_PUBLISHER_POLL_SECRET,
+    process.env.ASSET_PUBLISHER_EXECUTOR_SECRET,
+    process.env.ASSET_PUBLISHER_RENDER_CAPABILITY_SECRET,
+    process.env.ASSET_PUBLISHER_CACHE_TOKEN_SECRET,
+  ].filter((secret): secret is string => Boolean(secret));
+  if (!activation || otherPublisherSecrets.includes(activation)) return undefined;
+  return activation;
 }
 
 async function exactClaimArgs(
@@ -76,6 +94,53 @@ http.route({
           { cutoff: Date.parse(body.scheduledCutoff) }
         );
         return { ok: true, ...result, ...body };
+      },
+    });
+  }),
+});
+
+http.route({
+  path: '/asset-publishing/operator',
+  method: 'POST',
+  handler: httpAction(async (ctx, request) => {
+    return await handleAuthenticatedJson(request, {
+      expectedSecret: activationBoundarySecret(),
+      schema: operatorRequestSchema,
+      execute: async (body) => {
+        if (body.operation === 'initialize') {
+          return {
+            ok: true,
+            schemaVersion: body.schemaVersion,
+            operation: body.operation,
+            ...(await ctx.runMutation(internal.assetPublisherOperator.initializeDisabled, {})),
+          };
+        }
+        if (body.operation === 'pause') {
+          return {
+            ok: true,
+            schemaVersion: body.schemaVersion,
+            operation: body.operation,
+            ...(await ctx.runMutation(internal.assetPublisherOperator.pause, {})),
+          };
+        }
+        if (body.operation === 'disable') {
+          return {
+            ok: true,
+            schemaVersion: body.schemaVersion,
+            operation: body.operation,
+            ...(await ctx.runMutation(internal.assetPublisherOperator.disable, {})),
+          };
+        }
+        return {
+          ok: true,
+          schemaVersion: body.schemaVersion,
+          operation: body.operation,
+          ...(await ctx.runMutation(internal.assetPublisherOperator.activate, {
+            expectedRendererVersion: INITIAL_FACTION_SHEET_RENDERER_VERSION,
+            targetPrerequisite: FACTION_SHEET_TARGET_ACTIVATION_PREREQUISITE,
+            storagePrerequisite: FACTION_SHEET_STORAGE_ACTIVATION_PREREQUISITE,
+          })),
+        };
       },
     });
   }),
@@ -181,7 +246,7 @@ http.route({
         const claim = await exactClaimArgs(ctx, body);
         return {
           ok: true,
-          ...(await ctx.runQuery(internal.assetPublisher.revalidateClaim, claim)),
+          ...(await ctx.runMutation(internal.assetPublisher.revalidateClaim, claim)),
         };
       },
     });

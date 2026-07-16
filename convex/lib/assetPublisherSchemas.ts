@@ -29,6 +29,13 @@ export const pollRequestSchema = z.strictObject({
   triggerId: z.uuid(),
 });
 
+export const operatorRequestSchema = z.discriminatedUnion('operation', [
+  z.strictObject({ schemaVersion: z.literal(1), operation: z.literal('initialize') }),
+  z.strictObject({ schemaVersion: z.literal(1), operation: z.literal('pause') }),
+  z.strictObject({ schemaVersion: z.literal(1), operation: z.literal('disable') }),
+  z.strictObject({ schemaVersion: z.literal(1), operation: z.literal('activate') }),
+]);
+
 export const acquireRequestSchema = z.strictObject({
   schemaVersion: z.literal(1),
   batchToken: publisherTokenSchema,

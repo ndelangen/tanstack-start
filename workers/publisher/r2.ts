@@ -1,4 +1,3 @@
-import type { PublisherConfig } from './config';
 import type { ClaimedTarget } from './convex';
 
 export class ConditionalWriteConflictError extends Error {}
@@ -31,29 +30,10 @@ function storedGeneration(object: R2Object): number | undefined {
   return parsed;
 }
 
-export function assertInventoryAllowsWrite(
-  config: PublisherConfig,
-  now: number,
-  candidateBytes: number,
-  existingBytes: number
-): void {
-  const age = now - config.r2InventoryObservedAtMs;
-  if (config.r2InventoryObservedAtMs <= 0 || age < 0 || age > config.r2InventoryMaxAgeMs) {
-    throw new StorageGuardError('R2 estimated inventory is missing, future-dated, or stale');
-  }
-  const estimatedGrowth = Math.max(0, candidateBytes - existingBytes);
-  const guardedGrowth = Math.max(estimatedGrowth, config.r2UnaccountedWriteBudgetBytes);
-  if (config.r2EstimatedInventoryBytes + guardedGrowth > config.r2StorageCeilingBytes) {
-    throw new StorageGuardError('R2 estimated inventory would exceed the write ceiling');
-  }
-}
-
 export async function conditionallyPutFactionSheet(
   bucket: AssetBucket,
-  config: PublisherConfig,
   claim: ClaimedTarget,
-  bytes: Uint8Array,
-  now: number
+  bytes: Uint8Array
 ): Promise<{ key: string; etag: string }> {
   const key = factionSheetKey(claim.factionId);
   const existing = await bucket.head(key);
@@ -70,8 +50,6 @@ export async function conditionallyPutFactionSheet(
       'Stored object has different bytes for the same diagnostic generation'
     );
   }
-  assertInventoryAllowsWrite(config, now, bytes.byteLength, existing?.size ?? 0);
-
   const onlyIf = existing ? { etagMatches: existing.etag } : new Headers({ 'If-None-Match': '*' });
   const written = await bucket.put(key, bytes, {
     onlyIf,

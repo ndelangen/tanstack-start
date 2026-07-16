@@ -32,7 +32,7 @@ const SECRETS = [
 ];
 const TRIGGER_ID = '10a5318c-e0f2-49c6-bd19-5221a80643f7';
 
-function publisherEnv(now: number): Env {
+function publisherEnv(): Env {
   return {
     PUBLISHER_ENABLED: 'true',
     CRON_DISPATCH_ENABLED: 'true',
@@ -40,7 +40,7 @@ function publisherEnv(now: number): Env {
     CONVEX_POLL_URL: 'https://convex.invalid/asset-publishing/poll',
     CONVEX_EXECUTOR_BASE_URL: 'https://convex.invalid/asset-publishing/executor',
     CONVEX_RENDER_URL: 'https://convex.invalid/asset-publishing/render',
-    SUPPORTED_RENDERER_VERSION: rendererManifest.rendererId,
+    SUPPORTED_RENDERER_VERSION: rendererManifest.rendererVersion,
     EXECUTOR_MAX_ITEMS: '1',
     SOFT_DEADLINE_MS: '480000',
     UPLOAD_MARGIN_MS: '120000',
@@ -49,11 +49,6 @@ function publisherEnv(now: number): Env {
     PDF_MAX_BYTES: '2000000',
     QUEUE_MAX_PRE_OWNERSHIP_ATTEMPTS: '2',
     QUEUE_RETRY_DELAY_SECONDS: '60',
-    R2_STORAGE_CEILING_BYTES: '8000000000',
-    R2_ESTIMATED_INVENTORY_BYTES: '0',
-    R2_INVENTORY_OBSERVED_AT_MS: String(now),
-    R2_INVENTORY_MAX_AGE_MS: '86400000',
-    R2_UNACCOUNTED_WRITE_BUDGET_BYTES: '200000000',
     ASSET_PUBLISHER_POLL_SECRET: 'poll-secret-not-shared',
     ASSET_PUBLISHER_EXECUTOR_SECRET: 'executor-secret-not-shared',
     ASSET_PUBLISHER_CACHE_TOKEN_SECRET: createCacheSigningSecret(),
@@ -96,7 +91,7 @@ describe('publisher Worker structured-log security boundary', () => {
     '/publisher-capture',
     '/publisher-capture/unknown.js',
   ])('owns reserved namespaces without Static Assets fallthrough: %s', async (pathname) => {
-    const currentEnv = publisherEnv(Date.now());
+    const currentEnv = publisherEnv();
     const waitUntil = vi.fn();
     const response = await publisherWorker.fetch(
       new Request(`https://assets.example.com${pathname}`),
@@ -117,7 +112,7 @@ describe('publisher Worker structured-log security boundary', () => {
     '/rulesets/example',
     '/public/app-hash.js',
   ])('leaves ordinary application routes and assets to Static Assets: %s', async (pathname) => {
-    const currentEnv = publisherEnv(Date.now());
+    const currentEnv = publisherEnv();
     const response = await publisherWorker.fetch(
       new Request(`https://assets.example.com${pathname}`),
       currentEnv,
@@ -130,34 +125,34 @@ describe('publisher Worker structured-log security boundary', () => {
   });
 
   test('health reports exact Worker version and generated renderer identity', async () => {
-    const now = Date.now();
     const response = await publisherWorker.fetch(
       new Request('https://publisher.example.com/__asset-publisher/health'),
-      publisherEnv(now),
+      publisherEnv(),
       { waitUntil: vi.fn() } as unknown as ExecutionContext
     );
     await expect(response.json()).resolves.toMatchObject({
       maxItems: 1,
-      supportedRendererVersion: rendererManifest.rendererId,
+      supportedRendererVersion: rendererManifest.rendererVersion,
       identity: {
         workerVersionId: 'worker-version-one',
         workerVersionTag: 'ticket-7a',
         workerVersionTimestamp: '2026-07-16T12:00:00.000Z',
         rendererId: expect.stringMatching(/^faction-sheet\/sha256:[0-9a-f]{64}$/),
         rendererManifestDigest: expect.stringMatching(/^[0-9a-f]{64}$/),
-        configuredRendererVersion: rendererManifest.rendererId,
+        configuredRendererVersion: rendererManifest.rendererVersion,
         rendererConfigurationMatchesManifest: true,
       },
       rendererSupport: {
-        supportedRendererIds: [rendererManifest.rendererId],
-        configuredRendererVersion: rendererManifest.rendererId,
+        supportedRendererVersions: [rendererManifest.rendererVersion],
+        rendererId: rendererManifest.rendererId,
+        configuredRendererVersion: rendererManifest.rendererVersion,
         configurationMatchesManifest: true,
       },
     });
   });
 
-  test('health never advertises a mutable renderer label as supported', async () => {
-    const environment = publisherEnv(Date.now());
+  test('health never advertises an unsupported renderer version as compatible', async () => {
+    const environment = publisherEnv();
     (environment as unknown as { SUPPORTED_RENDERER_VERSION: string }).SUPPORTED_RENDERER_VERSION =
       'mutable-renderer-alias';
     const response = await publisherWorker.fetch(
@@ -166,9 +161,10 @@ describe('publisher Worker structured-log security boundary', () => {
       { waitUntil: vi.fn() } as unknown as ExecutionContext
     );
     await expect(response.json()).resolves.toMatchObject({
-      supportedRendererVersion: rendererManifest.rendererId,
+      supportedRendererVersion: rendererManifest.rendererVersion,
       rendererSupport: {
-        supportedRendererIds: [rendererManifest.rendererId],
+        supportedRendererVersions: [rendererManifest.rendererVersion],
+        rendererId: rendererManifest.rendererId,
         configuredRendererVersion: 'mutable-renderer-alias',
         configurationMatchesManifest: false,
       },
@@ -187,7 +183,7 @@ describe('publisher Worker structured-log security boundary', () => {
 
     await publisherWorker.scheduled(
       { scheduledTime: now, cron: '*/15 * * * *', noRetry: vi.fn() },
-      publisherEnv(now)
+      publisherEnv()
     );
 
     expect(errorLog).toHaveBeenCalledOnce();
@@ -240,7 +236,7 @@ describe('publisher Worker structured-log security boundary', () => {
         retryAll: vi.fn(),
         ackAll: vi.fn(),
       },
-      publisherEnv(now)
+      publisherEnv()
     );
 
     expect(ack).toHaveBeenCalledOnce();

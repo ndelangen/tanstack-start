@@ -9,6 +9,7 @@ import { ConvexPublisherClient } from '../workers/publisher/convex';
 import { api, internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import { createCacheSigningSecret } from './lib/assetPublisherHttp';
+import { FACTION_SHEET_PUBLICATION_COUNTER_KEY } from './lib/factionSheetPublicationGuard';
 import schema from './schema';
 
 const modules = import.meta.glob('./**/*.ts');
@@ -26,6 +27,8 @@ type SeedOptions = {
   publisherStatus?: 'active' | 'disabled' | 'paused' | 'absent';
   configStatus?: 'active' | 'disabled' | 'paused' | 'absent';
   targetStatus?: 'pending' | 'cooldown' | 'leased' | 'current' | 'absent';
+  firstPublicationAdmitted?: boolean;
+  firstPublicationCount?: number;
   nextEligibleAt?: number;
   leaseExpiresAt?: number;
 };
@@ -73,6 +76,7 @@ async function seed(options: SeedOptions = {}) {
         asset_type: 'faction_sheet',
         desired_generation: 1,
         desired_renderer_version: 'faction-sheet-v1',
+        first_publication_admitted: options.firstPublicationAdmitted ?? true,
         status,
         next_eligible_at: options.nextEligibleAt ?? NOW,
         attempt_count: 0,
@@ -86,6 +90,14 @@ async function seed(options: SeedOptions = {}) {
               claim_payload_hash: 'a'.repeat(64),
             }
           : {}),
+      });
+    }
+    if ((options.publisherStatus ?? 'active') !== 'absent') {
+      await ctx.db.insert('counters', {
+        key: FACTION_SHEET_PUBLICATION_COUNTER_KEY,
+        value:
+          options.firstPublicationCount ??
+          (targetId && (options.firstPublicationAdmitted ?? true) ? 1 : 0),
       });
     }
     return { factionId, targetId };
@@ -121,10 +133,15 @@ async function addSecondTarget(t: ReturnType<typeof convexTest>) {
       asset_type: 'faction_sheet',
       desired_generation: 1,
       desired_renderer_version: 'faction-sheet-v1',
+      first_publication_admitted: true,
       status: 'pending',
       next_eligible_at: NOW,
       attempt_count: 0,
     });
+    const counter = (await ctx.db.query('counters').take(10)).find(
+      (row) => row.key === FACTION_SHEET_PUBLICATION_COUNTER_KEY
+    );
+    if (counter) await ctx.db.patch(counter._id, { value: counter.value + 1 });
     return { factionId, targetId };
   });
 }
@@ -204,7 +221,7 @@ describe('publisher batch and exact claim state machine', () => {
       payload_hash: claim.payloadHash,
     });
     await expect(
-      t.query(internal.assetPublisher.revalidateClaim, exact(claim))
+      t.mutation(internal.assetPublisher.revalidateClaim, exact(claim))
     ).resolves.toMatchObject({ status: 'valid', payloadHash: claim.payloadHash });
     await expect(
       t.query(internal.assetPublisher.readRenderSnapshot, {
@@ -217,6 +234,72 @@ describe('publisher batch and exact claim state machine', () => {
         rendererVersion: claim.rendererVersion,
       })
     ).resolves.toBeNull();
+  });
+
+  test('transactionally admits a first publication exactly once before upload', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const { t } = await seed({ firstPublicationAdmitted: false });
+    const claim = await acquireAndClaim(t);
+
+    await expect(
+      t.mutation(internal.assetPublisher.revalidateClaim, exact(claim))
+    ).resolves.toMatchObject({ status: 'valid' });
+    await expect(
+      t.mutation(internal.assetPublisher.revalidateClaim, exact(claim))
+    ).resolves.toMatchObject({ status: 'valid' });
+    await expect(
+      t.run(async (ctx) => ({
+        target: await ctx.db.get('asset_targets', claim.targetId),
+        counter: await ctx.db
+          .query('counters')
+          .withIndex('by_key', (q) => q.eq('key', FACTION_SHEET_PUBLICATION_COUNTER_KEY))
+          .unique(),
+      }))
+    ).resolves.toMatchObject({
+      target: { first_publication_admitted: true },
+      counter: { value: 1 },
+    });
+  });
+
+  test('at the 3,500-object cap skips new objects but still claims admitted overwrites', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const { t: newObject } = await seed({
+      firstPublicationAdmitted: false,
+      firstPublicationCount: 3_500,
+    });
+    await expect(
+      newObject.mutation(internal.assetPublisher.acquireBatch, { batchToken: BATCH_ONE })
+    ).resolves.toEqual({ status: 'empty', reason: 'no_eligible_work' });
+
+    const { t: overwrite } = await seed({ firstPublicationCount: 3_500 });
+    await expect(acquireAndClaim(overwrite)).resolves.toMatchObject({ status: 'claimed' });
+  });
+
+  test('a first-publication race that reaches the cap fails closed without consuming a slot', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const { t } = await seed({
+      firstPublicationAdmitted: false,
+      firstPublicationCount: 3_499,
+    });
+    const claim = await acquireAndClaim(t);
+    await t.run(async (ctx) => {
+      const counter = await ctx.db
+        .query('counters')
+        .withIndex('by_key', (q) => q.eq('key', FACTION_SHEET_PUBLICATION_COUNTER_KEY))
+        .unique();
+      if (!counter) throw new Error('missing first-publication counter');
+      await ctx.db.patch(counter._id, { value: 3_500 });
+    });
+
+    await expect(
+      t.mutation(internal.assetPublisher.revalidateClaim, exact(claim))
+    ).resolves.toEqual({ status: 'storage_limit' });
+    await expect(
+      t.run(async (ctx) => await ctx.db.get('asset_targets', claim.targetId))
+    ).resolves.toMatchObject({ first_publication_admitted: false });
   });
 
   test('replays the one live claim when a lost response is retried with a new claim token', async () => {
@@ -300,7 +383,7 @@ describe('publisher batch and exact claim state machine', () => {
     const claim = await acquireAndClaim(t);
     vi.setSystemTime(claim.leaseExpiresAt - 2 * 60 * 1_000 + 1);
     await expect(
-      t.query(internal.assetPublisher.revalidateClaim, exact(claim))
+      t.mutation(internal.assetPublisher.revalidateClaim, exact(claim))
     ).resolves.toMatchObject({
       status: 'insufficient_lease',
       leaseExpiresAt: claim.leaseExpiresAt,

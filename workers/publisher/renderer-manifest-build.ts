@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { PUBLISHER_RENDERER_CONTRACT } from './renderer-contract';
+import { PUBLISHER_RENDERER_CONTRACT, PUBLISHER_RENDERER_VERSION } from './renderer-contract';
 
 export type RendererManifestEntry = {
   path: string;
@@ -66,6 +66,7 @@ export function writeRendererManifest(
   );
   const { pdf, viewport } = PUBLISHER_RENDERER_CONTRACT;
   const contract = `{
+    rendererVersion: '${PUBLISHER_RENDERER_VERSION}',
     viewport: {
       width: ${viewport.width},
       height: ${viewport.height},
@@ -93,6 +94,7 @@ export function writeRendererManifest(
       `// Run \`bun run publisher:assets\` after changing release assets or the PDF contract.\n` +
       `export const rendererManifest = {\n` +
       `  schemaVersion: 1,\n` +
+      `  rendererVersion: '${PUBLISHER_RENDERER_VERSION}',\n` +
       `  rendererId:\n` +
       `    'faction-sheet/sha256:${digest}',\n` +
       `  digest: '${digest}',\n` +

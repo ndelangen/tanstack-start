@@ -14,11 +14,6 @@ export type PublisherConfig = {
   pdfMaxBytes: number;
   queueMaxPreOwnershipAttempts: number;
   queueRetryDelaySeconds: number;
-  r2StorageCeilingBytes: number;
-  r2EstimatedInventoryBytes: number;
-  r2InventoryObservedAtMs: number;
-  r2InventoryMaxAgeMs: number;
-  r2UnaccountedWriteBudgetBytes: number;
 };
 
 const SETTLEMENT_MARGIN_MS = 5_000;
@@ -48,8 +43,8 @@ export function parsePublisherConfig(env: Env): PublisherConfig {
   ) {
     throw new Error('Poll and executor secrets must be present and distinct');
   }
-  if (String(env.SUPPORTED_RENDERER_VERSION) !== rendererManifest.rendererId) {
-    throw new Error('Configured renderer must equal the embedded immutable renderer manifest id');
+  if (String(env.SUPPORTED_RENDERER_VERSION) !== rendererManifest.rendererVersion) {
+    throw new Error('Configured renderer must equal the embedded renderer compatibility version');
   }
   const maxItems = integer('EXECUTOR_MAX_ITEMS', env.EXECUTOR_MAX_ITEMS, 1, 1);
   const softDeadlineMs = integer('SOFT_DEADLINE_MS', env.SOFT_DEADLINE_MS, 1, 480_000);
@@ -79,13 +74,13 @@ export function parsePublisherConfig(env: Env): PublisherConfig {
       env.CONVEX_EXECUTOR_BASE_URL
     ),
     convexRenderUrl: absoluteHttpsUrl('CONVEX_RENDER_URL', env.CONVEX_RENDER_URL),
-    supportedRendererVersion: rendererManifest.rendererId,
+    supportedRendererVersion: rendererManifest.rendererVersion,
     maxItems: maxItems as 1,
     softDeadlineMs,
     uploadMarginMs,
     browserCaptureTimeoutMs,
     browserCleanupGraceMs,
-    pdfMaxBytes: integer('PDF_MAX_BYTES', env.PDF_MAX_BYTES, 1, 10_000_000),
+    pdfMaxBytes: integer('PDF_MAX_BYTES', env.PDF_MAX_BYTES, 2_000_000, 2_000_000),
     queueMaxPreOwnershipAttempts: integer(
       'QUEUE_MAX_PRE_OWNERSHIP_ATTEMPTS',
       env.QUEUE_MAX_PRE_OWNERSHIP_ATTEMPTS,
@@ -97,36 +92,6 @@ export function parsePublisherConfig(env: Env): PublisherConfig {
       env.QUEUE_RETRY_DELAY_SECONDS,
       1,
       43_200
-    ),
-    r2StorageCeilingBytes: integer(
-      'R2_STORAGE_CEILING_BYTES',
-      env.R2_STORAGE_CEILING_BYTES,
-      1,
-      8_000_000_000
-    ),
-    r2EstimatedInventoryBytes: integer(
-      'R2_ESTIMATED_INVENTORY_BYTES',
-      env.R2_ESTIMATED_INVENTORY_BYTES,
-      0,
-      8_000_000_000
-    ),
-    r2InventoryObservedAtMs: integer(
-      'R2_INVENTORY_OBSERVED_AT_MS',
-      env.R2_INVENTORY_OBSERVED_AT_MS,
-      0,
-      Number.MAX_SAFE_INTEGER
-    ),
-    r2InventoryMaxAgeMs: integer(
-      'R2_INVENTORY_MAX_AGE_MS',
-      env.R2_INVENTORY_MAX_AGE_MS,
-      1,
-      7 * 24 * 60 * 60 * 1_000
-    ),
-    r2UnaccountedWriteBudgetBytes: integer(
-      'R2_UNACCOUNTED_WRITE_BUDGET_BYTES',
-      env.R2_UNACCOUNTED_WRITE_BUDGET_BYTES,
-      1,
-      8_000_000_000
     ),
   };
 }

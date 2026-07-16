@@ -3,15 +3,22 @@ import { v } from 'convex/values';
 import type { Doc } from './_generated/dataModel';
 import { internalMutation } from './_generated/server';
 import {
+  assertFirstPublicationCounterReady,
+  exactPublisherStateOrNull,
+  FACTION_SHEET_STORAGE_ACTIVATION_PREREQUISITE,
+  FACTION_SHEET_TARGET_ACTIVATION_PREREQUISITE,
+  initializeFirstPublicationCounterDisabled,
+  insertDisabledPublisherState,
+} from './lib/factionSheetPublicationGuard';
+import {
   FACTION_SHEET_ASSET_TYPE,
   INITIAL_FACTION_SHEET_RENDERER_VERSION,
 } from './lib/factionSheetTargets';
 import type { MutationCtx } from './types';
 
-export const FACTION_SHEET_ACTIVATION_PREREQUISITE = 'faction_sheet_targets_verify_v1' as const;
-
 const rendererValidator = v.literal(INITIAL_FACTION_SHEET_RENDERER_VERSION);
-const prerequisiteValidator = v.literal(FACTION_SHEET_ACTIVATION_PREREQUISITE);
+const targetPrerequisiteValidator = v.literal(FACTION_SHEET_TARGET_ACTIVATION_PREREQUISITE);
+const storagePrerequisiteValidator = v.literal(FACTION_SHEET_STORAGE_ACTIVATION_PREREQUISITE);
 
 async function exactConfigOrNull(ctx: MutationCtx) {
   const configs = await ctx.db
@@ -22,17 +29,6 @@ async function exactConfigOrNull(ctx: MutationCtx) {
     throw new Error('Asset publisher invariant violated: duplicate faction-sheet configs');
   }
   return configs[0] ?? null;
-}
-
-async function exactPublisherStateOrNull(ctx: MutationCtx) {
-  const states = await ctx.db
-    .query('asset_publisher_state')
-    .withIndex('by_key', (q) => q.eq('key', 'singleton'))
-    .take(2);
-  if (states.length > 1) {
-    throw new Error('Asset publisher invariant violated: duplicate publisher singletons');
-  }
-  return states[0] ?? null;
 }
 
 async function insertDisabledConfig(ctx: MutationCtx) {
@@ -47,20 +43,6 @@ async function insertDisabledConfig(ctx: MutationCtx) {
   return config;
 }
 
-async function insertDisabledPublisherState(ctx: MutationCtx) {
-  const id = await ctx.db.insert('asset_publisher_state', {
-    key: 'singleton',
-    status: 'disabled',
-    cooldown_until: 0,
-    daily_browser_utc_date: new Date(Date.now()).toISOString().slice(0, 10),
-    daily_browser_ms: 0,
-    next_lane: 'foreground',
-  });
-  const state = await ctx.db.get('asset_publisher_state', id);
-  if (!state) throw new Error('Failed to initialize disabled publisher singleton');
-  return state;
-}
-
 async function ensureDisabledRows(ctx: MutationCtx) {
   const [existingConfig, existingState] = await Promise.all([
     exactConfigOrNull(ctx),
@@ -68,6 +50,9 @@ async function ensureDisabledRows(ctx: MutationCtx) {
   ]);
   const config = existingConfig ?? (await insertDisabledConfig(ctx));
   const state = existingState ?? (await insertDisabledPublisherState(ctx));
+  if (config.status === 'disabled' && state.status === 'disabled') {
+    await initializeFirstPublicationCounterDisabled(ctx);
+  }
   return { config, state };
 }
 
@@ -105,6 +90,9 @@ async function setStatus(ctx: MutationCtx, status: 'disabled' | 'paused') {
   if (stateChanged) {
     await ctx.db.patch(state._id, { status });
   }
+  if (status === 'disabled') {
+    await initializeFirstPublicationCounterDisabled(ctx);
+  }
   return controlResult({ ...config, status }, { ...state, status }, configChanged || stateChanged);
 }
 
@@ -120,7 +108,9 @@ export const disable = internalMutation({
 
 async function assertExactPrerequisite(
   ctx: MutationCtx,
-  prerequisite: typeof FACTION_SHEET_ACTIVATION_PREREQUISITE
+  prerequisite:
+    | typeof FACTION_SHEET_TARGET_ACTIVATION_PREREQUISITE
+    | typeof FACTION_SHEET_STORAGE_ACTIVATION_PREREQUISITE
 ) {
   const rows = await ctx.db
     .query('migration_runs')
@@ -136,18 +126,21 @@ async function assertExactPrerequisite(
 }
 
 /**
- * Internal integration contract for a later authenticated operator boundary:
- * callers must supply the exact renderer and prerequisite literals. This
- * mutation remains private and performs no secret, HTTP, Worker, Queue, or R2 work.
+ * Private operator transition. The authenticated HTTP boundary supplies the
+ * exact renderer and both prerequisite literals; this mutation itself performs
+ * no secret, Worker, Queue, or R2 work.
  */
 export const activate = internalMutation({
   args: {
     expectedRendererVersion: rendererValidator,
-    prerequisite: prerequisiteValidator,
+    targetPrerequisite: targetPrerequisiteValidator,
+    storagePrerequisite: storagePrerequisiteValidator,
   },
   handler: async (ctx, args) => {
-    await assertExactPrerequisite(ctx, args.prerequisite);
+    await assertExactPrerequisite(ctx, args.targetPrerequisite);
+    await assertExactPrerequisite(ctx, args.storagePrerequisite);
     const { config, state } = await ensureDisabledRows(ctx);
+    await assertFirstPublicationCounterReady(ctx);
     if (config.active_renderer_version !== args.expectedRendererVersion) {
       throw new Error(
         `Publisher activation renderer mismatch: expected ${args.expectedRendererVersion}`

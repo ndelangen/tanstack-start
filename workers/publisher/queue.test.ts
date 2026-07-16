@@ -21,7 +21,7 @@ const identity: PublisherBuildIdentity = {
   workerVersionTimestamp: '2026-07-16T12:00:00.000Z',
   rendererId: rendererManifest.rendererId,
   rendererManifestDigest: rendererManifest.digest,
-  configuredRendererVersion: rendererManifest.rendererId,
+  configuredRendererVersion: rendererManifest.rendererVersion,
   rendererConfigurationMatchesManifest: true,
 };
 const config: PublisherConfig = {
@@ -29,7 +29,7 @@ const config: PublisherConfig = {
   convexPollUrl: 'https://convex.example.com/poll',
   convexExecutorBaseUrl: 'https://convex.example.com/executor',
   convexRenderUrl: 'https://convex.example.com/render',
-  supportedRendererVersion: rendererManifest.rendererId,
+  supportedRendererVersion: rendererManifest.rendererVersion,
   maxItems: 1,
   softDeadlineMs: 480_000,
   uploadMarginMs: 120_000,
@@ -38,11 +38,6 @@ const config: PublisherConfig = {
   pdfMaxBytes: 2_000_000,
   queueMaxPreOwnershipAttempts: 2,
   queueRetryDelaySeconds: 60,
-  r2StorageCeilingBytes: 8_000_000_000,
-  r2EstimatedInventoryBytes: 1_000,
-  r2InventoryObservedAtMs: NOW,
-  r2InventoryMaxAgeMs: 60_000,
-  r2UnaccountedWriteBudgetBytes: 200_000_000,
 };
 
 function message(body: unknown, attempts = 1) {
@@ -65,7 +60,7 @@ function dependencies(acquire: () => Promise<AcquireResult>): QueueDependencies 
     batchToken: 'batch-token-0000000000000001',
     claimToken: 'claim-token-0000000000000001',
     generation: 1,
-    rendererVersion: rendererManifest.rendererId,
+    rendererVersion: rendererManifest.rendererVersion,
     leaseExpiresAt: NOW + 720_000,
     payloadHash: 'a'.repeat(64),
     renderCapability: 'render-capability-token-000000001',

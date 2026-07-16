@@ -11,22 +11,28 @@ const modules = import.meta.glob('./**/*.ts');
 const NOW = Date.parse('2026-07-16T12:00:00.000Z');
 const activationArgs = {
   expectedRendererVersion: 'faction-sheet-v1' as const,
-  prerequisite: 'faction_sheet_targets_verify_v1' as const,
+  targetPrerequisite: 'faction_sheet_targets_verify_v1' as const,
+  storagePrerequisite: 'faction_sheet_publication_admissions_v1' as const,
 };
 
 afterEach(() => vi.useRealTimers());
 
 async function recordSuccessfulPrerequisite(t: ReturnType<typeof convexTest>) {
   await t.run(async (ctx) => {
-    await ctx.db.insert('migration_runs', {
-      migration_id: activationArgs.prerequisite,
-      state: 'success',
-      is_done: true,
-      processed: 25,
-      latest_start: NOW - 1_000,
-      latest_end: NOW,
-      updated_at: new Date(NOW).toISOString(),
-    });
+    for (const migrationId of [
+      activationArgs.targetPrerequisite,
+      activationArgs.storagePrerequisite,
+    ]) {
+      await ctx.db.insert('migration_runs', {
+        migration_id: migrationId,
+        state: 'success',
+        is_done: true,
+        processed: 25,
+        latest_start: NOW - 1_000,
+        latest_end: NOW,
+        updated_at: new Date(NOW).toISOString(),
+      });
+    }
   });
 }
 
@@ -61,6 +67,17 @@ describe('asset publisher operator controls', () => {
       configs: [{ status: 'disabled', active_renderer_version: 'faction-sheet-v1' }],
       states: [{ key: 'singleton', status: 'disabled' }],
     });
+    await expect(
+      t.run(
+        async (ctx) =>
+          await ctx.db
+            .query('counters')
+            .withIndex('by_key', (q) =>
+              q.eq('key', 'asset_publisher:faction_sheet:first_publications')
+            )
+            .unique()
+      )
+    ).resolves.toMatchObject({ value: 0 });
   });
 
   test('activation fails atomically when its exact prerequisite is missing', async () => {
@@ -75,6 +92,33 @@ describe('asset publisher operator controls', () => {
         states: await ctx.db.query('asset_publisher_state').take(1),
       }))
     ).resolves.toEqual({ configs: [], states: [] });
+  });
+
+  test('activation requires the exact storage admission migration independently', async () => {
+    const t = convexTest(schema, modules);
+    await t.run(
+      async (ctx) =>
+        await ctx.db.insert('migration_runs', {
+          migration_id: activationArgs.targetPrerequisite,
+          state: 'success',
+          is_done: true,
+          processed: 25,
+          latest_start: NOW - 1_000,
+          latest_end: NOW,
+          updated_at: new Date(NOW).toISOString(),
+        })
+    );
+
+    await expect(
+      t.mutation(internal.assetPublisherOperator.activate, activationArgs)
+    ).rejects.toThrow('faction_sheet_publication_admissions_v1');
+    await expect(
+      t.run(async (ctx) => ({
+        configs: await ctx.db.query('asset_type_configs').take(1),
+        states: await ctx.db.query('asset_publisher_state').take(1),
+        counters: await ctx.db.query('counters').take(1),
+      }))
+    ).resolves.toEqual({ configs: [], states: [], counters: [] });
   });
 
   test('activation rejects a stale renderer without creating or changing singleton state', async () => {
@@ -194,5 +238,109 @@ describe('asset publisher operator controls', () => {
         ? 'duplicate publisher singletons'
         : 'duplicate faction-sheet configs'
     );
+  });
+});
+
+describe('asset publisher operator HTTP boundary', () => {
+  test('authenticates one strict operation shape with a distinct secret and exposes no enqueue', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const keys = [
+      'ASSET_PUBLISHER_ACTIVATION_SECRET',
+      'ASSET_PUBLISHER_POLL_SECRET',
+      'ASSET_PUBLISHER_EXECUTOR_SECRET',
+      'ASSET_PUBLISHER_RENDER_CAPABILITY_SECRET',
+      'ASSET_PUBLISHER_CACHE_TOKEN_SECRET',
+    ] as const;
+    const prior = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+    process.env.ASSET_PUBLISHER_ACTIVATION_SECRET = 'activation-secret';
+    process.env.ASSET_PUBLISHER_POLL_SECRET = 'poll-secret';
+    process.env.ASSET_PUBLISHER_EXECUTOR_SECRET = 'executor-secret';
+    process.env.ASSET_PUBLISHER_RENDER_CAPABILITY_SECRET = 'render-secret';
+    process.env.ASSET_PUBLISHER_CACHE_TOKEN_SECRET = 'cache-secret';
+    try {
+      const t = convexTest(schema, modules);
+      const post = async (body: unknown, secret = 'activation-secret') =>
+        await t.fetch('/asset-publishing/operator', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${secret}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        });
+
+      expect(
+        (await post({ schemaVersion: 1, operation: 'initialize' }, 'poll-secret')).status
+      ).toBe(404);
+      expect((await post({ schemaVersion: 1, operation: 'initialize', extra: true })).status).toBe(
+        400
+      );
+      expect(
+        (
+          await post({
+            schemaVersion: 1,
+            operation: 'activate',
+            expectedRendererVersion: 'attacker-selected-renderer',
+          })
+        ).status
+      ).toBe(400);
+      const initialized = await post({ schemaVersion: 1, operation: 'initialize' });
+      expect(initialized.status).toBe(200);
+      await expect(initialized.json()).resolves.toMatchObject({
+        ok: true,
+        operation: 'initialize',
+        configStatus: 'disabled',
+        publisherStatus: 'disabled',
+      });
+      await expect(
+        (await post({ schemaVersion: 1, operation: 'pause' })).json()
+      ).resolves.toMatchObject({
+        operation: 'pause',
+        configStatus: 'paused',
+        publisherStatus: 'paused',
+      });
+      await expect(
+        (await post({ schemaVersion: 1, operation: 'disable' })).json()
+      ).resolves.toMatchObject({
+        operation: 'disable',
+        configStatus: 'disabled',
+        publisherStatus: 'disabled',
+      });
+
+      await recordSuccessfulPrerequisite(t);
+      await expect(
+        (await post({ schemaVersion: 1, operation: 'activate' })).json()
+      ).resolves.toMatchObject({
+        operation: 'activate',
+        configStatus: 'active',
+        publisherStatus: 'active',
+      });
+
+      process.env.ASSET_PUBLISHER_ACTIVATION_SECRET = 'poll-secret';
+      expect((await post({ schemaVersion: 1, operation: 'pause' }, 'poll-secret')).status).toBe(
+        404
+      );
+      expect(
+        (
+          await t.fetch('/asset-publishing/operator/enqueue', {
+            method: 'POST',
+            headers: { Authorization: 'Bearer poll-secret' },
+          })
+        ).status
+      ).toBe(404);
+      await expect(
+        t.run(async (ctx) => ({
+          config: await ctx.db.query('asset_type_configs').take(1),
+          state: await ctx.db.query('asset_publisher_state').take(1),
+        }))
+      ).resolves.toMatchObject({ config: [{ status: 'active' }], state: [{ status: 'active' }] });
+    } finally {
+      for (const key of keys) {
+        const value = prior[key];
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
+    }
   });
 });

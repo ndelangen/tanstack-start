@@ -74,6 +74,8 @@ Set in **GitHub repository secrets** for CI:
 - `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` - Google OAuth credentials (Convex env)
 - `AUTH_DISCORD_ID` / `AUTH_DISCORD_SECRET` - Discord OAuth credentials (Convex env)
 - `JWT_PRIVATE_KEY` / `JWKS` - JWT signing and discovery settings (Convex env)
+- `ASSET_PUBLISHER_ACTIVATION_SECRET` - distinct Convex-only bearer secret for the narrow
+  initialize/pause/disable/activate HTTP boundary; never install it in the Worker
 
 Keep the same values in Netlify only if you still plan to run manual Netlify builds.
 
