@@ -4,6 +4,7 @@ import SHA256 from 'crypto-js/sha256';
 import { FactionInputSchema } from '../src/game/schema/faction';
 import type { Doc, Id } from './_generated/dataModel';
 import { internalMutation, internalQuery, query } from './_generated/server';
+import { BROWSER_RESERVATION_MS, FREE_BROWSER_ALLOWANCE_MS } from './lib/assetPublisherLimits';
 import {
   completionMetadataSchema,
   exactClaimSchema,
@@ -20,9 +21,9 @@ import type { MutationCtx, QueryCtx } from './types';
 export const ASSET_TYPE = 'faction_sheet' as const;
 export const BATCH_LEASE_MS = 12 * 60 * 1_000;
 export const MIN_UPLOAD_LEASE_MARGIN_MS = 2 * 60 * 1_000;
-export const FREE_BROWSER_ALLOWANCE_MS = 10 * 60 * 1_000;
-export const BROWSER_RESERVATION_MS = 8 * 60 * 1_000;
 export const MAX_BROWSER_SETTLEMENT_MS = 15 * 60 * 1_000;
+export { BROWSER_RESERVATION_MS, FREE_BROWSER_ALLOWANCE_MS };
+
 const MAX_RETRY_DELAY_MS = 6 * 60 * 60 * 1_000;
 const BASE_RETRY_DELAY_MS = 60 * 1_000;
 

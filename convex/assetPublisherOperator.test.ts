@@ -14,6 +14,15 @@ const activationArgs = {
   targetPrerequisite: 'faction_sheet_targets_verify_v1' as const,
   storagePrerequisite: 'faction_sheet_publication_admissions_v1' as const,
 };
+const RECONCILIATION_RESERVATION_TOKEN = 'prior-canary-reservation';
+const reconciliationArgs = {
+  expectedUtcDate: '2026-07-16',
+  expectedDailyBrowserMs: 484_275,
+  expectedBrowserReservationBatchToken: RECONCILIATION_RESERVATION_TOKEN,
+  expectedBrowserReservationUtcDate: '2026-07-16',
+  expectedBrowserReservedMs: 480_000,
+  replacementDailyBrowserMs: 120_000,
+};
 
 afterEach(() => vi.useRealTimers());
 
@@ -33,6 +42,66 @@ async function recordSuccessfulPrerequisite(t: ReturnType<typeof convexTest>) {
         updated_at: new Date(NOW).toISOString(),
       });
     }
+  });
+}
+
+async function seedBrowserUsageReconciliation(t: ReturnType<typeof convexTest>) {
+  return await t.run(async (ctx) => {
+    const ownerId = await ctx.db.insert('users', { name: 'Browser reconciliation owner' });
+    const factionId = await ctx.db.insert('factions', {
+      owner_id: ownerId,
+      data: {},
+      slug: 'browser-reconciliation-canary',
+      created_at: new Date(NOW).toISOString(),
+      updated_at: new Date(NOW).toISOString(),
+      is_deleted: false,
+      group_id: null,
+    });
+    const configId = await ctx.db.insert('asset_type_configs', {
+      asset_type: 'faction_sheet',
+      status: 'paused',
+      active_renderer_version: 'faction-sheet-v1',
+      updated_at: NOW - 10_000,
+    });
+    const stateId = await ctx.db.insert('asset_publisher_state', {
+      key: 'singleton',
+      status: 'paused',
+      cooldown_until: NOW - 20_000,
+      daily_browser_utc_date: reconciliationArgs.expectedUtcDate,
+      daily_browser_ms: reconciliationArgs.expectedDailyBrowserMs,
+      browser_reservation_batch_token: RECONCILIATION_RESERVATION_TOKEN,
+      browser_reservation_utc_date: reconciliationArgs.expectedBrowserReservationUtcDate,
+      browser_reserved_ms: reconciliationArgs.expectedBrowserReservedMs,
+      last_browser_settlement_batch_token: 'historical-settlement-token',
+      last_browser_settlement_ms: 4_275,
+      last_browser_release_batch_token: 'historical-release-token',
+      last_browser_release_mode: 'after_settlement',
+      next_lane: 'rollout',
+    });
+    const targetId = await ctx.db.insert('asset_targets', {
+      faction_id: factionId,
+      asset_type: 'faction_sheet',
+      desired_generation: 2,
+      desired_renderer_version: 'faction-sheet-v1',
+      published_generation: 1,
+      published_renderer_version: 'faction-sheet-v1',
+      published_cache_token: 'v1.existing-canary-token.existing-canary-signature',
+      published_r2_etag: 'existing-etag',
+      published_bytes: 100_180,
+      published_at: NOW - 30_000,
+      first_publication_admitted: true,
+      status: 'pending',
+      next_eligible_at: 0,
+      attempt_count: 3,
+      last_error: 'retained retry diagnostic',
+      last_completed_batch_token: 'completed-batch-token',
+      last_completed_claim_token: 'completed-claim-token',
+    });
+    const counterId = await ctx.db.insert('counters', {
+      key: 'asset_publisher:faction_sheet:first_publications',
+      value: 1,
+    });
+    return { configId, counterId, factionId, stateId, targetId };
   });
 }
 
@@ -403,6 +472,208 @@ describe('asset publisher operator controls', () => {
         )
       ).resolves.toMatchObject({ desired_generation: testCase.desiredGeneration ?? 1 });
     }
+  });
+
+  test('reconciles exact current Browser evidence without collateral state changes', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const t = convexTest(schema, modules);
+    const seeded = await seedBrowserUsageReconciliation(t);
+    const before = await t.run(async (ctx) => ({
+      config: await ctx.db.get('asset_type_configs', seeded.configId),
+      counter: await ctx.db.get('counters', seeded.counterId),
+      state: await ctx.db.get('asset_publisher_state', seeded.stateId),
+      target: await ctx.db.get('asset_targets', seeded.targetId),
+    }));
+
+    await expect(
+      t.mutation(internal.assetPublisherOperator.reconcileCurrentBrowserUsage, reconciliationArgs)
+    ).resolves.toEqual({
+      status: 'reconciled',
+      utcDate: '2026-07-16',
+      previousDailyBrowserMs: 484_275,
+      dailyBrowserMs: 120_000,
+      clearedReservationBatchToken: RECONCILIATION_RESERVATION_TOKEN,
+    });
+
+    const after = await t.run(async (ctx) => ({
+      config: await ctx.db.get('asset_type_configs', seeded.configId),
+      counter: await ctx.db.get('counters', seeded.counterId),
+      state: await ctx.db.get('asset_publisher_state', seeded.stateId),
+      target: await ctx.db.get('asset_targets', seeded.targetId),
+    }));
+    expect(after.config).toEqual(before.config);
+    expect(after.counter).toEqual(before.counter);
+    expect(after.target).toEqual(before.target);
+    expect(after.state).toMatchObject({
+      daily_browser_utc_date: '2026-07-16',
+      daily_browser_ms: 120_000,
+      cooldown_until: before.state?.cooldown_until,
+      last_browser_settlement_batch_token: before.state?.last_browser_settlement_batch_token,
+      last_browser_settlement_ms: before.state?.last_browser_settlement_ms,
+      last_browser_release_batch_token: before.state?.last_browser_release_batch_token,
+      last_browser_release_mode: before.state?.last_browser_release_mode,
+      next_lane: before.state?.next_lane,
+    });
+    expect(after.state?.browser_reservation_batch_token).toBeUndefined();
+    expect(after.state?.browser_reservation_utc_date).toBeUndefined();
+    expect(after.state?.browser_reserved_ms).toBeUndefined();
+
+    await expect(
+      t.mutation(internal.assetPublisherOperator.reconcileCurrentBrowserUsage, reconciliationArgs)
+    ).rejects.toThrow('state does not match expected accounting');
+  });
+
+  test.each([
+    ['stale accounted value', { expectedDailyBrowserMs: 484_274 }],
+    [
+      'stale UTC date',
+      {
+        expectedUtcDate: '2026-07-15',
+        expectedBrowserReservationUtcDate: '2026-07-15',
+      },
+    ],
+  ])('rejects %s without clearing the reservation', async (_name, override) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const t = convexTest(schema, modules);
+    const seeded = await seedBrowserUsageReconciliation(t);
+    const before = await t.run(
+      async (ctx) => await ctx.db.get('asset_publisher_state', seeded.stateId)
+    );
+
+    await expect(
+      t.mutation(internal.assetPublisherOperator.reconcileCurrentBrowserUsage, {
+        ...reconciliationArgs,
+        ...override,
+      })
+    ).rejects.toThrow();
+    await expect(
+      t.run(async (ctx) => await ctx.db.get('asset_publisher_state', seeded.stateId))
+    ).resolves.toEqual(before);
+  });
+
+  test.each([
+    ['daily total', { daily_browser_ms: 484_274 }],
+    ['reservation token', { browser_reservation_batch_token: 'different-reservation-token' }],
+    ['reservation date', { browser_reservation_utc_date: '2026-07-15' }],
+    ['reserved amount', { browser_reserved_ms: 479_999 }],
+  ])('rejects drift in the stored %s', async (_name, statePatch) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const t = convexTest(schema, modules);
+    const seeded = await seedBrowserUsageReconciliation(t);
+    await t.run(async (ctx) => await ctx.db.patch(seeded.stateId, statePatch));
+    const before = await t.run(
+      async (ctx) => await ctx.db.get('asset_publisher_state', seeded.stateId)
+    );
+
+    await expect(
+      t.mutation(internal.assetPublisherOperator.reconcileCurrentBrowserUsage, reconciliationArgs)
+    ).rejects.toThrow('state does not match expected accounting');
+    await expect(
+      t.run(async (ctx) => await ctx.db.get('asset_publisher_state', seeded.stateId))
+    ).resolves.toEqual(before);
+  });
+
+  test.each([
+    ['config', 'active', 'paused'],
+    ['publisher singleton', 'paused', 'active'],
+  ] as const)('requires paused %s control', async (_name, configStatus, stateStatus) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const t = convexTest(schema, modules);
+    const seeded = await seedBrowserUsageReconciliation(t);
+    await t.run(async (ctx) => {
+      await ctx.db.patch(seeded.configId, { status: configStatus });
+      await ctx.db.patch(seeded.stateId, { status: stateStatus });
+    });
+
+    await expect(
+      t.mutation(internal.assetPublisherOperator.reconcileCurrentBrowserUsage, reconciliationArgs)
+    ).rejects.toThrow('requires paused publisher controls');
+  });
+
+  test.each([
+    'batch',
+    'target claim',
+    'snapshot',
+  ] as const)('rejects active %s ownership without changing accounting', async (ownership) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const t = convexTest(schema, modules);
+    const seeded = await seedBrowserUsageReconciliation(t);
+    await t.run(async (ctx) => {
+      if (ownership === 'batch') {
+        await ctx.db.patch(seeded.stateId, {
+          batch_token: 'new-owned-batch-token',
+          batch_lease_expires_at: NOW + 60_000,
+        });
+      } else if (ownership === 'target claim') {
+        await ctx.db.patch(seeded.targetId, {
+          status: 'leased',
+          batch_token: 'new-owned-batch-token',
+          claim_token: 'new-owned-claim-token',
+          claimed_generation: 2,
+          claimed_renderer_version: 'faction-sheet-v1',
+          lease_expires_at: NOW + 60_000,
+          claim_payload_hash: 'owned-payload-hash',
+        });
+      } else {
+        await ctx.db.insert('asset_claim_snapshots', {
+          target_id: seeded.targetId,
+          faction_id: seeded.factionId,
+          asset_type: 'faction_sheet',
+          batch_token: 'new-owned-batch-token',
+          claim_token: 'new-owned-claim-token',
+          generation: 2,
+          renderer_version: 'faction-sheet-v1',
+          lease_expires_at: NOW + 60_000,
+          payload_hash: 'owned-payload-hash',
+          payload: {},
+        });
+      }
+    });
+    const before = await t.run(
+      async (ctx) => await ctx.db.get('asset_publisher_state', seeded.stateId)
+    );
+
+    await expect(
+      t.mutation(internal.assetPublisherOperator.reconcileCurrentBrowserUsage, reconciliationArgs)
+    ).rejects.toThrow(
+      ownership === 'batch'
+        ? 'requires no owned publisher batch'
+        : 'requires no owned claims or snapshots'
+    );
+    await expect(
+      t.run(async (ctx) => await ctx.db.get('asset_publisher_state', seeded.stateId))
+    ).resolves.toEqual(before);
+  });
+
+  test.each([
+    ['equal value', 484_275],
+    ['increased value', 500_000],
+    ['negative value', -1],
+    ['over allowance', 600_001],
+    ['fractional value', 120_000.5],
+  ])('rejects invalid replacement: %s', async (_name, replacementDailyBrowserMs) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const t = convexTest(schema, modules);
+    const seeded = await seedBrowserUsageReconciliation(t);
+    const before = await t.run(
+      async (ctx) => await ctx.db.get('asset_publisher_state', seeded.stateId)
+    );
+
+    await expect(
+      t.mutation(internal.assetPublisherOperator.reconcileCurrentBrowserUsage, {
+        ...reconciliationArgs,
+        replacementDailyBrowserMs,
+      })
+    ).rejects.toThrow('Invalid Browser usage reconciliation values');
+    await expect(
+      t.run(async (ctx) => await ctx.db.get('asset_publisher_state', seeded.stateId))
+    ).resolves.toEqual(before);
   });
 
   test.each([

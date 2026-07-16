@@ -618,6 +618,23 @@ describe('daily Browser reservation accounting', () => {
   test('quota fails closed and the next UTC day clears a lost reservation', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
+    const { t: exactAllowance } = await seed();
+    await exactAllowance.run(async (ctx) => {
+      const state = await ctx.db
+        .query('asset_publisher_state')
+        .withIndex('by_key', (q) => q.eq('key', 'singleton'))
+        .unique();
+      if (!state) throw new Error('missing state');
+      await ctx.db.patch(state._id, { daily_browser_ms: 120_000 });
+    });
+    await expect(
+      exactAllowance.mutation(internal.assetPublisher.acquireBatch, { batchToken: BATCH_ONE })
+    ).resolves.toMatchObject({
+      status: 'acquired',
+      dailyBrowserMs: 600_000,
+      browserReservationMs: 480_000,
+    });
+
     const { t: quota } = await seed();
     await quota.run(async (ctx) => {
       const state = await ctx.db
