@@ -1,14 +1,14 @@
 # Disabled production faction-sheet publisher
 
-This is the production-shaped, one-item publisher surface. It is checked in inert and unprovisioned:
+This is the production-shaped, one-item publisher surface. Its stable Cloudflare resources are
+provisioned, but execution remains inert:
 
 - `PUBLISHER_ENABLED` and `CRON_DISPATCH_ENABLED` are `false`;
 - the Cron trigger list is empty;
-- Queue and R2 names are deliberately unprovisioned placeholders;
-- Convex and capture hosts use the reserved `.invalid` domain;
-- the configured renderer is the inert `unprovisioned` label and cannot authorize a claim because
-  execution requires the embedded semantic compatibility version `faction-sheet-v1`; the separate
-  SHA-256 renderer id identifies the exact assembled release for telemetry and canary checks;
+- the production Queue and dedicated private R2 bucket are named explicitly;
+- capture and Convex HTTP URLs use the intended workers.dev and regional Convex origins;
+- the configured semantic renderer is `faction-sheet-v1`; the separate SHA-256 renderer id
+  identifies the exact assembled release for telemetry and canary checks;
 - poll and executor secrets are distinct required bindings and are not checked in.
 - the Convex-only activation secret is distinct from every publisher boundary secret and is not
   checked in; it authenticates only initialize, pause, disable, and guarded activate operations.
@@ -78,8 +78,8 @@ bun run publisher:dry-run
 bun run publisher:startup
 ```
 
-Do not deploy this configuration. Ticket 6 must explicitly create/verify the private bucket and
-Queue, configure the real hosts and immutable renderer version, complete and verify the disabled-first
-publication-admission migration/counter, install distinct secrets, verify Browser/Queue/R2 plan
-guardrails and alerts, deploy inert, run one-item health checks, and only then add the approved
-15-minute Cron and activate Convex/Worker configuration in the ordered release workflow.
+Deploy this configuration only through Ticket 6's inert gate: the stable private bucket and Queue
+must be reverified, the disabled-first publication-admission migration/counter must pass, and the
+three Worker secrets must be installed before the first deployment. The checked-in flags remain
+`false/false` and no Cron is attached. Run inert health/routing checks and the separately approved
+one-item measurement before adding the 15-minute Cron or activating Convex/Worker execution.

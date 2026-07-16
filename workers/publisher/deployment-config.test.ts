@@ -12,23 +12,26 @@ const packageConfig = JSON.parse(
 ) as { scripts: Record<string, string> };
 
 describe('disabled production deployment shape', () => {
-  test('is inert and unprovisioned by default', () => {
+  test('is provisioned but remains inert with no Cron', () => {
     expect(config.triggers).toEqual({ crons: [] });
     expect(config.vars).toMatchObject({
       PUBLISHER_ENABLED: 'false',
       CRON_DISPATCH_ENABLED: 'false',
-      CAPTURE_BASE_URL: 'https://publisher.invalid',
+      CAPTURE_BASE_URL: 'https://faction-sheet-asset-publisher.ndelangen.workers.dev',
+      CONVEX_POLL_URL: 'https://exuberant-finch-263.eu-west-1.convex.site/asset-publishing/poll',
+      SUPPORTED_RENDERER_VERSION: 'faction-sheet-v1',
       EXECUTOR_MAX_ITEMS: '1',
     });
-    expect(config.workers_dev).toBe(false);
+    expect(config.workers_dev).toBe(true);
+    expect(config.preview_urls).toBe(false);
   });
 
   test('uses one bounded Queue consumer and no alternate authority', () => {
     expect(config.queues).toEqual({
-      producers: [{ binding: 'PUBLISH_QUEUE', queue: 'faction-sheet-publisher-unprovisioned' }],
+      producers: [{ binding: 'PUBLISH_QUEUE', queue: 'faction-sheet-asset-publisher' }],
       consumers: [
         {
-          queue: 'faction-sheet-publisher-unprovisioned',
+          queue: 'faction-sheet-asset-publisher',
           max_batch_size: 1,
           max_batch_timeout: 1,
           max_retries: 2,
@@ -47,7 +50,7 @@ describe('disabled production deployment shape', () => {
     expect(config.r2_buckets).toEqual([
       {
         binding: 'ASSET_BUCKET',
-        bucket_name: 'faction-sheet-assets-unprovisioned',
+        bucket_name: 'tanstack-start-faction-sheet-assets',
       },
     ]);
     const source = readFileSync(
