@@ -21,7 +21,7 @@ const config: PublisherConfig = {
   convexRenderUrl: 'https://convex.example.com/render',
   supportedRendererVersion: rendererManifest.rendererVersion,
   maxItems: 1,
-  softDeadlineMs: 480_000,
+  softDeadlineMs: 240_000,
   uploadMarginMs: 120_000,
   browserCaptureTimeoutMs: 45_000,
   browserCleanupGraceMs: 5,
@@ -34,8 +34,8 @@ const acquisition: Extract<AcquireResult, { status: 'acquired' }> = {
   replay: false,
   batchToken: 'batch-token-0000000000000001',
   leaseExpiresAt: NOW + 720_000,
-  browserReservationMs: 480_000,
-  dailyBrowserMs: 480_000,
+  browserReservationMs: 240_000,
+  dailyBrowserMs: 240_000,
 };
 const claim: ClaimedTarget = {
   status: 'claimed',
@@ -469,24 +469,24 @@ describe('one-item owned batch execution', () => {
     const { dependencies } = setup({
       now: () => current,
       put: async () => {
-        current += 200_000;
+        current += 80_000;
         return r2Object();
       },
       complete: async () => {
-        current += 100_000;
+        current += 40_000;
         return 'completed';
       },
     });
     const report = await executeOwnedBatch(dependencies, config, acquisition, NOW);
     expect(report.status).toBe('completed');
     expect(report.telemetry).toMatchObject({
-      minimumLeaseMarginMs: 420_000,
+      minimumLeaseMarginMs: 600_000,
       leaseMarginsMs: {
         claim: 720_000,
         lastPreUpload: 720_000,
-        postR2: 520_000,
-        postCompletion: 420_000,
-        cleanupStart: 420_000,
+        postR2: 640_000,
+        postCompletion: 600_000,
+        cleanupStart: 600_000,
       },
     });
   });
@@ -663,14 +663,14 @@ describe('one-item owned batch execution', () => {
     dependencies.openBrowser = async () => ({
       capture: spies.capture,
       close: async () => {
-        current = NOW + 481_000;
+        current = NOW + 241_000;
       },
     });
     const report = await executeOwnedBatch(dependencies, config, acquisition, NOW);
     expect(settlementBody).toMatchObject({
       schemaVersion: 1,
       batchToken: acquisition.batchToken,
-      measuredBrowserMs: 481_000,
+      measuredBrowserMs: 241_000,
     });
     expect(report.status).toBe('systemic_stop');
     expect(report).toMatchObject({ browserClosed: true, browserSettled: true });
@@ -738,7 +738,7 @@ describe('one-item owned batch execution', () => {
       dependencies.openBrowser = async () => ({
         capture: spies.capture,
         close: async () => {
-          vi.setSystemTime(NOW + 481_000);
+          vi.setSystemTime(NOW + 241_000);
         },
       });
       const execution = executeOwnedBatch(dependencies, config, acquisition, NOW);

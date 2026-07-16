@@ -82,7 +82,7 @@ describe('scheduled production deployment shape', () => {
 
   test('keeps the exact PDF storage bound and timing contract explicit', () => {
     expect(config.vars).toMatchObject({
-      SOFT_DEADLINE_MS: '480000',
+      SOFT_DEADLINE_MS: '240000',
       UPLOAD_MARGIN_MS: '120000',
       PDF_MAX_BYTES: '2000000',
       BROWSER_CAPTURE_TIMEOUT_MS: '45000',

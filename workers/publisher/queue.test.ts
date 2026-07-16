@@ -31,7 +31,7 @@ const config: PublisherConfig = {
   convexRenderUrl: 'https://convex.example.com/render',
   supportedRendererVersion: rendererManifest.rendererVersion,
   maxItems: 1,
-  softDeadlineMs: 480_000,
+  softDeadlineMs: 240_000,
   uploadMarginMs: 120_000,
   browserCaptureTimeoutMs: 45_000,
   browserCleanupGraceMs: 15_000,
@@ -169,8 +169,8 @@ describe('Queue acknowledgement and retry policy', () => {
       replay: true,
       batchToken: wakeUp.triggerId,
       leaseExpiresAt: NOW + 720_000,
-      browserReservationMs: 480_000,
-      dailyBrowserMs: 480_000,
+      browserReservationMs: 240_000,
+      dailyBrowserMs: 240_000,
     };
     const acquire = vi
       .fn()
@@ -210,8 +210,8 @@ describe('Queue acknowledgement and retry policy', () => {
       replay: false,
       batchToken: 'batch-token-0000000000000001',
       leaseExpiresAt: NOW + 720_000,
-      browserReservationMs: 480_000,
-      dailyBrowserMs: 480_000,
+      browserReservationMs: 240_000,
+      dailyBrowserMs: 240_000,
     };
     const deps = dependencies(async () => acquired);
     const result = await consumePublisherMessage(delivery.value, config, deps);
@@ -242,8 +242,8 @@ describe('Queue acknowledgement and retry policy', () => {
       replay: false,
       batchToken: 'batch-token-0000000000000001',
       leaseExpiresAt: NOW + 720_000,
-      browserReservationMs: 480_000,
-      dailyBrowserMs: 480_000,
+      browserReservationMs: 240_000,
+      dailyBrowserMs: 240_000,
     };
     const deps = dependencies(async () => acquired);
     deps.owned.browserAvailable = async () => false;
@@ -265,8 +265,8 @@ describe('Queue acknowledgement and retry policy', () => {
       replay: false,
       batchToken: 'batch-token-0000000000000001',
       leaseExpiresAt: NOW + 720_000,
-      browserReservationMs: 480_000,
-      dailyBrowserMs: 480_000,
+      browserReservationMs: 240_000,
+      dailyBrowserMs: 240_000,
     };
     const deps = dependencies(async () => acquired);
     const secretRenderer = `Bearer SECRET_RENDERER_TOKEN ${'x'.repeat(100_000)}`;

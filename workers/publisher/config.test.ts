@@ -13,7 +13,7 @@ function env(overrides: Record<string, string> = {}): Env {
     CONVEX_RENDER_URL: 'https://convex.example.com/render',
     SUPPORTED_RENDERER_VERSION: rendererManifest.rendererVersion,
     EXECUTOR_MAX_ITEMS: '1',
-    SOFT_DEADLINE_MS: '480000',
+    SOFT_DEADLINE_MS: '240000',
     UPLOAD_MARGIN_MS: '120000',
     BROWSER_CAPTURE_TIMEOUT_MS: '45000',
     BROWSER_CLEANUP_GRACE_MS: '15000',
@@ -26,17 +26,22 @@ function env(overrides: Record<string, string> = {}): Env {
 
 describe('publisher lifecycle configuration', () => {
   test('accepts the inert production timing contract', () => {
-    expect(parsePublisherConfig(env())).toMatchObject({
-      softDeadlineMs: 480_000,
+    const config = parsePublisherConfig(env());
+    expect(config).toMatchObject({
+      softDeadlineMs: 240_000,
       browserCaptureTimeoutMs: 45_000,
       browserCleanupGraceMs: 15_000,
     });
+    expect(
+      config.browserCaptureTimeoutMs + config.browserCleanupGraceMs + 5_000
+    ).toBeLessThanOrEqual(config.softDeadlineMs);
+    expect(config.softDeadlineMs - config.uploadMarginMs).toBe(120_000);
   });
 
   test('rejects phase settings that could consume the cleanup and settlement margin', () => {
     expect(() =>
       parsePublisherConfig(
-        env({ BROWSER_CAPTURE_TIMEOUT_MS: '470000', BROWSER_CLEANUP_GRACE_MS: '9000' })
+        env({ BROWSER_CAPTURE_TIMEOUT_MS: '225001', BROWSER_CLEANUP_GRACE_MS: '10000' })
       )
     ).toThrow(/absolute executor lifecycle deadline/);
   });

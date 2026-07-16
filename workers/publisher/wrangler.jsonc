@@ -64,7 +64,7 @@
     "CONVEX_RENDER_URL": "https://exuberant-finch-263.eu-west-1.convex.site/asset-publishing/render",
     "SUPPORTED_RENDERER_VERSION": "faction-sheet-v1",
     "EXECUTOR_MAX_ITEMS": "1",
-    "SOFT_DEADLINE_MS": "480000",
+    "SOFT_DEADLINE_MS": "240000",
     "UPLOAD_MARGIN_MS": "120000",
     "BROWSER_CAPTURE_TIMEOUT_MS": "45000",
     "BROWSER_CLEANUP_GRACE_MS": "15000",
