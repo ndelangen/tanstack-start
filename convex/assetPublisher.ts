@@ -788,8 +788,14 @@ export const getPublicMetadata = query({
       .unique();
     if (!target) return null;
 
+    const stablePath = `/factions/${encodeURIComponent(target.faction_id)}/sheet.pdf`;
     const publication =
-      target.published_generation === undefined
+      target.published_generation === undefined ||
+      target.published_renderer_version === undefined ||
+      target.published_cache_token === undefined ||
+      target.published_r2_etag === undefined ||
+      target.published_bytes === undefined ||
+      target.published_at === undefined
         ? null
         : {
             generation: target.published_generation,
@@ -798,6 +804,8 @@ export const getPublicMetadata = query({
             r2Etag: target.published_r2_etag,
             bytes: target.published_bytes,
             publishedAt: target.published_at,
+            stablePath,
+            href: `${stablePath}?v=${encodeURIComponent(target.published_cache_token)}`,
           };
     return {
       factionId: target.faction_id,

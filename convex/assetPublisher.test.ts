@@ -8,6 +8,7 @@ import { proofFaction } from '../src/app/capture/proofFaction';
 import { ConvexPublisherClient } from '../workers/publisher/convex';
 import { api, internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
+import { createCacheSigningSecret } from './lib/assetPublisherHttp';
 import schema from './schema';
 
 const modules = import.meta.glob('./**/*.ts');
@@ -839,6 +840,8 @@ describe('read-only eligibility and public projection', () => {
         cacheToken: CACHE_ONE,
         r2Etag: 'etag-one',
         bytes: 1_234,
+        stablePath: `/factions/${encodeURIComponent(factionId)}/sheet.pdf`,
+        href: `/factions/${encodeURIComponent(factionId)}/sheet.pdf?v=${encodeURIComponent(CACHE_ONE)}`,
       },
     });
     expect(Object.keys(metadata ?? {}).sort()).toEqual([
@@ -851,10 +854,43 @@ describe('read-only eligibility and public projection', () => {
       'bytes',
       'cacheToken',
       'generation',
+      'href',
       'publishedAt',
       'r2Etag',
       'rendererVersion',
+      'stablePath',
     ]);
+    expect(JSON.stringify(metadata)).not.toContain('atreides');
+    expect(JSON.stringify(metadata)).not.toContain('http://');
+    expect(JSON.stringify(metadata)).not.toContain('https://');
+  });
+
+  test('soft deletion retains exact environment-neutral publication metadata', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const { t, factionId } = await seed();
+    const claim = await acquireAndClaim(t);
+    await t.mutation(internal.assetPublisher.completeClaim, {
+      ...exact(claim),
+      r2Etag: 'etag-one',
+      bytes: 1_234,
+      cacheToken: CACHE_ONE,
+    });
+    await t.run(async (ctx) => await ctx.db.patch(factionId, { is_deleted: true }));
+
+    await expect(
+      t.query(api.assetPublisher.getPublicMetadata, {
+        factionId,
+        assetType: 'faction_sheet',
+      })
+    ).resolves.toMatchObject({
+      factionId,
+      publication: {
+        cacheToken: CACHE_ONE,
+        stablePath: `/factions/${encodeURIComponent(factionId)}/sheet.pdf`,
+        href: `/factions/${encodeURIComponent(factionId)}/sheet.pdf?v=${encodeURIComponent(CACHE_ONE)}`,
+      },
+    });
   });
 });
 
@@ -946,7 +982,7 @@ describe('publisher HTTP authorization separation', () => {
     process.env.ASSET_PUBLISHER_POLL_SECRET = 'poll-secret';
     process.env.ASSET_PUBLISHER_EXECUTOR_SECRET = 'executor-secret';
     process.env.ASSET_PUBLISHER_RENDER_CAPABILITY_SECRET = 'render-secret';
-    process.env.ASSET_PUBLISHER_CACHE_TOKEN_SECRET = 'cache-secret';
+    process.env.ASSET_PUBLISHER_CACHE_TOKEN_SECRET = createCacheSigningSecret();
     try {
       const { t } = await seed();
       await addSecondTarget(t);
@@ -1025,7 +1061,7 @@ describe('publisher HTTP authorization separation', () => {
         measuredBrowserMs: 8_170,
       });
 
-      const completion = await post('/asset-publishing/executor/complete', {
+      const completionBody = {
         schemaVersion: 1,
         targetId: replay.targetId,
         batchToken: acquisition.batchToken,
@@ -1034,9 +1070,19 @@ describe('publisher HTTP authorization separation', () => {
         rendererVersion: replay.rendererVersion,
         r2Etag: 'http-replay-etag',
         bytes: 1_234,
-      });
+      };
+      const completion = await post('/asset-publishing/executor/complete', completionBody);
       expect(completion.status).toBe(200);
-      await expect(completion.json()).resolves.toMatchObject({ status: 'completed' });
+      const completed = (await completion.json()) as { status: string; cacheToken: string };
+      expect(completed).toMatchObject({ status: 'completed' });
+      expect(completed.cacheToken).toMatch(/^v1\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}$/);
+      const lostResponseReplay = await post('/asset-publishing/executor/complete', completionBody);
+      expect(lostResponseReplay.status).toBe(200);
+      await expect(lostResponseReplay.json()).resolves.toMatchObject({
+        status: 'completed',
+        replay: true,
+        cacheToken: completed.cacheToken,
+      });
       const final = await t.run(async (ctx) => ({
         targets: await ctx.db.query('asset_targets').take(3),
         state: await ctx.db
@@ -1047,6 +1093,9 @@ describe('publisher HTTP authorization separation', () => {
       expect(final.targets.filter((target) => target.status === 'leased')).toHaveLength(0);
       expect(final.targets.filter((target) => target.status === 'current')).toHaveLength(1);
       expect(final.targets.filter((target) => target.status === 'pending')).toHaveLength(1);
+      expect(
+        final.targets.find((target) => target.status === 'current')?.published_cache_token
+      ).toBe(completed.cacheToken);
       expect(final.state?.batch_token).toBeUndefined();
     } finally {
       const restore = (key: string, value: string | undefined) => {

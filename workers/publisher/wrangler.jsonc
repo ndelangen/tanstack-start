@@ -15,7 +15,13 @@
     "directory": "./dist",
     "binding": "ASSETS",
     "html_handling": "none",
-    "run_worker_first": ["/__asset-publisher/*", "/publisher-capture.html", "/publisher-capture/*"]
+    "run_worker_first": [
+      "/__asset-publisher/*",
+      "/factions",
+      "/factions/*",
+      "/publisher-capture.html",
+      "/publisher-capture/*"
+    ]
   },
   "browser": { "binding": "BROWSER" },
   "r2_buckets": [
@@ -38,7 +44,11 @@
   },
   "triggers": { "crons": [] },
   "secrets": {
-    "required": ["ASSET_PUBLISHER_POLL_SECRET", "ASSET_PUBLISHER_EXECUTOR_SECRET"]
+    "required": [
+      "ASSET_PUBLISHER_CACHE_TOKEN_SECRET",
+      "ASSET_PUBLISHER_POLL_SECRET",
+      "ASSET_PUBLISHER_EXECUTOR_SECRET"
+    ]
   },
   "vars": {
     "PUBLISHER_ENABLED": "false",

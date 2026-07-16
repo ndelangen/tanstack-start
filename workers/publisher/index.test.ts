@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
+import { createCacheSigningSecret } from '../../convex/lib/assetPublisherHttp';
 import { createWakeUp } from './dispatch';
 
 const browserMocks = vi.hoisted(() => ({
@@ -54,6 +55,7 @@ function publisherEnv(now: number): Env {
     R2_UNACCOUNTED_WRITE_BUDGET_BYTES: '200000000',
     ASSET_PUBLISHER_POLL_SECRET: 'poll-secret-not-shared',
     ASSET_PUBLISHER_EXECUTOR_SECRET: 'executor-secret-not-shared',
+    ASSET_PUBLISHER_CACHE_TOKEN_SECRET: createCacheSigningSecret(),
     ASSETS: { fetch: vi.fn() },
     BROWSER: {},
     ASSET_BUCKET: {},
@@ -79,6 +81,25 @@ afterEach(() => {
 });
 
 describe('publisher Worker structured-log security boundary', () => {
+  test.each([
+    '/factions',
+    '/factions/',
+    '/factions/mutable-slug/sheet.pdf',
+    '/factions/extra',
+  ])('owns the full faction namespace without Static Assets fallthrough: %s', async (pathname) => {
+    const currentEnv = publisherEnv(Date.now());
+    const waitUntil = vi.fn();
+    const response = await publisherWorker.fetch(
+      new Request(`https://assets.example.com${pathname}`),
+      currentEnv,
+      { waitUntil } as unknown as ExecutionContext
+    );
+    expect(response.status).toBe(404);
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
+    expect(currentEnv.ASSETS.fetch).not.toHaveBeenCalled();
+    expect(waitUntil).not.toHaveBeenCalled();
+  });
+
   test.each(SIGNED_URLS)('Cron redacts a rejected poll URL: %s', async (signedUrl) => {
     vi.stubGlobal(
       'fetch',

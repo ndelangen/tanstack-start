@@ -41,9 +41,28 @@ describe('disabled production deployment shape', () => {
     expect(config).not.toHaveProperty('limits');
   });
 
-  test('declares separate generated poll/executor secret bindings', () => {
+  test('keeps the stable object behind one private R2 binding', () => {
+    expect(config.r2_buckets).toEqual([
+      {
+        binding: 'ASSET_BUCKET',
+        bucket_name: 'faction-sheet-assets-unprovisioned',
+      },
+    ]);
+    const source = readFileSync(
+      path.resolve(process.cwd(), 'workers/publisher/wrangler.jsonc'),
+      'utf8'
+    );
+    expect(source).not.toContain('r2.dev');
+    expect(config).not.toHaveProperty('routes');
+  });
+
+  test('declares cache-token plus separate generated poll/executor secret bindings', () => {
     expect(config.secrets).toEqual({
-      required: ['ASSET_PUBLISHER_POLL_SECRET', 'ASSET_PUBLISHER_EXECUTOR_SECRET'],
+      required: [
+        'ASSET_PUBLISHER_CACHE_TOKEN_SECRET',
+        'ASSET_PUBLISHER_POLL_SECRET',
+        'ASSET_PUBLISHER_EXECUTOR_SECRET',
+      ],
     });
     const source = readFileSync(
       path.resolve(process.cwd(), 'workers/publisher/wrangler.jsonc'),
@@ -64,9 +83,11 @@ describe('disabled production deployment shape', () => {
     });
   });
 
-  test('routes the capture document and isolated bundle through the capability gate', () => {
+  test('routes public assets, capture document, and isolated bundle through the Worker', () => {
     expect((config.assets as { run_worker_first?: string[] }).run_worker_first).toEqual([
       '/__asset-publisher/*',
+      '/factions',
+      '/factions/*',
       '/publisher-capture.html',
       '/publisher-capture/*',
     ]);

@@ -6,6 +6,7 @@ import { browserAvailable, openPublisherBrowser } from './browser';
 import { handleCaptureRoute } from './capture-route';
 import { isCronDispatchEnabled, isPublisherEnabled, parsePublisherConfig } from './config';
 import { ConvexPublisherClient } from './convex';
+import { handlePublicAssetRequest } from './delivery';
 import { createWakeUp, dispatchWakeUp } from './dispatch';
 import { consumePublisherMessage } from './queue';
 
@@ -27,7 +28,9 @@ function client(env: Env, config: ReturnType<typeof parsePublisherConfig>) {
 }
 
 export const publisherWorker = {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const publicAsset = await handlePublicAssetRequest(request, env, ctx);
+    if (publicAsset) return publicAsset;
     const capture = await handleCaptureRoute(request, env);
     if (capture) return capture;
     if (new URL(request.url).pathname === '/__asset-publisher/health') {
