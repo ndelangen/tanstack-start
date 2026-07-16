@@ -1,0 +1,252 @@
+import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
+export const PUBLISHER_WORKER_NAME = 'faction-sheet-asset-publisher';
+export const PUBLISHER_QUEUE_NAME = 'faction-sheet-asset-publisher';
+export const PUBLISHER_BUCKET_NAME = 'tanstack-start-faction-sheet-assets';
+export const PUBLISHER_ORIGIN = 'https://faction-sheet-asset-publisher.ndelangen.workers.dev';
+export const PUBLISHER_RENDERER_VERSION = 'faction-sheet-v1';
+
+const CONFIG_PATH = path.resolve(process.cwd(), 'workers/publisher/wrangler.jsonc');
+const REQUIRED_SECRETS = [
+  'ASSET_PUBLISHER_CACHE_TOKEN_SECRET',
+  'ASSET_PUBLISHER_POLL_SECRET',
+  'ASSET_PUBLISHER_EXECUTOR_SECRET',
+];
+
+type JsonObject = Record<string, unknown>;
+
+function invariant(condition: unknown, message: string): asserts condition {
+  if (!condition) throw new Error(message);
+}
+
+function object(value: unknown, name: string): JsonObject {
+  invariant(
+    value !== null && typeof value === 'object' && !Array.isArray(value),
+    `${name} must be an object`
+  );
+  return value as JsonObject;
+}
+
+function exactJson(actual: unknown, expected: unknown, name: string): void {
+  invariant(
+    JSON.stringify(actual) === JSON.stringify(expected),
+    `${name} does not match the reviewed production contract`
+  );
+}
+
+function requiredEnvironment(environment: NodeJS.ProcessEnv, name: string): string {
+  const value = environment[name];
+  invariant(typeof value === 'string' && value.trim().length > 0, `${name} is required`);
+  return value;
+}
+
+function absoluteHttpsUrl(value: string, name: string): URL {
+  const url = new URL(value);
+  invariant(url.protocol === 'https:', `${name} must use HTTPS`);
+  invariant(
+    !url.username && !url.password && !url.hash,
+    `${name} must not contain credentials or a fragment`
+  );
+  return url;
+}
+
+export function readPublisherConfig(): JsonObject {
+  return JSON.parse(readFileSync(CONFIG_PATH, 'utf8')) as JsonObject;
+}
+
+export function validatePublisherDeployContract(
+  config: JsonObject,
+  environment: NodeJS.ProcessEnv
+): void {
+  const githubSha = requiredEnvironment(environment, 'GITHUB_SHA');
+  invariant(/^[0-9a-f]{40}$/.test(githubSha), 'GITHUB_SHA must be a full lowercase Git commit SHA');
+  invariant(
+    requiredEnvironment(environment, 'GITHUB_REF') === 'refs/heads/main',
+    'Publisher deploys are restricted to refs/heads/main'
+  );
+  invariant(
+    /^[0-9a-f]{32}$/.test(requiredEnvironment(environment, 'CLOUDFLARE_ACCOUNT_ID')),
+    'CLOUDFLARE_ACCOUNT_ID must be a 32-character account ID'
+  );
+  requiredEnvironment(environment, 'CLOUDFLARE_API_TOKEN');
+  absoluteHttpsUrl(requiredEnvironment(environment, 'VITE_CONVEX_URL'), 'VITE_CONVEX_URL');
+
+  invariant(config.name === PUBLISHER_WORKER_NAME, 'Worker name changed unexpectedly');
+  invariant(config.main === './index.ts', 'Worker entrypoint changed unexpectedly');
+  invariant(config.workers_dev === true, 'workers.dev must remain enabled');
+  invariant(config.preview_urls === false, 'preview URLs must remain disabled');
+  invariant(
+    !('routes' in config) && !('route' in config),
+    'Custom routes are outside this deployment slice'
+  );
+
+  const vars = object(config.vars, 'vars');
+  exactJson(
+    {
+      PUBLISHER_ENABLED: vars.PUBLISHER_ENABLED,
+      CRON_DISPATCH_ENABLED: vars.CRON_DISPATCH_ENABLED,
+      CAPTURE_BASE_URL: vars.CAPTURE_BASE_URL,
+      SUPPORTED_RENDERER_VERSION: vars.SUPPORTED_RENDERER_VERSION,
+      EXECUTOR_MAX_ITEMS: vars.EXECUTOR_MAX_ITEMS,
+    },
+    {
+      PUBLISHER_ENABLED: 'false',
+      CRON_DISPATCH_ENABLED: 'false',
+      CAPTURE_BASE_URL: PUBLISHER_ORIGIN,
+      SUPPORTED_RENDERER_VERSION: PUBLISHER_RENDERER_VERSION,
+      EXECUTOR_MAX_ITEMS: '1',
+    },
+    'inert Worker variables'
+  );
+  exactJson(config.triggers, { crons: [] }, 'Cron configuration');
+  exactJson(
+    config.r2_buckets,
+    [{ binding: 'ASSET_BUCKET', bucket_name: PUBLISHER_BUCKET_NAME }],
+    'R2 binding'
+  );
+  exactJson(
+    config.queues,
+    {
+      producers: [{ binding: 'PUBLISH_QUEUE', queue: PUBLISHER_QUEUE_NAME }],
+      consumers: [
+        {
+          queue: PUBLISHER_QUEUE_NAME,
+          max_batch_size: 1,
+          max_batch_timeout: 1,
+          max_retries: 2,
+          max_concurrency: 1,
+        },
+      ],
+    },
+    'Queue bindings'
+  );
+  exactJson(config.secrets, { required: REQUIRED_SECRETS }, 'required Worker secret names');
+
+  const origin = absoluteHttpsUrl(PUBLISHER_ORIGIN, 'publisher origin');
+  invariant(origin.pathname === '/', 'Publisher origin must not contain a path');
+  invariant(
+    origin.hostname === `${PUBLISHER_WORKER_NAME}.ndelangen.workers.dev`,
+    'Publisher origin must be the reviewed workers.dev hostname'
+  );
+}
+
+export function validatePublisherHealth(
+  config: JsonObject,
+  healthValue: unknown,
+  expectedGitSha: string,
+  responseUrl: string,
+  cacheControl: string | null
+): void {
+  invariant(
+    /^[0-9a-f]{40}$/.test(expectedGitSha),
+    'Expected deployment SHA must be a full Git SHA'
+  );
+  const vars = object(config.vars, 'vars');
+  const health = object(healthValue, 'health response');
+  const rendererSupport = object(health.rendererSupport, 'health rendererSupport');
+  const identity = object(health.identity, 'health identity');
+  const configuredOrigin = new URL(PUBLISHER_ORIGIN).origin;
+  invariant(
+    new URL(responseUrl).origin === configuredOrigin,
+    'Health response came from an unexpected origin'
+  );
+  invariant(cacheControl === 'no-store', 'Health response must be non-cacheable');
+  invariant(health.ok === true, 'Health response is not ok');
+  invariant(health.publisherEnabled === false, 'Publisher must remain inert');
+  invariant(health.cronDispatchEnabled === false, 'Cron dispatch must remain inert');
+  invariant(health.maxItems === 1, 'Publisher maxItems must remain one');
+  invariant(
+    health.supportedRendererVersion === vars.SUPPORTED_RENDERER_VERSION,
+    'Health renderer version does not match checked-in configuration'
+  );
+  exactJson(
+    rendererSupport.supportedRendererVersions,
+    [vars.SUPPORTED_RENDERER_VERSION],
+    'renderer support list'
+  );
+  invariant(
+    rendererSupport.configuredRendererVersion === vars.SUPPORTED_RENDERER_VERSION &&
+      rendererSupport.configurationMatchesManifest === true,
+    'Renderer support does not match the embedded manifest'
+  );
+  invariant(
+    typeof rendererSupport.rendererId === 'string' &&
+      /^faction-sheet\/sha256:[0-9a-f]{64}$/.test(rendererSupport.rendererId),
+    'Renderer identity is invalid'
+  );
+  const rendererDigest = rendererSupport.rendererId.slice('faction-sheet/sha256:'.length);
+  invariant(
+    identity.rendererId === rendererSupport.rendererId &&
+      identity.rendererManifestDigest === rendererDigest,
+    'Worker identity and renderer support describe different release bytes'
+  );
+  invariant(
+    identity.workerVersionTag === expectedGitSha,
+    'Deployed Worker tag does not match GITHUB_SHA'
+  );
+  invariant(
+    identity.configuredRendererVersion === vars.SUPPORTED_RENDERER_VERSION &&
+      identity.rendererConfigurationMatchesManifest === true,
+    'Deployed Worker identity reports a renderer mismatch'
+  );
+}
+
+function assertExactCheckout(githubSha: string): void {
+  const revision = spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' });
+  invariant(revision.status === 0, 'Unable to read the checked-out Git revision');
+  invariant(revision.stdout.trim() === githubSha, 'Checked-out revision does not match GITHUB_SHA');
+  const status = spawnSync('git', ['status', '--porcelain'], {
+    encoding: 'utf8',
+  });
+  invariant(status.status === 0, 'Unable to inspect the Git worktree');
+  invariant(
+    status.stdout.trim() === '',
+    'Tracked source changed after checkout; refusing to deploy'
+  );
+}
+
+async function run(): Promise<void> {
+  const [command] = process.argv.slice(2);
+  const config = readPublisherConfig();
+  if (command === 'preflight') {
+    validatePublisherDeployContract(config, process.env);
+    assertExactCheckout(requiredEnvironment(process.env, 'GITHUB_SHA'));
+    console.log(`Publisher CI preflight passed for ${process.env.GITHUB_SHA}.`);
+    return;
+  }
+  if (command === 'smoke') {
+    const githubSha = requiredEnvironment(process.env, 'GITHUB_SHA');
+    let lastFailure: unknown;
+    for (let attempt = 1; attempt <= 6; attempt += 1) {
+      try {
+        const response = await fetch(`${PUBLISHER_ORIGIN}/__asset-publisher/health`, {
+          headers: { Accept: 'application/json' },
+          redirect: 'error',
+          signal: AbortSignal.timeout(5_000),
+        });
+        invariant(response.status === 200, `Publisher health returned HTTP ${response.status}`);
+        const health = await response.json();
+        validatePublisherHealth(
+          config,
+          health,
+          githubSha,
+          response.url,
+          response.headers.get('Cache-Control')
+        );
+        console.log(`Publisher health smoke passed for ${githubSha} at ${PUBLISHER_ORIGIN}.`);
+        return;
+      } catch (error) {
+        lastFailure = error;
+        if (attempt < 6) await new Promise((resolve) => setTimeout(resolve, 5_000));
+      }
+    }
+    throw new Error('Publisher health smoke did not observe the exact deployed release', {
+      cause: lastFailure,
+    });
+  }
+  throw new Error('Expected command: preflight or smoke');
+}
+
+if (import.meta.main) await run();

@@ -69,6 +69,7 @@ timestamp so identical inputs produce one stable release and renderer identity. 
 
 ```bash
 bun run publisher:types
+bun run publisher:types:check
 bun run publisher:typecheck
 bun run publisher:test
 bun run publisher:assets
@@ -77,6 +78,17 @@ bun run publisher:font-regression
 bun run publisher:dry-run
 bun run publisher:startup
 ```
+
+The protected `main` workflow runs the release gates after Convex deploy and required migrations:
+source/config preflight, generated-type check, typecheck, one production-URL asset build, assembled
+asset check, clean-source check, Wrangler dry-run, strict SHA-tagged deploy, and inert workers.dev
+health smoke. Netlify refreshes the same `dist/client` only afterward as rollback. The workflow does
+not provision resources, install/read secrets, change flags/Cron/routes, or activate publishing.
+
+Do not merge the CI deployment slice until the protected GitHub `production` environment contains
+the account-scoped least-privilege `CLOUDFLARE_API_TOKEN`. `CLOUDFLARE_ACCOUNT_ID` is a protected
+environment variable; the API token is a protected secret. The exact Queue and R2 names remain in
+`wrangler.jsonc`, and required Worker secret names are validated by Wrangler during deploy.
 
 Deploy this configuration only through Ticket 6's inert gate: the stable private bucket and Queue
 must be reverified, the disabled-first publication-admission migration/counter must pass, and the
