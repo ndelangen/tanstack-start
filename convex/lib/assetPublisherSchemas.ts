@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { SUPPORTED_FACTION_SHEET_RENDERER_VERSIONS } from './assetPublisherConstants';
+
 export const assetTypeSchema = z.literal('faction_sheet');
 export const publisherTokenSchema = z.string().min(16).max(256);
 export const rendererVersionSchema = z.string().trim().min(1).max(128);
@@ -33,11 +35,15 @@ export const operatorRequestSchema = z.discriminatedUnion('operation', [
   z.strictObject({ schemaVersion: z.literal(1), operation: z.literal('initialize') }),
   z.strictObject({ schemaVersion: z.literal(1), operation: z.literal('pause') }),
   z.strictObject({ schemaVersion: z.literal(1), operation: z.literal('disable') }),
-  z.strictObject({ schemaVersion: z.literal(1), operation: z.literal('activate') }),
+  z.strictObject({
+    schemaVersion: z.literal(1),
+    operation: z.literal('activate'),
+    rendererVersion: z.enum(SUPPORTED_FACTION_SHEET_RENDERER_VERSIONS),
+  }),
 ]);
 
 const rolloutIdSchema = z.string().trim().min(1).max(128);
-const supportedRolloutRendererSchema = z.literal('faction-sheet-v1');
+const supportedRolloutRendererSchema = z.enum(SUPPORTED_FACTION_SHEET_RENDERER_VERSIONS);
 
 export const rolloutOperatorRequestSchema = z.discriminatedUnion('operation', [
   z.strictObject({

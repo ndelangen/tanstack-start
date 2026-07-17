@@ -7,7 +7,8 @@ provisioned, and the persistent release configuration is ready for scheduled pol
 - the Cron trigger list contains exactly one `*/15 * * * *` schedule;
 - the production Queue and dedicated private R2 bucket are named explicitly;
 - capture and Convex HTTP URLs use the intended workers.dev and regional Convex origins;
-- the configured semantic renderer is `faction-sheet-v1`; the separate SHA-256 renderer id
+- the primary semantic renderer is `faction-sheet-v2`, while exact compatibility support remains
+  `[faction-sheet-v1, faction-sheet-v2]`; the separate SHA-256 renderer id
   identifies the exact assembled release for telemetry and canary checks;
 - poll and executor secrets are distinct required bindings and are not checked in.
 - the Convex-only activation secret is distinct from every publisher boundary secret and is not
@@ -65,7 +66,9 @@ recommendation-only. `EXECUTOR_MAX_ITEMS` accepts `1` or `2`; the checked-in fun
 one Convex batch, opens one Browser Session, checkpoints at most two items sequentially, then
 settles and releases the exact batch once.
 
-The only executable semantic renderer remains the release's embedded `faction-sheet-v1` contract.
+The release executes only its embedded semantic compatibility set:
+`[faction-sheet-v1, faction-sheet-v2]`. Both labels currently use the same capture/PDF behavior;
+`faction-sheet-v2` is a no-visual-change rollout canary, not a visual renderer revision.
 The rollout operator schema and mutation both reject any other string. Supporting a future candidate
 requires an ordered compatibility release: widen the Worker to embed/authorize that semantic
 renderer, verify its exact release id and a PDF canary, then widen the strict Convex operator

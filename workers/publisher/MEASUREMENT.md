@@ -70,19 +70,19 @@ promotion: it is not a size-two full batch and lacks memory, subrequest, lease, 
 reservation, failure-recovery, projected-slope, and production ownership/stable-write correctness
 measurements. Those correctness fields remain explicitly unknown; Ticket 1 did not prove them.
 
-## Ticket 7 Phase C work still blocked
+## Ticket 7 work after the size-two proof
 
 The additive Convex rollout ledger/state machine, strict operator projection, page-50 discovery,
 foreground supersession, and batch-retaining rollout checkpoints are implemented disabled-first.
-They do not create or resume a production rollout, raise either runtime cap, or change the fixed
-240,000-ms reservation/deadline. Until a separately measured scaling batch supplies the stable
-delivery-enabled baseline, do not add or activate:
+The production size-two canary subsequently proved two sequential foreground items in one Browser
+Session, and the checked-in effective maximum is now two. The dual semantic renderer slice keeps
+the fixed 240,000-ms reservation/deadline and adds no visual behavior change. It does not authorize:
 
-- an effective maximum above one or multi-item claiming;
+- an effective maximum above two;
 - dynamic batch-sized quota admission, weighted foreground/rollout scheduling, or quota borrowing;
-- candidate renderer activation or a broad production rollout;
+- broad production rollout activation;
 - a dynamic Browser reservation, CPU/memory/subrequest slope, marginal reused-session cost, or any
-  claim that batch sizes two through five are safe.
+  claim that batch sizes three through five are safe.
 
 `evaluateBatchPromotion` is pure. It recommends only the next step in `1 -> 2 -> 3 -> 4 -> 5`,
 requires the readiness minimum sample count and complete metrics, and returns hold/pause/rollback

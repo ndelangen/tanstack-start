@@ -3,7 +3,7 @@ import {
   serializePublisherLogEvent,
 } from '../../src/app/capture/publisher-diagnostics';
 import { assertCapturedPdfOutput, type PublisherBrowserSession } from './browser';
-import type { PublisherConfig } from './config';
+import { type PublisherConfig, supportsRendererVersion } from './config';
 import type {
   AcquireResult,
   ClaimedTarget,
@@ -595,7 +595,7 @@ export async function executeOwnedBatch(
       };
       itemStates.push(item);
       dependencies.fault?.('after_claim');
-      if (claim.rendererVersion !== config.supportedRendererVersion) {
+      if (!supportsRendererVersion(config, claim.rendererVersion)) {
         throw new Error('Claim renderer is not supported by this deployment');
       }
 
@@ -732,7 +732,7 @@ export async function executeOwnedBatch(
         : uncertainClaim ||
             deadlineFailure ||
             (launchAttempted && !browserOpened) ||
-            claim?.rendererVersion !== config.supportedRendererVersion
+            (claim !== undefined && !supportsRendererVersion(config, claim.rendererVersion))
           ? 'systemic_stop'
           : 'failed';
     stopReason = deadlineFailure
@@ -743,7 +743,7 @@ export async function executeOwnedBatch(
           ? 'failure'
           : 'max_items';
     if (claim && !currentItem?.completed && !currentItem?.stale) {
-      const unsupportedRenderer = claim.rendererVersion !== config.supportedRendererVersion;
+      const unsupportedRenderer = !supportsRendererVersion(config, claim.rendererVersion);
       await bestEffort(
         async () =>
           await telemetry.convex(unsupportedRenderer ? 'release' : 'fail', async () =>
@@ -830,7 +830,7 @@ export async function executeOwnedBatch(
           workLane: item.claim.workLane ?? 'foreground',
           claimCorrelationHash: await safeTelemetryCorrelationHash('claim', item.claim.claimToken),
           rendererId: rendererManifest.rendererId,
-          rendererMismatch: item.claim.rendererVersion !== config.supportedRendererVersion,
+          rendererMismatch: !supportsRendererVersion(config, item.claim.rendererVersion),
           outcome: item.completed ? 'completed' : item.stale ? 'stale' : 'failed',
           failureClass: item.completed ? null : failureClass(item.error),
           pdf: {

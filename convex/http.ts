@@ -33,7 +33,6 @@ import {
   FACTION_SHEET_STORAGE_ACTIVATION_PREREQUISITE,
   FACTION_SHEET_TARGET_ACTIVATION_PREREQUISITE,
 } from './lib/factionSheetPublicationGuard';
-import { INITIAL_FACTION_SHEET_RENDERER_VERSION } from './lib/factionSheetTargets';
 
 const http = httpRouter();
 
@@ -139,7 +138,7 @@ http.route({
           schemaVersion: body.schemaVersion,
           operation: body.operation,
           ...(await ctx.runMutation(internal.assetPublisherOperator.activate, {
-            expectedRendererVersion: INITIAL_FACTION_SHEET_RENDERER_VERSION,
+            rendererVersion: body.rendererVersion,
             targetPrerequisite: FACTION_SHEET_TARGET_ACTIVATION_PREREQUISITE,
             storagePrerequisite: FACTION_SHEET_STORAGE_ACTIVATION_PREREQUISITE,
           })),

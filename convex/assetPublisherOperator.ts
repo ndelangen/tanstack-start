@@ -13,12 +13,16 @@ import {
   insertDisabledPublisherState,
 } from './lib/factionSheetPublicationGuard';
 import {
+  CURRENT_FACTION_SHEET_RENDERER_VERSION,
   FACTION_SHEET_ASSET_TYPE,
   INITIAL_FACTION_SHEET_RENDERER_VERSION,
 } from './lib/factionSheetTargets';
 import type { MutationCtx } from './types';
 
-const rendererValidator = v.literal(INITIAL_FACTION_SHEET_RENDERER_VERSION);
+const rendererValidator = v.union(
+  v.literal(INITIAL_FACTION_SHEET_RENDERER_VERSION),
+  v.literal(CURRENT_FACTION_SHEET_RENDERER_VERSION)
+);
 const targetPrerequisiteValidator = v.literal(FACTION_SHEET_TARGET_ACTIVATION_PREREQUISITE);
 const storagePrerequisiteValidator = v.literal(FACTION_SHEET_STORAGE_ACTIVATION_PREREQUISITE);
 // Freeze both evidence-backed compare-and-swap amounts. These maintenance values must not follow a
@@ -321,7 +325,7 @@ async function assertExactPrerequisite(
  */
 export const activate = internalMutation({
   args: {
-    expectedRendererVersion: rendererValidator,
+    rendererVersion: rendererValidator,
     targetPrerequisite: targetPrerequisiteValidator,
     storagePrerequisite: storagePrerequisiteValidator,
   },
@@ -330,18 +334,13 @@ export const activate = internalMutation({
     await assertExactPrerequisite(ctx, args.storagePrerequisite);
     const { config, state } = await ensureDisabledRows(ctx);
     await assertFirstPublicationCounterReady(ctx);
-    if (config.active_renderer_version !== args.expectedRendererVersion) {
-      throw new Error(
-        `Publisher activation renderer mismatch: expected ${args.expectedRendererVersion}`
-      );
-    }
-
-    const configChanged = config.status !== 'active';
+    const configChanged =
+      config.status !== 'active' || config.active_renderer_version !== args.rendererVersion;
     const stateChanged = state.status !== 'active';
     if (configChanged) {
       await ctx.db.patch(config._id, {
         status: 'active',
-        active_renderer_version: args.expectedRendererVersion,
+        active_renderer_version: args.rendererVersion,
         updated_at: Date.now(),
       });
     }
@@ -349,7 +348,7 @@ export const activate = internalMutation({
       await ctx.db.patch(state._id, { status: 'active' });
     }
     return controlResult(
-      { ...config, status: 'active', active_renderer_version: args.expectedRendererVersion },
+      { ...config, status: 'active', active_renderer_version: args.rendererVersion },
       { ...state, status: 'active' },
       configChanged || stateChanged
     );

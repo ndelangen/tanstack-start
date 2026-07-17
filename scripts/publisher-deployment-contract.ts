@@ -5,6 +5,7 @@ import path from 'node:path';
 import {
   PUBLISHER_RENDERER_CONTRACT,
   PUBLISHER_RENDERER_VERSION,
+  PUBLISHER_SUPPORTED_RENDERER_VERSIONS,
 } from '../workers/publisher/renderer-contract';
 import { rendererManifest } from '../workers/publisher/renderer-manifest.generated';
 
@@ -13,7 +14,7 @@ export const PUBLISHER_QUEUE_NAME = 'faction-sheet-asset-publisher';
 export const PUBLISHER_BUCKET_NAME = 'tanstack-start-faction-sheet-assets';
 export const PUBLISHER_ORIGIN = 'https://faction-sheet-asset-publisher.ndelangen.workers.dev';
 export const PUBLISHER_PRODUCTION_CONVEX_URL = 'https://exuberant-finch-263.eu-west-1.convex.cloud';
-export { PUBLISHER_RENDERER_VERSION };
+export { PUBLISHER_RENDERER_VERSION, PUBLISHER_SUPPORTED_RENDERER_VERSIONS };
 
 const CONFIG_PATH = path.resolve(process.cwd(), 'workers/publisher/wrangler.jsonc');
 const PUBLISHER_CONVEX_SITE_ORIGIN = 'https://exuberant-finch-263.eu-west-1.convex.site';
@@ -156,6 +157,11 @@ export function validatePublisherDeployContract(
       vars.SUPPORTED_RENDERER_VERSION === rendererManifest.rendererVersion,
     'Configured renderer version does not match the source manifest'
   );
+  exactJson(
+    rendererManifest.supportedRendererVersions,
+    PUBLISHER_SUPPORTED_RENDERER_VERSIONS,
+    'renderer manifest support list'
+  );
   invariant(
     /^[0-9a-f]{64}$/.test(rendererManifest.digest) &&
       rendererManifest.rendererId === `faction-sheet/sha256:${rendererManifest.digest}`,
@@ -202,7 +208,7 @@ export function validatePublisherHealth(
   );
   exactJson(
     rendererSupport.supportedRendererVersions,
-    [vars.SUPPORTED_RENDERER_VERSION],
+    PUBLISHER_SUPPORTED_RENDERER_VERSIONS,
     'renderer support list'
   );
   invariant(

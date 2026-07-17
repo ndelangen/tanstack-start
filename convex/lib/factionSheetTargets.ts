@@ -7,6 +7,11 @@ import {
   INITIAL_FACTION_SHEET_RENDERER_VERSION,
 } from './assetPublisherConstants';
 
+export {
+  CURRENT_FACTION_SHEET_RENDERER_VERSION,
+  SUPPORTED_FACTION_SHEET_RENDERER_VERSIONS,
+  type SupportedFactionSheetRendererVersion,
+} from './assetPublisherConstants';
 export { FACTION_SHEET_ASSET_TYPE, INITIAL_FACTION_SHEET_RENDERER_VERSION };
 
 export function parseFactionInput(input: unknown) {

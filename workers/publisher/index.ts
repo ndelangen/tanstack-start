@@ -73,7 +73,7 @@ export const publisherWorker = {
           maxItems: configuredMaxItems(env),
           supportedRendererVersion: rendererManifest.rendererVersion,
           rendererSupport: {
-            supportedRendererVersions: [rendererManifest.rendererVersion],
+            supportedRendererVersions: rendererManifest.supportedRendererVersions,
             rendererId: rendererManifest.rendererId,
             configuredRendererVersion: env.SUPPORTED_RENDERER_VERSION,
             configurationMatchesManifest:

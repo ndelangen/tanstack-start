@@ -6,6 +6,7 @@ export type PublisherConfig = {
   convexExecutorBaseUrl: string;
   convexRenderUrl: string;
   supportedRendererVersion: string;
+  supportedRendererVersions: readonly ['faction-sheet-v1', 'faction-sheet-v2'];
   maxItems: 1 | 2;
   softDeadlineMs: number;
   uploadMarginMs: number;
@@ -29,6 +30,15 @@ function integer(name: string, value: string, minimum: number, maximum: number):
 
 export function configuredMaxItems(env: Pick<Env, 'EXECUTOR_MAX_ITEMS'>): 1 | 2 {
   return integer('EXECUTOR_MAX_ITEMS', env.EXECUTOR_MAX_ITEMS, 1, 2) as 1 | 2;
+}
+
+export function supportsRendererVersion(
+  config: Pick<PublisherConfig, 'supportedRendererVersions'>,
+  rendererVersion: string
+): boolean {
+  return config.supportedRendererVersions.some(
+    (supportedRendererVersion) => supportedRendererVersion === rendererVersion
+  );
 }
 
 function absoluteHttpsUrl(name: string, value: string): string {
@@ -79,6 +89,7 @@ export function parsePublisherConfig(env: Env): PublisherConfig {
     ),
     convexRenderUrl: absoluteHttpsUrl('CONVEX_RENDER_URL', env.CONVEX_RENDER_URL),
     supportedRendererVersion: rendererManifest.rendererVersion,
+    supportedRendererVersions: rendererManifest.supportedRendererVersions,
     maxItems,
     softDeadlineMs,
     uploadMarginMs,
