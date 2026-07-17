@@ -18,6 +18,7 @@ import type * as factions from "../factions.js";
 import type * as faq from "../faq.js";
 import type * as groups from "../groups.js";
 import type * as http from "../http.js";
+import type * as lib_assetPublisherConstants from "../lib/assetPublisherConstants.js";
 import type * as lib_assetPublisherHttp from "../lib/assetPublisherHttp.js";
 import type * as lib_assetPublisherLimits from "../lib/assetPublisherLimits.js";
 import type * as lib_assetPublisherSchemas from "../lib/assetPublisherSchemas.js";
@@ -55,6 +56,7 @@ declare const fullApi: ApiFromModules<{
   faq: typeof faq;
   groups: typeof groups;
   http: typeof http;
+  "lib/assetPublisherConstants": typeof lib_assetPublisherConstants;
   "lib/assetPublisherHttp": typeof lib_assetPublisherHttp;
   "lib/assetPublisherLimits": typeof lib_assetPublisherLimits;
   "lib/assetPublisherSchemas": typeof lib_assetPublisherSchemas;
