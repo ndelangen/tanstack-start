@@ -4,8 +4,10 @@ import { internal } from './_generated/api';
 import type { Doc, Id } from './_generated/dataModel';
 import { internalMutation, internalQuery } from './_generated/server';
 import {
+  CURRENT_FACTION_SHEET_RENDERER_VERSION,
   FACTION_SHEET_ASSET_TYPE,
   INITIAL_FACTION_SHEET_RENDERER_VERSION,
+  isSupportedFactionSheetRendererVersion,
 } from './lib/assetPublisherConstants';
 import { BROWSER_RESERVATION_MS, FREE_BROWSER_ALLOWANCE_MS } from './lib/assetPublisherLimits';
 import type { MutationCtx, QueryCtx } from './types';
@@ -13,7 +15,12 @@ import type { MutationCtx, QueryCtx } from './types';
 export const ROLLOUT_DISCOVERY_PAGE_SIZE = 50;
 export const ROLLOUT_CLEANUP_PAGE_SIZE = 50;
 export const MAX_ROLLOUT_ATTEMPTS = 3;
-export const EFFECTIVE_PUBLISHER_MAX_ITEMS = 1;
+export const EFFECTIVE_PUBLISHER_MAX_ITEMS = 2;
+
+const rendererValidator = v.union(
+  v.literal(INITIAL_FACTION_SHEET_RENDERER_VERSION),
+  v.literal(CURRENT_FACTION_SHEET_RENDERER_VERSION)
+);
 
 type RolloutStatus = Doc<'asset_rollouts'>['status'];
 type RolloutItemState = Doc<'asset_rollout_items'>['state'];
@@ -31,9 +38,7 @@ function isNonterminal(status: RolloutStatus): boolean {
 }
 
 function supportedRenderer(version: string): boolean {
-  // A candidate is executable only after the embedded Worker compatibility contract is widened.
-  // Operator input alone must never manufacture renderer support.
-  return version === INITIAL_FACTION_SHEET_RENDERER_VERSION;
+  return isSupportedFactionSheetRendererVersion(version);
 }
 
 async function exactConfig(ctx: ReadCtx) {
@@ -179,7 +184,7 @@ export const normalizeRolloutId = internalQuery({
 });
 
 export const createPaused = internalMutation({
-  args: { targetRendererVersion: v.string() },
+  args: { targetRendererVersion: rendererValidator },
   handler: async (ctx, args) => {
     const config = await exactConfig(ctx);
     if (config.active_rollout_id) {
@@ -202,7 +207,7 @@ export const createPaused = internalMutation({
 export const createRollback = internalMutation({
   args: {
     rollbackOfRolloutId: v.id('asset_rollouts'),
-    targetRendererVersion: v.string(),
+    targetRendererVersion: rendererValidator,
   },
   handler: async (ctx, args) => {
     const prior = await ctx.db.get('asset_rollouts', args.rollbackOfRolloutId);

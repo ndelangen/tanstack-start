@@ -2,7 +2,11 @@ import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { PUBLISHER_RENDERER_CONTRACT, PUBLISHER_RENDERER_VERSION } from './renderer-contract';
+import {
+  PUBLISHER_RENDERER_CONTRACT,
+  PUBLISHER_RENDERER_VERSION,
+  PUBLISHER_SUPPORTED_RENDERER_VERSIONS,
+} from './renderer-contract';
 
 export type RendererManifestEntry = {
   path: string;
@@ -17,6 +21,7 @@ export const RENDERER_RUNTIME_CLOSURE_PATHS = [
   'workers/publisher/renderer-contract.ts',
   'workers/proof/pdf.ts',
   'src/app/capture/publisher-diagnostics.ts',
+  'src/app/capture/faction-sheet-renderer-versions.ts',
 ] as const;
 
 export function computeRendererManifestDigest(
@@ -67,6 +72,7 @@ export function writeRendererManifest(
   const { pdf, viewport } = PUBLISHER_RENDERER_CONTRACT;
   const contract = `{
     rendererVersion: '${PUBLISHER_RENDERER_VERSION}',
+    supportedRendererVersions: [${PUBLISHER_SUPPORTED_RENDERER_VERSIONS.map((version) => `'${version}'`).join(', ')}],
     viewport: {
       width: ${viewport.width},
       height: ${viewport.height},
@@ -95,6 +101,7 @@ export function writeRendererManifest(
       `export const rendererManifest = {\n` +
       `  schemaVersion: 1,\n` +
       `  rendererVersion: '${PUBLISHER_RENDERER_VERSION}',\n` +
+      `  supportedRendererVersions: [${PUBLISHER_SUPPORTED_RENDERER_VERSIONS.map((version) => `'${version}'`).join(', ')}],\n` +
       `  rendererId:\n` +
       `    'faction-sheet/sha256:${digest}',\n` +
       `  digest: '${digest}',\n` +

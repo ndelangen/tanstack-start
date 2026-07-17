@@ -4,6 +4,7 @@ import {
   PUBLISHER_ORIGIN,
   PUBLISHER_PRODUCTION_CONVEX_URL,
   PUBLISHER_RENDERER_VERSION,
+  PUBLISHER_SUPPORTED_RENDERER_VERSIONS,
   readPublisherConfig,
   validatePublisherDeployContract,
   validatePublisherHealth,
@@ -27,7 +28,7 @@ function health() {
     maxItems: 2,
     supportedRendererVersion: PUBLISHER_RENDERER_VERSION,
     rendererSupport: {
-      supportedRendererVersions: [PUBLISHER_RENDERER_VERSION],
+      supportedRendererVersions: PUBLISHER_SUPPORTED_RENDERER_VERSIONS,
       rendererId: `faction-sheet/sha256:${'c'.repeat(64)}`,
       configuredRendererVersion: PUBLISHER_RENDERER_VERSION,
       configurationMatchesManifest: true,
@@ -125,6 +126,22 @@ describe('publisher CI deployment contract', () => {
         'no-store'
       )
     ).toThrow();
+    const extraRenderer = health() as unknown as {
+      rendererSupport: { supportedRendererVersions: string[] };
+    };
+    extraRenderer.rendererSupport.supportedRendererVersions = [
+      ...PUBLISHER_SUPPORTED_RENDERER_VERSIONS,
+      'faction-sheet-v3',
+    ];
+    expect(() =>
+      validatePublisherHealth(
+        readPublisherConfig(),
+        extraRenderer,
+        'a'.repeat(40),
+        `${PUBLISHER_ORIGIN}/__asset-publisher/health`,
+        'no-store'
+      )
+    ).toThrow(/renderer support list/);
     expect(() =>
       validatePublisherHealth(
         readPublisherConfig(),

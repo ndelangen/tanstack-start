@@ -105,9 +105,12 @@ async function seedCurrentTargets(
   return { t, userIds, factionIds, targetIds };
 }
 
-async function createPaused(t: Seeded['t']) {
+async function createPaused(
+  t: Seeded['t'],
+  targetRendererVersion: 'faction-sheet-v1' | 'faction-sheet-v2' = 'faction-sheet-v1'
+) {
   return await t.mutation(internal.assetRollouts.createPaused, {
-    targetRendererVersion: 'faction-sheet-v1',
+    targetRendererVersion,
   });
 }
 
@@ -162,9 +165,9 @@ describe('renderer rollout control plane', () => {
 
     await expect(
       t.mutation(internal.assetRollouts.createPaused, {
-        targetRendererVersion: 'operator-invented-renderer',
+        targetRendererVersion: 'operator-invented-renderer' as never,
       })
-    ).rejects.toThrow(/not supported/);
+    ).rejects.toThrow();
     const [first, replay] = await Promise.all([createPaused(t), createPaused(t)]);
     expect(replay.rolloutId).toBe(first.rolloutId);
     expect(first.status).toBe('paused');
@@ -408,7 +411,8 @@ describe('renderer rollout control plane', () => {
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
     const { t } = await seedCurrentTargets(1);
-    const created = await createPaused(t);
+    const created = await createPaused(t, 'faction-sheet-v2');
+    expect(created).toMatchObject({ targetRendererVersion: 'faction-sheet-v2', status: 'paused' });
     await resumeAndDrainDiscovery(t, created.rolloutId);
     await t.mutation(internal.assetRollouts.cancel, { rolloutId: created.rolloutId });
     await t.finishAllScheduledFunctions(vi.runAllTimers);
@@ -424,6 +428,7 @@ describe('renderer rollout control plane', () => {
     expect(rollback).toMatchObject({
       status: 'paused',
       rollbackOfRolloutId: created.rolloutId,
+      targetRendererVersion: 'faction-sheet-v1',
     });
     expect(replay.rolloutId).toBe(rollback.rolloutId);
   });
@@ -549,7 +554,7 @@ describe('renderer rollout control plane', () => {
       const created = await post({
         schemaVersion: 1,
         operation: 'create_paused',
-        targetRendererVersion: 'faction-sheet-v1',
+        targetRendererVersion: 'faction-sheet-v2',
       });
       expect(created.status).toBe(200);
       const createdBody = (await created.json()) as { rollout: { rolloutId: string } };
@@ -558,6 +563,7 @@ describe('renderer rollout control plane', () => {
         operation: 'progress',
         rolloutId: createdBody.rollout.rolloutId,
       });
+      await expect(progress.clone().json()).resolves.toMatchObject({ effectiveMaxItems: 2 });
       expect(progress.status).toBe(200);
       const serialized = JSON.stringify(await progress.json());
       expect(serialized).toContain('remainingItems');

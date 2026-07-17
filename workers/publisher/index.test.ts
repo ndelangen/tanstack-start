@@ -143,7 +143,7 @@ describe('publisher Worker structured-log security boundary', () => {
         rendererConfigurationMatchesManifest: true,
       },
       rendererSupport: {
-        supportedRendererVersions: [rendererManifest.rendererVersion],
+        supportedRendererVersions: rendererManifest.supportedRendererVersions,
         rendererId: rendererManifest.rendererId,
         configuredRendererVersion: rendererManifest.rendererVersion,
         configurationMatchesManifest: true,
@@ -174,7 +174,7 @@ describe('publisher Worker structured-log security boundary', () => {
     await expect(response.json()).resolves.toMatchObject({
       supportedRendererVersion: rendererManifest.rendererVersion,
       rendererSupport: {
-        supportedRendererVersions: [rendererManifest.rendererVersion],
+        supportedRendererVersions: rendererManifest.supportedRendererVersions,
         rendererId: rendererManifest.rendererId,
         configuredRendererVersion: 'mutable-renderer-alias',
         configurationMatchesManifest: false,

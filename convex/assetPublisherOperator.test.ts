@@ -10,9 +10,13 @@ import schema from './schema';
 const modules = import.meta.glob('./**/*.ts');
 const NOW = Date.parse('2026-07-16T12:00:00.000Z');
 const activationArgs = {
-  expectedRendererVersion: 'faction-sheet-v1' as const,
+  rendererVersion: 'faction-sheet-v1' as const,
   targetPrerequisite: 'faction_sheet_targets_verify_v1' as const,
   storagePrerequisite: 'faction_sheet_publication_admissions_v1' as const,
+};
+const v2ActivationArgs = {
+  ...activationArgs,
+  rendererVersion: 'faction-sheet-v2' as const,
 };
 const RECONCILIATION_RESERVATION_TOKEN = 'prior-canary-reservation';
 const reconciliationArgs = {
@@ -198,29 +202,33 @@ describe('asset publisher operator controls', () => {
     ).resolves.toEqual({ configs: [], states: [], counters: [] });
   });
 
-  test('activation rejects a stale renderer without creating or changing singleton state', async () => {
+  test('activation selects v2 and can explicitly reactivate v1 with the same exact guards', async () => {
     const t = convexTest(schema, modules);
     await recordSuccessfulPrerequisite(t);
-    await t.run(async (ctx) => {
-      await ctx.db.insert('asset_type_configs', {
-        asset_type: 'faction_sheet',
-        status: 'disabled',
-        active_renderer_version: 'stale-renderer',
-        updated_at: NOW,
-      });
-    });
+    await t.mutation(internal.assetPublisherOperator.initializeDisabled, {});
 
     await expect(
+      t.mutation(internal.assetPublisherOperator.activate, v2ActivationArgs)
+    ).resolves.toMatchObject({
+      changed: true,
+      rendererVersion: 'faction-sheet-v2',
+      configStatus: 'active',
+      publisherStatus: 'active',
+    });
+    await expect(
+      t.mutation(internal.assetPublisherOperator.activate, v2ActivationArgs)
+    ).resolves.toMatchObject({ changed: false, rendererVersion: 'faction-sheet-v2' });
+    await expect(
       t.mutation(internal.assetPublisherOperator.activate, activationArgs)
-    ).rejects.toThrow('renderer mismatch');
+    ).resolves.toMatchObject({ changed: true, rendererVersion: 'faction-sheet-v1' });
     await expect(
       t.run(async (ctx) => ({
         configs: await ctx.db.query('asset_type_configs').take(2),
         states: await ctx.db.query('asset_publisher_state').take(1),
       }))
     ).resolves.toMatchObject({
-      configs: [{ status: 'disabled', active_renderer_version: 'stale-renderer' }],
-      states: [],
+      configs: [{ status: 'active', active_renderer_version: 'faction-sheet-v1' }],
+      states: [{ status: 'active' }],
     });
   });
 
@@ -306,7 +314,7 @@ describe('asset publisher operator controls', () => {
       await ctx.db.insert('asset_type_configs', {
         asset_type: 'faction_sheet',
         status: 'paused',
-        active_renderer_version: 'faction-sheet-v1',
+        active_renderer_version: 'faction-sheet-v2',
         updated_at: NOW,
       });
       await ctx.db.insert('asset_publisher_state', {
@@ -362,14 +370,14 @@ describe('asset publisher operator controls', () => {
       targetId: seeded.targetId,
       previousGeneration: 1,
       desiredGeneration: 2,
-      rendererVersion: 'faction-sheet-v1',
+      rendererVersion: 'faction-sheet-v2',
       nextEligibleAt: 0,
     });
 
     const after = await t.run(async (ctx) => await ctx.db.get('asset_targets', seeded.targetId));
     expect(after).toMatchObject({
       desired_generation: 2,
-      desired_renderer_version: 'faction-sheet-v1',
+      desired_renderer_version: 'faction-sheet-v2',
       status: 'pending',
       next_eligible_at: 0,
       attempt_count: 1,
@@ -803,7 +811,7 @@ describe('asset publisher operator HTTP boundary', () => {
           await post({
             schemaVersion: 1,
             operation: 'activate',
-            expectedRendererVersion: 'attacker-selected-renderer',
+            rendererVersion: 'attacker-selected-renderer',
           })
         ).status
       ).toBe(400);
@@ -832,9 +840,16 @@ describe('asset publisher operator HTTP boundary', () => {
 
       await recordSuccessfulPrerequisite(t);
       await expect(
-        (await post({ schemaVersion: 1, operation: 'activate' })).json()
+        (
+          await post({
+            schemaVersion: 1,
+            operation: 'activate',
+            rendererVersion: 'faction-sheet-v2',
+          })
+        ).json()
       ).resolves.toMatchObject({
         operation: 'activate',
+        rendererVersion: 'faction-sheet-v2',
         configStatus: 'active',
         publisherStatus: 'active',
       });

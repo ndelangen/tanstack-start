@@ -1,7 +1,14 @@
-export const PUBLISHER_RENDERER_VERSION = 'faction-sheet-v1' as const;
+import {
+  CURRENT_FACTION_SHEET_RENDERER_VERSION,
+  SUPPORTED_FACTION_SHEET_RENDERER_VERSIONS,
+} from '../../src/app/capture/faction-sheet-renderer-versions';
+
+export const PUBLISHER_RENDERER_VERSION = CURRENT_FACTION_SHEET_RENDERER_VERSION;
+export const PUBLISHER_SUPPORTED_RENDERER_VERSIONS = SUPPORTED_FACTION_SHEET_RENDERER_VERSIONS;
 
 export const PUBLISHER_RENDERER_CONTRACT = {
   rendererVersion: PUBLISHER_RENDERER_VERSION,
+  supportedRendererVersions: PUBLISHER_SUPPORTED_RENDERER_VERSIONS,
   viewport: { width: 1_500, height: 1_950, deviceScaleFactor: 1 },
   pdf: {
     pageCount: 2,

@@ -30,6 +30,7 @@ const config: PublisherConfig = {
   convexExecutorBaseUrl: 'https://convex.example.com/executor',
   convexRenderUrl: 'https://convex.example.com/render',
   supportedRendererVersion: rendererManifest.rendererVersion,
+  supportedRendererVersions: rendererManifest.supportedRendererVersions,
   maxItems: 1,
   softDeadlineMs: 240_000,
   uploadMarginMs: 120_000,

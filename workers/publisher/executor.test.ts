@@ -20,6 +20,7 @@ const config: PublisherConfig = {
   convexExecutorBaseUrl: 'https://convex.example.com/executor',
   convexRenderUrl: 'https://convex.example.com/render',
   supportedRendererVersion: rendererManifest.rendererVersion,
+  supportedRendererVersions: rendererManifest.supportedRendererVersions,
   maxItems: 1,
   softDeadlineMs: 240_000,
   uploadMarginMs: 120_000,
@@ -194,6 +195,60 @@ describe('one-item owned batch execution', () => {
         pdf: { bytes: 3, pages: 2, widthMm: 150, heightMm: 195 },
       },
     });
+  });
+
+  test('one retained Browser session executes a v2 canary followed by a legacy v1 backlog item', async () => {
+    const legacyClaim: ClaimedTarget = {
+      ...claim,
+      targetId: 'legacy-v1-target',
+      factionId: 'legacy-v1-faction',
+      claimToken: 'claim-token-0000000000000002',
+      rendererVersion: 'faction-sheet-v1',
+      payloadHash: 'b'.repeat(64),
+      renderCapability: 'render-capability-token-000000002',
+    };
+    const claimed = [claim, legacyClaim];
+    const claimNext = vi.fn(async () => claimed.shift() ?? ({ status: 'empty' } as const));
+    const { dependencies, spies } = setup({ claim: claimNext });
+    dependencies.client.revalidate = vi.fn(async (exactClaim) => {
+      const owned = exactClaim.targetId === legacyClaim.targetId ? legacyClaim : claim;
+      return {
+        status: 'valid' as const,
+        leaseExpiresAt: owned.leaseExpiresAt,
+        factionId: owned.factionId,
+        assetType: owned.assetType,
+        payloadHash: owned.payloadHash,
+      };
+    });
+
+    const report = await executeOwnedBatch(
+      dependencies,
+      { ...config, maxItems: 2 },
+      acquisition,
+      NOW
+    );
+
+    expect(report).toMatchObject({
+      status: 'completed',
+      browserOpened: true,
+      browserClosed: true,
+      browserSettled: true,
+      telemetry: {
+        configuredMaxItems: 2,
+        effectiveMaxItems: 2,
+        counts: { claimed: 2, completed: 2, failed: 0 },
+        items: [
+          { rendererMismatch: false, outcome: 'completed' },
+          { rendererMismatch: false, outcome: 'completed' },
+        ],
+      },
+    });
+    expect(spies.openBrowser).toHaveBeenCalledOnce();
+    expect(spies.capture).toHaveBeenCalledTimes(2);
+    expect(spies.put).toHaveBeenCalledTimes(2);
+    expect(spies.complete).toHaveBeenCalledTimes(2);
+    expect(spies.settleBrowser).toHaveBeenCalledOnce();
+    expect(spies.releaseBatch).toHaveBeenCalledOnce();
   });
 
   test('a rollout checkpoint releases the retained batch only after Browser settlement', async () => {
@@ -509,7 +564,7 @@ describe('one-item owned batch execution', () => {
     });
   });
 
-  test('the embedded semantic renderer version is the only claim authorization identity', async () => {
+  test('claims outside the exact embedded semantic support set fail before capture or R2', async () => {
     const rejectedRenderer = `Bearer SECRET_RENDERER_TOKEN ${'x'.repeat(100_000)}`;
     const { dependencies, spies } = setup({
       claimResult: { ...claim, rendererVersion: rejectedRenderer },
@@ -530,6 +585,23 @@ describe('one-item owned batch execution', () => {
     expect(JSON.stringify(report)).not.toContain('SECRET_RENDERER_TOKEN');
     expect(JSON.stringify(report)).not.toContain('rendererVersion');
     expect(spies.capture).not.toHaveBeenCalled();
+    expect(spies.release).toHaveBeenCalledOnce();
+  });
+
+  test('an unknown faction-sheet-v3 claim fails before Browser capture and R2', async () => {
+    const { dependencies, spies } = setup({
+      claimResult: { ...claim, rendererVersion: 'faction-sheet-v3' },
+    });
+    const report = await executeOwnedBatch(dependencies, config, acquisition, NOW);
+    expect(report).toMatchObject({
+      status: 'systemic_stop',
+      telemetry: {
+        invocationFailureClass: 'renderer',
+        item: { rendererMismatch: true, failureClass: 'renderer' },
+      },
+    });
+    expect(spies.capture).not.toHaveBeenCalled();
+    expect(spies.put).not.toHaveBeenCalled();
     expect(spies.release).toHaveBeenCalledOnce();
   });
 

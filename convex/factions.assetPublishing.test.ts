@@ -164,6 +164,50 @@ describe('faction save target reconciliation', () => {
     });
   });
 
+  test('saves keep v1 until guarded v2 activation and adopt v2 only afterward', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const { t, asUser } = await authenticatedTest();
+    await t.mutation(internal.assetPublisherOperator.initializeDisabled, {});
+    await t.run(async (ctx) => {
+      for (const migrationId of [
+        'faction_sheet_targets_verify_v1',
+        'faction_sheet_publication_admissions_v1',
+      ]) {
+        await ctx.db.insert('migration_runs', {
+          migration_id: migrationId,
+          state: 'success',
+          is_done: true,
+          processed: 25,
+          latest_start: NOW - 1_000,
+          latest_end: NOW,
+          updated_at: new Date(NOW).toISOString(),
+        });
+      }
+    });
+
+    const faction = await createFaction(asUser, 'Before v2 activation');
+    await expect(targetFor(t, faction._id)).resolves.toMatchObject({
+      desired_generation: 1,
+      desired_renderer_version: 'faction-sheet-v1',
+    });
+
+    await t.mutation(internal.assetPublisherOperator.activate, {
+      rendererVersion: 'faction-sheet-v2',
+      targetPrerequisite: 'faction_sheet_targets_verify_v1',
+      storagePrerequisite: 'faction_sheet_publication_admissions_v1',
+    });
+    await asUser.mutation(api.factions.update, {
+      id: faction._id,
+      data: { ...proofFaction, name: 'After v2 activation' },
+    });
+
+    await expect(targetFor(t, faction._id)).resolves.toMatchObject({
+      desired_generation: 2,
+      desired_renderer_version: 'faction-sheet-v2',
+    });
+  });
+
   test('a save during a claim preserves the exact claim snapshot and makes that claim stale', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
