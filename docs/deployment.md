@@ -143,6 +143,31 @@ The protected `CLOUDFLARE_API_TOKEN` must stay scoped to the one Cloudflare acco
 permission set needed to update the existing Worker and bindings. Do not grant or exercise resource
 provisioning, secret-management, billing, domain, or unrelated-resource access.
 
+## Pull-request Cloudflare drift guard
+
+`.github/workflows/cloudflare-live-drift.yml` compares production Cloudflare state with the trusted
+`main` contract on every pull request. It uses `pull_request_target`, checks out only the base SHA,
+and never checks out or executes pull-request-authored code. Keep that boundary intact: changing the
+workflow to execute the head revision would expose a repository secret to untrusted code.
+
+Configure a repository secret named `CLOUDFLARE_READ_API_TOKEN` with only these account-level read
+permissions:
+
+- Workers Scripts Read;
+- Queues Read; and
+- Workers R2 Storage Read.
+
+Do not reuse `CLOUDFLARE_API_TOKEN`; that deployment credential has write authority. The drift
+script issues only authenticated `GET` requests and checks the exact Worker bindings, secret names,
+Cron schedule, repository-owned Queue inventory, and private R2 bucket/domain state declared in
+`infra/cloudflare-live-contract.json` and `workers/publisher/wrangler.jsonc`.
+
+After the workflow has run once on `main`, make `Cloudflare live drift / audit` a required status
+check for the `main` branch. The repository currently has no branch protection, so adding the
+workflow alone does not block merging. The workflow is loaded from the default branch for security,
+which also means the pull request that first introduces it is a bootstrap change: the check begins
+on subsequent pull requests after this workflow is merged.
+
 ## Netlify one-time setup
 
 Production traffic should come only from GitHub Actions (`netlify deploy --prod` with a fresh

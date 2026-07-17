@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "publisherWorker": "faction-sheet-asset-publisher",
+  "ownedQueuePrefix": "faction-sheet-",
+  "queues": [
+    {
+      "name": "faction-sheet-asset-publisher",
+      "producers": 0,
+      "consumers": 0
+    }
+  ],
+  "buckets": [
+    {
+      "name": "tanstack-start-faction-sheet-assets",
+      "location": "weur",
+      "storageClass": "Standard",
+      "managedPublic": false,
+      "customDomains": []
+    },
+    {
+      "name": "tanstack-start-asset-publisher-proof",
+      "location": "weur",
+      "storageClass": "Standard",
+      "managedPublic": false,
+      "customDomains": []
+    }
+  ]
+}
