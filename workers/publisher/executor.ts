@@ -84,7 +84,7 @@ export type OwnedBatchTelemetry = {
     messageId?: string;
     attempt?: number;
     name?: string;
-    lane: 'foreground';
+    lane: 'foreground' | 'rollout';
     triggerId?: string;
   };
   batchCorrelationHash: string | null;
@@ -712,7 +712,12 @@ export async function executeOwnedBatch(
         ),
       'unsupported_renderer'
     );
-  } else if (releaseUnclaimedBatch && browserSettled) {
+  }
+  if (
+    browserSettled &&
+    !uncertainClaim &&
+    (releaseUnclaimedBatch || claim?.workLane === 'rollout')
+  ) {
     await bestEffort(
       async () =>
         await telemetry.convex('releaseBatch', async () =>
@@ -722,7 +727,7 @@ export async function executeOwnedBatch(
             ownedOutcomeDeadlineAt
           )
         ),
-      'unclaimed_batch_release'
+      releaseUnclaimedBatch ? 'unclaimed_batch_release' : 'rollout_checkpointed_batch_release'
     );
   } else if (uncertainClaim) {
     // The Convex release mutation also rejects while any target or snapshot owns this batch.
@@ -771,7 +776,7 @@ export async function executeOwnedBatch(
             triggerId: telemetryContext.triggerId,
           }
         : {}),
-      lane: 'foreground',
+      lane: claim?.workLane ?? 'foreground',
     },
     batchCorrelationHash,
     configuredMaxItems: config.maxItems,

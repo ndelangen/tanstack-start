@@ -36,6 +36,43 @@ export const operatorRequestSchema = z.discriminatedUnion('operation', [
   z.strictObject({ schemaVersion: z.literal(1), operation: z.literal('activate') }),
 ]);
 
+const rolloutIdSchema = z.string().trim().min(1).max(128);
+const supportedRolloutRendererSchema = z.literal('faction-sheet-v1');
+
+export const rolloutOperatorRequestSchema = z.discriminatedUnion('operation', [
+  z.strictObject({
+    schemaVersion: z.literal(1),
+    operation: z.literal('create_paused'),
+    targetRendererVersion: supportedRolloutRendererSchema,
+  }),
+  z.strictObject({
+    schemaVersion: z.literal(1),
+    operation: z.literal('resume'),
+    rolloutId: rolloutIdSchema,
+  }),
+  z.strictObject({
+    schemaVersion: z.literal(1),
+    operation: z.literal('pause'),
+    rolloutId: rolloutIdSchema,
+  }),
+  z.strictObject({
+    schemaVersion: z.literal(1),
+    operation: z.literal('cancel'),
+    rolloutId: rolloutIdSchema,
+  }),
+  z.strictObject({
+    schemaVersion: z.literal(1),
+    operation: z.literal('rollback'),
+    rolloutId: rolloutIdSchema,
+    targetRendererVersion: supportedRolloutRendererSchema,
+  }),
+  z.strictObject({
+    schemaVersion: z.literal(1),
+    operation: z.literal('progress'),
+    rolloutId: rolloutIdSchema.optional(),
+  }),
+]);
+
 export const acquireRequestSchema = z.strictObject({
   schemaVersion: z.literal(1),
   batchToken: publisherTokenSchema,

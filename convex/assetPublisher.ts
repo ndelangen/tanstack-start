@@ -4,6 +4,14 @@ import SHA256 from 'crypto-js/sha256';
 import { FactionInputSchema } from '../src/game/schema/faction';
 import type { Doc, Id } from './_generated/dataModel';
 import { internalMutation, internalQuery, query } from './_generated/server';
+import {
+  completeRolloutItem,
+  failRolloutItem,
+  firstEligibleRolloutTarget,
+  markRolloutClaimed,
+  recoverExpiredRolloutClaim,
+  releaseRolloutItem,
+} from './assetRollouts';
 import { BROWSER_RESERVATION_MS, FREE_BROWSER_ALLOWANCE_MS } from './lib/assetPublisherLimits';
 import {
   completionMetadataSchema,
@@ -51,51 +59,44 @@ async function assetTypeConfig(ctx: PublisherReadCtx) {
     .unique();
 }
 
-async function firstEligibleTarget(ctx: PublisherReadCtx, cutoff: number, admittedOnly: boolean) {
-  const pending = admittedOnly
+async function firstEligibleForegroundTargetForLane(
+  ctx: PublisherReadCtx,
+  cutoff: number,
+  admittedOnly: boolean,
+  workLane: 'foreground' | undefined
+) {
+  for (const status of ['pending', 'cooldown'] as const) {
+    const rows = admittedOnly
+      ? await ctx.db
+          .query('asset_targets')
+          .withIndex('by_type_lane_admitted_status_eligible', (q) =>
+            q
+              .eq('asset_type', ASSET_TYPE)
+              .eq('work_lane', workLane)
+              .eq('first_publication_admitted', true)
+              .eq('status', status)
+              .lte('next_eligible_at', cutoff)
+          )
+          .take(1)
+      : await ctx.db
+          .query('asset_targets')
+          .withIndex('by_type_lane_status_eligible', (q) =>
+            q
+              .eq('asset_type', ASSET_TYPE)
+              .eq('work_lane', workLane)
+              .eq('status', status)
+              .lte('next_eligible_at', cutoff)
+          )
+          .take(1);
+    if (rows[0]) return rows[0];
+  }
+  const rows = admittedOnly
     ? await ctx.db
         .query('asset_targets')
-        .withIndex('by_asset_type_and_admitted_and_status_and_next_eligible_at', (q) =>
+        .withIndex('by_type_lane_admitted_status_lease', (q) =>
           q
             .eq('asset_type', ASSET_TYPE)
-            .eq('first_publication_admitted', true)
-            .eq('status', 'pending')
-            .lte('next_eligible_at', cutoff)
-        )
-        .take(1)
-    : await ctx.db
-        .query('asset_targets')
-        .withIndex('by_asset_type_and_status_and_next_eligible_at', (q) =>
-          q.eq('asset_type', ASSET_TYPE).eq('status', 'pending').lte('next_eligible_at', cutoff)
-        )
-        .take(1);
-  if (pending[0]) return pending[0];
-
-  const cooldown = admittedOnly
-    ? await ctx.db
-        .query('asset_targets')
-        .withIndex('by_asset_type_and_admitted_and_status_and_next_eligible_at', (q) =>
-          q
-            .eq('asset_type', ASSET_TYPE)
-            .eq('first_publication_admitted', true)
-            .eq('status', 'cooldown')
-            .lte('next_eligible_at', cutoff)
-        )
-        .take(1)
-    : await ctx.db
-        .query('asset_targets')
-        .withIndex('by_asset_type_and_status_and_next_eligible_at', (q) =>
-          q.eq('asset_type', ASSET_TYPE).eq('status', 'cooldown').lte('next_eligible_at', cutoff)
-        )
-        .take(1);
-  if (cooldown[0]) return cooldown[0];
-
-  const expiredLease = admittedOnly
-    ? await ctx.db
-        .query('asset_targets')
-        .withIndex('by_asset_type_and_admitted_and_status_and_lease_expires_at', (q) =>
-          q
-            .eq('asset_type', ASSET_TYPE)
+            .eq('work_lane', workLane)
             .eq('first_publication_admitted', true)
             .eq('status', 'leased')
             .lte('lease_expires_at', cutoff)
@@ -103,11 +104,25 @@ async function firstEligibleTarget(ctx: PublisherReadCtx, cutoff: number, admitt
         .take(1)
     : await ctx.db
         .query('asset_targets')
-        .withIndex('by_asset_type_and_status_and_lease_expires_at', (q) =>
-          q.eq('asset_type', ASSET_TYPE).eq('status', 'leased').lte('lease_expires_at', cutoff)
+        .withIndex('by_type_lane_status_lease', (q) =>
+          q
+            .eq('asset_type', ASSET_TYPE)
+            .eq('work_lane', workLane)
+            .eq('status', 'leased')
+            .lte('lease_expires_at', cutoff)
         )
         .take(1);
-  return expiredLease[0] ?? null;
+  return rows[0] ?? null;
+}
+
+async function firstEligibleTarget(ctx: PublisherReadCtx, cutoff: number, admittedOnly: boolean) {
+  // At the production maximum of one, ordinary saves always win. Existing rows with no lane field
+  // remain foreground without a backfill; new and newly-saved rows use the explicit lane value.
+  for (const lane of [undefined, 'foreground'] as const) {
+    const foreground = await firstEligibleForegroundTargetForLane(ctx, cutoff, admittedOnly, lane);
+    if (foreground) return foreground;
+  }
+  return await firstEligibleRolloutTarget(ctx, cutoff);
 }
 
 async function hasEligibleWorkAt(ctx: PublisherReadCtx, cutoff: number, now: number) {
@@ -518,36 +533,40 @@ export const claimOne = internalMutation({
         leaseExpiresAt: existingTarget.lease_expires_at,
         payload: snapshot.payload,
         payloadHash: existingTarget.claim_payload_hash,
+        workLane:
+          existingTarget.work_lane === 'rollout' ? ('rollout' as const) : ('foreground' as const),
       };
     }
 
-    const expired = await ctx.db
-      .query('asset_targets')
-      .withIndex('by_asset_type_and_status_and_lease_expires_at', (q) =>
-        q.eq('asset_type', ASSET_TYPE).eq('status', 'leased').lte('lease_expires_at', now)
-      )
-      .take(1);
-    if (expired[0]) {
-      const expiredSnapshot = await claimSnapshot(ctx, expired[0]._id);
-      if (
-        expiredSnapshot &&
-        expiredSnapshot.batch_token === expired[0].batch_token &&
-        expiredSnapshot.claim_token === expired[0].claim_token
-      ) {
-        await ctx.db.delete(expiredSnapshot._id);
-      }
-      await ctx.db.patch(expired[0]._id, {
-        ...clearClaim(),
-        status: 'pending',
-        next_eligible_at: now,
-      });
-    }
-
-    const target = await firstEligibleTarget(
+    let target = await firstEligibleTarget(
       ctx,
       now,
       counter.value >= MAX_FIRST_PUBLISHED_FACTION_SHEETS
     );
+    if (target?.status === 'leased') {
+      const expiredSnapshot = await claimSnapshot(ctx, target._id);
+      if (
+        expiredSnapshot &&
+        expiredSnapshot.batch_token === target.batch_token &&
+        expiredSnapshot.claim_token === target.claim_token
+      ) {
+        await ctx.db.delete(expiredSnapshot._id);
+      }
+      const detached = await recoverExpiredRolloutClaim(ctx, target, now);
+      if (!detached) {
+        await ctx.db.patch(target._id, {
+          ...clearClaim(),
+          status: 'pending',
+          next_eligible_at: now,
+        });
+      }
+      target = await firstEligibleTarget(
+        ctx,
+        now,
+        counter.value >= MAX_FIRST_PUBLISHED_FACTION_SHEETS
+      );
+    }
+
     if (!target || target.status === 'leased') return { status: 'empty' as const };
     const faction = await ctx.db.get('factions', target.faction_id);
     if (!faction) throw new Error('Publisher target faction is missing');
@@ -569,6 +588,7 @@ export const claimOne = internalMutation({
       payload_hash: payloadHash,
       payload,
     });
+    await markRolloutClaimed(ctx, target, now);
     await ctx.db.patch(target._id, {
       status: 'leased',
       next_eligible_at: leaseExpiresAt,
@@ -595,6 +615,7 @@ export const claimOne = internalMutation({
       leaseExpiresAt,
       payload,
       payloadHash,
+      workLane: target.work_lane === 'rollout' ? ('rollout' as const) : ('foreground' as const),
     };
   },
 });
@@ -715,7 +736,9 @@ export const completeClaim = internalMutation({
     }
 
     const publishedAt = now;
+    const rolloutClaim = target.work_lane === 'rollout' && target.rollout_item_id !== undefined;
     await deleteSnapshotIfExact(ctx, args);
+    await completeRolloutItem(ctx, target, now);
     await ctx.db.patch(target._id, {
       ...clearClaim(),
       status: 'current',
@@ -728,8 +751,11 @@ export const completeClaim = internalMutation({
       published_at: publishedAt,
       last_completed_batch_token: args.batchToken,
       last_completed_claim_token: args.claimToken,
+      work_lane: 'foreground',
+      rollout_id: undefined,
+      rollout_item_id: undefined,
     });
-    await releaseBatchIfOwned(ctx, args.batchToken);
+    if (!rolloutClaim) await releaseBatchIfOwned(ctx, args.batchToken);
     return {
       status: 'completed' as const,
       replay: false,
@@ -772,14 +798,24 @@ export const failClaim = internalMutation({
     }
 
     const nextEligibleAt = now + retryDelayMs(target.attempt_count);
+    const rolloutClaim = target.work_lane === 'rollout' && target.rollout_item_id !== undefined;
     await deleteSnapshotIfExact(ctx, args);
-    await ctx.db.patch(target._id, {
-      ...clearClaim(),
-      status: 'cooldown',
-      next_eligible_at: nextEligibleAt,
-      last_error: failure.data.error,
-    });
-    await releaseBatchIfOwned(ctx, args.batchToken);
+    const rolloutOutcome = await failRolloutItem(
+      ctx,
+      target,
+      failure.data.error,
+      nextEligibleAt,
+      now
+    );
+    if (rolloutOutcome !== 'detached') {
+      await ctx.db.patch(target._id, {
+        ...clearClaim(),
+        status: 'cooldown',
+        next_eligible_at: nextEligibleAt,
+        last_error: failure.data.error,
+      });
+    }
+    if (!rolloutClaim) await releaseBatchIfOwned(ctx, args.batchToken);
     return { status: 'failed' as const, nextEligibleAt };
   },
 });
@@ -800,13 +836,17 @@ export const releaseClaim = internalMutation({
     ) {
       return { status: 'stale' as const };
     }
+    const rolloutClaim = target.work_lane === 'rollout' && target.rollout_item_id !== undefined;
     await deleteSnapshotIfExact(ctx, args);
-    await ctx.db.patch(target._id, {
-      ...clearClaim(),
-      status: 'pending',
-      next_eligible_at: now,
-    });
-    await releaseBatchIfOwned(ctx, args.batchToken);
+    const rolloutOutcome = await releaseRolloutItem(ctx, target, now);
+    if (rolloutOutcome !== 'detached') {
+      await ctx.db.patch(target._id, {
+        ...clearClaim(),
+        status: 'pending',
+        next_eligible_at: now,
+      });
+    }
+    if (!rolloutClaim) await releaseBatchIfOwned(ctx, args.batchToken);
     return { status: 'released' as const };
   },
 });

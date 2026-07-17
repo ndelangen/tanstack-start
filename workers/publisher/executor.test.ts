@@ -196,6 +196,24 @@ describe('one-item owned batch execution', () => {
     });
   });
 
+  test('a rollout checkpoint releases the retained batch only after Browser settlement', async () => {
+    const rolloutClaim = { ...claim, workLane: 'rollout' as const };
+    const { dependencies, spies } = setup({ claimResult: rolloutClaim });
+    const report = await executeOwnedBatch(dependencies, config, acquisition, NOW);
+    expect(report).toMatchObject({
+      status: 'completed',
+      browserSettled: true,
+      telemetry: { queue: { lane: 'rollout' } },
+    });
+    expect(spies.complete).toHaveBeenCalledBefore(spies.settleBrowser);
+    expect(spies.settleBrowser).toHaveBeenCalledBefore(spies.releaseBatch);
+    expect(spies.releaseBatch).toHaveBeenCalledWith(
+      acquisition.batchToken,
+      'after_settlement',
+      expect.any(Number)
+    );
+  });
+
   test('empty and duplicate/busy-fenced claims close without upload', async () => {
     for (const status of ['empty', 'stale', 'conflict'] as const) {
       const { dependencies, spies } = setup({ claimResult: { status } });

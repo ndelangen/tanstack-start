@@ -11,6 +11,7 @@
 import type * as assetPublisher from "../assetPublisher.js";
 import type * as assetPublisherOperator from "../assetPublisherOperator.js";
 import type * as assetPublishingStatus from "../assetPublishingStatus.js";
+import type * as assetRollouts from "../assetRollouts.js";
 import type * as auth from "../auth.js";
 import type * as e2e from "../e2e.js";
 import type * as factions from "../factions.js";
@@ -47,6 +48,7 @@ declare const fullApi: ApiFromModules<{
   assetPublisher: typeof assetPublisher;
   assetPublisherOperator: typeof assetPublisherOperator;
   assetPublishingStatus: typeof assetPublishingStatus;
+  assetRollouts: typeof assetRollouts;
   auth: typeof auth;
   e2e: typeof e2e;
   factions: typeof factions;

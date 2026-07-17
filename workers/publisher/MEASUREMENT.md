@@ -70,15 +70,18 @@ promotion: it is not a size-two full batch and lacks memory, subrequest, lease, 
 reservation, failure-recovery, projected-slope, and production ownership/stable-write correctness
 measurements. Those correctness fields remain explicitly unknown; Ticket 1 did not prove them.
 
-## Ticket 7 work still blocked
+## Ticket 7 Phase C work still blocked
 
-Until Ticket 6 supplies the stable delivery-enabled baseline, do not add or activate:
+The additive Convex rollout ledger/state machine, strict operator projection, page-50 discovery,
+foreground supersession, and batch-retaining rollout checkpoints are implemented disabled-first.
+They do not create or resume a production rollout, raise either runtime cap, or change the fixed
+240,000-ms reservation/deadline. Until a separately measured scaling batch supplies the stable
+delivery-enabled baseline, do not add or activate:
 
-- an `asset_rollouts`/rollout-item schema or rollout state machine;
-- batch-retaining item checkpoints, an effective maximum above one, or multi-item claiming;
+- an effective maximum above one or multi-item claiming;
 - dynamic batch-sized quota admission, weighted foreground/rollout scheduling, or quota borrowing;
-- candidate renderer activation, rollout discovery/pause/resume/cancel/rollback, or rollout ETA;
-- a final Browser reservation, CPU/memory/subrequest slope, marginal reused-session cost, or any
+- candidate renderer activation or a broad production rollout;
+- a dynamic Browser reservation, CPU/memory/subrequest slope, marginal reused-session cost, or any
   claim that batch sizes two through five are safe.
 
 `evaluateBatchPromotion` is pure. It recommends only the next step in `1 -> 2 -> 3 -> 4 -> 5`,

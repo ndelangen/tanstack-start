@@ -11,7 +11,8 @@ provisioned, and the persistent release configuration is ready for scheduled pol
   identifies the exact assembled release for telemetry and canary checks;
 - poll and executor secrets are distinct required bindings and are not checked in.
 - the Convex-only activation secret is distinct from every publisher boundary secret and is not
-  checked in; it authenticates only initialize, pause, disable, and guarded activate operations.
+  checked in; it authenticates only initialize, pause, disable, guarded activate, and the strict
+  rollout create/pause/resume/cancel/rollback/progress operation union.
 - the cache-token signing secret is a required binding shared out-of-band with Convex and is not
   checked in or provisioned by this ticket. It has the exact canonical shape `s1.<43 base64url
   characters>`: version `s1`, a dot, and the unpadded canonical base64url encoding of 32 bytes from
@@ -21,7 +22,8 @@ provisioned, and the persistent release configuration is ready for scheduled pol
 
 The Queue payload is only `{ schemaVersion, scheduledCutoff, triggerId }`. Convex owns all batch,
 claim, retry, snapshot, publication, and Browser reservation state. R2 metadata is diagnostic only.
-The 480-second work deadline cannot be extended by phase settings. A separate 30-second
+The 240-second work deadline and fixed 240-second Browser reservation cannot be extended by phase
+settings. A separate 30-second
 post-lifecycle window may only settle definitely closed Browser usage; it is bounded well inside the
 15-minute Queue wall and cannot perform more Browser, R2, or publication work.
 
@@ -55,8 +57,16 @@ no-custom-limit configuration and re-measure the production one-item path rather
 allowance from the generic documentation.
 
 See [MEASUREMENT.md](./MEASUREMENT.md) for the pre-measurement telemetry contract, the production
-metrics Ticket 6 must join from Cloudflare, and the Ticket 7 rollout/scaling work that remains
-blocked. Promotion reports are recommendation-only; `EXECUTOR_MAX_ITEMS` remains exactly `1`.
+metrics Ticket 6 must join from Cloudflare, and the Ticket 7 scaling work that remains blocked.
+Convex now contains a disabled-first rollout control plane with page-50 discovery and batch-retaining
+rollout checkpoints, but no rollout is created or resumed by deployment. Promotion reports are
+recommendation-only; `EXECUTOR_MAX_ITEMS` remains exactly `1`.
+
+The only executable semantic renderer remains the release's embedded `faction-sheet-v1` contract.
+The rollout operator schema and mutation both reject any other string. Supporting a future candidate
+requires an ordered compatibility release: widen the Worker to embed/authorize that semantic
+renderer, verify its exact release id and a PDF canary, then widen the strict Convex operator
+validator before activation or paused rollout creation. Operator input alone is never support proof.
 
 ## Local checks
 

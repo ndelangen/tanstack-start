@@ -22,6 +22,7 @@ import {
   operatorRequestSchema,
   pollRequestSchema,
   releaseBatchRequestSchema,
+  rolloutOperatorRequestSchema,
   settleBrowserRequestSchema,
 } from './lib/assetPublisherSchemas';
 import {
@@ -140,6 +141,81 @@ http.route({
             targetPrerequisite: FACTION_SHEET_TARGET_ACTIVATION_PREREQUISITE,
             storagePrerequisite: FACTION_SHEET_STORAGE_ACTIVATION_PREREQUISITE,
           })),
+        };
+      },
+    });
+  }),
+});
+
+http.route({
+  path: '/asset-publishing/rollouts',
+  method: 'POST',
+  handler: httpAction(async (ctx, request) => {
+    return await handleAuthenticatedJson(request, {
+      expectedSecret: activationBoundarySecret(),
+      schema: rolloutOperatorRequestSchema,
+      execute: async (body) => {
+        if (body.operation === 'create_paused') {
+          return {
+            ok: true,
+            schemaVersion: body.schemaVersion,
+            operation: body.operation,
+            rollout: await ctx.runMutation(internal.assetRollouts.createPaused, {
+              targetRendererVersion: body.targetRendererVersion,
+            }),
+          };
+        }
+        const rolloutId = body.rolloutId
+          ? await ctx.runQuery(internal.assetRollouts.normalizeRolloutId, {
+              rolloutId: body.rolloutId,
+            })
+          : null;
+        if (body.rolloutId && !rolloutId) {
+          throw new InvalidPublisherRequestError('Invalid rollout id');
+        }
+        if (body.operation === 'progress') {
+          return {
+            ok: true,
+            schemaVersion: body.schemaVersion,
+            operation: body.operation,
+            ...(await ctx.runQuery(internal.assetRollouts.progress, {
+              ...(rolloutId ? { rolloutId } : {}),
+            })),
+          };
+        }
+        if (!rolloutId) throw new InvalidPublisherRequestError('Rollout id is required');
+        if (body.operation === 'resume') {
+          return {
+            ok: true,
+            schemaVersion: body.schemaVersion,
+            operation: body.operation,
+            rollout: await ctx.runMutation(internal.assetRollouts.resume, { rolloutId }),
+          };
+        }
+        if (body.operation === 'pause') {
+          return {
+            ok: true,
+            schemaVersion: body.schemaVersion,
+            operation: body.operation,
+            rollout: await ctx.runMutation(internal.assetRollouts.pause, { rolloutId }),
+          };
+        }
+        if (body.operation === 'cancel') {
+          return {
+            ok: true,
+            schemaVersion: body.schemaVersion,
+            operation: body.operation,
+            rollout: await ctx.runMutation(internal.assetRollouts.cancel, { rolloutId }),
+          };
+        }
+        return {
+          ok: true,
+          schemaVersion: body.schemaVersion,
+          operation: body.operation,
+          rollout: await ctx.runMutation(internal.assetRollouts.createRollback, {
+            rollbackOfRolloutId: rolloutId,
+            targetRendererVersion: body.targetRendererVersion,
+          }),
         };
       },
     });
