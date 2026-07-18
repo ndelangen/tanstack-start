@@ -5,8 +5,8 @@ export const rendererManifest = {
   rendererVersion: 'faction-sheet-v3',
   supportedRendererVersions: ['faction-sheet-v3'],
   rendererId:
-    'faction-sheet/sha256:78666e341d0fe4d372d8b22d292be171cbd1da8421d6de29df1c97b0879d0210',
-  digest: '78666e341d0fe4d372d8b22d292be171cbd1da8421d6de29df1c97b0879d0210',
+    'faction-sheet/sha256:42d3a10b16194c9c6c900ca967fb3267e744dc5bbd6198ab07289a3dfb10c2ac',
+  digest: '42d3a10b16194c9c6c900ca967fb3267e744dc5bbd6198ab07289a3dfb10c2ac',
   contract: {
     rendererVersion: 'faction-sheet-v3',
     supportedRendererVersions: ['faction-sheet-v3'],

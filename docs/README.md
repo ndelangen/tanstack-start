@@ -34,8 +34,7 @@ npm run biome:check      # Lint and format
 npm run test             # Run tests
 npm run storybook        # Storybook dev (port 6006)
 npm run build-storybook  # Static Storybook → storybook-static
-npm run generate         # Regenerate src/game/data/generated.ts + generated/index.json
-npm run capture          # Screenshots/PDFs (requires storybook-static from build-storybook)
+npm run generate         # Regenerate the public asset catalog in src/game/data/generated.ts
 ```
 
 ## Common Workflows
@@ -85,9 +84,9 @@ npm run capture          # Screenshots/PDFs (requires storybook-static from buil
 
 3. Route tree auto-generates from file structure.
 
-## Game assets (`src/game`, `public/`, `generated/`)
+## Game assets (`src/game`, `public/`)
 
-Dune card/faction rendering, Storybook, and static art live here. `generated/` holds JPEGs from `scripts/capture.ts` and `index.json` from `scripts/generate.ts`; it is large—consider [Git LFS](https://git-lfs.com/) if clones get slow.
+Dune card/faction rendering and Storybook stories live in `src/game`; source artwork lives in `public/`. `scripts/generate.ts` refreshes the typed public-asset catalog used by game schemas.
 
 ## Detailed Documentation
 

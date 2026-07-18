@@ -777,6 +777,4 @@ export const TROOP_MODIFIER = z.enum([
   '/vector/troop_modifier/star-right.svg',
 ]);
 
-export const GENERATED = z.enum([]);
-
 export const ALL = z.union([GENERIC, LOGO, DECAL, ICON, TROOP]);

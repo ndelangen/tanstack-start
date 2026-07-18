@@ -39,11 +39,5 @@ export default defineMain({
   typescript: {
     reactDocgen: 'react-docgen-typescript',
   },
-  staticDirs: [
-    '../public',
-    {
-      from: '../generated',
-      to: 'generated',
-    },
-  ],
+  staticDirs: ['../public'],
 });
