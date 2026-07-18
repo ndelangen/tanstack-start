@@ -51,7 +51,8 @@ bun run publisher:startup
 ```
 
 `publisher:capture-contract-regression` serves the built capture bundle the exact narrow Browser DTO
-in Chromium and requires the capture marker, payload hash, and two-page PDF contract to succeed.
+in Chromium and requires corrupt resource rejection, capture readiness, payload identity, physical
+page bounds, omitted troop-modifier rendering, and the two-page PDF contract to succeed.
 Convex explicitly projects only the claimed payload and hash, then producer and capture client both
 validate that shared strict contract. Operational item metadata cannot leak into or couple the
 Browser response to executor internals.

@@ -5,7 +5,7 @@ import migrationsTest from '@convex-dev/migrations/test';
 import { convexTest } from 'convex-test';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
-import { proofFaction } from '../src/app/capture/proofFaction';
+import { assetPublishingFaction } from '../src/game/fixtures/assetPublishingFaction';
 import { api, internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import { ITEM_CLAIM_MIGRATION_IDS } from './lib/assetPublisherConstants';
@@ -26,10 +26,10 @@ async function authenticatedTest() {
 
 async function createFaction(
   asUser: Awaited<ReturnType<typeof authenticatedTest>>['asUser'],
-  name = proofFaction.name
+  name = assetPublishingFaction.name
 ) {
   return await asUser.mutation(api.factions.create, {
-    data: { ...proofFaction, name },
+    data: { ...assetPublishingFaction, name },
     group_id: null,
   });
 }
@@ -100,7 +100,7 @@ describe('faction render-generation invariants', () => {
 
     await asUser.mutation(api.factions.update, {
       id: faction._id,
-      data: { ...proofFaction, name: 'Edited faction' },
+      data: { ...assetPublishingFaction, name: 'Edited faction' },
     });
     await expect(targetFor(t, faction._id)).resolves.toMatchObject({
       desired_generation: 2,
@@ -131,7 +131,7 @@ describe('faction render-generation invariants', () => {
 
     await asUser.mutation(api.factions.update, {
       id: faction._id,
-      data: { ...proofFaction, name: 'Edited while leased' },
+      data: { ...assetPublishingFaction, name: 'Edited while leased' },
     });
     const target = await targetFor(t, faction._id);
     expect(target).toMatchObject({
@@ -196,7 +196,7 @@ describe('item-claim widen migrations', () => {
       });
       const factionId = await ctx.db.insert('factions', {
         owner_id: userId,
-        data: proofFaction,
+        data: assetPublishingFaction,
         slug: 'legacy-faction',
         created_at: new Date(NOW).toISOString(),
         updated_at: new Date(NOW).toISOString(),
@@ -289,7 +289,7 @@ describe('item-claim widen migrations', () => {
       });
       const factionId = await ctx.db.insert('factions', {
         owner_id: userId,
-        data: proofFaction,
+        data: assetPublishingFaction,
         slug: 'live-claim',
         created_at: new Date(NOW).toISOString(),
         updated_at: new Date(NOW).toISOString(),

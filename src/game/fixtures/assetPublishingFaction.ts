@@ -1,6 +1,6 @@
-import { type FactionInput, FactionInputSchema } from '../../game/schema/faction';
+import { type FactionInput, FactionInputSchema } from '../schema/faction';
 
-const proofFactionInput = {
+const assetPublishingFactionInput = {
   name: 'Atreides',
   logo: '/vector/logo/atreides.svg',
   colors: ['Green', 'Blue'],
@@ -72,5 +72,7 @@ const proofFactionInput = {
   },
 } satisfies FactionInput;
 
-/** Stable, representative payload used only by the one-PDF Cloudflare proof. */
-export const proofFaction: FactionInput = FactionInputSchema.parse(proofFactionInput);
+/** Stable, representative payload for asset-publishing integration and regression coverage. */
+export const assetPublishingFaction: FactionInput = FactionInputSchema.parse(
+  assetPublishingFactionInput
+);

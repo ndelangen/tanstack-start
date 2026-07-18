@@ -4,7 +4,7 @@
 import { convexTest } from 'convex-test';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
-import { proofFaction } from '../src/app/capture/proofFaction';
+import { assetPublishingFaction } from '../src/game/fixtures/assetPublishingFaction';
 import { internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import schema from './schema';
@@ -28,7 +28,7 @@ async function seedCurrentTargets(count: number) {
       const userId = await ctx.db.insert('users', { name: `Rollout owner ${index}` });
       const factionId = await ctx.db.insert('factions', {
         owner_id: userId,
-        data: { ...proofFaction, name: `Rollout faction ${index}` },
+        data: { ...assetPublishingFaction, name: `Rollout faction ${index}` },
         slug: `rollout-faction-${index}`,
         created_at: new Date(NOW).toISOString(),
         updated_at: new Date(NOW).toISOString(),
@@ -100,7 +100,7 @@ describe('rollout compatibility with independent item claims', () => {
       const userId = await ctx.db.insert('users', { name: 'Foreground owner' });
       const factionId = await ctx.db.insert('factions', {
         owner_id: userId,
-        data: { ...proofFaction, name: 'Foreground priority' },
+        data: { ...assetPublishingFaction, name: 'Foreground priority' },
         slug: 'foreground-priority',
         created_at: new Date(NOW).toISOString(),
         updated_at: new Date(NOW).toISOString(),

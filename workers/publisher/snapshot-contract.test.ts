@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { proofFaction } from '../../src/app/capture/proofFaction';
+import { assetPublishingFaction } from '../../src/game/fixtures/assetPublishingFaction';
 import { publisherCaptureSnapshotSchema } from '../../src/shared/asset-publishing/publisher-snapshot';
 
 const productionEnvelope = {
@@ -8,7 +8,7 @@ const productionEnvelope = {
   payload: {
     factionId: 'k17faction',
     slug: 'test-faction',
-    faction: proofFaction,
+    faction: assetPublishingFaction,
   },
   payloadHash: 'a'.repeat(64),
 } as const;

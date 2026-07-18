@@ -8,7 +8,7 @@ import '@fontsource/caladea/latin-700-italic.css';
 import '@app/components/factions/sheet/FactionSheetDocument.css';
 import '@app/styles/fonts.css';
 import '@app/styles/tokens.css';
-import './proof-document.css';
+import './capture-document.css';
 
 import { ProofFactionSheetCapture } from './ProofFactionSheetCapture';
 

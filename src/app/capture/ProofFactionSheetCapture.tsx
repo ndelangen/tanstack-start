@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 
 import { FactionSheetView } from '@app/components/factions/sheet/FactionSheetView';
+import { assetPublishingFaction as faction } from '@game/fixtures/assetPublishingFaction';
 
-import { proofFaction } from './proofFaction';
 import { publisherErrorMessage, redactPublisherResource } from './publisher-diagnostics';
 
 const IMAGE_SETTLE_TIMEOUT_MS = 15_000;
@@ -198,7 +198,7 @@ export function ProofFactionSheetCapture() {
       <output id="capture-status" data-capture-state={state} aria-live="polite" hidden>
         {detail}
       </output>
-      <FactionSheetView faction={proofFaction} />
+      <FactionSheetView faction={faction} />
     </>
   );
 }

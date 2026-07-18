@@ -4,7 +4,7 @@
 import { convexTest } from 'convex-test';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
-import { proofFaction } from '../src/app/capture/proofFaction';
+import { assetPublishingFaction } from '../src/game/fixtures/assetPublishingFaction';
 import { publisherCaptureSnapshotSchema } from '../src/shared/asset-publishing/publisher-snapshot';
 import { internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
@@ -40,7 +40,7 @@ async function seed(options: { active?: boolean; targets?: number } = {}) {
       const userId = await ctx.db.insert('users', { name: `Publisher user ${index}` });
       const factionId = await ctx.db.insert('factions', {
         owner_id: userId,
-        data: { ...proofFaction, name: `Faction ${index}` },
+        data: { ...assetPublishingFaction, name: `Faction ${index}` },
         slug: `faction-${index}`,
         created_at: new Date(NOW).toISOString(),
         updated_at: new Date(NOW).toISOString(),
@@ -301,7 +301,7 @@ describe('item HTTP contracts', () => {
       payload: {
         factionId: item.factionId,
         slug: 'faction-0',
-        faction: { ...proofFaction, name: 'Faction 0' },
+        faction: { ...assetPublishingFaction, name: 'Faction 0' },
       },
       payloadHash: expect.stringMatching(/^[0-9a-f]{64}$/),
     });
