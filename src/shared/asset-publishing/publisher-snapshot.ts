@@ -12,17 +12,3 @@ export const publisherCaptureSnapshotSchema = z.strictObject({
   }),
   payloadHash: z.string().regex(/^[0-9a-f]{64}$/),
 });
-
-type PublisherCaptureSnapshotSource = {
-  payload: unknown;
-  payloadHash: unknown;
-};
-
-/** Explicitly projects the narrow browser DTO so operational item fields cannot leak into it. */
-export function makePublisherCaptureSnapshot(source: PublisherCaptureSnapshotSource) {
-  return publisherCaptureSnapshotSchema.parse({
-    ok: true,
-    payload: source.payload,
-    payloadHash: source.payloadHash,
-  });
-}
