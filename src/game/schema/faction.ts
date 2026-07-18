@@ -1,12 +1,12 @@
 import SHA256 from 'crypto-js/sha256';
 import { z } from 'zod';
 
-import { ALL, GENERATED, GENERIC, LEADERS, LOGO, TROOP, TROOP_MODIFIER } from '../data/generated';
+import { ALL, GENERIC, LEADERS, LOGO, TROOP, TROOP_MODIFIER } from '../data/generated';
 
 const STRENGTH = z.union([z.number().int(), z.string().length(1)]);
 const OFFSET = z.tuple([z.number(), z.number()]);
 const SCALE = z.number().min(0).max(1);
-const URL = GENERATED.or(z.url());
+const URL = z.url();
 const HEXCOLOR = z.string().regex(/^#[0-9a-f]{6}$/i);
 
 const RULE = z.strictObject({
