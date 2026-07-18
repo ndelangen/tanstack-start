@@ -5,6 +5,11 @@
 The ordered `main` workflow deploys Convex widen-compatible code, runs the required migrations, and
 then deploys the already-provisioned Cloudflare Worker in its steady-state scheduled form.
 
+The production Convex project slug is `dunezone` (display name `dune.zone`) and its production
+deployment is `exuberant-finch-263`. Renaming the project slug does not change the deployment's
+`.convex.cloud` or `.convex.site` URLs, but it does require rotating `CONVEX_DEPLOY_KEY` anywhere
+that key is used.
+
 The checked-in publisher release is now the minimal item-only model:
 
 - exactly one `*/5 * * * *` Cron is source controlled;
