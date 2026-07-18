@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { createCacheSigningSecret } from '../../convex/lib/assetPublisherHttp';
-import { MAX_ASSIGNED_ITEMS, parsePublisherConfig } from './config';
+import { parsePublisherConfig } from './config';
 import { rendererManifest } from './renderer-manifest.generated';
 
 function env(overrides: Record<string, string> = {}): Env {
@@ -27,13 +27,15 @@ describe('publisher lifecycle configuration', () => {
       workWindowMs: 240_000,
       browserCaptureTimeoutMs: 45_000,
       browserCleanupGraceMs: 15_000,
-      maxItems: MAX_ASSIGNED_ITEMS,
     });
     expect(
       config.browserCaptureTimeoutMs + config.browserCleanupGraceMs + 5_000
     ).toBeLessThanOrEqual(config.workWindowMs);
-    expect(config.supportedRendererVersion).toBe('faction-sheet-v3');
     expect(config.supportedRendererVersions).toEqual(['faction-sheet-v3']);
+  });
+
+  test('still validates the capture route upstream without projecting it into executor config', () => {
+    expect(() => parsePublisherConfig(env({ CONVEX_RENDER_URL: 'not-a-url' }))).toThrow();
   });
 
   test('rejects phase settings that exceed the four-minute work window', () => {

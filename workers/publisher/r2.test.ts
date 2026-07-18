@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 
-import type { ClaimedTarget } from './convex';
+import type { AssignedItem } from './convex';
 import {
   type AssetBucket,
   ConditionalWriteConflictError,
@@ -10,7 +10,7 @@ import {
 import { fakeR2Object } from './test-helpers';
 
 const NOW = Date.parse('2026-07-17T12:00:00.000Z');
-const claim: ClaimedTarget = {
+const claim: AssignedItem = {
   targetId: 'target-one',
   factionId: 'faction',
   assetType: 'faction_sheet',

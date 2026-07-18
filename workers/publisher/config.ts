@@ -5,10 +5,7 @@ import { rendererManifest } from './renderer-manifest.generated';
 export type PublisherConfig = {
   captureBaseUrl: string;
   convexExecutorBaseUrl: string;
-  convexRenderUrl: string;
-  supportedRendererVersion: string;
-  supportedRendererVersions: readonly ['faction-sheet-v3'];
-  maxItems: number;
+  supportedRendererVersions: typeof rendererManifest.supportedRendererVersions;
   workWindowMs: number;
   browserCaptureTimeoutMs: number;
   browserCleanupGraceMs: number;
@@ -25,10 +22,6 @@ function integer(name: string, value: string, minimum: number, maximum: number):
     throw new Error(`${name} must be between ${minimum} and ${maximum}`);
   }
   return parsed;
-}
-
-export function configuredMaxItems(): number {
-  return MAX_PUBLISHER_ITEMS;
 }
 
 export function supportsRendererVersion(
@@ -79,16 +72,14 @@ export function parsePublisherConfig(env: Env): PublisherConfig {
       'Browser capture, cleanup, and completion margins must fit the absolute executor lifecycle deadline'
     );
   }
+  absoluteHttpsUrl('CONVEX_RENDER_URL', env.CONVEX_RENDER_URL);
   return {
     captureBaseUrl: absoluteHttpsUrl('CAPTURE_BASE_URL', env.CAPTURE_BASE_URL),
     convexExecutorBaseUrl: absoluteHttpsUrl(
       'CONVEX_EXECUTOR_BASE_URL',
       env.CONVEX_EXECUTOR_BASE_URL
     ),
-    convexRenderUrl: absoluteHttpsUrl('CONVEX_RENDER_URL', env.CONVEX_RENDER_URL),
-    supportedRendererVersion: rendererManifest.rendererVersion,
     supportedRendererVersions: rendererManifest.supportedRendererVersions,
-    maxItems: configuredMaxItems(),
     workWindowMs,
     browserCaptureTimeoutMs,
     browserCleanupGraceMs,
