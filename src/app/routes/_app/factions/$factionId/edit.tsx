@@ -14,13 +14,13 @@ import {
   FactionEditor,
   type FactionEditorHandle,
 } from '@app/components/factions/editor/FactionEditor';
-import styles from '@app/components/factions/editor/FactionEditor.module.css';
 import { FactionGroupPopover } from '@app/components/factions/editor/FactionGroupPopover';
 import { FactionLoadPopover } from '@app/components/factions/editor/FactionLoadPopover';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
+import { PageLayout } from '@app/components/shell';
 import { factionAssetPublishingCopy } from '@app/factions/assetPublishingStatus';
 import { loadFaction } from '@app/factions/db';
 import { FactionInputSchema } from '@game/schema/faction';
@@ -48,23 +48,27 @@ function FactionEditPage() {
   const [editorErrors, setEditorErrors] = useState<string[]>([]);
 
   const { faction, group, assetPublishing } = useFaction(factionId, { initialData: loaderData });
+  const header = <h1>{faction ? `Edit ${faction.data.name}` : 'Edit faction'}</h1>;
+
   if (!profile?.data?.user_id) {
     return (
-      <Card>
-        <p>
-          <Link to="/auth/login">Log in</Link> to edit factions.
-        </p>
-        <p>
-          <Link to="/factions/$factionId" params={{ factionId }}>
-            Back to faction
-          </Link>
-        </p>
-      </Card>
+      <PageLayout header={header}>
+        <Card>
+          <p>
+            <Link to="/auth/login">Log in</Link> to edit factions.
+          </p>
+          <p>
+            <Link to="/factions/$factionId" params={{ factionId }}>
+              Back to faction
+            </Link>
+          </p>
+        </Card>
+      </PageLayout>
     );
   }
 
   if (!faction) {
-    return null;
+    return <PageLayout header={header}>Loading faction…</PageLayout>;
   }
 
   const canDelete = faction.owner_id === profile.data.user_id;
@@ -103,113 +107,117 @@ function FactionEditPage() {
         : 'idle';
 
   return (
-    <>
-      <Toolbar>
-        <Toolbar.Left>
-          <FormTooltip content={updateFaction.isPending ? 'Saving…' : 'Save changes'}>
-            <UIButton
-              type="button"
-              iconOnly
-              aria-label="Save changes"
-              disabled={updateFaction.isPending}
-              onClick={() => editorRef.current?.submit()}
-            >
-              <Save size={16} aria-hidden />
-            </UIButton>
-          </FormTooltip>
-          <FactionLoadPopover
-            disabled={false}
-            currentPublicSlug={faction.slug}
-            onLoaded={(loaded) => {
-              editorRef.current?.load(loaded);
-            }}
-          />
-          {canAssignGroup && !group && (
-            <FactionGroupPopover
+    <PageLayout
+      header={header}
+      toolbar={
+        <Toolbar>
+          <Toolbar.Left>
+            <FormTooltip content={updateFaction.isPending ? 'Saving…' : 'Save changes'}>
+              <UIButton
+                type="button"
+                iconOnly
+                aria-label="Save changes"
+                disabled={updateFaction.isPending}
+                onClick={() => editorRef.current?.submit()}
+              >
+                <Save size={16} aria-hidden />
+              </UIButton>
+            </FormTooltip>
+            <FactionLoadPopover
               disabled={false}
-              onChangeGroup={async (nextGroupId) => {
-                await setFactionGroup.mutateAsync({ id: faction._id, groupId: nextGroupId });
+              currentPublicSlug={faction.slug}
+              onLoaded={(loaded) => {
+                editorRef.current?.load(loaded);
               }}
             />
-          )}
-          {canAssignGroup && group && (
-            <FormTooltip content="Remove group">
-              <UIButton
-                type="button"
-                iconOnly
-                aria-label="Remove group"
+            {canAssignGroup && !group && (
+              <FactionGroupPopover
                 disabled={false}
-                variant="critical"
-                onClick={() => setFactionGroup.mutateAsync({ id: faction._id, groupId: null })}
-              >
-                <UserRoundMinus size={16} aria-hidden />
-              </UIButton>
-            </FormTooltip>
-          )}
-
-          <FormTooltip content="Reset unsaved edits">
-            <UIButton
-              type="button"
-              variant="critical"
-              iconOnly
-              aria-label="Reset unsaved edits"
-              disabled={false}
-              onClick={() => editorRef.current?.load()}
-            >
-              <RotateCcw size={16} aria-hidden />
-            </UIButton>
-          </FormTooltip>
-        </Toolbar.Left>
-
-        <Toolbar.Right>
-          <p className={styles.toolbarGroupAccess} role="status">
-            {factionAssetPublishingCopy(assetPublishing.status, saveState)}
-          </p>
-          {group ? (
-            <div className={styles.toolbarGroupAccess}>
-              <span className={styles.groupStatusLabel}>Group access:</span>{' '}
-              <span>{group.name ?? group._id}</span>
-            </div>
-          ) : null}
-          <FormTooltip content="Close editor">
-            <UIButton
-              type="button"
-              variant="critical"
-              iconOnly
-              aria-label="Close editor"
-              disabled={false}
-              onClick={() =>
-                navigate({
-                  to: '/factions/$factionId',
-                  params: { factionId },
-                })
-              }
-            >
-              <X size={16} aria-hidden />
-            </UIButton>
-          </FormTooltip>
-          {canDelete && (
-            <FormTooltip content="Delete faction">
-              <UIButton
-                type="button"
-                variant="critical"
-                iconOnly
-                aria-label="Delete faction"
-                disabled={false}
-                onClick={() => {
-                  if (!window.confirm('Delete this faction? It will be hidden from lists.')) return;
-                  void (async () => {
-                    await deleteFaction.mutateAsync({ id: faction._id });
-                    navigate({ to: '/factions' });
-                  })();
+                onChangeGroup={async (nextGroupId) => {
+                  await setFactionGroup.mutateAsync({ id: faction._id, groupId: nextGroupId });
                 }}
+              />
+            )}
+            {canAssignGroup && group && (
+              <FormTooltip content="Remove group">
+                <UIButton
+                  type="button"
+                  iconOnly
+                  aria-label="Remove group"
+                  disabled={false}
+                  variant="critical"
+                  onClick={() => setFactionGroup.mutateAsync({ id: faction._id, groupId: null })}
+                >
+                  <UserRoundMinus size={16} aria-hidden />
+                </UIButton>
+              </FormTooltip>
+            )}
+
+            <FormTooltip content="Reset unsaved edits">
+              <UIButton
+                type="button"
+                variant="critical"
+                iconOnly
+                aria-label="Reset unsaved edits"
+                disabled={false}
+                onClick={() => editorRef.current?.load()}
               >
-                <Trash2 size={16} aria-hidden />
+                <RotateCcw size={16} aria-hidden />
               </UIButton>
             </FormTooltip>
-          )}
-        </Toolbar.Right>
-      </Toolbar>
+          </Toolbar.Left>
+
+          <Toolbar.Right>
+            <span role="status">
+              {factionAssetPublishingCopy(assetPublishing.status, saveState)}
+            </span>
+            {group ? (
+              <span>
+                <strong>Group access:</strong> <span>{group.name ?? group._id}</span>
+              </span>
+            ) : null}
+            <FormTooltip content="Close editor">
+              <UIButton
+                type="button"
+                variant="critical"
+                iconOnly
+                aria-label="Close editor"
+                disabled={false}
+                onClick={() =>
+                  navigate({
+                    to: '/factions/$factionId',
+                    params: { factionId },
+                  })
+                }
+              >
+                <X size={16} aria-hidden />
+              </UIButton>
+            </FormTooltip>
+            {canDelete && (
+              <FormTooltip content="Delete faction">
+                <UIButton
+                  type="button"
+                  variant="critical"
+                  iconOnly
+                  aria-label="Delete faction"
+                  disabled={false}
+                  onClick={() => {
+                    if (!window.confirm('Delete this faction? It will be hidden from lists.'))
+                      return;
+                    void (async () => {
+                      await deleteFaction.mutateAsync({ id: faction._id });
+                      navigate({ to: '/factions' });
+                    })();
+                  }}
+                >
+                  <Trash2 size={16} aria-hidden />
+                </UIButton>
+              </FormTooltip>
+            )}
+          </Toolbar.Right>
+        </Toolbar>
+      }
+    >
       <FactionEditor
         key={faction._id}
         ref={editorRef}
@@ -217,6 +225,6 @@ function FactionEditPage() {
         errors={editorErrors}
         onSubmit={handleEditorSubmit}
       />
-    </>
+    </PageLayout>
   );
 }

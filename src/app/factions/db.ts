@@ -54,6 +54,7 @@ export type FactionDetailPageData = {
   group: Doc<'groups'> | null;
   memberships: Doc<'group_members'>[];
   groups: Doc<'groups'>[];
+  rulesets: Doc<'rulesets'>[];
   groupAccess: FactionPageGroupAccess | null;
   assetPublishing: PublicAssetPublishingStatusProjection;
 };
@@ -94,6 +95,7 @@ export function useFaction(
     group: result.data?.group,
     memberships: result.data?.memberships,
     groups: result.data?.groups,
+    rulesets: result.data?.rulesets ?? [],
     groupAccess: result.data?.groupAccess ?? null,
     assetPublishing: result.data?.assetPublishing ?? { status: null, publicationHref: null },
   };
@@ -287,9 +289,13 @@ export async function loadFactionCreatePageContext(): Promise<FactionCreatePageD
   return await db.query<FactionCreatePageData>(api.factions.getCreatePageContext, {});
 }
 
-export function useFactionCreatePageContext(options?: { initialData?: FactionCreatePageData }) {
-  const liveData = useQuery(api.factions.getCreatePageContext, {});
-  const result = toLiveQueryResult(liveData, true, () => options?.initialData ?? undefined);
+export function useFactionCreatePageContext(options?: {
+  initialData?: FactionCreatePageData;
+  enabled?: boolean;
+}) {
+  const enabled = options?.enabled ?? true;
+  const liveData = useQuery(api.factions.getCreatePageContext, enabled ? {} : 'skip');
+  const result = toLiveQueryResult(liveData, enabled, () => options?.initialData ?? undefined);
   return {
     ...result,
   };

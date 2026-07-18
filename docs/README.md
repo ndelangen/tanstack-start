@@ -70,17 +70,30 @@ npm run generate         # Regenerate the public asset catalog in src/game/data/
 ### Adding a New Route
 
 1. Create file in `src/app/routes/`:
-   - `index.tsx` → `/`
-   - `about.tsx` → `/about`
-   - `users/$userId.tsx` → `/users/:userId`
+   - `_app/index.tsx` → `/`
+   - `_app/about.tsx` → `/about`
+   - `_app/users/$userId/index.tsx` → `/users/:userId`
 
-2. Use loader for data:
+2. Use a loader for data and compose every terminal visual route with `PageLayout`:
    ```typescript
    export const Route = createFileRoute('/path')({
-     loader: async () => { ... },
-     component: Component,
-   });
+      loader: async () => { ... },
+      component: AboutPage,
+    });
+
+    function AboutPage() {
+      return (
+        <PageLayout header={<h1>About</h1>}>
+          <Card>
+            <p>About this application.</p>
+          </Card>
+        </PageLayout>
+      );
+    }
    ```
+
+   Keep nested parent routes outlet-only. The printable faction-sheet route and non-visual auth
+   callbacks are the intentional layout exceptions.
 
 3. Route tree auto-generates from file structure.
 

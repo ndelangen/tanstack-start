@@ -11,6 +11,10 @@ const meta = preview.meta({
 export const Default = meta.story({
   args: {
     content: 'Helpful description for this action.',
-    children: <UIButton type="button">Hover me</UIButton>,
+    children: (
+      <UIButton type="button" iconOnly={false}>
+        Hover me
+      </UIButton>
+    ),
   },
 });

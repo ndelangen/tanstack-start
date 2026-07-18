@@ -1,8 +1,6 @@
-import { createFileRoute, Outlet, useLocation, useMatches } from '@tanstack/react-router';
-import React from 'react';
+import { createFileRoute, Outlet, useLocation } from '@tanstack/react-router';
 
-import { useCurrentProfile } from '@db/profiles';
-import { Page } from '@app/components/generic/surfaces/Page';
+import { AppShell } from '@app/components/shell';
 import { isFactionSheetBarePath } from '@app/lib/factionSheetRoute';
 
 export const Route = createFileRoute('/_app')({
@@ -10,19 +8,15 @@ export const Route = createFileRoute('/_app')({
 });
 
 function AppLayout() {
-  useCurrentProfile();
   const pathname = useLocation({ select: (l) => l.pathname });
-  const pageHead = useMatches({
-    select: (matches) => {
-      const leaf = matches.at(-1);
-      const HeadComponent = (leaf?.staticData as { PageHead?: React.ComponentType })?.PageHead;
-      return HeadComponent ? <HeadComponent /> : undefined;
-    },
-  });
 
   if (isFactionSheetBarePath(pathname)) {
     return <Outlet />;
   }
 
-  return <Page head={pageHead} content={<Outlet />} />;
+  return (
+    <AppShell pathname={pathname}>
+      <Outlet />
+    </AppShell>
+  );
 }

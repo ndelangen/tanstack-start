@@ -1,9 +1,10 @@
 // import { TanStackDevtools } from '@tanstack/react-devtools';
 
 import { ConvexAuthProvider } from '@convex-dev/auth/react';
-import { createRootRoute, HeadContent, Link, Scripts } from '@tanstack/react-router';
+import { createRootRoute, HeadContent, Link, Scripts, useLocation } from '@tanstack/react-router';
 
 import { convex } from '@db/core';
+import { AppShell, PageLayout } from '@app/components/shell';
 
 import '@fontsource/caladea/latin-400.css';
 import '@fontsource/caladea/latin-400-italic.css';
@@ -12,6 +13,7 @@ import '@fontsource/caladea/latin-700-italic.css';
 import '@fontsource/lato/latin.css';
 import '@fontsource/lato/latin-italic.css';
 import '../styles/fonts.css';
+import '../styles/page.css';
 import '../styles/tokens.css';
 
 // import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
@@ -27,7 +29,7 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'TanStack Start Starter',
+        title: 'Dune Zone',
       },
       {
         name: 'google-site-verification',
@@ -41,12 +43,15 @@ export const Route = createRootRoute({
 });
 
 function NotFound() {
+  const pathname = useLocation({ select: (location) => location.pathname });
+
   return (
-    <div>
-      <h1>404 - Page Not Found</h1>
-      <p>The page you're looking for doesn't exist.</p>
-      <Link to="/">Go back home</Link>
-    </div>
+    <AppShell pathname={pathname}>
+      <PageLayout header={<h1>Page not found</h1>}>
+        <p>The page you're looking for doesn't exist.</p>
+        <Link to="/">Go back home</Link>
+      </PageLayout>
+    </AppShell>
   );
 }
 

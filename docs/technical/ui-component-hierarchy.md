@@ -15,9 +15,14 @@ More primitive / generic layers **must not** depend on more specific ones:
 | Primitives | `src/app/components/generic/ui/**` | Other `generic/ui` modules, shared tokens |
 | Form | `src/app/components/form/**` | `generic/ui`, shared tokens |
 | Layout / surfaces | `src/app/components/generic/layout/**`, `src/app/components/generic/surfaces/**` | `generic/ui`, `form`, shared tokens |
+| Application shell | `src/app/components/shell/**` | `generic/**`, `form`, profile/auth components needed by global chrome |
 | Features / routes | domain folders (`factions`, `faq`, `profile`, `auth`) and `routes` | `generic/**`, `form/**`, shared tokens, same-domain modules |
 
 **Forbidden:** anything in `generic/**` importing from domain folders.
+
+The application shell is intentionally product-specific. `AppShell` owns persistent chrome and
+document effects; terminal routes compose `PageLayout` slots directly. Shell components must never
+be imported back into `generic/**`.
 
 ### Role of CSS Modules
 

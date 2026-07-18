@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router';
+import clsx from 'clsx';
 import Fuse from 'fuse.js';
 import { useMemo } from 'react';
 
@@ -54,7 +55,10 @@ export function FaqList({ items, rulesetSlug, searchQuery, selectedTag }: FaqLis
                 <div className={styles.meta}>
                   <span className={styles.badges}>
                     <span
-                      className={hasAcceptedAnswer ? styles.badgeAnswered : styles.badgeUnanswered}
+                      className={clsx(
+                        styles.badge,
+                        hasAcceptedAnswer ? styles.badgeAnswered : styles.badgeUnanswered
+                      )}
                     >
                       {hasAcceptedAnswer ? 'Answered' : 'Unanswered'}
                     </span>

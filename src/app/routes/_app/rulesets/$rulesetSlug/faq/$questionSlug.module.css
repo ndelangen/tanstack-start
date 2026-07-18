@@ -1,23 +1,11 @@
-.backLink {
-  display: block;
-  margin-bottom: 1rem;
-}
-
-.section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  margin-bottom: 1.5rem;
-}
-
-.section:last-child {
-  margin-bottom: 0;
-}
-
 .questionHeader {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
+}
+
+.questionAskerLink {
+  flex-shrink: 0;
 }
 
 .questionAskerLink img,
@@ -33,50 +21,66 @@
 
 .questionTitle {
   margin: 0;
-  margin-bottom: 0.25rem;
 }
 
 .answerList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
 .answerItem {
-  margin-bottom: 1rem;
-  padding: 0.5rem 0;
+  padding: var(--space-2) 0;
 }
 
 .answerItem[data-accepted="true"] {
   border-left: 2px solid var(--color-accent, #4b82f8);
-  padding-left: 0.5rem;
+  padding-left: var(--space-2);
 }
 
-.answerItem:last-child {
-  margin-bottom: 0;
-}
-
-.answerMeta {
+.answerMetaRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
   font-size: 0.85em;
   color: var(--color-muted, #666);
-  margin-right: 0.5em;
 }
 
 .answerContent {
-  margin: 0.25rem 0;
-}
-
-.answerActions {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.25rem;
+  min-width: 0;
 }
 
 .hintBlock {
+  margin: 0;
   font-size: 0.9em;
   color: var(--color-muted, #666);
-  margin-bottom: 0.5rem;
+}
+
+.tagFieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.tagOption {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .error {
