@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { FactionInputSchema, FactionRowSlugSchema } from '../../game/schema/faction';
 
 /** Shared exact contract for the protected Convex producer and Browser capture consumer. */
-const publisherCaptureSnapshotSchema = z.strictObject({
+export const publisherCaptureSnapshotSchema = z.strictObject({
   ok: z.literal(true),
   payload: z.strictObject({
     factionId: z.string().min(1),
@@ -25,9 +25,4 @@ export function makePublisherCaptureSnapshot(source: PublisherCaptureSnapshotSou
     payload: source.payload,
     payloadHash: source.payloadHash,
   });
-}
-
-/** Strictly parses the untrusted snapshot response inside Browser capture. */
-export function parsePublisherCaptureSnapshot(value: unknown) {
-  return publisherCaptureSnapshotSchema.parse(value);
 }

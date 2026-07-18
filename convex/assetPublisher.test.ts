@@ -5,7 +5,7 @@ import { convexTest } from 'convex-test';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { proofFaction } from '../src/app/capture/proofFaction';
-import { parsePublisherCaptureSnapshot } from '../src/shared/asset-publishing/publisher-snapshot';
+import { publisherCaptureSnapshotSchema } from '../src/shared/asset-publishing/publisher-snapshot';
 import { internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import { ITEM_CLAIM_LEASE_MS, MAX_PUBLISHER_ITEMS } from './assetPublisher';
@@ -295,7 +295,7 @@ describe('item HTTP contracts', () => {
       headers: { Authorization: `Bearer ${item.claimToken}` },
     });
     expect(renderResponse.status).toBe(200);
-    const renderSnapshot = parsePublisherCaptureSnapshot(await renderResponse.json());
+    const renderSnapshot = publisherCaptureSnapshotSchema.parse(await renderResponse.json());
     expect(renderSnapshot).toEqual({
       ok: true,
       payload: {
