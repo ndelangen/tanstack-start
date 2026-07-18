@@ -2,14 +2,14 @@ import { describe, expect, test, vi } from 'vitest';
 
 import { createCacheSigningSecret } from '../../convex/lib/assetPublisherHttp';
 import { type CapturedPdf, TargetRenderError } from './browser';
-import type { ClaimedTarget } from './convex';
+import type { AssignedItem } from './convex';
 import { executeItemList } from './executor';
 import type { AssetBucket } from './r2';
 
 const NOW = Date.parse('2026-07-17T12:00:00.000Z');
 const cacheSecret = createCacheSigningSecret();
 
-const item: ClaimedTarget = {
+const item: AssignedItem = {
   targetId: 'target-one',
   factionId: 'j57d9kz4ktbkpa12nb7j7s7w8h7ygb8p',
   assetType: 'faction_sheet',
@@ -22,10 +22,7 @@ const item: ClaimedTarget = {
 const config = {
   captureBaseUrl: 'https://publisher.example.com',
   convexExecutorBaseUrl: 'https://convex.example.com/asset-publishing/executor',
-  convexRenderUrl: 'https://convex.example.com/asset-publishing/render',
-  supportedRendererVersion: 'faction-sheet-v3',
   supportedRendererVersions: ['faction-sheet-v3'] as const,
-  maxItems: 20,
   workWindowMs: 240_000,
   browserCaptureTimeoutMs: 45_000,
   browserCleanupGraceMs: 15_000,

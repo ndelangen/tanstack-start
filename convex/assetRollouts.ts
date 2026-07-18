@@ -13,9 +13,9 @@ import {
 } from './lib/assetPublisherConstants';
 import type { MutationCtx, QueryCtx } from './types';
 
-export const ROLLOUT_DISCOVERY_PAGE_SIZE = 50;
-export const ROLLOUT_CLEANUP_PAGE_SIZE = 50;
-export const MAX_ROLLOUT_ATTEMPTS = 3;
+const ROLLOUT_DISCOVERY_PAGE_SIZE = 50;
+const ROLLOUT_CLEANUP_PAGE_SIZE = 50;
+const MAX_ROLLOUT_ATTEMPTS = 3;
 
 const rendererValidator = v.union(
   v.literal(INITIAL_FACTION_SHEET_RENDERER_VERSION),
@@ -700,31 +700,6 @@ export async function failRolloutItem(
     last_error: error,
     updated_at: now,
   });
-  await ctx.db.patch(rollout._id, counterPatch(rollout, 'leased', 'pending'));
-  return 'retry';
-}
-
-export async function releaseRolloutItem(
-  ctx: MutationCtx,
-  target: Doc<'asset_targets'>,
-  now: number
-): Promise<'not_rollout' | 'retry' | 'detached'> {
-  if (!target.rollout_id || !target.rollout_item_id) return 'not_rollout';
-  const [rollout, item] = await Promise.all([
-    ctx.db.get('asset_rollouts', target.rollout_id),
-    ctx.db.get('asset_rollout_items', target.rollout_item_id),
-  ]);
-  if (!rollout || !item || item.state !== 'leased') {
-    throw new Error('Rollout release ownership is inconsistent');
-  }
-  if (rollout.status === 'cancelling') {
-    await ctx.db.patch(target._id, restoreTargetAfterRollout(target, item, now));
-    await ctx.db.patch(item._id, { state: 'cancelled', updated_at: now });
-    await ctx.db.patch(rollout._id, counterPatch(rollout, 'leased', 'cancelled'));
-    await maybeFinalizeRollout(ctx, rollout._id);
-    return 'detached';
-  }
-  await ctx.db.patch(item._id, { state: 'pending', next_eligible_at: now, updated_at: now });
   await ctx.db.patch(rollout._id, counterPatch(rollout, 'leased', 'pending'));
   return 'retry';
 }

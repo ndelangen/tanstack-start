@@ -2,7 +2,7 @@ import { createCacheToken } from '../../convex/lib/assetPublisherHttp';
 import { publisherErrorMessage } from '../../src/app/capture/publisher-diagnostics';
 import { type CapturedPdf, type PublisherBrowserSession, TargetRenderError } from './browser';
 import { MAX_ASSIGNED_ITEMS, type PublisherConfig, supportsRendererVersion } from './config';
-import type { ClaimedTarget, ConvexPublisherClient, ExactItemClaim } from './convex';
+import type { AssignedItem, ConvexPublisherClient, ExactItemClaim } from './convex';
 import { type AssetBucket, conditionallyPutFactionSheet } from './r2';
 
 type BrowserSession = Pick<PublisherBrowserSession, 'capture' | 'close' | 'sessionId'>;
@@ -39,7 +39,7 @@ type PendingCompletion = {
   initial: Promise<CompletionObservation>;
 };
 
-function exact(item: ClaimedTarget): ExactItemClaim {
+function exact(item: AssignedItem): ExactItemClaim {
   return {
     targetId: item.targetId,
     claimToken: item.claimToken,
@@ -86,7 +86,7 @@ function assertCapturedSize(captured: CapturedPdf, maximum: number): void {
 /** Processes one fixed Convex assignment in exactly one Browser session. */
 export async function executeItemList(
   config: PublisherConfig,
-  items: ClaimedTarget[],
+  items: AssignedItem[],
   dependencies: ItemListDependencies
 ): Promise<ItemListExecution> {
   if (items.length < 1 || items.length > MAX_ASSIGNED_ITEMS) {

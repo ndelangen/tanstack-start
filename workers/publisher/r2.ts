@@ -1,4 +1,4 @@
-import type { ClaimedTarget } from './convex';
+import type { AssignedItem } from './convex';
 
 export const PUBLISHER_CACHE_TOKEN_METADATA_KEY = 'publisherCacheToken';
 
@@ -36,7 +36,7 @@ function storedGeneration(object: R2Object): number | undefined {
 
 export async function conditionallyPutFactionSheet(
   bucket: AssetBucket,
-  claim: ClaimedTarget,
+  claim: AssignedItem,
   payloadHash: string,
   cacheToken: string,
   bytes: Uint8Array

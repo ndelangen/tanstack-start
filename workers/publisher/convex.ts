@@ -1,6 +1,6 @@
 import { publisherErrorMessage } from '../../src/app/capture/publisher-diagnostics';
 import { MAX_ASSIGNED_ITEMS } from './config';
-import { PublisherHttpError, postJson } from './http';
+import { postJson } from './http';
 
 export type ExactItemClaim = {
   targetId: string;
@@ -15,7 +15,6 @@ export type AssignedItem = ExactItemClaim & {
   leaseExpiresAt: number;
   workLane?: 'foreground' | 'rollout';
 };
-export type ClaimedTarget = AssignedItem;
 
 export type TakeWorkResult =
   | {
@@ -149,7 +148,7 @@ export function parseTakeWork(value: unknown): TakeWorkResult {
   };
 }
 
-export function parseRevalidateItem(value: unknown):
+function parseRevalidateItem(value: unknown):
   | { status: 'stale' }
   | {
       status: 'valid';
@@ -212,7 +211,7 @@ function parseFailItem(value: unknown): FailItemResult {
   throw new Error('Convex fail-item response is invalid');
 }
 
-export type PublicationMetadata = {
+type PublicationMetadata = {
   r2Etag: string;
   bytes: number;
   cacheToken: string;
@@ -236,7 +235,7 @@ export class ConvexPublisherClient {
     return parseTakeWork(await this.postExecutor('take-work', { schemaVersion: 1 }, deadlineAt));
   }
 
-  async revalidateItem(
+  async revalidate(
     claim: ExactItemClaim,
     deadlineAt?: number
   ): Promise<ReturnType<typeof parseRevalidateItem>> {
@@ -245,60 +244,22 @@ export class ConvexPublisherClient {
     );
   }
 
-  async revalidate(
-    claim: ExactItemClaim,
-    deadlineAt?: number
-  ): Promise<ReturnType<typeof parseRevalidateItem>> {
-    return await this.revalidateItem(claim, deadlineAt);
-  }
-
-  async completeItem(
-    claim: ExactItemClaim,
-    r2Etag: string,
-    bytes: number,
-    cacheToken: string,
-    deadlineAt?: number
-  ): Promise<CompleteItemResult> {
-    return parseCompleteItem(
-      await this.postExecutor(
-        'complete-item',
-        { schemaVersion: 1, ...claim, r2Etag, bytes, cacheToken },
-        deadlineAt
-      )
-    );
-  }
-
   async complete(
     claim: ExactItemClaim,
     publication: PublicationMetadata,
     deadlineAt?: number
   ): Promise<'completed' | 'stale'> {
-    const result = await this.completeItem(
-      claim,
-      publication.r2Etag,
-      publication.bytes,
-      publication.cacheToken,
-      deadlineAt
+    const result: CompleteItemResult = parseCompleteItem(
+      await this.postExecutor(
+        'complete-item',
+        { schemaVersion: 1, ...claim, ...publication },
+        deadlineAt
+      )
     );
     if (result.status === 'completed' && result.cacheToken !== publication.cacheToken) {
       throw new Error('Convex completed item with a different cache token');
     }
     return result.status;
-  }
-
-  async failItem(
-    claim: ExactItemClaim,
-    attribution: 'target' | 'infrastructure',
-    error: unknown,
-    deadlineAt?: number
-  ): Promise<FailItemResult> {
-    return parseFailItem(
-      await this.postExecutor(
-        'fail-item',
-        { schemaVersion: 1, ...claim, attribution, error: truncatedError(error) },
-        deadlineAt
-      )
-    );
   }
 
   async fail(
@@ -307,12 +268,14 @@ export class ConvexPublisherClient {
     error: unknown,
     deadlineAt?: number
   ): Promise<FailItemResult['status']> {
-    const result = await this.failItem(claim, attribution, error, deadlineAt);
+    const result = parseFailItem(
+      await this.postExecutor(
+        'fail-item',
+        { schemaVersion: 1, ...claim, attribution, error: truncatedError(error) },
+        deadlineAt
+      )
+    );
     return result.status;
-  }
-
-  isRetryable(error: unknown): boolean {
-    return error instanceof PublisherHttpError && error.transient;
   }
 
   private async postExecutor(
