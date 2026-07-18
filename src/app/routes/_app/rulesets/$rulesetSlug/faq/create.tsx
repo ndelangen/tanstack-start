@@ -9,24 +9,15 @@ import { TextField } from '@app/components/form/TextField';
 import { ButtonGroup, Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
+import { PageLayout } from '@app/components/shell';
 import type { FaqTag } from '@app/faq/tags';
 import { FAQ_TAG_LABELS, FAQ_TAG_VALUES } from '@app/faq/tags';
 
-import styles from '../../RulesetDetail.module.css';
+import styles from './create.module.css';
 
 export const Route = createFileRoute('/_app/rulesets/$rulesetSlug/faq/create')({
   loader: async ({ params }) => ({ ruleset: await loadRulesetBySlug(params.rulesetSlug) }),
   component: FaqCreatePage,
-  staticData: {
-    PageHead: () => (
-      <div>
-        <h1>Ask a question</h1>
-        <p>
-          <Link to="/rulesets">Back to rulesets</Link>
-        </p>
-      </div>
-    ),
-  },
 });
 
 function FaqCreatePage() {
@@ -36,36 +27,41 @@ function FaqCreatePage() {
   const ruleset = useRulesetBySlug(rulesetSlug, { initialData: loaderData.ruleset });
   const profile = useCurrentProfile();
   const createFaqItem = useCreateFaqItem();
+  const rulesetRow = ruleset.data?.ruleset;
 
-  if (!ruleset.data) {
-    return null;
+  const header = (
+    <div>
+      <h1>Ask a question</h1>
+      <p>
+        {rulesetRow ? `For ${rulesetRow.name} · ` : null}
+        <Link to="/rulesets/$rulesetSlug" params={{ rulesetSlug }}>
+          Back to ruleset
+        </Link>
+        {' · '}
+        <Link to="/rulesets">Back to rulesets</Link>
+      </p>
+    </div>
+  );
+
+  if (!rulesetRow) {
+    return <PageLayout header={header}>Loading ruleset…</PageLayout>;
   }
-  const rulesetId = ruleset.data.ruleset._id;
+  const rulesetId = rulesetRow._id;
 
   if (!profile?.data?._id) {
     return (
-      <Card>
-        <p>
-          <Link to="/auth/login">Log in</Link> to ask a question.
-        </p>
-        <p>
-          <Link to="/rulesets/$rulesetSlug" params={{ rulesetSlug }}>
-            Back to ruleset
-          </Link>
-        </p>
-      </Card>
+      <PageLayout header={header}>
+        <Card>
+          <p>
+            <Link to="/auth/login">Log in</Link> to ask a question.
+          </p>
+        </Card>
+      </PageLayout>
     );
   }
 
   return (
-    <>
-      <Link
-        to="/rulesets/$rulesetSlug"
-        params={{ rulesetSlug }}
-        style={{ display: 'block', marginBottom: '1rem' }}
-      >
-        Back to ruleset
-      </Link>
+    <PageLayout header={header}>
       <Card>
         <Stack
           as="form"
@@ -114,13 +110,10 @@ function FaqCreatePage() {
             <MultilineTextField name="answer" rows={3} placeholder="Optional answer..." />
           </FormField>
           <FormField label="Tags">
-            <Stack as="fieldset" gap={2} style={{ border: 0, margin: 0, padding: 0 }}>
-              <legend style={{ display: 'none' }}>FAQ tags</legend>
+            <Stack as="fieldset" gap={2} className={styles.tagFieldset}>
+              <legend className={styles.visuallyHidden}>FAQ tags</legend>
               {FAQ_TAG_VALUES.map((tag) => (
-                <label
-                  key={tag}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
-                >
+                <label key={tag} className={styles.tagOption}>
                   <input type="checkbox" name="tags" value={tag} defaultChecked={tag === 'other'} />
                   <span>{FAQ_TAG_LABELS[tag]}</span>
                 </label>
@@ -128,7 +121,7 @@ function FaqCreatePage() {
             </Stack>
           </FormField>
           <ButtonGroup>
-            <UIButton type="submit" disabled={createFaqItem.isPending}>
+            <UIButton type="submit" iconOnly={false} disabled={createFaqItem.isPending}>
               {createFaqItem.isPending ? 'Asking…' : 'Ask'}
             </UIButton>
             {createFaqItem.isError && (
@@ -137,6 +130,6 @@ function FaqCreatePage() {
           </ButtonGroup>
         </Stack>
       </Card>
-    </>
+    </PageLayout>
   );
 }

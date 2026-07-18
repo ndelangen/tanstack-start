@@ -11,7 +11,7 @@ const meta = preview.meta({
 export const Default = meta.story({
   args: {
     trigger: (
-      <UIButton type="button" variant="secondary">
+      <UIButton type="button" variant="secondary" iconOnly={false}>
         Open popover
       </UIButton>
     ),

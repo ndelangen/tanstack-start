@@ -140,7 +140,8 @@ This document records durable UI decisions for consistency across features.
 - Examples:
   - `UIButton` and `IconButton` live in `generic/ui`.
   - `TextField` lives in `form`.
-  - `Card`, `Page`, and `Block` live in `generic/surfaces`.
+  - `Card` and `Block` live in `generic/surfaces`.
+  - Product-specific `AppShell` and `PageLayout` live in `components/shell`.
 - Exceptions:
   - None by default.
 - Changed on: 2026-03-25
@@ -172,3 +173,16 @@ This document records durable UI decisions for consistency across features.
   - Mutations are not counted against this limit.
   - Intentional lazy loading or rare technical constraints require explicit call-out in review.
 - Changed on: 2026-04-04
+
+## DD-014: Leaf routes own page composition
+- Status: accepted
+- Context: A parent-owned `staticData.PageHead` bridge split one screen into detached header and body sub-views, duplicated page subscriptions, and hid the complete page composition across router metadata and the app shell.
+- Rule: Every terminal `_app` route renders `PageLayout` directly and supplies its `header` and optional `toolbar` slots alongside its content. Nested route parents are outlet-only. `AppShell` owns only persistent application chrome and document effects.
+- Examples:
+  - A detail route reads its page query once, then passes query-backed identity to `header`, actions to `toolbar`, and feature components as children.
+  - Loading, error, empty, and authorization states still render through `PageLayout` so page chrome stays consistent.
+  - The faction-sheet preview intentionally omits `AppShell` and `PageLayout` because it is a document-rendering surface.
+- Exceptions:
+  - Auth hand-off/redirect routes and document-only render targets may use a purpose-built layout.
+  - Do not reintroduce router metadata, context registration, or portals solely to move page header content into a parent shell.
+- Changed on: 2026-07-18

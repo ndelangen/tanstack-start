@@ -2,24 +2,13 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 
 import { loadRulesetsAll, useRulesetsAll } from '@db/rulesets';
 import { BlockCover, BlockLink } from '@app/components/generic/surfaces';
+import { PageLayout } from '@app/components/shell';
 
 import styles from './RulesetsIndex.module.css';
 
 export const Route = createFileRoute('/_app/rulesets/')({
   loader: async () => ({ rulesets: await loadRulesetsAll() }),
   component: RulesetsPage,
-  staticData: {
-    PageHead: () => (
-      <div>
-        <h1>Rulesets</h1>
-        <p>
-          <Link to="/rulesets/create" activeProps={{ style: { fontWeight: 'bold' } }}>
-            Create a new ruleset
-          </Link>
-        </p>
-      </div>
-    ),
-  },
 });
 
 function RulesetsPage() {
@@ -27,7 +16,18 @@ function RulesetsPage() {
   const rulesets = useRulesetsAll({ initialData: loaderData.rulesets });
 
   return (
-    <>
+    <PageLayout
+      header={
+        <div>
+          <h1>Rulesets</h1>
+          <p>
+            <Link to="/rulesets/create" activeProps={{ style: { fontWeight: 'bold' } }}>
+              Create a new ruleset
+            </Link>
+          </p>
+        </div>
+      }
+    >
       {rulesets.data && rulesets.data.length > 0 ? (
         <div className={styles.grid}>
           {rulesets.data.map((r) => (
@@ -47,6 +47,6 @@ function RulesetsPage() {
       ) : (
         <p>No rulesets yet.</p>
       )}
-    </>
+    </PageLayout>
   );
 }

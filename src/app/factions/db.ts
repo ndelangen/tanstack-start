@@ -271,26 +271,8 @@ export function useSetFactionGroup() {
   };
 }
 
-export type FactionCreatePageData = {
-  ownerProfile: Doc<'profiles'> | null;
-  groups: Doc<'groups'>[];
-  memberships: Doc<'group_members'>[];
-};
-
 export async function loadFaction(slug: string): Promise<FactionDetailPageData> {
   return await db.query<FactionDetailPageData>(api.factions.getBySlug, {
     slug,
   });
-}
-
-export async function loadFactionCreatePageContext(): Promise<FactionCreatePageData> {
-  return await db.query<FactionCreatePageData>(api.factions.getCreatePageContext, {});
-}
-
-export function useFactionCreatePageContext(options?: { initialData?: FactionCreatePageData }) {
-  const liveData = useQuery(api.factions.getCreatePageContext, {});
-  const result = toLiveQueryResult(liveData, true, () => options?.initialData ?? undefined);
-  return {
-    ...result,
-  };
 }

@@ -7,20 +7,17 @@ import { useCurrentProfile } from '@db/profiles';
 import { FormField } from '@app/components/form/FormField';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { TextField } from '@app/components/form/TextField';
-import { ButtonGroup, Stack } from '@app/components/generic/layout';
+import { ButtonGroup, Stack, Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
+import { PageLayout } from '@app/components/shell';
 
 export const Route = createFileRoute('/_app/groups/create')({
   component: GroupCreatePage,
-  staticData: {
-    PageHead: () => (
-      <div>
-        <h1>Start group</h1>
-      </div>
-    ),
-  },
 });
+
+const GROUP_CREATE_FORM_ID = 'group-create';
+const groupCreateHeader = <h1>Start group</h1>;
 
 function GroupCreatePage() {
   const navigate = useNavigate();
@@ -31,14 +28,16 @@ function GroupCreatePage() {
 
   if (!profile.data?._id || !profile.data.slug) {
     return (
-      <Card>
-        <p>
-          <Link to="/auth/login">Log in</Link> to start a group.
-        </p>
-        <p>
-          <Link to="/profiles">Back to profiles</Link>
-        </p>
-      </Card>
+      <PageLayout header={groupCreateHeader}>
+        <Card>
+          <p>
+            <Link to="/auth/login">Log in</Link> to start a group.
+          </p>
+          <p>
+            <Link to="/profiles">Back to profiles</Link>
+          </p>
+        </Card>
+      </PageLayout>
     );
   }
 
@@ -46,74 +45,90 @@ function GroupCreatePage() {
   const canSubmit = !createGroup.isPending && name.trim().length > 0;
 
   return (
-    <Card>
-      <Stack
-        as="form"
-        gap={3}
-        onSubmit={(e) => {
-          e.preventDefault();
-          const nextName = name.trim();
-          if (!nextName) return;
-          setSubmitError(null);
-          createGroup.mutate(
-            { input: { name: nextName } },
-            {
-              onSuccess: () => {
-                setSubmitError(null);
-                navigate({
-                  to: '/profiles/$profileSlug',
-                  params: { profileSlug: profileRow.slug },
-                });
-              },
-              onError: (error) => setSubmitError(error.message),
-            }
-          );
-        }}
-      >
-        <h2>Create a new group</h2>
-        <ButtonGroup>
-          <FormTooltip content="Save group">
-            <UIButton type="submit" iconOnly aria-label="Save group" disabled={!canSubmit}>
-              <Save size={16} aria-hidden />
-            </UIButton>
-          </FormTooltip>
-          <FormTooltip content="Close create group">
-            <UIButton
-              type="button"
-              variant="secondary"
-              iconOnly
-              aria-label="Close create group"
-              disabled={createGroup.isPending}
-              onClick={() =>
-                navigate({
-                  to: '/profiles/$profileSlug',
-                  params: { profileSlug: profileRow.slug },
-                })
+    <PageLayout
+      header={groupCreateHeader}
+      toolbar={
+        <Toolbar>
+          <Toolbar.Left>
+            <ButtonGroup>
+              <FormTooltip content="Save group">
+                <UIButton
+                  type="submit"
+                  form={GROUP_CREATE_FORM_ID}
+                  iconOnly
+                  aria-label="Save group"
+                  disabled={!canSubmit}
+                >
+                  <Save size={16} aria-hidden />
+                </UIButton>
+              </FormTooltip>
+              <FormTooltip content="Close create group">
+                <UIButton
+                  type="button"
+                  variant="secondary"
+                  iconOnly
+                  aria-label="Close create group"
+                  disabled={createGroup.isPending}
+                  onClick={() =>
+                    navigate({
+                      to: '/profiles/$profileSlug',
+                      params: { profileSlug: profileRow.slug },
+                    })
+                  }
+                >
+                  <X size={16} aria-hidden />
+                </UIButton>
+              </FormTooltip>
+            </ButtonGroup>
+          </Toolbar.Left>
+        </Toolbar>
+      }
+    >
+      <Card>
+        <Stack
+          as="form"
+          gap={3}
+          id={GROUP_CREATE_FORM_ID}
+          onSubmit={(e) => {
+            e.preventDefault();
+            const nextName = name.trim();
+            if (!nextName) return;
+            setSubmitError(null);
+            createGroup.mutate(
+              { input: { name: nextName } },
+              {
+                onSuccess: () => {
+                  setSubmitError(null);
+                  navigate({
+                    to: '/profiles/$profileSlug',
+                    params: { profileSlug: profileRow.slug },
+                  });
+                },
+                onError: (error) => setSubmitError(error.message),
               }
-            >
-              <X size={16} aria-hidden />
-            </UIButton>
-          </FormTooltip>
-        </ButtonGroup>
-        <FormField
-          label="Group name"
-          htmlFor="group-name"
-          error={submitError ?? createGroup.error?.message}
+            );
+          }}
         >
-          <TextField
-            id="group-name"
-            name="name"
-            required
-            minLength={1}
-            title="Group name may only contain letters and numbers"
-            value={name}
-            onChange={(event) => {
-              setName(event.target.value);
-              if (submitError) setSubmitError(null);
-            }}
-          />
-        </FormField>
-      </Stack>
-    </Card>
+          <FormField
+            label="Group name"
+            htmlFor="group-name"
+            error={submitError ?? createGroup.error?.message}
+          >
+            <TextField
+              id="group-name"
+              name="name"
+              required
+              minLength={1}
+              title="Group name may only contain letters and numbers"
+              value={name}
+              onChange={(event) => {
+                setName(event.target.value);
+                if (submitError) setSubmitError(null);
+              }}
+            />
+          </FormField>
+        </Stack>
+      </Card>
+    </PageLayout>
   );
 }

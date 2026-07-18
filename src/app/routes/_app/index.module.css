@@ -3,29 +3,19 @@
   font-size: 1.5rem;
 }
 
-.horizontalPanels {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-around;
-  align-items: center;
-  gap: 20px;
-  width: 100%;
-}
-
 .block {
   display: flex;
   flex-direction: column;
   justify-content: stretch;
   align-items: stretch;
-  flex: 1;
-  gap: 20px;
+  gap: var(--space-4);
 }
 
 .panel {
   flex: 1;
   background-color: var(--panel-bg);
   border-radius: var(--panel-radius);
-  padding: 20px;
+  padding: var(--space-4);
   box-shadow: var(--panel-shadow);
   backdrop-filter: blur(8px);
   border: 2px solid var(--panel-border);

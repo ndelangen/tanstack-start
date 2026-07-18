@@ -1,7 +1,9 @@
 import clsx from 'clsx';
 import type { ReactNode } from 'react';
 
-import styles from './FaqList.module.css';
+import { Stack } from '@app/components/generic/layout';
+
+import styles from './FaqItemList.module.css';
 
 export type FaqItemListProps = {
   className?: string;
@@ -9,8 +11,7 @@ export type FaqItemListProps = {
 };
 
 /**
- * FAQ thread list shell: shared `.list` layout from {@link FaqList.module.css}.
- * Parent owns empty state and row content (same boundary as the factions grid list).
+ * FAQ thread list shell. Parent owns empty state and row content.
  */
 export function FaqItemList({ className, children }: FaqItemListProps) {
   return <ul className={clsx(styles.list, className)}>{children}</ul>;
@@ -26,7 +27,9 @@ export type FaqItemListRowProps = {
 export function FaqItemListRow({ children }: FaqItemListRowProps) {
   return (
     <li className={styles.item}>
-      <div className={styles.itemLink}>{children}</div>
+      <Stack gap={2} className={styles.itemContent}>
+        {children}
+      </Stack>
     </li>
   );
 }

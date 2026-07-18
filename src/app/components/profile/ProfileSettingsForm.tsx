@@ -1,23 +1,14 @@
 import { useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Save, User } from 'lucide-react';
 import { useState } from 'react';
 
-import { type ProfileEntry, useCurrentProfile, useUpdateCurrentProfile } from '@db/profiles';
-import formStyles from '@app/components/form/Form.module.css';
+import { type ProfileEntry, useUpdateCurrentProfile } from '@db/profiles';
 import { FormField } from '@app/components/form/FormField';
-import { FormTooltip } from '@app/components/form/FormTooltip';
 import { TextField } from '@app/components/form/TextField';
-import { ButtonGroup, Stack, Toolbar } from '@app/components/generic/layout';
-import { Card } from '@app/components/generic/surfaces/Card';
+import { ButtonGroup, Stack } from '@app/components/generic/layout';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 import { profileSlugBaseFromName } from '@app/profile/validation';
 
-import layoutStyles from './ProfilePageLayout.module.css';
-
-/** HTML `id` / `form` attribute for toolbar submit control. */
-const PROFILE_SETTINGS_FORM_ID = 'profile-settings';
-
-function ProfileSettingsFormFields({ initial }: { initial: ProfileEntry }) {
+export function ProfileSettingsForm({ initial }: { initial: ProfileEntry }) {
   const navigate = useNavigate();
   const update = useUpdateCurrentProfile();
 
@@ -49,89 +40,53 @@ function ProfileSettingsFormFields({ initial }: { initial: ProfileEntry }) {
     update.isError && update.error instanceof Error ? update.error.message : null;
 
   return (
-    <div className={layoutStyles.root}>
-      <Toolbar>
-        <Toolbar.Left>
-          <ButtonGroup>
-            <FormTooltip content={update.isPending ? 'Saving…' : 'Save'}>
-              <UIButton
-                type="submit"
-                form={PROFILE_SETTINGS_FORM_ID}
-                iconOnly
-                aria-label="Save profile"
-                disabled={update.isPending}
-              >
-                <Save size={16} aria-hidden />
-              </UIButton>
-            </FormTooltip>
-            <FormTooltip content="View public profile">
-              <UIButton
-                variant="secondary"
-                to="/profiles/$profileSlug"
-                params={{ profileSlug: initial.slug }}
-                aria-label="View public profile"
-              >
-                <User size={16} aria-hidden />
-              </UIButton>
-            </FormTooltip>
-            <FormTooltip content="Back to profiles">
-              <UIButton variant="nav" to="/profiles" aria-label="Back to profiles">
-                <ArrowLeft size={16} aria-hidden />
-              </UIButton>
-            </FormTooltip>
-          </ButtonGroup>
-        </Toolbar.Left>
-      </Toolbar>
-
-      <Card>
-        <Stack as="form" gap={3} id={PROFILE_SETTINGS_FORM_ID} onSubmit={handleSubmit}>
-          <FormField label="Display name" htmlFor="profile-display-name">
-            <TextField
-              id="profile-display-name"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoComplete="nickname"
-              maxLength={30}
-            />
-          </FormField>
-          <p className={formStyles.hint}>
+    <Stack as="form" gap={3} onSubmit={handleSubmit}>
+      <FormField
+        label="Display name"
+        htmlFor="profile-display-name"
+        hint={
+          <>
             Letters and numbers only, 5–30 characters, not all capitals. Your public profile URL
             uses an id derived from this name (e.g. <code>…/profiles/{basePreview}</code>, with a
             number suffix if needed). If you rename, that id and the URL can change, so older links
             may break—including bookmarks and pasted links.
-          </p>
+          </>
+        }
+      >
+        <TextField
+          id="profile-display-name"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          autoComplete="nickname"
+          maxLength={30}
+        />
+      </FormField>
 
-          <FormField label="Avatar image URL" htmlFor="profile-avatar-url">
-            <TextField
-              id="profile-avatar-url"
-              type="url"
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder="https://…"
-              autoComplete="off"
-            />
-          </FormField>
-          <p className={formStyles.hint}>
+      <FormField
+        label="Avatar image URL"
+        htmlFor="profile-avatar-url"
+        hint={
+          <>
             Must be a full <code>https://</code> URL. Avatar URL is required.
-          </p>
+          </>
+        }
+      >
+        <TextField
+          id="profile-avatar-url"
+          type="url"
+          value={avatarUrl}
+          onChange={(e) => setAvatarUrl(e.target.value)}
+          placeholder="https://…"
+          autoComplete="off"
+        />
+      </FormField>
 
-          {mutationError && (
-            <p className={formStyles.error} role="alert">
-              {mutationError}
-            </p>
-          )}
-        </Stack>
-      </Card>
-    </div>
+      {mutationError && <p role="alert">{mutationError}</p>}
+      <ButtonGroup>
+        <UIButton type="submit" iconOnly={false} disabled={update.isPending}>
+          {update.isPending ? 'Saving…' : 'Save profile'}
+        </UIButton>
+      </ButtonGroup>
+    </Stack>
   );
-}
-
-export function ProfileSettingsForm() {
-  const profile = useCurrentProfile();
-
-  if (!profile.data) {
-    return null;
-  }
-
-  return <ProfileSettingsFormFields key={profile.data.slug} initial={profile.data} />;
 }

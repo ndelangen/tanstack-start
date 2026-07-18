@@ -1,8 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 
 import { loadProfilesAll, useProfilesAll } from '@db/profiles';
+import { Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { ProfileLink } from '@app/components/profile/ProfileLink';
+import { PageLayout } from '@app/components/shell';
 
 import styles from './ProfilesIndex.module.css';
 
@@ -16,10 +18,10 @@ function ProfilesPage() {
   const profiles = useProfilesAll({ initialData: loaderData.profiles });
 
   return (
-    <div className={styles.root}>
+    <PageLayout header={<h1>Profiles</h1>}>
       {profiles.data && profiles.data.length > 0 ? (
         <Card>
-          <ul className={styles.list}>
+          <Stack as="ul" gap={2} className={styles.list}>
             {profiles.data.map((profile) => (
               <li key={profile._id} className={styles.row}>
                 <ProfileLink
@@ -29,11 +31,11 @@ function ProfilesPage() {
                 />
               </li>
             ))}
-          </ul>
+          </Stack>
         </Card>
       ) : (
         <p className={styles.empty}>No profiles yet.</p>
       )}
-    </div>
+    </PageLayout>
   );
 }

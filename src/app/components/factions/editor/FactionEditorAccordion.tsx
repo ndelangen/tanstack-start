@@ -1,8 +1,7 @@
 import { Image as ImageIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import accordionStyles from '@app/components/generic/surfaces/Accordion.module.css';
-
+import styles from './FactionEditorAccordion.module.css';
 import { type FactionEditorSectionId } from './useEditorAccordionHash';
 
 const ACCORDION_SECTION_ICON_SRC: Partial<Record<FactionEditorSectionId, string>> = {
@@ -21,13 +20,5 @@ export function renderAccordionIcon(sectionId: FactionEditorSectionId): ReactNod
     if (sectionId === 'background') return <ImageIcon size={15} aria-hidden />;
     return null;
   }
-  return (
-    <img
-      className={accordionStyles.headerIconImage}
-      src={src}
-      alt=""
-      aria-hidden
-      draggable={false}
-    />
-  );
+  return <img className={styles.icon} src={src} alt="" aria-hidden draggable={false} />;
 }

@@ -10,7 +10,7 @@ import { ButtonGroup } from '@app/components/generic/layout';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 import { useUserGroupMembershipGroups, useUserGroupMemberships } from '@app/members/db';
 
-import styles from '../factions/editor/FactionEditor.module.css';
+import styles from './GroupAssignPopover.module.css';
 
 export interface GroupAssignPopoverProps {
   disabled: boolean;
@@ -74,9 +74,9 @@ function GroupAssignPopoverBodyContent({
     if (!group) return groupId;
     const isMember = memberGroupIdSet.has(group.id);
     return (
-      <div className={styles.groupOptionRow}>
-        <span className={styles.groupOptionName}>{group.name}</span>
-        <span className={styles.groupOptionMeta}>
+      <div className={styles.option}>
+        <span className={styles.optionName}>{group.name}</span>
+        <span className={styles.optionMeta}>
           Slug: {group.slug} · {isMember ? 'Member' : 'Not a member'}
         </span>
       </div>
@@ -102,22 +102,22 @@ function GroupAssignPopoverBodyContent({
   };
 
   return (
-    <div className={styles.loadFactionPopover}>
-      <p className={styles.loadFactionTitle}>{title}</p>
+    <div className={styles.popover}>
+      <p className={styles.title}>{title}</p>
       {descriptionLines.map((line) => (
-        <p key={line} className={styles.loadFactionHint}>
+        <p key={line} className={styles.hint}>
           {line}
         </p>
       ))}
       {error && (
-        <p className={styles.loadFactionHint} role="alert">
+        <p className={styles.hint} role="alert">
           {error}
         </p>
       )}
       {isPending ? (
-        <p className={styles.loadFactionHint}>Loading groups...</p>
+        <p className={styles.hint}>Loading groups...</p>
       ) : groupOptions.length === 0 ? (
-        <p className={styles.loadFactionHint}>No groups are available yet.</p>
+        <p className={styles.hint}>No groups are available yet.</p>
       ) : (
         <>
           <FormField label="Search groups" htmlFor="entity-group">
@@ -238,9 +238,9 @@ export function GroupAssignPopover({
           onAssigned={() => setOpen(false)}
         />
       ) : open && profile.isPending ? (
-        <p className={styles.loadFactionHint}>Loading account…</p>
+        <p className={styles.hint}>Loading account…</p>
       ) : open ? (
-        <p className={styles.loadFactionHint}>Sign in to assign a group.</p>
+        <p className={styles.hint}>Sign in to assign a group.</p>
       ) : null}
     </FormPopover>
   );

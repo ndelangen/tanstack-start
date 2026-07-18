@@ -1,19 +1,12 @@
 import { useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Save, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { type GroupEntry, useUpdateGroup } from '@db/groups';
-import formStyles from '@app/components/form/Form.module.css';
 import { FormField } from '@app/components/form/FormField';
-import { FormTooltip } from '@app/components/form/FormTooltip';
 import { TextField } from '@app/components/form/TextField';
-import { ButtonGroup, Stack, Toolbar } from '@app/components/generic/layout';
-import { Card } from '@app/components/generic/surfaces/Card';
+import { ButtonGroup, Stack } from '@app/components/generic/layout';
 import { UIButton } from '@app/components/generic/ui/UIButton';
-import layoutStyles from '@app/components/profile/ProfilePageLayout.module.css';
 import { groupInputSchema } from '@app/groups/validation';
-
-const GROUP_SETTINGS_FORM_ID = 'group-settings';
 
 export function GroupSettingsForm({ initial }: { initial: GroupEntry }) {
   const navigate = useNavigate();
@@ -59,62 +52,31 @@ export function GroupSettingsForm({ initial }: { initial: GroupEntry }) {
   };
 
   return (
-    <div className={layoutStyles.root}>
-      <Toolbar>
-        <Toolbar.Left>
-          <ButtonGroup>
-            <FormTooltip content={updateGroup.isPending ? 'Saving…' : 'Save group name'}>
-              <UIButton
-                type="submit"
-                form={GROUP_SETTINGS_FORM_ID}
-                iconOnly
-                aria-label="Save group name"
-                disabled={!canSave}
-              >
-                <Save size={16} aria-hidden />
-              </UIButton>
-            </FormTooltip>
-            <FormTooltip content="View group">
-              <UIButton
-                variant="secondary"
-                to="/groups/$groupSlug"
-                params={{ groupSlug: initial.slug }}
-                aria-label="View group"
-              >
-                <Users size={16} aria-hidden />
-              </UIButton>
-            </FormTooltip>
-            <FormTooltip content="Back to profiles">
-              <UIButton variant="nav" to="/profiles" aria-label="Back to profiles">
-                <ArrowLeft size={16} aria-hidden />
-              </UIButton>
-            </FormTooltip>
-          </ButtonGroup>
-        </Toolbar.Left>
-      </Toolbar>
-
-      <Card>
-        <Stack as="form" gap={3} id={GROUP_SETTINGS_FORM_ID} onSubmit={handleSubmit}>
-          <FormField label="Group name" htmlFor="group-settings-name" error={fieldError}>
-            <TextField
-              id="group-settings-name"
-              name="name"
-              required
-              minLength={1}
-              title="Group name may only contain letters and numbers"
-              value={name}
-              onChange={(event) => {
-                setName(event.target.value);
-                if (submitError) setSubmitError(null);
-              }}
-            />
-          </FormField>
-          <p className={formStyles.hint}>
-            Renaming may change this group&apos;s URL slug. Bookmarks and shared links that use the
-            old address may stop working until updated.
-          </p>
-        </Stack>
-      </Card>
-    </div>
+    <Stack as="form" gap={3} onSubmit={handleSubmit}>
+      <FormField
+        label="Group name"
+        htmlFor="group-settings-name"
+        error={fieldError}
+        hint="Renaming may change this group's URL slug. Bookmarks and shared links that use the old address may stop working until updated."
+      >
+        <TextField
+          id="group-settings-name"
+          name="name"
+          required
+          minLength={1}
+          title="Group name may only contain letters and numbers"
+          value={name}
+          onChange={(event) => {
+            setName(event.target.value);
+            if (submitError) setSubmitError(null);
+          }}
+        />
+      </FormField>
+      <ButtonGroup>
+        <UIButton type="submit" iconOnly={false} disabled={!canSave}>
+          {updateGroup.isPending ? 'Saving…' : 'Save group'}
+        </UIButton>
+      </ButtonGroup>
+    </Stack>
   );
 }

@@ -6,7 +6,6 @@ import { FaqItemList, FaqItemListRow } from '@app/components/faq/FaqItemList';
 import { ProfileLink } from '@app/components/profile/ProfileLink';
 import { formatRelativeDate } from '@app/utils/formatRelativeDate';
 
-import faqStyles from '../faq/FaqList.module.css';
 import styles from './ProfileFaqActivity.module.css';
 
 function truncate(text: string, max = 200): string {
@@ -31,7 +30,7 @@ function AskerChip({
       slug={profile.slug}
       username={profile.username}
       avatar_url={profile.avatar_url}
-      className={faqStyles.askerLink}
+      className={styles.askerLink}
     >
       Question by {profile.username ?? 'Unknown'}
     </ProfileLink>
@@ -40,7 +39,7 @@ function AskerChip({
 
 export function ProfileFaqQuestionsAsked({ items }: { items: FaqItemAskedByWithRuleset[] }) {
   if (items.length === 0) {
-    return <p className={faqStyles.noResults}>No questions asked yet.</p>;
+    return <p className={styles.noResults}>No questions asked yet.</p>;
   }
 
   return (
@@ -65,7 +64,7 @@ export function ProfileFaqQuestionsAsked({ items }: { items: FaqItemAskedByWithR
               questionSlug: item.slug,
             }}
           >
-            <span className={faqStyles.question}>{item.question}</span>
+            <span className={styles.question}>{item.question}</span>
           </Link>
         </FaqItemListRow>
       ))}
@@ -81,7 +80,7 @@ export function ProfileFaqAnswersGiven({
   viewedProfileId: string;
 }) {
   if (items.length === 0) {
-    return <p className={faqStyles.noResults}>No FAQ answers yet.</p>;
+    return <p className={styles.noResults}>No FAQ answers yet.</p>;
   }
 
   return (
@@ -109,7 +108,7 @@ export function ProfileFaqAnswersGiven({
               <time dateTime={row.created_at}>{formatRelativeDate(row.created_at)}</time>
             </div>
 
-            <p className={faqStyles.parentQuestion}>{row.faq_item.question}</p>
+            <p className={styles.parentQuestion}>{row.faq_item.question}</p>
 
             <Link
               to="/rulesets/$rulesetSlug/faq/$questionSlug"
@@ -118,16 +117,14 @@ export function ProfileFaqAnswersGiven({
                 questionSlug: row.faq_item.slug,
               }}
             >
-              <p className={faqStyles.answerPreview}>{truncate(row.answer)}</p>
+              <p className={styles.answerPreview}>{truncate(row.answer)}</p>
             </Link>
 
-            <div className={styles.answerFooter}>
-              {isPicked ? (
-                <span className={clsx(faqStyles.badge, faqStyles.badgeAnswered)}>
-                  Picked answer
-                </span>
-              ) : null}
-            </div>
+            {isPicked ? (
+              <div className={styles.answerFooter}>
+                <span className={clsx(styles.badge, styles.badgeAnswered)}>Picked answer</span>
+              </div>
+            ) : null}
           </FaqItemListRow>
         );
       })}
