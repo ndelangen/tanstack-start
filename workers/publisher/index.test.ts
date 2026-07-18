@@ -128,7 +128,6 @@ describe('publisher Worker scheduled item-list flow', () => {
                 generation: 2,
                 rendererVersion: rendererManifest.rendererVersion,
                 leaseExpiresAt: NOW + 240_000,
-                workLane: 'foreground',
               },
             ],
           });

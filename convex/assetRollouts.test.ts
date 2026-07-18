@@ -80,7 +80,7 @@ describe('rollout compatibility with independent item claims', () => {
   test('takeWork claims rollout items when foreground work is empty', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
-    const { t } = await seedCurrentTargets(2);
+    const { t, targetIds } = await seedCurrentTargets(2);
     await runningRollout(t);
     const result = await t.mutation(internal.assetPublisher.takeWork, {
       claimTokens: ['rollout-claim-token-00000001', 'rollout-claim-token-00000002'],
@@ -88,7 +88,7 @@ describe('rollout compatibility with independent item claims', () => {
     expect(result).toMatchObject({ status: 'assigned' });
     if (result.status !== 'assigned') throw new Error('Expected assigned rollout work');
     expect(result.items).toHaveLength(2);
-    expect(result.items.every((item) => item.workLane === 'rollout')).toBe(true);
+    expect(result.items.map((item) => item.targetId)).toEqual(targetIds);
   });
 
   test('foreground pending work retains priority over rollout work', async () => {
@@ -96,7 +96,7 @@ describe('rollout compatibility with independent item claims', () => {
     vi.setSystemTime(NOW);
     const { t } = await seedCurrentTargets(1);
     await runningRollout(t);
-    await t.run(async (ctx) => {
+    const foregroundTargetId = await t.run(async (ctx) => {
       const userId = await ctx.db.insert('users', { name: 'Foreground owner' });
       const factionId = await ctx.db.insert('factions', {
         owner_id: userId,
@@ -107,7 +107,7 @@ describe('rollout compatibility with independent item claims', () => {
         is_deleted: false,
         group_id: null,
       });
-      await ctx.db.insert('asset_targets', {
+      return await ctx.db.insert('asset_targets', {
         faction_id: factionId,
         asset_type: 'faction_sheet',
         desired_generation: 1,
@@ -118,7 +118,7 @@ describe('rollout compatibility with independent item claims', () => {
         foreground_updated_at: NOW,
       });
     });
-    await expect(takeOne(t, 1)).resolves.toMatchObject({ workLane: 'foreground' });
+    await expect(takeOne(t, 1)).resolves.toMatchObject({ targetId: foregroundTargetId });
   });
 
   test('successful completion finalizes the rollout and resets target failures', async () => {

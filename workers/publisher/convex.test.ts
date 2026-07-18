@@ -11,7 +11,6 @@ function assignedItem(index = 1) {
     generation: 1,
     rendererVersion: 'faction-sheet-v3',
     leaseExpiresAt: 2_000_000_000_000,
-    workLane: 'foreground',
   };
 }
 
@@ -44,6 +43,18 @@ describe('Convex item-list parsing', () => {
       leaseExpiresAt: 2_000_000_000_000,
       items: [],
     });
+  });
+
+  test('ignores legacy work-lane metadata during a rolling deployment', () => {
+    const result = parseTakeWork({
+      ok: true,
+      schemaVersion: 1,
+      status: 'assigned',
+      leaseExpiresAt: 2_000_000_000_000,
+      items: [{ ...assignedItem(), workLane: 'foreground' }],
+    });
+    if (result.status !== 'assigned') throw new Error('Expected assigned work');
+    expect(result.items[0]).not.toHaveProperty('workLane');
   });
 
   test('rejects oversized, duplicate, and mismatched-lease assignments', () => {
@@ -111,7 +122,7 @@ describe('Convex item client', () => {
     await client.revalidate(claim);
     const cacheToken = `v1.${'a'.repeat(22)}.${'b'.repeat(43)}`;
     await client.complete(claim, { r2Etag: 'etag', bytes: 123, cacheToken });
-    await client.fail(claim, 'target', 'invalid output');
+    await client.fail(claim, 'invalid output');
 
     expect(requests.map((request) => request.url.split('/').at(-1))).toEqual([
       'take-work',
