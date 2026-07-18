@@ -1,12 +1,11 @@
 import type { FC, ReactNode } from 'react';
-import type { z } from 'zod';
 
-import type { Background as BackgroundSchema } from '../../data/objects';
+import type { FactionInput } from '../../schema/faction';
 import { Background } from './Background';
 import styles from './BackgroundRenderer.module.css';
 
 type BackgroundRendererProps = {
-  background: z.infer<typeof BackgroundSchema>;
+  background: FactionInput['background'];
   className?: string;
   children?: ReactNode;
 };

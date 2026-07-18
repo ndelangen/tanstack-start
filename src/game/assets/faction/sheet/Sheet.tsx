@@ -1,14 +1,12 @@
-import type { z } from 'zod';
-
 import { MarkdownContent } from '../../../components/block/MarkdownContent';
-import type { FactionRender } from '../../../schema/faction';
+import type { FactionInput } from '../../../schema/faction';
 import { isLight } from '../../utils/contrast';
 import { LeaderToken } from '../leader/Leader';
 import { Token } from '../token/Token';
 import { TroopToken } from '../troop/Troop';
 import styles from './Sheet.module.css';
 
-type SheetProps = z.infer<typeof FactionRender.sheet>;
+type SheetProps = FactionInput;
 
 export const FactionSheet = (props: SheetProps) => {
   return (

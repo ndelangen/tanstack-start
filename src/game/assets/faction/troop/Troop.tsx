@@ -1,8 +1,7 @@
 import { type FC, useMemo } from 'react';
-import type { z } from 'zod';
 
 import { StrokedUse } from '../../../components/block/StrokedUse';
-import type { FactionRender } from '../../../schema/faction';
+import type { FactionInput } from '../../../schema/faction';
 import { BackgroundRenderer } from '../../utils/BackgroundRenderer';
 import { useCountId } from '../../utils/useCountId';
 import styles from './Troop.module.css';
@@ -11,7 +10,8 @@ const foreGroundColor = '#e3dbb3';
 const iconSize = { width: 73, height: 73 };
 const iconLocation = { x: 50 - iconSize.width / 2, y: 50 - iconSize.height / 2 };
 
-type TroopTokenProps = z.infer<typeof FactionRender.troops>[0];
+type TroopTokenProps = Pick<FactionInput, 'background'> &
+  Pick<FactionInput['troops'][number], 'image' | 'star' | 'striped'>;
 
 export const TroopToken: FC<TroopTokenProps> = ({ background, image, star, striped }) => {
   const cid = useCountId();

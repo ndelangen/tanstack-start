@@ -86,7 +86,8 @@ npm run generate         # Regenerate the public asset catalog in src/game/data/
 
 ## Game assets (`src/game`, `public/`)
 
-Dune card/faction rendering and Storybook stories live in `src/game`; source artwork lives in `public/`. `scripts/generate.ts` refreshes the typed public-asset catalog used by game schemas.
+Faction-sheet rendering and its focused Storybook stories live in `src/game`; source artwork lives
+in `public/`. `scripts/generate.ts` refreshes the typed public-asset catalog used by game schemas.
 
 ## Detailed Documentation
 

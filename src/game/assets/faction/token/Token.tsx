@@ -1,9 +1,8 @@
 /** biome-ignore-all lint/a11y/noSvgWithoutTitle: I don't care */
 import type { FC } from 'react';
-import type { z } from 'zod';
 
 import { StrokedUse } from '../../../components/block/StrokedUse';
-import type { FactionRender } from '../../../schema/faction';
+import type { FactionInput } from '../../../schema/faction';
 import { BackgroundRenderer } from '../../utils/BackgroundRenderer';
 import styles from './Token.module.css';
 
@@ -14,7 +13,7 @@ const iconLocation = {
   y: 50 - iconSize.height / 2,
 };
 
-type FactionTokenProps = z.infer<typeof FactionRender.token>;
+type FactionTokenProps = Pick<FactionInput, 'background' | 'logo'>;
 
 export const Token: FC<FactionTokenProps> = ({ background, logo }) => {
   const svgContent = (

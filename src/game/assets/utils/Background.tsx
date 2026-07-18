@@ -1,12 +1,11 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: I don't care */
 /** biome-ignore-all lint/a11y/noSvgWithoutTitle: I don't care */
 import { type FC, useId } from 'react';
-import type { z } from 'zod';
 
-import { type Background as BackGroundType, GRADIENT } from '../../data/objects';
+import type { FactionInput } from '../../schema/faction';
 import styles from './Background.module.css';
 
-export const Background: FC<z.infer<typeof BackGroundType>> = ({
+export const Background: FC<FactionInput['background']> = ({
   colors,
   image,
   opacity = 0, // Set default opacity
@@ -41,11 +40,11 @@ export const Background: FC<z.infer<typeof BackGroundType>> = ({
           <rect x="0" y="0" width="100" height="100" fill={`url(#${textureId})`} />
         </mask>
         {colors.map((color, i) => {
-          if (!GRADIENT.safeParse(color).success) {
+          if (typeof color === 'string') {
             return null;
           }
 
-          const data = GRADIENT.parse(color);
+          const data = color;
           if (data.type === 'linear') {
             const { angle, stops } = data;
 
