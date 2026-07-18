@@ -12,6 +12,7 @@ describe('PageLayout', () => {
     );
 
     expect(markup).toContain('<h1>Page title</h1>');
+    expect(markup).not.toContain('data-page-layout-compact');
     expect(markup.indexOf('Page title')).toBeLessThan(markup.indexOf('Page tools'));
     expect(markup.indexOf('Page tools')).toBeLessThan(markup.indexOf('Page content'));
   });
@@ -24,6 +25,7 @@ describe('PageLayout', () => {
     );
 
     expect(markup).not.toContain('<h1');
+    expect(markup).toContain('data-page-layout-compact="true"');
     expect(markup).toContain('<main');
     expect(markup).toContain('Minimal content');
   });

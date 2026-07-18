@@ -1,10 +1,9 @@
-import { createFileRoute } from '@tanstack/react-router';
-
-import { loadProfilesAll, useProfilesAll } from '@db/profiles';
 import { Stack } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { ProfileLink } from '@app/components/profile/ProfileLink';
 import { PageLayout } from '@app/components/shell';
+import { loadProfilesAll, useProfilesAll } from '@db/profiles';
+import { createFileRoute } from '@tanstack/react-router';
 
 import styles from './ProfilesIndex.module.css';
 
@@ -18,7 +17,7 @@ function ProfilesPage() {
   const profiles = useProfilesAll({ initialData: loaderData.profiles });
 
   return (
-    <PageLayout header={<h1>Profiles</h1>}>
+    <PageLayout>
       {profiles.data && profiles.data.length > 0 ? (
         <Card>
           <Stack as="ul" gap={2} className={styles.list}>

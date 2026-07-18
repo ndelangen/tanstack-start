@@ -1,34 +1,11 @@
-.hero {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 3064 / 1125;
-  overflow: hidden;
-  border-radius: 6px;
-  box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.5);
-  transition:
-    aspect-ratio 0.6s ease-out,
-    height 0.6s ease-out;
-}
-
-.hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: url("/web/head.png") no-repeat top center;
-  background-size: cover;
-  filter: blur(12px);
-  transition: filter 0.6s ease-out;
-  z-index: -1;
-}
-
-.loaded::before {
-  filter: blur(0);
+.layout {
+  display: contents;
 }
 
 .headerContent {
-  position: absolute;
-  bottom: 0;
-  left: 0;
+  grid-area: hero;
+  align-self: end;
+  position: relative;
   width: 100%;
   aspect-ratio: 3064 / 945;
   display: flex;
@@ -40,11 +17,8 @@
   z-index: 1;
 }
 
-.compact {
-  aspect-ratio: 3064 / 178;
-}
-
 .content {
+  grid-area: content;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -53,24 +27,8 @@
 }
 
 @media (max-width: 900px) {
-  .hero {
-    aspect-ratio: unset;
-    height: 319px;
-  }
-
-  .hero::before {
-    background-size: auto 319px;
-    background-position: left top;
-  }
-
   .headerContent {
     aspect-ratio: auto;
-    top: 51px;
-    bottom: 0;
-    height: auto;
-  }
-
-  .compact {
-    height: 51px;
+    height: calc(100% - 51px);
   }
 }

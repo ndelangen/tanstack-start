@@ -1,13 +1,12 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { ArrowLeft, User } from 'lucide-react';
-
-import { useCurrentProfile } from '@db/profiles';
 import { FormTooltip } from '@app/components/form/FormTooltip';
 import { ButtonGroup, Toolbar } from '@app/components/generic/layout';
 import { Card } from '@app/components/generic/surfaces/Card';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 import { ProfileSettingsForm } from '@app/components/profile/ProfileSettingsForm';
 import { PageLayout } from '@app/components/shell';
+import { useCurrentProfile } from '@db/profiles';
+import { Link, createFileRoute } from '@tanstack/react-router';
+import { ArrowLeft, User } from 'lucide-react';
 
 export const Route = createFileRoute('/_app/profiles/$profileSlug/edit')({
   component: ProfileSettingsPage,
@@ -19,7 +18,7 @@ function ProfileSettingsPage() {
 
   if (!profile.data) {
     return (
-      <PageLayout header={<h1>Edit profile</h1>}>
+      <PageLayout>
         <Card>
           <p>
             <Link to="/auth/login">Log in</Link> to edit your profile.
@@ -31,7 +30,7 @@ function ProfileSettingsPage() {
 
   if (profile.data.slug !== profileSlug) {
     return (
-      <PageLayout header={<h1>Edit profile</h1>}>
+      <PageLayout>
         <Card>
           <p>You can only edit your own profile.</p>
           <p>
@@ -69,7 +68,7 @@ function ProfileSettingsPage() {
   );
 
   return (
-    <PageLayout header={<h1>Edit profile</h1>} toolbar={toolbar}>
+    <PageLayout toolbar={toolbar}>
       <Card>
         <ProfileSettingsForm key={profile.data.slug} initial={profile.data} />
       </Card>

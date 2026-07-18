@@ -17,11 +17,44 @@
 
 .routeFrame {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: stretch;
+  display: grid;
+  grid-template-areas:
+    "hero"
+    "content";
+  grid-template-columns: minmax(0, 1fr);
   gap: 40px;
+}
+
+.hero {
+  grid-area: hero;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3064 / 1125;
+  overflow: hidden;
+  border-radius: 6px;
+  box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.5);
+  transition:
+    aspect-ratio 0.6s ease-out,
+    height 0.6s ease-out;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("/web/head.png") no-repeat top center;
+  background-size: cover;
+  filter: blur(12px);
+  transition: filter 0.6s ease-out;
+  z-index: -1;
+}
+
+.loaded::before {
+  filter: blur(0);
+}
+
+.routeFrame:has([data-page-layout-compact="true"]) .hero {
+  aspect-ratio: 3064 / 178;
 }
 
 .footer {
@@ -29,6 +62,20 @@
 }
 
 @media (max-width: 900px) {
+  .hero {
+    aspect-ratio: unset;
+    height: 319px;
+  }
+
+  .hero::before {
+    background-size: auto 319px;
+    background-position: left top;
+  }
+
+  .routeFrame:has([data-page-layout-compact="true"]) .hero {
+    height: 51px;
+  }
+
   .footer {
     height: 93px;
   }

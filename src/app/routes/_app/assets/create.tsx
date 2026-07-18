@@ -8,7 +8,8 @@ export const Route = createFileRoute('/_app/assets/create')({
 
 function CreateAssetsPage() {
   return (
-    <PageLayout header={<h2>Create a new faction</h2>}>
+    <PageLayout>
+      <h2>Create a new faction</h2>
       <p>This page has no Page.Head, so the header is collapsed (tiny).</p>
     </PageLayout>
   );

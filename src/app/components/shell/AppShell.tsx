@@ -1,10 +1,12 @@
 import { Link } from '@tanstack/react-router';
-import { type ReactNode, useEffect } from 'react';
+import clsx from 'clsx';
+import { type ReactNode, useEffect, useState } from 'react';
 
 import styles from './AppShell.module.css';
 import { SiteNavigation } from './SiteNavigation';
 
 const SCROLL_VAR = '--scroll-pct';
+let heroImageLoaded = false;
 
 function updateScrollProgress() {
   const root = document.documentElement;
@@ -23,6 +25,18 @@ export interface AppShellProps {
 
 /** Persistent application chrome and document-level page effects. */
 export function AppShell({ children, pathname }: AppShellProps) {
+  const [imageLoaded, setImageLoaded] = useState(heroImageLoaded);
+
+  useEffect(() => {
+    if (heroImageLoaded) return;
+    const image = new Image();
+    image.onload = () => {
+      heroImageLoaded = true;
+      setImageLoaded(true);
+    };
+    image.src = '/web/head.png';
+  }, []);
+
   useEffect(() => {
     const root = document.documentElement;
     let animationFrameId: number | null = null;
@@ -65,7 +79,9 @@ export function AppShell({ children, pathname }: AppShellProps) {
     <div className={styles.container}>
       <div className={styles.main}>
         <div className={styles.routeFrame}>
-          <SiteNavigation />
+          <header className={clsx(styles.hero, imageLoaded && styles.loaded)}>
+            <SiteNavigation />
+          </header>
           {children}
         </div>
       </div>
