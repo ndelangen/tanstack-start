@@ -30,7 +30,7 @@ export const completionMetadataSchema = z.strictObject({
 });
 
 export const itemFailureSchema = z.strictObject({
-  attribution: z.enum(['target', 'infrastructure']),
+  attribution: z.literal('target'),
   error: z.string().trim().min(1).max(2_000),
 });
 
@@ -95,6 +95,6 @@ export const completeItemRequestSchema = exactItemRequestSchema.extend({
 });
 
 export const failItemRequestSchema = exactItemRequestSchema.extend({
-  attribution: z.enum(['target', 'infrastructure']),
+  attribution: z.literal('target'),
   error: z.string().trim().min(1).max(2_000),
 });

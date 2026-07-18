@@ -13,7 +13,6 @@ export type AssignedItem = ExactItemClaim & {
   factionId: string;
   assetType: 'faction_sheet';
   leaseExpiresAt: number;
-  workLane?: 'foreground' | 'rollout';
 };
 
 export type TakeWorkResult =
@@ -40,7 +39,6 @@ type CompleteItemResult =
 
 type FailItemResult =
   | { status: 'stale' }
-  | { status: 'retained'; leaseExpiresAt: number }
   | { status: 'failed' | 'blocked'; consecutiveFailures: number };
 
 type RecordValue = Record<string, unknown>;
@@ -75,10 +73,7 @@ function parseAssignedItem(value: unknown): AssignedItem {
     !token(value.claimToken) ||
     !positiveInteger(value.generation) ||
     typeof value.rendererVersion !== 'string' ||
-    !finite(value.leaseExpiresAt) ||
-    (value.workLane !== undefined &&
-      value.workLane !== 'foreground' &&
-      value.workLane !== 'rollout')
+    !finite(value.leaseExpiresAt)
   ) {
     throw new Error('Convex assigned item response is invalid');
   }
@@ -90,9 +85,6 @@ function parseAssignedItem(value: unknown): AssignedItem {
     generation: value.generation,
     rendererVersion: value.rendererVersion,
     leaseExpiresAt: value.leaseExpiresAt,
-    ...(value.workLane === 'foreground' || value.workLane === 'rollout'
-      ? { workLane: value.workLane }
-      : {}),
   };
 }
 
@@ -196,9 +188,6 @@ function parseCompleteItem(value: unknown): CompleteItemResult {
 function parseFailItem(value: unknown): FailItemResult {
   const body = okRecord(value);
   if (body.status === 'stale') return { status: 'stale' };
-  if (body.status === 'retained' && finite(body.leaseExpiresAt)) {
-    return { status: 'retained', leaseExpiresAt: body.leaseExpiresAt };
-  }
   if (
     (body.status === 'failed' || body.status === 'blocked') &&
     positiveInteger(body.consecutiveFailures)
@@ -264,14 +253,13 @@ export class ConvexPublisherClient {
 
   async fail(
     claim: ExactItemClaim,
-    attribution: 'target' | 'infrastructure',
     error: unknown,
     deadlineAt?: number
   ): Promise<FailItemResult['status']> {
     const result = parseFailItem(
       await this.postExecutor(
         'fail-item',
-        { schemaVersion: 1, ...claim, attribution, error: truncatedError(error) },
+        { schemaVersion: 1, ...claim, attribution: 'target', error: truncatedError(error) },
         deadlineAt
       )
     );

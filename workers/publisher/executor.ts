@@ -136,13 +136,11 @@ export async function executeItemList(
         if (!(error instanceof TargetRenderError)) throw error;
         const failure = await dependencies.client.fail(
           exact(item),
-          'target',
           publisherErrorMessage(error),
           requestDeadline(now, completionDeadlineAt)
         );
         if (failure === 'failed' || failure === 'blocked') result.targetFailed += 1;
-        else if (failure === 'stale') result.stale += 1;
-        else throw new Error(`Target failure unexpectedly retained its claim: ${failure}`);
+        else result.stale += 1;
         result.unprocessed -= 1;
         continue;
       }

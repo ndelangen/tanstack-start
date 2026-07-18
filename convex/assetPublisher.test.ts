@@ -130,7 +130,6 @@ describe('item claim assignment', () => {
     });
     const [item] = await takeAssigned(t, 1);
     expect(item.targetId).toBe(targetIds[0]);
-    expect(item.workLane).toBe('foreground');
   });
 
   test('recovers expired claims and gives each recovered target a new token', async () => {
@@ -211,27 +210,6 @@ describe('exact item operations', () => {
       published_cache_token: CACHE_TOKEN,
     });
     expect(targets.second).toMatchObject({ status: 'leased', claim_token: second.claimToken });
-  });
-
-  test('infrastructure failure retains ownership and never increments the target counter', async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(NOW);
-    const { t } = await seed();
-    const [item] = await takeAssigned(t, 1);
-    await expect(
-      t.mutation(internal.assetPublisher.failItem, {
-        ...exact(item),
-        attribution: 'infrastructure',
-        error: 'Browser session unavailable',
-      })
-    ).resolves.toMatchObject({ status: 'retained' });
-    const target = await t.run(async (ctx) => await ctx.db.get('asset_targets', item.targetId));
-    expect(target).toMatchObject({
-      status: 'leased',
-      claim_token: item.claimToken,
-      consecutive_render_failures: 0,
-    });
-    expect(target?.last_error).toBeUndefined();
   });
 
   test('target failures one through nine return pending and the tenth blocks the generation', async () => {

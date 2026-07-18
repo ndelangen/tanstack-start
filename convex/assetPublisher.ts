@@ -177,7 +177,6 @@ async function assignClaim(
     generation: target.desired_generation,
     rendererVersion: target.desired_renderer_version,
     leaseExpiresAt,
-    workLane: target.work_lane === 'rollout' ? ('rollout' as const) : ('foreground' as const),
   };
 }
 
@@ -360,7 +359,7 @@ export const completeItem = internalMutation({
 export const failItem = internalMutation({
   args: {
     ...exactItemArgs,
-    attribution: v.union(v.literal('target'), v.literal('infrastructure')),
+    attribution: v.literal('target'),
     error: v.string(),
   },
   handler: async (ctx, args) => {
@@ -381,13 +380,6 @@ export const failItem = internalMutation({
     ) {
       return { status: 'stale' as const };
     }
-    if (failure.data.attribution === 'infrastructure') {
-      return {
-        status: 'retained' as const,
-        leaseExpiresAt: target.lease_expires_at,
-      };
-    }
-
     const consecutiveFailures = target.consecutive_render_failures + 1;
     const blocked = consecutiveFailures >= MAX_CONSECUTIVE_RENDER_FAILURES;
     const rolloutOutcome = await failRolloutItem(
