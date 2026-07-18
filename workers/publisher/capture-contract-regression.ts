@@ -1,8 +1,8 @@
 import path from 'node:path';
 
-import { chromium } from 'playwright';
+import { type Browser, chromium, type Page } from 'playwright';
 
-import { proofFaction } from '../../src/app/capture/proofFaction';
+import { assetPublishingFaction } from '../../src/game/fixtures/assetPublishingFaction';
 import { inspectChromiumPdf } from './pdf-inspection';
 import { PUBLISHER_RENDERER_CONTRACT } from './renderer-contract';
 
@@ -11,7 +11,7 @@ const publisherDist = path.join(repositoryRoot, 'workers/publisher/dist');
 const payload = {
   factionId: 'k17publisherContractFaction',
   slug: 'publisher-contract-faction',
-  faction: proofFaction,
+  faction: assetPublishingFaction,
 };
 const payloadHash = new Bun.CryptoHasher('sha256').update(JSON.stringify(payload)).digest('hex');
 const snapshot = {
@@ -38,13 +38,102 @@ const server = Bun.serve({
   },
 });
 
-const browser = await chromium.launch({ headless: true });
-try {
-  const page = await browser.newPage({
+function newPublisherPage(browser: Browser): Promise<Page> {
+  return browser.newPage({
     viewport: PUBLISHER_RENDERER_CONTRACT.viewport,
     locale: 'en-US',
     timezoneId: 'UTC',
   });
+}
+
+async function waitForCaptureResult(page: Page): Promise<{
+  detail: string;
+  payloadHash: string | null;
+  state: string | null;
+}> {
+  const marker = page.locator('#capture-status');
+  await marker.waitFor({ state: 'attached' });
+  await page.waitForFunction(
+    () =>
+      document.querySelector('#capture-status')?.getAttribute('data-capture-state') !== 'loading'
+  );
+  return {
+    detail: (await marker.textContent()) ?? '',
+    payloadHash: await marker.getAttribute('data-payload-hash'),
+    state: await marker.getAttribute('data-capture-state'),
+  };
+}
+
+async function openCapture(page: Page) {
+  await page.goto(`http://127.0.0.1:${server.port}/publisher-capture.html`, {
+    waitUntil: 'domcontentloaded',
+  });
+  return await waitForCaptureResult(page);
+}
+
+async function checkCorruptSvgImage(browser: Browser): Promise<void> {
+  const page = await newPublisherPage(browser);
+  try {
+    await page.route('**/image/leader/official/jessica.png', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'image/png', body: 'not a png' });
+    });
+    const result = await openCapture(page);
+    invariant(
+      result.state === 'error',
+      `Corrupt SVG image was reported as ${result.state}: ${result.detail}`
+    );
+  } finally {
+    await page.close();
+  }
+}
+
+async function checkCorruptExternalUse(browser: Browser): Promise<void> {
+  const page = await newPublisherPage(browser);
+  try {
+    await page.route('**/vector/logo/atreides.svg', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'image/svg+xml', body: 'not an svg' });
+    });
+    const result = await openCapture(page);
+    invariant(
+      result.state === 'error',
+      `Corrupt external SVG use was reported as ${result.state}: ${result.detail}`
+    );
+  } finally {
+    await page.close();
+  }
+}
+
+async function assertPageBounds(page: Page): Promise<void> {
+  await page.emulateMedia({ media: 'print' });
+  const bodyMargin = await page.evaluate(() => getComputedStyle(document.body).margin);
+  invariant(bodyMargin === '0px', `Publisher body margin was ${bodyMargin}`);
+
+  const expectedWidthPx = (PUBLISHER_RENDERER_CONTRACT.pdf.pageWidthMm * 96) / 25.4;
+  const expectedHeightPx = (PUBLISHER_RENDERER_CONTRACT.pdf.pageHeightMm * 96) / 25.4;
+  const pages = page.locator('[data-faction-sheet-page]');
+  invariant(
+    (await pages.count()) === PUBLISHER_RENDERER_CONTRACT.pdf.pageCount,
+    `Production-shaped capture did not render exactly ${PUBLISHER_RENDERER_CONTRACT.pdf.pageCount} pages`
+  );
+  for (let index = 0; index < PUBLISHER_RENDERER_CONTRACT.pdf.pageCount; index += 1) {
+    const bounds = await pages.nth(index).boundingBox();
+    invariant(bounds, `Production-shaped capture page ${index + 1} had no bounds`);
+    invariant(
+      Math.abs(bounds.x) <= 0.5 &&
+        Math.abs(bounds.y - index * expectedHeightPx) <= 0.5 &&
+        Math.abs(bounds.width - expectedWidthPx) <= 0.5 &&
+        Math.abs(bounds.height - expectedHeightPx) <= 0.5,
+      `Production-shaped capture page ${index + 1} bounds were ${JSON.stringify(bounds)}`
+    );
+  }
+  invariant(
+    (await page.locator('[aria-label="Troop Token"]').count()) > 0,
+    'Production-shaped capture must render omitted troop modifiers as bounded TroopToken components'
+  );
+}
+
+async function checkPublisherPdf(browser: Browser): Promise<void> {
+  const page = await newPublisherPage(browser);
   const errors: string[] = [];
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(`console: ${message.text()}`);
@@ -59,45 +148,56 @@ try {
     }
   });
 
-  await page.goto(`http://127.0.0.1:${server.port}/publisher-capture.html`, {
-    waitUntil: 'domcontentloaded',
-  });
-  const marker = page.locator('#capture-status');
-  await marker.waitFor({ state: 'attached' });
-  await page.waitForFunction(
-    () =>
-      document.querySelector('#capture-status')?.getAttribute('data-capture-state') !== 'loading'
-  );
-  const state = await marker.getAttribute('data-capture-state');
-  const detail = (await marker.textContent()) ?? '';
-  invariant(state === 'ready', `Production-shaped capture reported ${state}: ${detail}`);
-  invariant(
-    (await marker.getAttribute('data-payload-hash')) === payloadHash,
-    'Production-shaped capture did not expose the exact payload hash'
-  );
-  invariant(errors.length === 0, `Production-shaped capture emitted errors: ${errors.join(' | ')}`);
+  try {
+    const result = await openCapture(page);
+    invariant(
+      result.state === 'ready',
+      `Production-shaped capture reported ${result.state}: ${result.detail}`
+    );
+    invariant(
+      result.payloadHash === payloadHash,
+      'Production-shaped capture did not expose the exact payload hash'
+    );
+    invariant(
+      errors.length === 0,
+      `Production-shaped capture emitted errors: ${errors.join(' | ')}`
+    );
+    await assertPageBounds(page);
 
-  const pdf = await page.pdf({
-    displayHeaderFooter: PUBLISHER_RENDERER_CONTRACT.pdf.displayHeaderFooter,
-    margin: PUBLISHER_RENDERER_CONTRACT.pdf.marginMm,
-    preferCSSPageSize: PUBLISHER_RENDERER_CONTRACT.pdf.preferCssPageSize,
-    printBackground: PUBLISHER_RENDERER_CONTRACT.pdf.printBackground,
-  });
-  const inspection = await inspectChromiumPdf(pdf);
-  invariant(
-    inspection.pageCount === PUBLISHER_RENDERER_CONTRACT.pdf.pageCount,
-    `Production-shaped capture produced ${inspection.pageCount} pages`
-  );
-  invariant(
-    Math.abs(inspection.pageWidthMm - PUBLISHER_RENDERER_CONTRACT.pdf.pageWidthMm) <=
-      PUBLISHER_RENDERER_CONTRACT.pdf.pageSizeToleranceMm &&
+    const pdf = await page.pdf({
+      displayHeaderFooter: PUBLISHER_RENDERER_CONTRACT.pdf.displayHeaderFooter,
+      margin: PUBLISHER_RENDERER_CONTRACT.pdf.marginMm,
+      preferCSSPageSize: PUBLISHER_RENDERER_CONTRACT.pdf.preferCssPageSize,
+      printBackground: PUBLISHER_RENDERER_CONTRACT.pdf.printBackground,
+    });
+    const inspection = await inspectChromiumPdf(pdf);
+    invariant(
+      inspection.pageCount === PUBLISHER_RENDERER_CONTRACT.pdf.pageCount,
+      `Production-shaped capture produced ${inspection.pageCount} pages`
+    );
+    invariant(
+      Math.abs(inspection.pageWidthMm - PUBLISHER_RENDERER_CONTRACT.pdf.pageWidthMm) <=
+        PUBLISHER_RENDERER_CONTRACT.pdf.pageSizeToleranceMm,
+      `Production-shaped capture produced ${inspection.pageWidthMm.toFixed(2)} mm wide pages`
+    );
+    invariant(
       Math.abs(inspection.pageHeightMm - PUBLISHER_RENDERER_CONTRACT.pdf.pageHeightMm) <=
         PUBLISHER_RENDERER_CONTRACT.pdf.pageSizeToleranceMm,
-    `Production-shaped capture produced ${inspection.pageWidthMm.toFixed(2)} mm x ${inspection.pageHeightMm.toFixed(2)} mm pages`
-  );
-  console.log(
-    `Publisher narrow-contract Chromium regression passed: ${inspection.pageCount} pages, ${pdf.byteLength} bytes`
-  );
+      `Production-shaped capture produced ${inspection.pageHeightMm.toFixed(2)} mm tall pages`
+    );
+    console.log(
+      `Publisher capture Chromium regression passed: ${inspection.pageCount} pages, ${pdf.byteLength} bytes`
+    );
+  } finally {
+    await page.close();
+  }
+}
+
+const browser = await chromium.launch({ headless: true });
+try {
+  await checkCorruptSvgImage(browser);
+  await checkCorruptExternalUse(browser);
+  await checkPublisherPdf(browser);
 } finally {
   await browser.close();
   server.stop(true);
