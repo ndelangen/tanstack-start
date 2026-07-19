@@ -19,7 +19,7 @@ function ProfileSettingsPage() {
 
   if (!profile.data) {
     return (
-      <PageLayout header={<h1>Edit profile</h1>}>
+      <PageLayout>
         <Card>
           <p>
             <Link to="/auth/login">Log in</Link> to edit your profile.
@@ -31,7 +31,7 @@ function ProfileSettingsPage() {
 
   if (profile.data.slug !== profileSlug) {
     return (
-      <PageLayout header={<h1>Edit profile</h1>}>
+      <PageLayout>
         <Card>
           <p>You can only edit your own profile.</p>
           <p>
@@ -69,7 +69,7 @@ function ProfileSettingsPage() {
   );
 
   return (
-    <PageLayout header={<h1>Edit profile</h1>} toolbar={toolbar}>
+    <PageLayout toolbar={toolbar}>
       <Card>
         <ProfileSettingsForm key={profile.data.slug} initial={profile.data} />
       </Card>

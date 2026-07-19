@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { ArrowLeft, Download, Eye, Pencil, Plus, User, UserPlus } from 'lucide-react';
+import { ArrowLeft, Download, Eye, Pencil, UserPlus } from 'lucide-react';
 
 import { loadFaction, useFaction } from '@db/factions';
 import { useRequestGroupMembership } from '@db/members';
@@ -100,29 +100,6 @@ function FactionDetailPage() {
                   </UIButton>
                 </FormTooltip>
               ) : null}
-              <FormTooltip content={profile.data?.slug ? 'My factions' : 'Log in for my factions'}>
-                <UIButton
-                  variant="secondary"
-                  {...(profile.data?.slug
-                    ? {
-                        to: '/profiles/$profileSlug' as const,
-                        params: { profileSlug: profile.data.slug },
-                      }
-                    : { to: '/auth/login' as const })}
-                  aria-label={profile.data?.slug ? 'My factions' : 'Log in for my factions'}
-                >
-                  <User size={16} aria-hidden />
-                </UIButton>
-              </FormTooltip>
-              <FormTooltip content="Create a new faction">
-                <UIButton
-                  variant="secondary"
-                  to="/factions/create"
-                  aria-label="Create a new faction"
-                >
-                  <Plus size={16} aria-hidden />
-                </UIButton>
-              </FormTooltip>
             </ButtonGroup>
           </Toolbar.Left>
           <Toolbar.Right>

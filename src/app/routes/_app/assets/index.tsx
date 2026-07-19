@@ -8,7 +8,8 @@ export const Route = createFileRoute('/_app/assets/')({
 
 function AssetsPage() {
   return (
-    <PageLayout header={<h2>Assets</h2>}>
+    <PageLayout>
+      <h2>Assets</h2>
       <p>This page has no Page.Head, so the header is collapsed (tiny).</p>
     </PageLayout>
   );
