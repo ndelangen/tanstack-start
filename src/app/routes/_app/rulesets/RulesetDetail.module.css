@@ -37,8 +37,96 @@
   gap: var(--space-3);
 }
 
-.sectionTitle {
+.contentColumns {
+  display: grid;
+  grid-template-areas: "main sidebar";
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 21rem);
+  align-items: start;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.mainColumn {
+  grid-area: main;
+  min-width: 0;
+}
+
+.sidebar {
+  grid-area: sidebar;
+  min-width: 0;
+}
+
+.iconHeading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin: 0;
+}
+
+.sectionIntro,
+.proposedLabel,
+.muted {
+  margin: 0;
+}
+
+.sectionIntro,
+.muted {
+  color: var(--color-muted, #735c47);
+}
+
+.proposedLabel {
+  color: var(--color-muted, #735c47);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.proposedRulesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.faqTools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.faqTools > :first-child {
+  flex: 1 1 16rem;
+}
+
+.faqTools > :last-child {
+  flex: 0 1 12rem;
+}
+
+.factList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.factList p {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.factList span {
+  color: var(--color-muted, #735c47);
+}
+
+.sectionLinks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding-inline-start: 1.25rem;
 }
 
 .error {
@@ -46,17 +134,26 @@
   color: var(--color-error, #c33);
 }
 
-.toolbarGroupAccess {
-  margin: 0;
-  font-size: 0.84rem;
-  line-height: 1.4;
-  opacity: 0.95;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  flex-wrap: wrap;
-}
+@media (max-width: 800px) {
+  .contentColumns {
+    grid-template-areas:
+      "sidebar"
+      "main";
+    grid-template-columns: minmax(0, 1fr);
+  }
 
-.groupStatusLabel {
-  font-weight: 700;
+  .proposedRulesGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .faqTools {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .faqTools > :first-child,
+  .faqTools > :last-child {
+    flex-basis: auto;
+    width: 100%;
+  }
 }

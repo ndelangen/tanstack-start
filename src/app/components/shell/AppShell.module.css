@@ -57,6 +57,10 @@
   aspect-ratio: 3064 / 178;
 }
 
+.routeFrame:has([data-page-layout-header-size="compact"]) .hero {
+  aspect-ratio: 3064 / 760;
+}
+
 .footer {
   height: 11.5vw;
 }
@@ -74,6 +78,10 @@
 
   .routeFrame:has([data-page-layout-compact="true"]) .hero {
     height: 51px;
+  }
+
+  .routeFrame:has([data-page-layout-header-size="compact"]) .hero {
+    height: 220px;
   }
 
   .footer {

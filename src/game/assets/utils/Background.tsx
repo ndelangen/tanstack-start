@@ -24,6 +24,7 @@ export const Background: FC<z.infer<typeof BackGroundType>> = ({
       width="600px"
       height="600px"
       viewBox="0 0 100 100"
+      preserveAspectRatio="xMidYMid slice"
       className={styles.container}
     >
       <defs>

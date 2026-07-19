@@ -4,44 +4,143 @@
 }
 
 .card {
-  aspect-ratio: 1;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: 1rem;
-}
-
-.coverSlot {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.token {
   position: relative;
-  height: 100%;
-  width: auto;
-  max-width: 100%;
-  aspect-ratio: 1;
-  border-radius: 50%;
+  height: 7.75rem;
+  border-width: 1px;
+}
+
+.artwork {
+  position: absolute;
+  inset: 0;
   overflow: hidden;
 }
 
-.token > * {
+.glyphMark {
   position: absolute;
-  inset: 0;
+  top: 0.9rem;
+  left: 0.9rem;
+  z-index: 1;
+  width: 4rem;
+  height: 4rem;
+}
+
+.glyph {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
+  color: #f4e8c1;
+  fill: currentColor;
+  stroke: rgba(20, 13, 10, 0.85);
+  stroke-width: 2px;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55));
+}
+
+.glossary {
+  position: absolute;
+  top: 0.75rem;
+  right: 1rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.heroToken,
+.leaderSamples > span,
+.troopSamples > span {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 50%;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55));
+}
+
+.heroToken {
+  width: 6rem;
+  height: 6rem;
+}
+
+.leaderSamples,
+.troopSamples {
+  display: flex;
+  align-items: center;
+}
+
+.leaderSamples > span {
+  width: 3.25rem;
+  height: 3.25rem;
+  margin-inline-start: -0.7rem;
+}
+
+.leaderSamples > span:first-child {
+  margin-inline-start: 0;
+}
+
+.troopSamples {
+  gap: var(--space-1);
+}
+
+.troopSamples > span {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.heroToken > *,
+.leaderSamples > span > *,
+.troopSamples > span > * {
+  position: absolute;
+  inset: 0;
+}
+
+.content {
+  position: absolute;
+  inset: auto auto 0.65rem 0.65rem;
+  z-index: 2;
+  display: flex;
+  align-items: end;
+  width: fit-content;
+  max-width: calc(100% - 1.3rem);
+  padding: 0.4rem 0.55rem;
+  min-width: 0;
+  color: #fff8e7;
 }
 
 .name {
-  font-size: 0.95rem;
-  font-weight: 600;
-  line-height: 1.3;
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55));
+}
+
+@media (max-width: 520px) {
+  .card {
+    height: 7.95rem;
+  }
+
+  .glyphMark {
+    width: 4.25rem;
+    height: 4.25rem;
+  }
+
+  .heroToken {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .leaderSamples > span {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .troopSamples {
+    display: none;
+  }
 }

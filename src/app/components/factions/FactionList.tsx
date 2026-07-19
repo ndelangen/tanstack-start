@@ -1,7 +1,9 @@
 import { type FactionEntry } from '@db/factions';
 import { AutoGrid } from '@app/components/generic/layout';
 import { BlockLink } from '@app/components/generic/surfaces';
-import { Token as FactionToken } from '@game/assets/faction/token/Token';
+import { LeaderToken } from '@game/assets/faction/leader/Leader';
+import { TroopToken } from '@game/assets/faction/troop/Troop';
+import { BackgroundRenderer } from '@game/assets/utils/BackgroundRenderer';
 
 import styles from './FactionList.module.css';
 
@@ -11,7 +13,7 @@ export type FactionListProps = {
 };
 
 /**
- * Responsive grid of faction tiles using shared {@link BlockLink} + {@link FactionToken}.
+ * Responsive grid of compact faction identity plates.
  * An empty `factions` array renders the standard no-results line (e.g. search filter).
  * Callers that need different empty UX should not render this with an empty list.
  */
@@ -21,7 +23,7 @@ export function FactionList({ factions, className }: FactionListProps) {
   }
 
   return (
-    <AutoGrid minColumnWidth="180px" gap={6} className={className}>
+    <AutoGrid minColumnWidth="420px" gap={4} className={className}>
       {factions.map((faction) => (
         <FactionListItem key={faction._id} faction={faction} />
       ))}
@@ -30,7 +32,7 @@ export function FactionList({ factions, className }: FactionListProps) {
 }
 
 function FactionListItem({ faction }: { faction: FactionEntry }) {
-  const { name, logo, background } = faction.data;
+  const { name, logo, background, hero, leaders, troops } = faction.data;
 
   return (
     <BlockLink
@@ -38,12 +40,41 @@ function FactionListItem({ faction }: { faction: FactionEntry }) {
       params={{ factionId: faction.slug }}
       className={styles.card}
     >
-      <div className={styles.coverSlot}>
-        <div className={styles.token}>
-          <FactionToken logo={logo} background={background} />
+      <BackgroundRenderer background={background} className={styles.artwork}>
+        <div className={styles.glyphMark}>
+          <svg className={styles.glyph} viewBox="0 0 100 100" role="img">
+            <title>{name} symbol</title>
+            <use href={`${logo}#root`} />
+          </svg>
         </div>
-      </div>
-      <span className={styles.name}>{name}</span>
+        <div className={styles.glossary}>
+          <div className={styles.heroToken} title={`Faction leader: ${hero.name}`}>
+            <LeaderToken {...hero} strength={undefined} background={background} logo={logo} />
+          </div>
+          <div className={styles.leaderSamples}>
+            {leaders.slice(0, 3).map((leader) => (
+              <span key={`${leader.name}-${leader.image}`} title={leader.name}>
+                <LeaderToken {...leader} background={background} logo={logo} />
+              </span>
+            ))}
+          </div>
+          <div className={styles.troopSamples}>
+            {troops.slice(0, 2).map((troop) => (
+              <span key={`${troop.name}-${troop.image}`} title={troop.name}>
+                <TroopToken
+                  background={background}
+                  image={troop.image}
+                  star={troop.star}
+                  striped={troop.striped}
+                />
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className={styles.content}>
+          <strong className={styles.name}>{name}</strong>
+        </div>
+      </BackgroundRenderer>
     </BlockLink>
   );
 }

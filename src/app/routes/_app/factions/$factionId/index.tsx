@@ -1,16 +1,40 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { ArrowLeft, Download, Eye, Pencil, UserPlus } from 'lucide-react';
+import {
+  ArrowLeft,
+  BookOpen,
+  Coins,
+  Crown,
+  Download,
+  Eye,
+  FileText,
+  Handshake,
+  HeartPulse,
+  MapPin,
+  Palette,
+  Pencil,
+  ScrollText,
+  Shield,
+  Swords,
+  UserPlus,
+  UsersRound,
+} from 'lucide-react';
 
 import { loadFaction, useFaction } from '@db/factions';
 import { useRequestGroupMembership } from '@db/members';
 import { useCurrentProfile } from '@db/profiles';
 import { loadRulesetsByFaction, useRulesetsByFaction } from '@db/rulesets';
 import { FormTooltip } from '@app/components/form/FormTooltip';
-import { ButtonGroup, Toolbar } from '@app/components/generic/layout';
+import { ButtonGroup, Stack, Toolbar } from '@app/components/generic/layout';
+import { Card } from '@app/components/generic/surfaces';
 import { UIButton } from '@app/components/generic/ui/UIButton';
 import { ProfileLink } from '@app/components/profile/ProfileLink';
 import { PageLayout } from '@app/components/shell';
 import { factionAssetPublishingCopy } from '@app/factions/assetPublishingStatus';
+import { LeaderToken } from '@game/assets/faction/leader/Leader';
+import { Token as FactionToken } from '@game/assets/faction/token/Token';
+import { TroopToken } from '@game/assets/faction/troop/Troop';
+
+import styles from '../FactionDetailWireframe.module.css';
 
 export const Route = createFileRoute('/_app/factions/$factionId/')({
   loader: async ({ params }) => {
@@ -69,16 +93,34 @@ function FactionDetailPage() {
     viewerMembership && viewerMembership.status !== 'removed' ? viewerMembership.status : 'none';
   const canRequestMembership = !!profileUserId && !!assignedGroup && membershipStatus === 'none';
 
+  const data = factionRow.data;
+  const planets = data.planet ?? [];
+  const troopCount = data.troops.reduce((total, troop) => total + troop.count, 0);
   const header = (
-    <div>
-      <h1>{factionRow.data.name}</h1>
-      <p>Owner: {owner ? <ProfileLink {...owner} /> : <span>Loading owner...</span>}</p>
+    <div className={styles.hero}>
+      <div className={styles.factionSymbol} role="img" aria-label={`${data.name} symbol`}>
+        <FactionToken logo={data.logo} background={data.background} />
+      </div>
+      <Stack gap={2} className={styles.heroCopy}>
+        <p className={styles.eyebrow}>
+          <Link to="/factions">Factions</Link> / Dense wireframe
+        </p>
+        <h1>{data.name}</h1>
+        <p>
+          <strong>Proposed summary:</strong> Add one sentence describing this faction's identity and
+          play style.
+        </p>
+        <p className={styles.muted}>
+          Maintained by {owner ? <ProfileLink {...owner} /> : <span>Loading owner...</span>}
+        </p>
+      </Stack>
     </div>
   );
 
   return (
     <PageLayout
       header={header}
+      headerSize="compact"
       toolbar={
         <Toolbar>
           <Toolbar.Left>
@@ -134,97 +176,261 @@ function FactionDetailPage() {
         </Toolbar>
       }
     >
-      <p>
-        <Link
-          to="/preview/sheet/$factionSlug"
-          params={{ factionSlug: factionId }}
-          search={{ mode: 'db' }}
-        >
-          Preview faction sheet
-        </Link>{' '}
-        (opens without site chrome; use the browser print dialog for PDF)
-      </p>
-
-      <section>
-        <h3>Public assets</h3>
-        <p>{factionAssetPublishingCopy(assetPublishing.status)}</p>
-        <p>
-          {assetPublishing.publicationHref ? (
-            <a href={assetPublishing.publicationHref} target="_blank" rel="noopener noreferrer">
-              Open published faction sheet (PDF)
-            </a>
-          ) : (
-            'The published PDF has not been rendered yet.'
-          )}
-        </p>
-      </section>
-
-      <section>
-        <h3>Group</h3>
-        {factionGroupId == null ? (
-          <p>This faction is not assigned to a group.</p>
-        ) : !assignedGroup ? (
-          <p>Group details unavailable.</p>
-        ) : (
-          <>
-            <p>
-              Group:{' '}
-              {assignedGroup.slug ? (
-                <Link to="/groups/$groupSlug" params={{ groupSlug: assignedGroup.slug }}>
-                  {assignedGroup.name}
-                </Link>
-              ) : (
-                <strong>{assignedGroup.name}</strong>
-              )}
-            </p>
-            <p>
-              Membership status:{' '}
-              {membershipStatus === 'active'
-                ? 'Active member'
-                : membershipStatus === 'pending'
-                  ? 'Pending approval'
-                  : 'Not a member'}
-            </p>
-            {membershipStatus === 'pending' && (
-              <p>Your membership request is waiting for approval.</p>
-            )}
-            {!profile.isPending && !profileUserId && (
-              <p>
-                <Link to="/auth/login">Log in</Link> to request membership.
-              </p>
-            )}
-            {canRequestMembership && (
-              <FormTooltip content="Request membership">
-                <UIButton
-                  type="button"
-                  iconOnly
-                  aria-label="Request membership"
-                  disabled={requestMembership.isPending}
-                  onClick={() => requestMembership.mutate(factionGroupId)}
+      <div className={styles.contentColumns}>
+        <Stack gap={3} className={styles.mainColumn}>
+          <section className={styles.denseSection}>
+            <h2 className={styles.iconHeading}>
+              <UsersRound size={20} aria-hidden /> Leaders
+            </h2>
+            <div className={styles.horizontalLane}>
+              {data.leaders.map((leader) => (
+                <article
+                  className={styles.leaderTile}
+                  key={`${leader.name}-${leader.image}`}
+                  title={`${leader.name}, strength ${leader.strength ?? 'not specified'}`}
                 >
-                  <UserPlus size={16} aria-hidden />
-                </UIButton>
-              </FormTooltip>
-            )}
-            {requestMembership.isError && <p>{requestMembership.error?.message}</p>}
-          </>
-        )}
-      </section>
+                  <LeaderToken {...leader} background={data.background} logo={data.logo} />
+                </article>
+              ))}
+            </div>
+          </section>
 
-      {rulesets.data && rulesets.data.length > 0 ? (
-        <section>
-          <h3>In rulesets</h3>
-          <ul>
-            {rulesets.data.map((ruleset) => (
-              <li key={ruleset.id}>
-                <Link to="/rulesets/$rulesetSlug" params={{ rulesetSlug: ruleset.slug }}>
-                  {ruleset.name}
+          <section className={styles.denseSection}>
+            <h2 className={styles.iconHeading}>
+              <Swords size={20} aria-hidden /> Troops
+            </h2>
+            <div className={styles.horizontalLane}>
+              {data.troops.map((troop) => (
+                <article className={styles.troopTile} key={`${troop.name}-${troop.image}`}>
+                  <div className={styles.troopToken}>
+                    <TroopToken
+                      background={data.background}
+                      image={troop.image}
+                      star={troop.star}
+                      striped={troop.striped}
+                    />
+                  </div>
+                  <div className={styles.tileCopy}>
+                    <strong>{troop.name}</strong>
+                    <span>×{troop.count}</span>
+                    <small>{troop.description}</small>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          {planets.length > 0 ? (
+            <section className={styles.denseSection}>
+              <h2 className={styles.iconHeading}>
+                <MapPin size={20} aria-hidden /> Planets
+              </h2>
+              <div className={styles.horizontalLane}>
+                {planets.map((planet) => (
+                  <article className={styles.compactTile} key={`${planet.name}-${planet.image}`}>
+                    <strong>{planet.name}</strong>
+                    <small>{planet.description}</small>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          <section className={styles.denseSection}>
+            <h2 className={styles.iconHeading}>
+              <Shield size={20} aria-hidden /> Advantages
+            </h2>
+            {data.rules.advantages.length > 0 ? (
+              <div className={styles.advantageList}>
+                {data.rules.advantages.map((advantage, index) => (
+                  <article
+                    className={styles.advantage}
+                    key={`${advantage.title ?? 'advantage'}-${advantage.text}`}
+                  >
+                    <h3>{advantage.title ?? `Advantage ${index + 1}`}</h3>
+                    <p>{advantage.text}</p>
+                    {advantage.karama ? (
+                      <p className={styles.karama}>
+                        <ScrollText size={16} aria-hidden /> {advantage.karama}
+                      </p>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className={styles.muted}>No faction advantages have been added yet.</p>
+            )}
+          </section>
+
+          <div className={styles.ruleGrid}>
+            <Card
+              header={
+                <h2 className={styles.iconHeading}>
+                  <Handshake size={20} aria-hidden /> Alliance
+                </h2>
+              }
+            >
+              <p>{data.rules.alliance.text}</p>
+            </Card>
+            <Card
+              header={
+                <h2 className={styles.iconHeading}>
+                  <ScrollText size={20} aria-hidden /> {data.rules.fate.title ?? 'Fate'}
+                </h2>
+              }
+            >
+              <p>{data.rules.fate.text}</p>
+            </Card>
+          </div>
+        </Stack>
+
+        <aside className={styles.sidebar} aria-label="Faction details">
+          <Stack gap={3}>
+            <section className={styles.sidebarPanel}>
+              <h2 className={styles.iconHeading}>
+                <Crown size={20} aria-hidden /> Faction Leader
+              </h2>
+              <div className={styles.loreHeroToken}>
+                <LeaderToken
+                  {...data.hero}
+                  strength={undefined}
+                  background={data.background}
+                  logo={data.logo}
+                />
+              </div>
+            </section>
+
+            <section className={styles.overviewBlock} aria-label="Faction overview">
+              <div className={styles.metrics}>
+                <span className={styles.metric} title="Starting spice">
+                  <Coins size={20} aria-hidden />
+                  <strong>{data.rules.spiceCount}</strong>
+                  <small>Spice</small>
+                </span>
+                <span className={styles.metric} title="Leaders">
+                  <UsersRound size={20} aria-hidden />
+                  <strong>{data.leaders.length}</strong>
+                  <small>Leaders</small>
+                </span>
+                <span className={styles.metric} title="Troops">
+                  <Swords size={20} aria-hidden />
+                  <strong>{troopCount}</strong>
+                  <small>Troops</small>
+                </span>
+                <span className={styles.metric} title="Preferred colors">
+                  <Palette size={20} aria-hidden />
+                  <strong>{data.colors.join(' · ') || '—'}</strong>
+                </span>
+              </div>
+              <div className={styles.overviewRules}>
+                <article>
+                  <h2 className={styles.iconHeading}>
+                    <BookOpen size={18} aria-hidden /> Setup
+                  </h2>
+                  <p>{data.rules.startText}</p>
+                </article>
+                <article>
+                  <h2 className={styles.iconHeading}>
+                    <HeartPulse size={18} aria-hidden /> Revival
+                  </h2>
+                  <p>{data.rules.revivalText}</p>
+                </article>
+              </div>
+            </section>
+
+            <Card
+              header={
+                <h2 className={styles.iconHeading}>
+                  <UsersRound size={20} aria-hidden /> Stewardship
+                </h2>
+              }
+            >
+              {factionGroupId == null ? (
+                <p className={styles.muted}>No maintaining group.</p>
+              ) : !assignedGroup ? (
+                <p className={styles.muted}>Group unavailable.</p>
+              ) : (
+                <Stack gap={2}>
+                  <p>
+                    {assignedGroup.slug ? (
+                      <Link to="/groups/$groupSlug" params={{ groupSlug: assignedGroup.slug }}>
+                        {assignedGroup.name}
+                      </Link>
+                    ) : (
+                      <strong>{assignedGroup.name}</strong>
+                    )}
+                    {' · '}
+                    {membershipStatus === 'active'
+                      ? 'Member'
+                      : membershipStatus === 'pending'
+                        ? 'Pending'
+                        : 'Not a member'}
+                  </p>
+                  {!profile.isPending && !profileUserId ? (
+                    <p>
+                      <Link to="/auth/login">Log in</Link> to join.
+                    </p>
+                  ) : null}
+                  {canRequestMembership ? (
+                    <FormTooltip content="Request membership">
+                      <UIButton
+                        iconOnly
+                        aria-label="Request membership"
+                        disabled={requestMembership.isPending}
+                        onClick={() => requestMembership.mutate(factionGroupId)}
+                      >
+                        <UserPlus size={16} aria-hidden />
+                      </UIButton>
+                    </FormTooltip>
+                  ) : null}
+                  {requestMembership.isError ? <p>{requestMembership.error?.message}</p> : null}
+                </Stack>
+              )}
+            </Card>
+
+            <Card
+              header={
+                <h2 className={styles.iconHeading}>
+                  <FileText size={20} aria-hidden /> Files
+                </h2>
+              }
+            >
+              <Stack gap={2}>
+                <p>{factionAssetPublishingCopy(assetPublishing.status)}</p>
+                <Link
+                  to="/preview/sheet/$factionSlug"
+                  params={{ factionSlug: factionId }}
+                  search={{ mode: 'db' }}
+                >
+                  Preview faction sheet
                 </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+              </Stack>
+            </Card>
+
+            <Card
+              header={
+                <h2 className={styles.iconHeading}>
+                  <BookOpen size={20} aria-hidden /> Rulesets
+                </h2>
+              }
+            >
+              {rulesets.data && rulesets.data.length > 0 ? (
+                <ul className={styles.compactList}>
+                  {rulesets.data.map((ruleset) => (
+                    <li key={ruleset.id}>
+                      <Link to="/rulesets/$rulesetSlug" params={{ rulesetSlug: ruleset.slug }}>
+                        {ruleset.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className={styles.muted}>Not in a ruleset yet.</p>
+              )}
+            </Card>
+          </Stack>
+        </aside>
+      </div>
     </PageLayout>
   );
 }

@@ -1,6 +1,18 @@
 import { useAuthActions } from '@convex-dev/auth/react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, LogOut, Pencil, UserPlus } from 'lucide-react';
+import {
+  ArrowLeft,
+  BookOpen,
+  CheckCircle2,
+  CircleHelp,
+  Link2,
+  LogOut,
+  MessageCircleReply,
+  Pencil,
+  Shield,
+  UserPlus,
+  UsersRound,
+} from 'lucide-react';
 
 import { loadProfileBySlug, useCurrentProfile, useProfileBySlug } from '@db/profiles';
 import { FactionList } from '@app/components/factions/FactionList';
@@ -31,9 +43,8 @@ function ProfileDetailPage() {
   const currentProfile = useCurrentProfile();
   const { signOut } = useAuthActions();
   const navigate = useNavigate();
-  const profileId = profileData.profile?._id;
 
-  if (!profileId || !profileData.profile) {
+  if (!profileData.profile) {
     return (
       <PageLayout header={<h1>Profile</h1>}>
         <Card>
@@ -59,6 +70,9 @@ function ProfileDetailPage() {
   };
 
   const groupsById = new Map((profileData.groups ?? []).map((g) => [String(g._id), g] as const));
+  const acceptedAnswerCount = (profileData.faqAnswers ?? []).filter(
+    (answer) => answer.faq_item.accepted_answer_id === answer._id
+  ).length;
 
   const toolbar = (
     <Toolbar>
@@ -124,64 +138,170 @@ function ProfileDetailPage() {
           <Stack gap={1}>
             <h1 className={styles.displayName}>{profileData.profile.username ?? 'Unknown'}</h1>
             {isSelf && <p className={styles.selfHint}>This is you!</p>}
+            <p className={styles.profileSummary}>
+              <strong>Proposed bio:</strong> A short introduction describing this contributor's
+              interests and work.
+            </p>
           </Stack>
         </div>
       }
+      headerSize="compact"
       toolbar={toolbar}
     >
-      <Stack gap={2}>
-        <Card header={<h3 className={styles.sectionTitle}>Groups</h3>}>
-          {profileData.memberships && profileData.memberships.length > 0 ? (
-            <ul className={styles.list}>
-              {profileData.memberships.map((m) => {
-                const group = groupsById.get(String(m.group_id));
-                return (
-                  <li key={m._id}>
-                    {group?.slug ? (
-                      <Link to="/groups/$groupSlug" params={{ groupSlug: group.slug }}>
-                        {group.name}
-                      </Link>
-                    ) : group ? (
-                      <span>{group.name}</span>
-                    ) : (
-                      <span title={m.group_id}>Unknown group</span>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p className={styles.empty}>Not a member of any groups.</p>
-          )}
-        </Card>
+      <div className={styles.contentColumns}>
+        <Stack gap={4} className={styles.mainColumn}>
+          <section className={styles.section}>
+            <h2 className={styles.iconHeading}>
+              <Shield size={20} aria-hidden /> Factions created
+            </h2>
+            {profileData.factions && profileData.factions.length > 0 ? (
+              <FactionList factions={profileData.factions} />
+            ) : (
+              <Card>
+                <p className={styles.empty}>No factions created yet.</p>
+              </Card>
+            )}
+          </section>
 
-        <Card header={<h3 className={styles.sectionTitle}>Questions asked</h3>}>
-          {profileData.faqAsked && profileData.faqAsked.length > 0 ? (
-            <ProfileFaqQuestionsAsked items={profileData.faqAsked} />
-          ) : (
-            <p className={styles.empty}>No questions asked yet.</p>
-          )}
-        </Card>
+          <section className={styles.section}>
+            <h2 className={styles.iconHeading}>
+              <BookOpen size={20} aria-hidden /> Rulesets maintained
+            </h2>
+            <Card>
+              <Stack gap={2}>
+                <p className={styles.proposedLabel}>Proposed content · page query required</p>
+                <p className={styles.empty}>
+                  Rulesets owned or maintained by this contributor would appear here.
+                </p>
+              </Stack>
+            </Card>
+          </section>
 
-        <Card header={<h3 className={styles.sectionTitle}>FAQ answers</h3>}>
-          {profileData.faqAnswers && profileData.faqAnswers.length > 0 ? (
-            <ProfileFaqAnswersGiven
-              items={profileData.faqAnswers}
-              viewedProfileId={profileData.profile._id}
-            />
-          ) : (
-            <p className={styles.empty}>No FAQ answers yet.</p>
-          )}
-        </Card>
+          <section className={styles.section}>
+            <h2 className={styles.iconHeading}>
+              <MessageCircleReply size={20} aria-hidden /> Answers contributed
+            </h2>
+            <Card>
+              {profileData.faqAnswers && profileData.faqAnswers.length > 0 ? (
+                <ProfileFaqAnswersGiven
+                  items={profileData.faqAnswers}
+                  viewedProfileId={profileData.profile._id}
+                />
+              ) : (
+                <p className={styles.empty}>No FAQ answers yet.</p>
+              )}
+            </Card>
+          </section>
 
-        <Card header={<h3 className={styles.sectionTitle}>Factions owned</h3>}>
-          {profileData.factions && profileData.factions.length > 0 ? (
-            <FactionList factions={profileData.factions} />
-          ) : (
-            <p className={styles.empty}>No factions owned.</p>
-          )}
-        </Card>
-      </Stack>
+          <section className={styles.section}>
+            <h2 className={styles.iconHeading}>
+              <CircleHelp size={20} aria-hidden /> Questions asked
+            </h2>
+            <Card>
+              {profileData.faqAsked && profileData.faqAsked.length > 0 ? (
+                <ProfileFaqQuestionsAsked items={profileData.faqAsked} />
+              ) : (
+                <p className={styles.empty}>No questions asked yet.</p>
+              )}
+            </Card>
+          </section>
+        </Stack>
+
+        <aside className={styles.sidebar} aria-label="Profile details">
+          <Stack gap={3}>
+            <Card
+              header={
+                <h2 className={styles.iconHeading}>
+                  <UsersRound size={20} aria-hidden /> At a glance
+                </h2>
+              }
+            >
+              <div className={styles.factList}>
+                <p>
+                  <Shield size={18} aria-hidden />
+                  <strong>{profileData.factions?.length ?? 0}</strong>
+                  <span>Factions</span>
+                </p>
+                <p>
+                  <UsersRound size={18} aria-hidden />
+                  <strong>{profileData.memberships?.length ?? 0}</strong>
+                  <span>Groups</span>
+                </p>
+                <p>
+                  <MessageCircleReply size={18} aria-hidden />
+                  <strong>{profileData.faqAnswers?.length ?? 0}</strong>
+                  <span>Answers</span>
+                </p>
+                <p>
+                  <CheckCircle2 size={18} aria-hidden />
+                  <strong>{acceptedAnswerCount}</strong>
+                  <span>Picked answers</span>
+                </p>
+                <p>
+                  <CircleHelp size={18} aria-hidden />
+                  <strong>{profileData.faqAsked?.length ?? 0}</strong>
+                  <span>Questions</span>
+                </p>
+              </div>
+            </Card>
+
+            <Card
+              header={
+                <h2 className={styles.iconHeading}>
+                  <Link2 size={20} aria-hidden /> About
+                </h2>
+              }
+            >
+              <Stack gap={2}>
+                <p className={styles.proposedLabel}>Proposed profile fields</p>
+                <p className={styles.empty}>
+                  A short bio and a small set of relevant external links could live here.
+                </p>
+                <p className={styles.memberSince}>
+                  Member since{' '}
+                  <time dateTime={profileData.profile.created_at}>
+                    {new Intl.DateTimeFormat('en', {
+                      month: 'short',
+                      year: 'numeric',
+                    }).format(new Date(profileData.profile.created_at))}
+                  </time>
+                </p>
+              </Stack>
+            </Card>
+
+            <Card
+              header={
+                <h2 className={styles.iconHeading}>
+                  <UsersRound size={20} aria-hidden /> Groups
+                </h2>
+              }
+            >
+              {profileData.memberships && profileData.memberships.length > 0 ? (
+                <ul className={styles.list}>
+                  {profileData.memberships.map((m) => {
+                    const group = groupsById.get(String(m.group_id));
+                    return (
+                      <li key={m._id}>
+                        {group?.slug ? (
+                          <Link to="/groups/$groupSlug" params={{ groupSlug: group.slug }}>
+                            {group.name}
+                          </Link>
+                        ) : group ? (
+                          <span>{group.name}</span>
+                        ) : (
+                          <span title={m.group_id}>Unknown group</span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className={styles.empty}>Not a member of any groups.</p>
+              )}
+            </Card>
+          </Stack>
+        </aside>
+      </div>
     </PageLayout>
   );
 }
