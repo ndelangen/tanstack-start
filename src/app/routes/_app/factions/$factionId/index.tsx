@@ -14,7 +14,6 @@ import {
   SimpleGrid,
   Stack,
   Text,
-  ThemeIcon,
   Title,
   Tooltip,
 } from '@mantine/core';
@@ -43,22 +42,9 @@ import { factionAssetPublishingCopy } from '@app/factions/assetPublishingStatus'
 import { LeaderToken } from '@game/assets/faction/leader/Leader';
 import { Token as FactionToken } from '@game/assets/faction/token/Token';
 import { TroopToken } from '@game/assets/faction/troop/Troop';
+import { TTS_COLOR_SWATCHES } from '@game/data/ttsColors';
 
 import styles from '../FactionDetail.module.css';
-
-// https://api.tabletopsimulator.com/player/colors/
-const ttsColorSwatches = {
-  White: 'rgb(100% 100% 100%)',
-  Brown: 'rgb(44.3% 23.1% 9%)',
-  Red: 'rgb(85.6% 10% 9.4%)',
-  Orange: 'rgb(95.6% 39.2% 11.3%)',
-  Yellow: 'rgb(90.5% 89.8% 17.2%)',
-  Green: 'rgb(19.2% 70.1% 16.8%)',
-  Teal: 'rgb(12.9% 69.4% 60.7%)',
-  Blue: 'rgb(11.8% 53% 100%)',
-  Purple: 'rgb(62.7% 12.5% 94.1%)',
-  Pink: 'rgb(96% 43.9% 80.7%)',
-} as const;
 
 export const Route = createFileRoute('/_app/factions/$factionId/')({
   codeSplitGroupings: [['component', 'pendingComponent', 'errorComponent']],
@@ -209,19 +195,18 @@ function FactionDetailPage() {
       toolbar={
         <Paper withBorder p="sm" radius="md">
           <Group justify="space-between" gap="sm" wrap="wrap">
-            <Tooltip label="Back to factions">
-              <ActionIcon
-                variant="light"
-                color="gray"
-                size="lg"
-                aria-label="Back to factions"
-                renderRoot={(rootProps) => <Link {...rootProps} to="/factions" />}
-              >
-                <ArrowLeft size={17} aria-hidden />
-              </ActionIcon>
-            </Tooltip>
-
-            <Group gap="xs" wrap="wrap" role="group" aria-label="Faction actions">
+            <Group gap="xs" wrap="wrap" role="group" aria-label="Navigation and editing">
+              <Tooltip label="Back to factions">
+                <ActionIcon
+                  variant="light"
+                  color="gray"
+                  size="lg"
+                  aria-label="Back to factions"
+                  renderRoot={(rootProps) => <Link {...rootProps} to="/factions" />}
+                >
+                  <ArrowLeft size={17} aria-hidden />
+                </ActionIcon>
+              </Tooltip>
               {canEdit ? (
                 <Tooltip label="Edit faction">
                   <ActionIcon
@@ -237,6 +222,9 @@ function FactionDetailPage() {
                   </ActionIcon>
                 </Tooltip>
               ) : null}
+            </Group>
+
+            <Group gap="xs" wrap="wrap" role="group" aria-label="Faction actions">
               <Tooltip label="Preview faction sheet">
                 <ActionIcon
                   variant="filled"
@@ -329,7 +317,7 @@ function FactionDetailPage() {
                           <Text fw={700} lh={1.2}>
                             {troop.name}
                           </Text>
-                          <Badge variant="light" color="dune" size="lg">
+                          <Badge variant="filled" color="grey" size="lg">
                             ×{troop.count}
                           </Badge>
                         </Group>
@@ -491,7 +479,7 @@ function FactionDetailPage() {
                         {data.colors.map((color) => (
                           <Tooltip key={color} label={`${color} TTS color`}>
                             <ColorSwatch
-                              color={ttsColorSwatches[color]}
+                              color={TTS_COLOR_SWATCHES[color]}
                               size={18}
                               aria-label={`${color} TTS color`}
                             />
@@ -700,13 +688,11 @@ function SectionHeading({
   order?: 2 | 3;
 } & ComponentProps<typeof Group>) {
   return (
-    <Group gap="sm" wrap="nowrap" {...props}>
-      <ThemeIcon variant="light" color="dune" size="md" radius="md">
-        {icon}
-      </ThemeIcon>
+    <Group gap="xs" wrap="nowrap" c="var(--color-text, var(--mantine-color-text))" {...props}>
       <Title order={order} size={order === 2 ? 'h3' : 'h4'}>
         {children}
       </Title>
+      {icon}
     </Group>
   );
 }
