@@ -68,3 +68,13 @@ export const Rulesets = meta.story({
 export const Fate = meta.story({
   args: { topic: 'fate' },
 });
+
+export const InheritedColor = meta.story({
+  args: { topic: 'identity', size: 48 },
+  render: (args) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 24, color: '#c2410c' }}>
+      <TopicIcon {...args} />
+      <TopicIcon topic="background" size={args.size} />
+    </div>
+  ),
+});

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { TopicIcon, type TopicIconTopic } from './TopicIcon';
 
-const IMAGE_TOPICS: Array<[TopicIconTopic, string]> = [
+const MASK_TOPICS: Array<[TopicIconTopic, string]> = [
   ['identity', '/vector/icon/eye.svg'],
   ['hero', '/vector/generic/ceasar.svg'],
   ['leaders', '/vector/icon/traitor.svg'],
@@ -20,10 +20,13 @@ const IMAGE_TOPICS: Array<[TopicIconTopic, string]> = [
 const COMPONENT_TOPICS: TopicIconTopic[] = ['background', 'setup', 'rulesets'];
 
 describe('TopicIcon', () => {
-  it.each(IMAGE_TOPICS)('maps %s to %s', (topic, src) => {
+  it.each(MASK_TOPICS)('renders the %s asset as a current-color mask', (topic, src) => {
     const markup = renderToStaticMarkup(<TopicIcon topic={topic} />);
 
-    expect(markup).toContain(`src="${src}"`);
+    expect(markup).toContain('<span');
+    expect(markup).not.toContain('<img');
+    expect(markup).toContain(`mask-image:url(${src})`);
+    expect(markup).toContain('background-color:currentColor');
     expect(markup).toContain('aria-hidden="true"');
   });
 
