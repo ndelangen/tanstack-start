@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AuthOauthRouteImport } from './routes/auth/oauth'
+import { Route as App_iconsRouteImport } from './routes/_app/[_]_icons'
 import { Route as AppSplatRouteImport } from './routes/_app/$'
 import { Route as AppRulesetsIndexRouteImport } from './routes/_app/rulesets/index'
 import { Route as AppProfilesIndexRouteImport } from './routes/_app/profiles/index'
@@ -53,6 +54,11 @@ const AuthOauthRoute = AuthOauthRouteImport.update({
   id: '/auth/oauth',
   path: '/auth/oauth',
   getParentRoute: () => rootRouteImport,
+} as any)
+const App_iconsRoute = App_iconsRouteImport.update({
+  id: '/__icons',
+  path: '/__icons',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppSplatRoute = AppSplatRouteImport.update({
   id: '/$',
@@ -201,6 +207,7 @@ const AppRulesetsRulesetSlugFaqQuestionSlugRoute =
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/$': typeof AppSplatRoute
+  '/__icons': typeof App_iconsRoute
   '/auth/oauth': typeof AuthOauthRoute
   '/admin/migrations': typeof AppAdminMigrationsRoute
   '/assets/create': typeof AppAssetsCreateRoute
@@ -231,6 +238,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/$': typeof AppSplatRoute
+  '/__icons': typeof App_iconsRoute
   '/auth/oauth': typeof AuthOauthRoute
   '/': typeof AppIndexRoute
   '/admin/migrations': typeof AppAdminMigrationsRoute
@@ -262,6 +270,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/_app/$': typeof AppSplatRoute
+  '/_app/__icons': typeof App_iconsRoute
   '/auth/oauth': typeof AuthOauthRoute
   '/_app/': typeof AppIndexRoute
   '/_app/admin/migrations': typeof AppAdminMigrationsRoute
@@ -296,6 +305,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$'
+    | '/__icons'
     | '/auth/oauth'
     | '/admin/migrations'
     | '/assets/create'
@@ -326,6 +336,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/$'
+    | '/__icons'
     | '/auth/oauth'
     | '/'
     | '/admin/migrations'
@@ -356,6 +367,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/_app/$'
+    | '/_app/__icons'
     | '/auth/oauth'
     | '/_app/'
     | '/_app/admin/migrations'
@@ -414,6 +426,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/oauth'
       preLoaderRoute: typeof AuthOauthRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/__icons': {
+      id: '/_app/__icons'
+      path: '/__icons'
+      fullPath: '/__icons'
+      preLoaderRoute: typeof App_iconsRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/$': {
       id: '/_app/$'
@@ -643,6 +662,7 @@ const AppRulesetsRulesetSlugRouteWithChildren =
 
 interface AppRouteChildren {
   AppSplatRoute: typeof AppSplatRoute
+  App_iconsRoute: typeof App_iconsRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAdminMigrationsRoute: typeof AppAdminMigrationsRoute
   AppAssetsCreateRoute: typeof AppAssetsCreateRoute
@@ -667,6 +687,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppSplatRoute: AppSplatRoute,
+  App_iconsRoute: App_iconsRoute,
   AppIndexRoute: AppIndexRoute,
   AppAdminMigrationsRoute: AppAdminMigrationsRoute,
   AppAssetsCreateRoute: AppAssetsCreateRoute,

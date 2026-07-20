@@ -48,3 +48,23 @@ export const Rules = meta.story({
 export const Advantages = meta.story({
   args: { topic: 'advantages' },
 });
+
+export const Spice = meta.story({
+  args: { topic: 'spice' },
+});
+
+export const Setup = meta.story({
+  args: { topic: 'setup' },
+});
+
+export const Karama = meta.story({
+  args: { topic: 'karama' },
+});
+
+export const Rulesets = meta.story({
+  args: { topic: 'rulesets' },
+});
+
+export const Fate = meta.story({
+  args: { topic: 'fate' },
+});

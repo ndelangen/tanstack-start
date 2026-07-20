@@ -13,6 +13,7 @@ async function getFiles(path: string) {
 const leaders = await getFiles('/image/leader');
 
 // vectors
+const background = await getFiles('/vector/background');
 const generic = await getFiles('/vector/generic');
 const decal = await getFiles('/vector/decal');
 const icon = await getFiles('/vector/icon');
@@ -21,6 +22,7 @@ const troop = await getFiles('/vector/troop');
 const troop_modifier = await getFiles('/vector/troop_modifier');
 
 const enums = {
+  background,
   generic,
   logo,
   decal,

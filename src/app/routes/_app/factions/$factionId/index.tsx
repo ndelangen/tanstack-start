@@ -21,14 +21,11 @@ import {
 import { createFileRoute, type ErrorComponentProps, Link } from '@tanstack/react-router';
 import {
   ArrowLeft,
-  BookOpen,
-  Coins,
   Download,
   Eye,
   FileText,
   MapPin,
   Pencil,
-  ScrollText,
   UserPlus,
   UsersRound,
 } from 'lucide-react';
@@ -398,7 +395,7 @@ function FactionDetailPage() {
                         <Text size="sm">{advantage.text}</Text>
                         {advantage.karama ? (
                           <Group gap="xs" wrap="nowrap" align="flex-start">
-                            <ScrollText size={16} aria-hidden />
+                            <TopicIcon topic="karama" size={16} />
                             <Text size="sm" c="dimmed">
                               {advantage.karama}
                             </Text>
@@ -426,7 +423,7 @@ function FactionDetailPage() {
               </Card>
               <Card withBorder padding="lg" radius="md">
                 <Stack gap="md">
-                  <SectionHeading icon={<ScrollText size={20} aria-hidden />} order={3}>
+                  <SectionHeading icon={<TopicIcon topic="fate" size={20} />} order={3}>
                     {data.rules.fate.title ?? 'Fate'}
                   </SectionHeading>
                   <Text size="sm">{data.rules.fate.text}</Text>
@@ -459,7 +456,7 @@ function FactionDetailPage() {
           </Stack>
 
           <Stack component="section" aria-labelledby="setup-heading" gap="md">
-            <SectionHeading id="setup-heading" icon={<BookOpen size={20} aria-hidden />}>
+            <SectionHeading id="setup-heading" icon={<TopicIcon topic="setup" size={20} />}>
               Setup
             </SectionHeading>
             <Card withBorder padding="lg" radius="md">
@@ -470,7 +467,7 @@ function FactionDetailPage() {
                   </Title>
                   <Group gap="lg" mt="sm" wrap="wrap">
                     <IconStat
-                      icon={<Coins size={17} aria-hidden />}
+                      icon={<TopicIcon topic="spice" size={17} />}
                       value={data.rules.spiceCount}
                       label={`${data.rules.spiceCount} spice`}
                     />
@@ -654,7 +651,9 @@ function FactionDetailPage() {
 
           <Card withBorder padding="lg" radius="md">
             <Stack gap="sm">
-              <SectionHeading icon={<BookOpen size={20} aria-hidden />}>Rulesets</SectionHeading>
+              <SectionHeading icon={<TopicIcon topic="rulesets" size={20} />}>
+                Rulesets
+              </SectionHeading>
               {rulesets.data === undefined ? (
                 <Text size="sm" c="dimmed">
                   Loading rulesets…

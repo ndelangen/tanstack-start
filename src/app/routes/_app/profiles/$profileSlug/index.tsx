@@ -2,7 +2,6 @@ import { useAuthActions } from '@convex-dev/auth/react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import {
   ArrowLeft,
-  BookOpen,
   CheckCircle2,
   CircleHelp,
   Link2,
@@ -25,6 +24,7 @@ import {
   ProfileFaqQuestionsAsked,
 } from '@app/components/profile/ProfileFaqActivity';
 import { PageLayout } from '@app/components/shell';
+import { TopicIcon } from '@app/components/topics/TopicIcon';
 
 import styles from '../ProfileDetail.module.css';
 
@@ -165,7 +165,7 @@ function ProfileDetailPage() {
 
           <section className={styles.section}>
             <h2 className={styles.iconHeading}>
-              <BookOpen size={20} aria-hidden /> Rulesets maintained
+              <TopicIcon topic="rulesets" size={20} /> Rulesets maintained
             </h2>
             <Card>
               <Stack gap={2}>

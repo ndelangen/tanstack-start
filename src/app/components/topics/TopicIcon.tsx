@@ -1,4 +1,4 @@
-import { Image as ImageIcon, type LucideIcon } from 'lucide-react';
+import { BookOpen, Image as ImageIcon, type LucideIcon } from 'lucide-react';
 
 const TOPIC_ICON_DEFINITIONS = {
   identity: { kind: 'image', src: '/vector/icon/eye.svg' },
@@ -10,12 +10,19 @@ const TOPIC_ICON_DEFINITIONS = {
   troops: { kind: 'image', src: '/vector/troop/atreides.svg' },
   rules: { kind: 'image', src: '/vector/icon/balance.svg' },
   advantages: { kind: 'image', src: '/vector/icon/kwisatz.svg' },
+  spice: { kind: 'image', src: '/vector/icon/spice.svg' },
+  setup: { kind: 'component', component: BookOpen },
+  karama: { kind: 'image', src: '/vector/icon/karama.svg' },
+  rulesets: { kind: 'component', component: BookOpen },
+  fate: { kind: 'image', src: '/vector/icon/fate.svg' },
 } as const satisfies Record<
   string,
   { kind: 'image'; src: string } | { kind: 'component'; component: LucideIcon }
 >;
 
 export type TopicIconTopic = keyof typeof TOPIC_ICON_DEFINITIONS;
+
+export const TOPIC_ICON_TOPICS = Object.keys(TOPIC_ICON_DEFINITIONS) as TopicIconTopic[];
 
 export interface TopicIconProps {
   topic: TopicIconTopic;
