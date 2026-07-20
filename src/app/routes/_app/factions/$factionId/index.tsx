@@ -280,7 +280,11 @@ function FactionDetailPage() {
         </Paper>
       }
     >
-      <Flex direction={{ base: 'column', md: 'row' }} gap="xl" align="flex-start">
+      <Flex
+        direction={{ base: 'column-reverse', md: 'row' }}
+        gap="xl"
+        align={{ base: 'stretch', md: 'flex-start' }}
+      >
         <Box miw={0} style={{ flex: '1 1 auto' }}>
           <Stack gap="xl">
             <Stack component="section" aria-labelledby="leaders-heading" gap="md">
@@ -379,7 +383,7 @@ function FactionDetailPage() {
                 Advantages
               </SectionHeading>
               {data.rules.advantages.length > 0 ? (
-                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
                   {data.rules.advantages.map((advantage, index) => (
                     <Card
                       key={`${advantage.title ?? 'advantage'}-${advantage.text}`}
@@ -411,7 +415,7 @@ function FactionDetailPage() {
               )}
             </Stack>
 
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+            <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
               <Card withBorder padding="lg" radius="md">
                 <Stack gap="md">
                   <SectionHeading icon={<TopicIcon topic="alliance" size={20} />} order={3}>

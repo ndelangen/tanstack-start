@@ -1,13 +1,11 @@
-.pageHead
-{
+.pageHead {
   width: min(100%, 48rem);
   min-width: 0;
   margin: 0 auto;
   padding-inline: var(--mantine-spacing-sm);
 }
 
-.factionSymbol
-{
+.factionSymbol {
   position: relative;
   flex: 0 0 5.5rem;
   width: 5.5rem;
@@ -16,8 +14,7 @@
 
 .factionSymbol,
 .leaderTile,
-.loreHeroToken
-{
+.loreHeroToken {
   overflow: hidden;
   border: 0;
   border-radius: 50%;
@@ -25,29 +22,25 @@
   filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.5));
 }
 
-.factionSymbol>*,
-.leaderTile>*,
-.troopToken>*,
-.loreHeroToken>*
-{
+.factionSymbol > *,
+.leaderTile > *,
+.troopToken > *,
+.loreHeroToken > * {
   position: absolute;
   inset: 0;
 }
 
-.pageHeadText
-{
+.pageHeadText {
   min-width: 0;
   color: var(--color-text, var(--mantine-color-dark-8));
 }
 
-.factionTitle
-{
+.factionTitle {
   overflow-wrap: anywhere;
   color: var(--color-text, var(--mantine-color-dark-8));
 }
 
-.horizontalLane
-{
+.horizontalLane {
   --lane-bleed: var(--mantine-spacing-xl);
 
   display: flex;
@@ -56,16 +49,20 @@
   min-width: 0;
   margin: calc(var(--mantine-spacing-xs) - var(--lane-bleed)) calc(-1 * var(--lane-bleed));
   /* margin-right: 0; */
-  -webkit-mask-image: linear-gradient(to right,
-      transparent,
-      #000 40px,
-      #000 calc(100% - 90px),
-      transparent);
-  mask-image: linear-gradient(to right,
-      transparent,
-      #000 40px,
-      #000 calc(100% - 90px),
-      transparent);
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 40px,
+    #000 calc(100% - 90px),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 40px,
+    #000 calc(100% - 90px),
+    transparent
+  );
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-inline: contain;
@@ -74,23 +71,20 @@
   padding: var(--lane-bleed);
 }
 
-.leaderTile
-{
+.leaderTile {
   position: relative;
   flex: 0 0 auto;
   width: 9.5rem;
   height: 9.5rem;
 }
 
-.troopTile
-{
+.troopTile {
   flex: 0 0 18rem;
   min-height: 6rem;
   overflow: hidden;
 }
 
-.troopToken
-{
+.troopToken {
   position: relative;
   flex: 0 0 4rem;
   width: 4rem;
@@ -99,56 +93,55 @@
   border-radius: 50%;
 }
 
-.planetTile
-{
+.planetTile {
   flex: 0 0 15rem;
   overflow: hidden;
 }
 
-.loreHeroToken
-{
+.loreHeroToken {
   position: relative;
   width: min(100%, 15rem);
   margin-inline: auto;
   aspect-ratio: 1;
 }
 
-@media (max-width: 48em)
-{
-  .pageHead
-  {
+@media (max-width: 62em) {
+  .horizontalLane {
+    margin-inline: calc(-1 * var(--app-shell-inline-gutter));
+    -webkit-mask-image: none;
+    mask-image: none;
+    padding-inline: var(--app-shell-inline-gutter);
+  }
+}
+
+@media (max-width: 48em) {
+  .pageHead {
     align-items: flex-start;
     gap: var(--mantine-spacing-md);
   }
 
-  .factionSymbol
-  {
+  .factionSymbol {
     flex-basis: 4.75rem;
     width: 4.75rem;
     height: 4.75rem;
   }
 
-  .factionTitle
-  {
+  .factionTitle {
     font-size: 1.35rem;
   }
 
-  .loreHeroToken
-  {
+  .loreHeroToken {
     width: min(100%, 12rem);
   }
 }
 
-@media (max-width: 30em)
-{
-  .pageHead
-  {
+@media (max-width: 30em) {
+  .pageHead {
     padding-inline: 0;
     gap: var(--mantine-spacing-sm);
   }
 
-  .factionSymbol
-  {
+  .factionSymbol {
     flex-basis: 3.75rem;
     width: 3.75rem;
     height: 3.75rem;
