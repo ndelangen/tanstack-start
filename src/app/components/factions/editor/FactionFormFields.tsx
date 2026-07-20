@@ -1,9 +1,9 @@
 import { useCallback } from 'react';
 
 import { AccordionSection } from '@app/components/generic/surfaces/Accordion';
+import { TopicIcon } from '@app/components/topics/TopicIcon';
 
 import styles from './FactionEditor.module.css';
-import { renderAccordionIcon } from './FactionEditorAccordion';
 import { FactionFormSectionAdvantages } from './FactionFormSectionAdvantages';
 import { FactionFormSectionBackground } from './FactionFormSectionBackground';
 import { FactionFormSectionDecals } from './FactionFormSectionDecals';
@@ -29,7 +29,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
       <AccordionSection
         sectionId="identity"
         title="Identity"
-        icon={renderAccordionIcon('identity')}
+        icon={<TopicIcon topic="identity" />}
         isOpen={openId === 'identity'}
         onToggle={onAccordionToggle}
       >
@@ -39,7 +39,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
       <AccordionSection
         sectionId="background"
         title="Background"
-        icon={renderAccordionIcon('background')}
+        icon={<TopicIcon topic="background" />}
         isOpen={openId === 'background'}
         onToggle={onAccordionToggle}
       >
@@ -49,7 +49,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
       <AccordionSection
         sectionId="hero"
         title="Hero"
-        icon={renderAccordionIcon('hero')}
+        icon={<TopicIcon topic="hero" />}
         isOpen={openId === 'hero'}
         onToggle={onAccordionToggle}
       >
@@ -59,7 +59,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
       <AccordionSection
         sectionId="leaders"
         title="Leaders"
-        icon={renderAccordionIcon('leaders')}
+        icon={<TopicIcon topic="leaders" />}
         isOpen={openId === 'leaders'}
         onToggle={onAccordionToggle}
       >
@@ -69,7 +69,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
       <AccordionSection
         sectionId="decals"
         title="Alliance decals"
-        icon={renderAccordionIcon('decals')}
+        icon={<TopicIcon topic="decals" />}
         isOpen={openId === 'decals'}
         onToggle={onAccordionToggle}
       >
@@ -79,7 +79,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
       <AccordionSection
         sectionId="troops"
         title="Troops"
-        icon={renderAccordionIcon('troops')}
+        icon={<TopicIcon topic="troops" />}
         isOpen={openId === 'troops'}
         onToggle={onAccordionToggle}
       >
@@ -89,7 +89,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
       <AccordionSection
         sectionId="rules"
         title="Rules"
-        icon={renderAccordionIcon('rules')}
+        icon={<TopicIcon topic="rules" />}
         isOpen={openId === 'rules'}
         onToggle={onAccordionToggle}
       >
@@ -99,7 +99,7 @@ export function FactionFormFields({ form }: { form: FactionFormApi }) {
       <AccordionSection
         sectionId="advantages"
         title="Advantages"
-        icon={renderAccordionIcon('advantages')}
+        icon={<TopicIcon topic="advantages" />}
         isOpen={openId === 'advantages'}
         onToggle={onAccordionToggle}
       >

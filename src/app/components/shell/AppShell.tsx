@@ -66,6 +66,7 @@ export function AppShell({ children, pathname }: AppShellProps) {
       window.removeEventListener('resize', updateScrollProgress);
       window.removeEventListener('scroll', handleScroll);
       resizeObserver.disconnect();
+      root.style.removeProperty(SCROLL_VAR);
     };
   }, []);
 
@@ -73,10 +74,15 @@ export function AppShell({ children, pathname }: AppShellProps) {
     const root = document.documentElement;
     root.dataset.route = pathname;
     root.setAttribute('data-initial-animate', '');
+
+    return () => {
+      delete root.dataset.route;
+      root.removeAttribute('data-initial-animate');
+    };
   }, [pathname]);
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} data-app-shell>
       <div className={styles.main}>
         <div className={styles.routeFrame}>
           <header className={clsx(styles.hero, imageLoaded && styles.loaded)}>

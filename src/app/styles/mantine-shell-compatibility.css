@@ -1,0 +1,20 @@
+/* Preserve the legacy shell around Mantine's layered baseline without overriding Mantine parts. */
+body:has([data-app-shell]) {
+  background-color: rgba(0, 0, 0, 0);
+  color: var(--color-text, #2e2927);
+}
+
+[data-app-shell] {
+  box-sizing: content-box;
+  line-height: normal;
+}
+
+:where(*:not([class*="mantine-"])),
+:where(*:not([class*="mantine-"]))::before,
+:where(*:not([class*="mantine-"]))::after {
+  box-sizing: content-box;
+}
+
+.mantine-Title-root {
+  font-family: var(--mantine-font-family-headings);
+}

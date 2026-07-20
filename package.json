@@ -47,6 +47,8 @@
     "@fontsource-variable/inter": "^5.2.8",
     "@fontsource/caladea": "^5.2.8",
     "@fontsource/lato": "^5.2.7",
+    "@mantine/core": "9.4.1",
+    "@mantine/hooks": "9.4.1",
     "@radix-ui/react-popover": "^1.1.17",
     "@radix-ui/react-select": "^2.3.1",
     "@radix-ui/react-tabs": "^1.1.15",

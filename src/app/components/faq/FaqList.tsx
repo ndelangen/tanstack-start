@@ -1,10 +1,9 @@
+import { Anchor, Badge, Group, Stack, Text } from '@mantine/core';
 import { Link } from '@tanstack/react-router';
-import clsx from 'clsx';
 import Fuse from 'fuse.js';
 import { useMemo } from 'react';
 
 import type { FaqItemWithDetails } from '@db/faq';
-import { Stack } from '@app/components/generic/layout';
 import { ProfileLink } from '@app/components/profile/ProfileLink';
 import { FAQ_TAG_LABELS, type FaqTag } from '@app/faq/tags';
 import { formatRelativeDate } from '@app/utils/formatRelativeDate';
@@ -31,13 +30,19 @@ export function FaqList({ items, rulesetSlug, searchQuery, selectedTag }: FaqLis
   }, [items, searchQuery, selectedTag]);
 
   if (items.length === 0) {
-    return <p className={styles.empty}>No FAQ items yet.</p>;
+    return (
+      <Text c="dimmed" ta="center" py="xl">
+        No FAQ items yet.
+      </Text>
+    );
   }
 
   return (
-    <Stack gap={3}>
+    <Stack gap="md">
       {filtered.length === 0 ? (
-        <p className={styles.noResults}>No questions match your search.</p>
+        <Text c="dimmed" ta="center" py="lg">
+          No questions match your search.
+        </Text>
       ) : (
         <FaqItemList>
           {filtered.map((item) => {
@@ -46,34 +51,38 @@ export function FaqList({ items, rulesetSlug, searchQuery, selectedTag }: FaqLis
 
             return (
               <FaqItemListRow key={item._id}>
-                <Link
-                  to="/rulesets/$rulesetSlug/faq/$questionSlug"
-                  params={{ rulesetSlug, questionSlug: item.slug }}
+                <Anchor
+                  fw={650}
+                  className={styles.question}
+                  renderRoot={(rootProps) => (
+                    <Link
+                      {...rootProps}
+                      to="/rulesets/$rulesetSlug/faq/$questionSlug"
+                      params={{ rulesetSlug, questionSlug: item.slug }}
+                    />
+                  )}
                 >
-                  <span className={styles.question}>{item.question}</span>
-                </Link>
-                <div className={styles.meta}>
-                  <span className={styles.badges}>
-                    <span
-                      className={clsx(
-                        styles.badge,
-                        hasAcceptedAnswer ? styles.badgeAnswered : styles.badgeUnanswered
-                      )}
-                    >
+                  {item.question}
+                </Anchor>
+                <Group gap="xs" wrap="wrap" className={styles.meta}>
+                  <Group gap={6} wrap="wrap">
+                    <Badge size="sm" variant="light" color={hasAcceptedAnswer ? 'green' : 'gray'}>
                       {hasAcceptedAnswer ? 'Answered' : 'Unanswered'}
-                    </span>
-                    <span className={styles.badge}>
+                    </Badge>
+                    <Badge size="sm" variant="light" color="gray">
                       {answerCount} {answerCount === 1 ? 'answer' : 'answers'}
-                    </span>
+                    </Badge>
                     {(item.tags ?? []).map((tag) => (
-                      <span key={`${item._id}:${tag}`} className={styles.badge}>
+                      <Badge key={`${item._id}:${tag}`} size="sm" variant="outline" color="dune">
                         {FAQ_TAG_LABELS[tag as FaqTag]}
-                      </span>
+                      </Badge>
                     ))}
-                  </span>
+                  </Group>
                   {item.asker_profile && (
                     <>
-                      <span>·</span>
+                      <Text component="span" c="dimmed" aria-hidden>
+                        ·
+                      </Text>
                       <ProfileLink
                         slug={item.asker_profile.slug}
                         username={item.asker_profile.username}
@@ -82,9 +91,13 @@ export function FaqList({ items, rulesetSlug, searchQuery, selectedTag }: FaqLis
                       />
                     </>
                   )}
-                  <span>·</span>
-                  <time dateTime={item.created_at}>{formatRelativeDate(item.created_at)}</time>
-                </div>
+                  <Text component="span" c="dimmed" aria-hidden>
+                    ·
+                  </Text>
+                  <Text component="time" dateTime={item.created_at} size="xs" c="dimmed">
+                    {formatRelativeDate(item.created_at)}
+                  </Text>
+                </Group>
               </FaqItemListRow>
             );
           })}

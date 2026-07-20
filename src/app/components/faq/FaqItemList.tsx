@@ -1,7 +1,6 @@
+import { Stack } from '@mantine/core';
 import clsx from 'clsx';
 import type { ReactNode } from 'react';
-
-import { Stack } from '@app/components/generic/layout';
 
 import styles from './FaqItemList.module.css';
 
@@ -27,7 +26,7 @@ export type FaqItemListRowProps = {
 export function FaqItemListRow({ children }: FaqItemListRowProps) {
   return (
     <li className={styles.item}>
-      <Stack gap={2} className={styles.itemContent}>
+      <Stack gap="xs" className={styles.itemContent}>
         {children}
       </Stack>
     </li>

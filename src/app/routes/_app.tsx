@@ -1,22 +1,36 @@
+import mantineStylesHref from '@mantine/core/styles.layer.css?url';
 import { createFileRoute, Outlet, useLocation } from '@tanstack/react-router';
 
-import { AppShell } from '@app/components/shell';
-import { isFactionSheetBarePath } from '@app/lib/factionSheetRoute';
+import { ApplicationChrome } from '@app/components/shell/ApplicationChrome';
+import { AppNotFound } from '@app/components/shell/AppNotFound';
+
+import compatibilityStylesHref from '../styles/mantine-shell-compatibility.css?url';
+
+function routeStylesheet(href: string) {
+  return {
+    rel: 'stylesheet' as const,
+    href,
+    // React precedence resources intentionally survive unmount. Keep these as ordinary links so
+    // HeadContent removes them when the application route match leaves.
+    precedence: false as never,
+  };
+}
 
 export const Route = createFileRoute('/_app')({
+  codeSplitGroupings: [['component', 'notFoundComponent']],
+  head: () => ({
+    links: [routeStylesheet(mantineStylesHref), routeStylesheet(compatibilityStylesHref)],
+  }),
   component: AppLayout,
+  notFoundComponent: AppNotFound,
 });
 
 function AppLayout() {
-  const pathname = useLocation({ select: (l) => l.pathname });
-
-  if (isFactionSheetBarePath(pathname)) {
-    return <Outlet />;
-  }
+  const pathname = useLocation({ select: (location) => location.pathname });
 
   return (
-    <AppShell pathname={pathname}>
+    <ApplicationChrome pathname={pathname}>
       <Outlet />
-    </AppShell>
+    </ApplicationChrome>
   );
 }

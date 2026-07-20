@@ -7,7 +7,7 @@ import '@app/components/factions/sheet/FactionSheetDocument.css';
 import { FactionSheetView } from '@app/components/factions/sheet/FactionSheetView';
 import { useFactionSheetPostMessage } from '@app/hooks/useFactionSheetPostMessage';
 
-export const Route = createFileRoute('/_app/preview/sheet/$factionSlug')({
+export const Route = createFileRoute('/preview/sheet/$factionSlug')({
   validateSearch: (params: Record<string, unknown>): { mode: 'db' | 'live' } => {
     return params.mode === 'live' ? { mode: 'live' } : { mode: 'db' };
   },

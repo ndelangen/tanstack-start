@@ -84,16 +84,19 @@ npm run generate         # Regenerate the public asset catalog in src/game/data/
     function AboutPage() {
       return (
         <PageLayout header={<h1>About</h1>}>
-          <Card>
+          <section aria-labelledby="about-heading">
+            <h2 id="about-heading">About this application</h2>
             <p>About this application.</p>
-          </Card>
+          </section>
         </PageLayout>
       );
     }
    ```
 
    Keep nested parent routes outlet-only. The printable faction-sheet route and non-visual auth
-   callbacks are the intentional layout exceptions.
+   callbacks are the intentional layout exceptions. For styled application content, follow the
+   [Mantine-first UI ownership model](./technical/ui-component-hierarchy.md); do not introduce new
+   legacy generic cards or layout wrappers.
 
 3. Route tree auto-generates from file structure.
 
@@ -114,3 +117,4 @@ Dune card/faction rendering and Storybook stories live in `src/game`; source art
 - [Convex Migrations](./convex-migrations.md) - Required widen/migrate/verify/narrow runbook + CI/deploy guards
 - [UI Component Hierarchy](./technical/ui-component-hierarchy.md) - Composition layers, dependency direction, CSS ownership
 - [UI Design Decisions](./technical/ui-design-decisions.md) - Accepted UI semantics and consistency defaults
+- [UI Content Migration](./technical/ui-content-migration.md) - Settled Mantine pilot conventions, remaining routes, and legacy retirement waves

@@ -1,68 +1,10 @@
-.searchInput {
-  display: block;
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  padding-left: 2.25rem;
-  font-size: 1rem;
-  font-family: inherit;
-  background-color: var(--input-bg, rgba(255, 255, 255, 0.95));
-  border: 1px solid var(--input-border, rgba(0, 0, 0, 0.15));
-  border-radius: 6px;
-  box-sizing: border-box;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
-}
-
-.searchInput:focus {
-  outline: none;
-  border-color: var(--panel-border, #735c47);
-  box-shadow: 0 0 0 2px rgba(244, 207, 139, 0.3);
-}
-
-.searchInput::placeholder {
-  color: var(--color-muted, #666);
-}
-
-.searchWrapper {
-  position: relative;
-}
-
-.searchIcon {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--color-muted, #666);
-  pointer-events: none;
-}
-
 .question {
-  font-weight: 500;
-}
-
-.parentQuestion {
-  margin: 0;
-  font-size: 0.88em;
-  font-weight: 500;
-  color: var(--color-muted, #666);
+  color: var(--mantine-color-dark-8);
   line-height: 1.35;
 }
 
-.answerPreview {
-  margin: 0;
-  font-size: 0.92em;
-  line-height: 1.4;
-  color: inherit;
-}
-
 .meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85em;
-  color: var(--color-muted, #666);
+  color: var(--mantine-color-dimmed);
 }
 
 .askerLink {
@@ -75,42 +17,4 @@
 
 .askerLink:hover {
   text-decoration: underline;
-}
-
-.badges {
-  display: flex;
-  gap: 0.35rem;
-  flex-wrap: wrap;
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.15rem 0.5rem;
-  font-size: 0.75em;
-  font-weight: 500;
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.08);
-}
-
-.badgeAnswered {
-  background: rgba(76, 175, 80, 0.2);
-  color: #2e7d32;
-}
-
-.badgeUnanswered {
-  background: rgba(158, 158, 158, 0.2);
-  color: #616161;
-}
-
-.empty {
-  padding: 1.5rem 0;
-  text-align: center;
-  color: var(--color-muted, #666);
-}
-
-.noResults {
-  padding: 1rem 0;
-  font-size: 0.95em;
-  color: var(--color-muted, #666);
 }

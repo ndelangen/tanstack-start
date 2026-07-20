@@ -68,4 +68,27 @@ describe('AppShell page hero', () => {
 
     act(() => root.unmount());
   });
+
+  it('releases its document-level route and scroll state on unmount', () => {
+    const container = document.createElement('div');
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <AppShell pathname="/privacy">
+          <p>Privacy content</p>
+        </AppShell>
+      );
+    });
+
+    expect(document.documentElement.dataset.route).toBe('/privacy');
+    expect(document.documentElement.hasAttribute('data-initial-animate')).toBe(true);
+    expect(document.documentElement.style.getPropertyValue('--scroll-pct')).not.toBe('');
+
+    act(() => root.unmount());
+
+    expect(document.documentElement.hasAttribute('data-route')).toBe(false);
+    expect(document.documentElement.hasAttribute('data-initial-animate')).toBe(false);
+    expect(document.documentElement.style.getPropertyValue('--scroll-pct')).toBe('');
+  });
 });

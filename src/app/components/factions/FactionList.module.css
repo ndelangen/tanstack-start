@@ -1,21 +1,36 @@
-.noResults {
+.noResults
+{
   margin: 0;
   color: var(--color-muted, #735c47);
 }
 
-.card {
+.card
+{
   position: relative;
   height: 7.75rem;
   border-width: 1px;
 }
 
-.artwork {
+.artwork
+{
   position: absolute;
   inset: 0;
   overflow: hidden;
+
 }
 
-.glyphMark {
+.artwork>*:first-child
+{
+  top: -7em;
+  left: -7em;
+  border-radius: 50%;
+  overflow: hidden;
+  width: 16em;
+  height: 16em;
+}
+
+.glyphMark
+{
   position: absolute;
   top: 0.9rem;
   left: 0.9rem;
@@ -24,7 +39,8 @@
   height: 4rem;
 }
 
-.glyph {
+.glyph
+{
   position: relative;
   z-index: 1;
   width: 100%;
@@ -36,7 +52,8 @@
   filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55));
 }
 
-.glossary {
+.glossary
+{
   position: absolute;
   top: 0.75rem;
   right: 1rem;
@@ -47,8 +64,9 @@
 }
 
 .heroToken,
-.leaderSamples > span,
-.troopSamples > span {
+.leaderSamples>span,
+.troopSamples>span
+{
   position: relative;
   display: block;
   flex: 0 0 auto;
@@ -57,44 +75,52 @@
   filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55));
 }
 
-.heroToken {
+.heroToken
+{
   width: 6rem;
   height: 6rem;
 }
 
 .leaderSamples,
-.troopSamples {
+.troopSamples
+{
   display: flex;
   align-items: center;
 }
 
-.leaderSamples > span {
+.leaderSamples>span
+{
   width: 3.25rem;
   height: 3.25rem;
   margin-inline-start: -0.7rem;
 }
 
-.leaderSamples > span:first-child {
+.leaderSamples>span:first-child
+{
   margin-inline-start: 0;
 }
 
-.troopSamples {
+.troopSamples
+{
   gap: var(--space-1);
 }
 
-.troopSamples > span {
+.troopSamples>span
+{
   width: 2.5rem;
   height: 2.5rem;
 }
 
-.heroToken > *,
-.leaderSamples > span > *,
-.troopSamples > span > * {
+.heroToken>*,
+.leaderSamples>span>*,
+.troopSamples>span>*
+{
   position: absolute;
   inset: 0;
 }
 
-.content {
+.content
+{
   position: absolute;
   inset: auto auto 0.65rem 0.65rem;
   z-index: 2;
@@ -107,7 +133,8 @@
   color: #fff8e7;
 }
 
-.name {
+.name
+{
   position: relative;
   z-index: 1;
   min-width: 0;
@@ -120,27 +147,33 @@
   filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55));
 }
 
-@media (max-width: 520px) {
-  .card {
+@media (max-width: 520px)
+{
+  .card
+  {
     height: 7.95rem;
   }
 
-  .glyphMark {
+  .glyphMark
+  {
     width: 4.25rem;
     height: 4.25rem;
   }
 
-  .heroToken {
+  .heroToken
+  {
     width: 5rem;
     height: 5rem;
   }
 
-  .leaderSamples > span {
+  .leaderSamples>span
+  {
     width: 2.75rem;
     height: 2.75rem;
   }
 
-  .troopSamples {
+  .troopSamples
+  {
     display: none;
   }
 }

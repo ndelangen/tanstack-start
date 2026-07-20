@@ -12,12 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AuthOauthRouteImport } from './routes/auth/oauth'
+import { Route as AppSplatRouteImport } from './routes/_app/$'
 import { Route as AppRulesetsIndexRouteImport } from './routes/_app/rulesets/index'
 import { Route as AppProfilesIndexRouteImport } from './routes/_app/profiles/index'
 import { Route as AppPrivacyIndexRouteImport } from './routes/_app/privacy/index'
 import { Route as AppFactionsIndexRouteImport } from './routes/_app/factions/index'
 import { Route as AppAuthIndexRouteImport } from './routes/_app/auth/index'
 import { Route as AppAssetsIndexRouteImport } from './routes/_app/assets/index'
+import { Route as PreviewSheetFactionSlugRouteImport } from './routes/preview/sheet/$factionSlug'
 import { Route as AppRulesetsCreateRouteImport } from './routes/_app/rulesets/create'
 import { Route as AppRulesetsRulesetSlugRouteImport } from './routes/_app/rulesets/$rulesetSlug'
 import { Route as AppGroupsCreateRouteImport } from './routes/_app/groups/create'
@@ -33,7 +35,6 @@ import { Route as AppGroupsGroupSlugIndexRouteImport } from './routes/_app/group
 import { Route as AppFactionsFactionIdIndexRouteImport } from './routes/_app/factions/$factionId/index'
 import { Route as AppRulesetsRulesetSlugEditRouteImport } from './routes/_app/rulesets/$rulesetSlug/edit'
 import { Route as AppProfilesProfileSlugEditRouteImport } from './routes/_app/profiles/$profileSlug/edit'
-import { Route as AppPreviewSheetFactionSlugRouteImport } from './routes/_app/preview/sheet/$factionSlug'
 import { Route as AppGroupsGroupSlugEditRouteImport } from './routes/_app/groups/$groupSlug/edit'
 import { Route as AppFactionsFactionIdEditRouteImport } from './routes/_app/factions/$factionId/edit'
 import { Route as AppRulesetsRulesetSlugFaqCreateRouteImport } from './routes/_app/rulesets/$rulesetSlug/faq/create'
@@ -52,6 +53,11 @@ const AuthOauthRoute = AuthOauthRouteImport.update({
   id: '/auth/oauth',
   path: '/auth/oauth',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppSplatRoute = AppSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppRulesetsIndexRoute = AppRulesetsIndexRouteImport.update({
   id: '/rulesets/',
@@ -82,6 +88,11 @@ const AppAssetsIndexRoute = AppAssetsIndexRouteImport.update({
   id: '/assets/',
   path: '/assets/',
   getParentRoute: () => AppRoute,
+} as any)
+const PreviewSheetFactionSlugRoute = PreviewSheetFactionSlugRouteImport.update({
+  id: '/preview/sheet/$factionSlug',
+  path: '/preview/sheet/$factionSlug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppRulesetsCreateRoute = AppRulesetsCreateRouteImport.update({
   id: '/rulesets/create',
@@ -163,12 +174,6 @@ const AppProfilesProfileSlugEditRoute =
     path: '/profiles/$profileSlug/edit',
     getParentRoute: () => AppRoute,
   } as any)
-const AppPreviewSheetFactionSlugRoute =
-  AppPreviewSheetFactionSlugRouteImport.update({
-    id: '/preview/sheet/$factionSlug',
-    path: '/preview/sheet/$factionSlug',
-    getParentRoute: () => AppRoute,
-  } as any)
 const AppGroupsGroupSlugEditRoute = AppGroupsGroupSlugEditRouteImport.update({
   id: '/edit',
   path: '/edit',
@@ -195,6 +200,7 @@ const AppRulesetsRulesetSlugFaqQuestionSlugRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/$': typeof AppSplatRoute
   '/auth/oauth': typeof AuthOauthRoute
   '/admin/migrations': typeof AppAdminMigrationsRoute
   '/assets/create': typeof AppAssetsCreateRoute
@@ -205,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/groups/create': typeof AppGroupsCreateRoute
   '/rulesets/$rulesetSlug': typeof AppRulesetsRulesetSlugRouteWithChildren
   '/rulesets/create': typeof AppRulesetsCreateRoute
+  '/preview/sheet/$factionSlug': typeof PreviewSheetFactionSlugRoute
   '/assets/': typeof AppAssetsIndexRoute
   '/auth/': typeof AppAuthIndexRoute
   '/factions/': typeof AppFactionsIndexRoute
@@ -213,7 +220,6 @@ export interface FileRoutesByFullPath {
   '/rulesets/': typeof AppRulesetsIndexRoute
   '/factions/$factionId/edit': typeof AppFactionsFactionIdEditRoute
   '/groups/$groupSlug/edit': typeof AppGroupsGroupSlugEditRoute
-  '/preview/sheet/$factionSlug': typeof AppPreviewSheetFactionSlugRoute
   '/profiles/$profileSlug/edit': typeof AppProfilesProfileSlugEditRoute
   '/rulesets/$rulesetSlug/edit': typeof AppRulesetsRulesetSlugEditRoute
   '/factions/$factionId/': typeof AppFactionsFactionIdIndexRoute
@@ -224,6 +230,7 @@ export interface FileRoutesByFullPath {
   '/rulesets/$rulesetSlug/faq/create': typeof AppRulesetsRulesetSlugFaqCreateRoute
 }
 export interface FileRoutesByTo {
+  '/$': typeof AppSplatRoute
   '/auth/oauth': typeof AuthOauthRoute
   '/': typeof AppIndexRoute
   '/admin/migrations': typeof AppAdminMigrationsRoute
@@ -233,6 +240,7 @@ export interface FileRoutesByTo {
   '/factions/create': typeof AppFactionsCreateRoute
   '/groups/create': typeof AppGroupsCreateRoute
   '/rulesets/create': typeof AppRulesetsCreateRoute
+  '/preview/sheet/$factionSlug': typeof PreviewSheetFactionSlugRoute
   '/assets': typeof AppAssetsIndexRoute
   '/auth': typeof AppAuthIndexRoute
   '/factions': typeof AppFactionsIndexRoute
@@ -241,7 +249,6 @@ export interface FileRoutesByTo {
   '/rulesets': typeof AppRulesetsIndexRoute
   '/factions/$factionId/edit': typeof AppFactionsFactionIdEditRoute
   '/groups/$groupSlug/edit': typeof AppGroupsGroupSlugEditRoute
-  '/preview/sheet/$factionSlug': typeof AppPreviewSheetFactionSlugRoute
   '/profiles/$profileSlug/edit': typeof AppProfilesProfileSlugEditRoute
   '/rulesets/$rulesetSlug/edit': typeof AppRulesetsRulesetSlugEditRoute
   '/factions/$factionId': typeof AppFactionsFactionIdIndexRoute
@@ -254,6 +261,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/_app/$': typeof AppSplatRoute
   '/auth/oauth': typeof AuthOauthRoute
   '/_app/': typeof AppIndexRoute
   '/_app/admin/migrations': typeof AppAdminMigrationsRoute
@@ -265,6 +273,7 @@ export interface FileRoutesById {
   '/_app/groups/create': typeof AppGroupsCreateRoute
   '/_app/rulesets/$rulesetSlug': typeof AppRulesetsRulesetSlugRouteWithChildren
   '/_app/rulesets/create': typeof AppRulesetsCreateRoute
+  '/preview/sheet/$factionSlug': typeof PreviewSheetFactionSlugRoute
   '/_app/assets/': typeof AppAssetsIndexRoute
   '/_app/auth/': typeof AppAuthIndexRoute
   '/_app/factions/': typeof AppFactionsIndexRoute
@@ -273,7 +282,6 @@ export interface FileRoutesById {
   '/_app/rulesets/': typeof AppRulesetsIndexRoute
   '/_app/factions/$factionId/edit': typeof AppFactionsFactionIdEditRoute
   '/_app/groups/$groupSlug/edit': typeof AppGroupsGroupSlugEditRoute
-  '/_app/preview/sheet/$factionSlug': typeof AppPreviewSheetFactionSlugRoute
   '/_app/profiles/$profileSlug/edit': typeof AppProfilesProfileSlugEditRoute
   '/_app/rulesets/$rulesetSlug/edit': typeof AppRulesetsRulesetSlugEditRoute
   '/_app/factions/$factionId/': typeof AppFactionsFactionIdIndexRoute
@@ -287,6 +295,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$'
     | '/auth/oauth'
     | '/admin/migrations'
     | '/assets/create'
@@ -297,6 +306,7 @@ export interface FileRouteTypes {
     | '/groups/create'
     | '/rulesets/$rulesetSlug'
     | '/rulesets/create'
+    | '/preview/sheet/$factionSlug'
     | '/assets/'
     | '/auth/'
     | '/factions/'
@@ -305,7 +315,6 @@ export interface FileRouteTypes {
     | '/rulesets/'
     | '/factions/$factionId/edit'
     | '/groups/$groupSlug/edit'
-    | '/preview/sheet/$factionSlug'
     | '/profiles/$profileSlug/edit'
     | '/rulesets/$rulesetSlug/edit'
     | '/factions/$factionId/'
@@ -316,6 +325,7 @@ export interface FileRouteTypes {
     | '/rulesets/$rulesetSlug/faq/create'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/$'
     | '/auth/oauth'
     | '/'
     | '/admin/migrations'
@@ -325,6 +335,7 @@ export interface FileRouteTypes {
     | '/factions/create'
     | '/groups/create'
     | '/rulesets/create'
+    | '/preview/sheet/$factionSlug'
     | '/assets'
     | '/auth'
     | '/factions'
@@ -333,7 +344,6 @@ export interface FileRouteTypes {
     | '/rulesets'
     | '/factions/$factionId/edit'
     | '/groups/$groupSlug/edit'
-    | '/preview/sheet/$factionSlug'
     | '/profiles/$profileSlug/edit'
     | '/rulesets/$rulesetSlug/edit'
     | '/factions/$factionId'
@@ -345,6 +355,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_app'
+    | '/_app/$'
     | '/auth/oauth'
     | '/_app/'
     | '/_app/admin/migrations'
@@ -356,6 +367,7 @@ export interface FileRouteTypes {
     | '/_app/groups/create'
     | '/_app/rulesets/$rulesetSlug'
     | '/_app/rulesets/create'
+    | '/preview/sheet/$factionSlug'
     | '/_app/assets/'
     | '/_app/auth/'
     | '/_app/factions/'
@@ -364,7 +376,6 @@ export interface FileRouteTypes {
     | '/_app/rulesets/'
     | '/_app/factions/$factionId/edit'
     | '/_app/groups/$groupSlug/edit'
-    | '/_app/preview/sheet/$factionSlug'
     | '/_app/profiles/$profileSlug/edit'
     | '/_app/rulesets/$rulesetSlug/edit'
     | '/_app/factions/$factionId/'
@@ -378,6 +389,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthOauthRoute: typeof AuthOauthRoute
+  PreviewSheetFactionSlugRoute: typeof PreviewSheetFactionSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -402,6 +414,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/oauth'
       preLoaderRoute: typeof AuthOauthRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/$': {
+      id: '/_app/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof AppSplatRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/rulesets/': {
       id: '/_app/rulesets/'
@@ -444,6 +463,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/assets/'
       preLoaderRoute: typeof AppAssetsIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/preview/sheet/$factionSlug': {
+      id: '/preview/sheet/$factionSlug'
+      path: '/preview/sheet/$factionSlug'
+      fullPath: '/preview/sheet/$factionSlug'
+      preLoaderRoute: typeof PreviewSheetFactionSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/rulesets/create': {
       id: '/_app/rulesets/create'
@@ -550,13 +576,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfilesProfileSlugEditRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/preview/sheet/$factionSlug': {
-      id: '/_app/preview/sheet/$factionSlug'
-      path: '/preview/sheet/$factionSlug'
-      fullPath: '/preview/sheet/$factionSlug'
-      preLoaderRoute: typeof AppPreviewSheetFactionSlugRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/groups/$groupSlug/edit': {
       id: '/_app/groups/$groupSlug/edit'
       path: '/edit'
@@ -623,6 +642,7 @@ const AppRulesetsRulesetSlugRouteWithChildren =
   )
 
 interface AppRouteChildren {
+  AppSplatRoute: typeof AppSplatRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAdminMigrationsRoute: typeof AppAdminMigrationsRoute
   AppAssetsCreateRoute: typeof AppAssetsCreateRoute
@@ -640,13 +660,13 @@ interface AppRouteChildren {
   AppProfilesIndexRoute: typeof AppProfilesIndexRoute
   AppRulesetsIndexRoute: typeof AppRulesetsIndexRoute
   AppFactionsFactionIdEditRoute: typeof AppFactionsFactionIdEditRoute
-  AppPreviewSheetFactionSlugRoute: typeof AppPreviewSheetFactionSlugRoute
   AppProfilesProfileSlugEditRoute: typeof AppProfilesProfileSlugEditRoute
   AppFactionsFactionIdIndexRoute: typeof AppFactionsFactionIdIndexRoute
   AppProfilesProfileSlugIndexRoute: typeof AppProfilesProfileSlugIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppSplatRoute: AppSplatRoute,
   AppIndexRoute: AppIndexRoute,
   AppAdminMigrationsRoute: AppAdminMigrationsRoute,
   AppAssetsCreateRoute: AppAssetsCreateRoute,
@@ -664,7 +684,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppProfilesIndexRoute: AppProfilesIndexRoute,
   AppRulesetsIndexRoute: AppRulesetsIndexRoute,
   AppFactionsFactionIdEditRoute: AppFactionsFactionIdEditRoute,
-  AppPreviewSheetFactionSlugRoute: AppPreviewSheetFactionSlugRoute,
   AppProfilesProfileSlugEditRoute: AppProfilesProfileSlugEditRoute,
   AppFactionsFactionIdIndexRoute: AppFactionsFactionIdIndexRoute,
   AppProfilesProfileSlugIndexRoute: AppProfilesProfileSlugIndexRoute,
@@ -675,6 +694,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AuthOauthRoute: AuthOauthRoute,
+  PreviewSheetFactionSlugRoute: PreviewSheetFactionSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

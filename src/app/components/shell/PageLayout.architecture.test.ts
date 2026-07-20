@@ -13,8 +13,19 @@ const rootRouteSource = readFileSync(
   fileURLToPath(new URL('../../routes/__root.tsx', import.meta.url)),
   'utf8'
 );
-const pageLayoutExceptions = new Set(['preview/sheet/$factionSlug.tsx']);
-
+const appCatchAllSource = readFileSync(
+  fileURLToPath(new URL('../../routes/_app/$.tsx', import.meta.url)),
+  'utf8'
+);
+const rootNotFoundSource = readFileSync(new URL('./AppNotFound.tsx', import.meta.url), 'utf8');
+const sheetRouteSource = readFileSync(
+  fileURLToPath(new URL('../../routes/preview/sheet/$factionSlug.tsx', import.meta.url)),
+  'utf8'
+);
+const factionDetailSource = readFileSync(
+  fileURLToPath(new URL('../../routes/_app/factions/$factionId/index.tsx', import.meta.url)),
+  'utf8'
+);
 function listRouteFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const path = resolve(directory, entry.name);
@@ -36,7 +47,6 @@ describe('PageLayout route contract', () => {
       .filter(
         ({ source }) => !source.includes('<Outlet />') && !source.includes('component: Outlet')
       )
-      .filter(({ relativePath }) => !pageLayoutExceptions.has(relativePath))
       .filter(({ source }) => !source.includes('<PageLayout'))
       .map(({ relativePath }) => relativePath);
 
@@ -52,8 +62,29 @@ describe('PageLayout route contract', () => {
     expect(appLayoutSource).not.toContain('PageHead');
   });
 
-  it('keeps the root not-found screen on the canonical shell', () => {
-    expect(rootRouteSource).toContain('<AppShell');
-    expect(rootRouteSource).toContain('<PageLayout');
+  it('keeps application not-found presentation lazy and outside the root', () => {
+    expect(rootRouteSource).not.toContain('AppNotFound');
+    expect(rootRouteSource).not.toContain('ApplicationChrome');
+    expect(appLayoutSource).toContain("codeSplitGroupings: [['component', 'notFoundComponent']]");
+    expect(appLayoutSource).toContain('notFoundComponent: AppNotFound');
+    expect(rootNotFoundSource).toContain('<ApplicationChrome');
+    expect(rootNotFoundSource).toContain('<PageLayout');
+  });
+
+  it('routes unknown public URLs through the application branch without capturing the sheet', () => {
+    expect(appCatchAllSource).toContain("createFileRoute('/_app/$')");
+    expect(appCatchAllSource).toContain("notFound({ routeId: '/_app' })");
+    expect(sheetRouteSource).toContain("createFileRoute('/preview/sheet/$factionSlug')");
+    expect(sheetRouteSource).not.toContain("createFileRoute('/_app/");
+  });
+
+  it('keeps application CSS and Mantine UI chunks owned by the application match', () => {
+    expect(rootRouteSource).not.toContain('styles.layer.css');
+    expect(rootRouteSource).not.toContain('mantine-shell-compatibility.css');
+    expect(appLayoutSource).toContain('styles.layer.css?url');
+    expect(appLayoutSource).toContain('mantine-shell-compatibility.css?url');
+    expect(factionDetailSource).toContain(
+      "codeSplitGroupings: [['component', 'pendingComponent', 'errorComponent']]"
+    );
   });
 });

@@ -21,7 +21,7 @@ This document records durable UI decisions for consistency across features.
 ```
 
 ## DD-001: Reuse existing shared components first
-- Status: accepted
+- Status: superseded
 - Context: UI drift and duplication increase when new components are created before surveying existing primitives.
 - Rule: Always check `src/app/components/generic/ui`, `src/app/components/form`, `src/app/components/generic/layout`, and `src/app/components/generic/surfaces` before creating new UI components.
 - Examples:
@@ -31,9 +31,10 @@ This document records durable UI decisions for consistency across features.
   - New component is allowed when no existing component can satisfy requirements without awkward API growth.
   - Confirm with user before creating a new shared API if reuse options are not exhausted.
 - Changed on: 2026-03-25
+- Superseded on: 2026-07-19 by DD-015. The listed legacy presentation paths are now migration-only; discovery starts with Mantine for standard UI.
 
 ## DD-002: Component layering and dependency direction
-- Status: accepted
+- Status: superseded
 - Context: Layer violations (`generic` importing domain code) create tight coupling and brittle reuse.
 - Rule: Preserve direction `generic/ui` -> `form` -> `generic/layout|generic/surfaces` -> `features/routes`. Never import upward.
 - Examples:
@@ -43,9 +44,10 @@ This document records durable UI decisions for consistency across features.
 - Exceptions:
   - None by default; treat violations as architecture exceptions requiring explicit approval.
 - Changed on: 2026-03-25
+- Superseded on: 2026-07-19 by DD-015. The legacy generic/form/layout hierarchy is replaced by the Mantine, shared-content, domain, shell, and renderer ownership model.
 
 ## DD-003: Layout spacing uses reusable wrappers, flex + gap, and grid
-- Status: accepted
+- Status: superseded
 - Context: Margin-led spacing in leaf components causes inconsistent layout behavior.
 - Rule: Handle spacing and alignment in reusable parent layout wrappers. Prefer flexbox + `gap` for one-dimensional layout and CSS Grid for two-dimensional layout.
 - Examples:
@@ -54,9 +56,10 @@ This document records durable UI decisions for consistency across features.
 - Exceptions:
   - Margin may be used only for unavoidable third-party constraints and should be documented in implementation notes.
 - Changed on: 2026-03-25
+- Superseded on: 2026-07-19 by DD-015. Flex, `gap`, grid, and parent-owned spacing remain useful, but new reusable legacy layout wrappers are no longer the default.
 
 ## DD-004: Avoid custom CSS and prohibit CSS composes
-- Status: accepted
+- Status: superseded
 - Context: Excess custom CSS and cross-module style composition hide ownership and reduce maintainability.
 - Rule: Prefer composing existing components and classes in TSX. Avoid custom CSS when existing primitives/wrappers solve the need. Do not use CSS `composes`.
 - Examples:
@@ -65,6 +68,7 @@ This document records durable UI decisions for consistency across features.
 - Exceptions:
   - Custom CSS can be added when composition cannot satisfy requirements and the exception is explicitly approved.
 - Changed on: 2026-03-25
+- Superseded on: 2026-07-19 by DD-015. Mantine APIs are the standard-UI default; CSS Modules remain valid for domain, shell, and justified page-specific ownership, while `composes` remains prohibited.
 
 ## DD-005: Icon-only buttons are for established actions with explicit semantics
 - Status: accepted
@@ -102,7 +106,7 @@ This document records durable UI decisions for consistency across features.
 - Changed on: 2026-03-25
 
 ## DD-008: Generic components require Storybook stories
-- Status: accepted
+- Status: superseded
 - Context: Stories document usage, prevent regressions, and improve AI discoverability of intended APIs.
 - Rule: Every new generic component must include `*.stories.tsx` in the same area.
 - Examples:
@@ -110,6 +114,7 @@ This document records durable UI decisions for consistency across features.
 - Exceptions:
   - No default exceptions; missing stories should block completion for new generic components.
 - Changed on: 2026-03-25
+- Superseded on: 2026-07-19 by DD-015. Installed Mantine components and route-local compositions are exempt from local duplication; locally owned shared and domain components still require representative coverage.
 
 ## DD-009: Prefer small composable components over large monoliths
 - Status: accepted
@@ -123,7 +128,7 @@ This document records durable UI decisions for consistency across features.
 - Changed on: 2026-03-25
 
 ## DD-010: Component placement is generic-first but domain-honest
-- Status: accepted
+- Status: superseded
 - Context: Shared components were difficult to discover and domain-specific code was occasionally exposed as generic API.
 - Rule: Place reusable controls under `src/app/components/form/**`, reusable primitives/layout/surfaces under `src/app/components/generic/**`, and domain-coupled components under domain folders (`factions`, `faq`, `profile`, `auth`, etc).
 - Examples:
@@ -132,9 +137,10 @@ This document records durable UI decisions for consistency across features.
 - Exceptions:
   - None by default. Duplicate wrappers and parallel import paths for the same shared component are not allowed.
 - Changed on: 2026-03-25
+- Superseded on: 2026-07-19 by DD-015. Standard presentation is Mantine-owned, while domain behavior and identity-rich visuals remain locally owned.
 
 ## DD-011: One shared component, one canonical path
-- Status: accepted
+- Status: superseded
 - Context: Parallel paths (`components/ui` plus `components/generic/ui`) made shared components hard to discover and caused duplicate usage patterns.
 - Rule: Shared components must use one canonical path: controls via `@app/components/form/...`, other shared primitives via `@app/components/generic/...`.
 - Examples:
@@ -145,6 +151,7 @@ This document records durable UI decisions for consistency across features.
 - Exceptions:
   - None by default.
 - Changed on: 2026-03-25
+- Superseded on: 2026-07-19 by DD-015. One canonical owner remains required, but the standard-UI owner is Mantine and the named legacy paths are migration-only.
 
 ## DD-012: Components are concern boundaries, not sub-views
 - Status: accepted
@@ -186,3 +193,41 @@ This document records durable UI decisions for consistency across features.
   - Auth hand-off/redirect routes and document-only render targets may use a purpose-built layout.
   - Do not reintroduce router metadata, context registration, or portals solely to move page header content into a parent shell.
 - Changed on: 2026-07-18
+
+## DD-015: Mantine owns standard application-content UI
+- Status: accepted
+- Context: The home-grown generic primitive, form-presentation, layout, and surface layers duplicated maintained library concerns and encouraged new work to deepen a parallel component system. The application still needs clear ownership for product-specific composition, distinctive Dune Zone visuals, and precision-rendered game and document output.
+- Rule:
+  - Use Mantine directly for standard application controls, surfaces, layout, feedback, overlays, and typography.
+  - Use the free Mantine UI catalogue as the preferred page-composition reference. Adapt patterns route-locally first; extract locally owned shared content only after repeated product semantics or repeated composition are demonstrated.
+  - Do not create local wrappers that merely rename or lightly forward Mantine components.
+  - Keep Dune Zone behavior and identity-rich visuals in domain components. `FactionListItem`, leader/troop/planet showcases, and similar visuals may remain custom while composing Mantine around their domain-specific core.
+  - Keep game, sheet, print, capture, and publishing renderers isolated. No Mantine dependency, provider, theme, stylesheet, styling assumption, or internal restyling may enter those renderers.
+  - Treat `src/app/components/generic/ui/**`, `generic/layout/**`, `generic/surfaces/**`, and current `form/**` presentation primitives as migration-only. Do not add consumers or expand their presentation APIs; migrate and remove them as consumers move. This does not deprecate domain behavior, TanStack Form state, or validation contracts.
+  - Preserve route-owned `PageLayout` composition and the one-page-query rule from DD-013 and DD-014.
+  - Preserve semantic action hierarchy from DD-005 through DD-007 and focused concern boundaries from DD-009 and DD-012.
+  - Installed Mantine components and route-local Mantine compositions do not require duplicate local Storybook stories. New or materially changed locally owned shared content and domain components require representative stories for meaningful variants and interactions.
+  - Prefer Mantine APIs and theme facilities for standard styling. CSS Modules remain valid for domain visuals, shell ownership, and page-specific composition Mantine cannot express clearly; CSS `composes` and cross-owned CSS module imports remain prohibited.
+- Examples:
+  - Compose Mantine `Button`, `ActionIcon`, `Group`, `Stack`, `Paper`, `Text`, and `Title` directly in a terminal route instead of adding another application button, card, or stack wrapper.
+  - Keep a faction tile's identity-rich art and game renderer intact while using Mantine for its surrounding page section, heading, actions, and responsive layout.
+  - Use Mantine's root-rendering integration with TanStack Router's typed `Link` at call sites; extract a routing adapter only if repeated usage proves it preserves typed `to`, `params`, and `search` without recreating the legacy broad button API.
+- Exceptions:
+  - `AppShell` and `PageLayout` remain application-owned; Mantine adoption does not authorize redesigning persistent shell appearance.
+  - A locally owned shared composition is allowed when it expresses stable product semantics or demonstrated repeated composition, not merely repeated JSX.
+  - A domain-specific component may use custom CSS and visuals when standard Mantine UI would erase product meaning or renderer fidelity.
+  - Before the Mantine foundation dependency lands, do not add Mantine imports prematurely and do not deepen the legacy primitive system; coordinate the work with the foundation or migration scope.
+- Changed on: 2026-07-19
+
+## DD-016: Recurring topics use one canonical icon mapping
+- Status: accepted
+- Context: The same topic appeared with different icons between the faction editor and application detail pages, weakening visual recognition.
+- Rule: Render recurring topic icons through `TopicIcon`; the faction editor's established mapping is authoritative.
+- Examples:
+  - Identity: eye; background: image; hero: Caesar; leaders: traitor.
+  - Alliance and alliance decals: alliance; troops: Atreides troop.
+  - Rules: balance; advantages: Kwisatz Haderach.
+- Exceptions:
+  - One-off topics without a canonical mapping may keep a locally selected icon until they recur or receive product direction.
+  - Renderer-owned game visuals remain isolated and do not consume the application component.
+- Changed on: 2026-07-20

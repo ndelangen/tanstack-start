@@ -133,6 +133,8 @@ function FactionEditPage() {
             {canAssignGroup && !group && (
               <FactionGroupPopover
                 disabled={false}
+                userId={profile.data?.user_id}
+                isUserPending={profile.isPending}
                 onChangeGroup={async (nextGroupId) => {
                   await setFactionGroup.mutateAsync({ id: faction._id, groupId: nextGroupId });
                 }}

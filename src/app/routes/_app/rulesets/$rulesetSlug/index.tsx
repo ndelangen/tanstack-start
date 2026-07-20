@@ -1,3 +1,26 @@
+import {
+  ActionIcon,
+  Alert,
+  Anchor,
+  Badge,
+  Box,
+  Button,
+  Card,
+  Divider,
+  Grid,
+  Group,
+  Image,
+  NavLink,
+  Paper,
+  Select,
+  SimpleGrid,
+  Stack,
+  Text,
+  TextInput,
+  ThemeIcon,
+  Title,
+  Tooltip,
+} from '@mantine/core';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import {
   BookOpen,
@@ -9,6 +32,7 @@ import {
   MessageCircleQuestionMark,
   Pencil,
   ScrollText,
+  Search,
   Trash2,
   UserPlus,
   UserRoundMinus,
@@ -24,14 +48,10 @@ import {
   useUpdateRuleset,
 } from '@db/rulesets';
 import { FaqList } from '@app/components/faq/FaqList';
-import { FormTooltip } from '@app/components/form/FormTooltip';
-import { OptionPicker } from '@app/components/form/OptionPicker';
-import { AutoGrid, Stack, Toolbar, ToolbarSearchField } from '@app/components/generic/layout';
-import { BlockCover, Card } from '@app/components/generic/surfaces';
-import { UIButton } from '@app/components/generic/ui/UIButton';
 import { GroupAssignPopover } from '@app/components/groups/GroupAssignPopover';
 import { ProfileLink } from '@app/components/profile/ProfileLink';
 import { PageLayout } from '@app/components/shell';
+import { TopicIcon } from '@app/components/topics/TopicIcon';
 import { FAQ_TAG_LABELS, FAQ_TAG_VALUES, type FaqTag } from '@app/faq/tags';
 
 import styles from '../RulesetDetail.module.css';
@@ -73,25 +93,26 @@ function RulesetDetailPage() {
     return (
       <PageLayout
         header={
-          <div>
-            <h1>Ruleset</h1>
-            <p>
-              <Link to="/rulesets">Back to rulesets</Link>
-            </p>
-          </div>
+          <Stack align="center" gap="xs">
+            <Title order={1}>Ruleset</Title>
+            <Anchor renderRoot={(rootProps) => <Link {...rootProps} to="/rulesets" />}>
+              Back to rulesets
+            </Anchor>
+          </Stack>
         }
       >
-        <Card>
-          <h2>Ruleset not found</h2>
-          <p>This ruleset doesn't exist or was deleted.</p>
-        </Card>
+        <Paper withBorder p="xl" radius="md">
+          <Stack gap="xs">
+            <Title order={2}>Ruleset not found</Title>
+            <Text c="dimmed">This ruleset does not exist or was deleted.</Text>
+          </Stack>
+        </Paper>
       </PageLayout>
     );
   }
 
   const r = page.ruleset;
-  const isOwner = profile?.data?.user_id === r.owner_id;
-
+  const isOwner = profile.data?.user_id === r.owner_id;
   const profileUserId = profile.data?.user_id;
   const assignedGroup = page.groupAccess?.group;
   const groupMembersList = page.groupAccess?.members ?? [];
@@ -102,6 +123,10 @@ function RulesetDetailPage() {
     viewerMembership && viewerMembership.status !== 'removed' ? viewerMembership.status : 'none';
   const canRequestMembership = !!profileUserId && !!assignedGroup && membershipStatus === 'none';
   const answeredFaqCount = page.faqItems.filter((item) => item.accepted_answer_id != null).length;
+  const mutationError =
+    deleteRuleset.error?.message ??
+    requestMembership.error?.message ??
+    updateRuleset.error?.message;
 
   const handleDelete = () => {
     if (!window.confirm(`Delete ruleset "${r.name}"? This cannot be undone.`)) return;
@@ -117,10 +142,14 @@ function RulesetDetailPage() {
       replace: true,
     });
   };
-  const handleFaqTagChange = (value: string) => {
+
+  const handleFaqTagChange = (value: string | null) => {
     navigate({
       to: '.',
-      search: (prev) => ({ ...prev, tag: value === '__all__' ? undefined : (value as FaqTag) }),
+      search: (prev) => ({
+        ...prev,
+        tag: value == null || value === '__all__' ? undefined : (value as FaqTag),
+      }),
       replace: true,
     });
   };
@@ -129,21 +158,47 @@ function RulesetDetailPage() {
     <PageLayout
       headerSize="compact"
       header={
-        <div className={styles.pageHead}>
-          <div className={styles.rulesetHeadCover}>
-            <BlockCover src={r.image_cover} alt={`Cover for ${r.name}`} />
-          </div>
-          <div className={styles.pageHeadText}>
-            <h1 className={styles.rulesetTitle}>{r.name}</h1>
-            <p className={styles.pageHeadMeta}>
-              <Link to="/rulesets">Rulesets</Link> / Content wireframe
-            </p>
-            <p>
-              <strong>Proposed summary:</strong> Add a short explanation of what this ruleset
-              changes, includes, and who it is intended for.
-            </p>
-            <p>
-              Maintained by{' '}
+        <Group wrap="nowrap" align="center" gap="lg" className={styles.pageHead}>
+          <Paper className={styles.rulesetHeadCover} radius="md" withBorder>
+            {r.image_cover ? (
+              <Image
+                src={r.image_cover}
+                alt={`Cover for ${r.name}`}
+                className={styles.coverImage}
+              />
+            ) : (
+              <Text size="xs" c="dimmed" ta="center" px="xs">
+                No cover
+              </Text>
+            )}
+          </Paper>
+          <Stack gap={6} className={styles.pageHeadText}>
+            <Group gap="xs" wrap="wrap">
+              <Anchor
+                size="sm"
+                fw={600}
+                renderRoot={(rootProps) => <Link {...rootProps} to="/rulesets" />}
+              >
+                Rulesets
+              </Anchor>
+              <Text size="sm" c="dimmed">
+                / Content wireframe
+              </Text>
+            </Group>
+            <Title order={1} className={styles.rulesetTitle}>
+              {r.name}
+            </Title>
+            <Text size="sm" maw={620}>
+              <Text component="span" inherit fw={700}>
+                Proposed summary:
+              </Text>{' '}
+              Add a short explanation of what this ruleset changes, includes, and who it is intended
+              for.
+            </Text>
+            <Group gap="xs" wrap="wrap">
+              <Text size="sm" c="dimmed">
+                Maintained by
+              </Text>
               {page.owner ? (
                 <ProfileLink
                   slug={page.owner.slug}
@@ -151,21 +206,20 @@ function RulesetDetailPage() {
                   avatar_url={page.owner.avatar_url}
                 />
               ) : (
-                <span>Unknown</span>
+                <Text size="sm">Unknown</Text>
               )}
-            </p>
-          </div>
-        </div>
+            </Group>
+          </Stack>
+        </Group>
       }
       toolbar={
-        <Toolbar>
-          <Toolbar.Left>
-            {profile?.data?._id && (
-              <FormTooltip content="Ask a question">
-                <UIButton
+        profile.data?._id ? (
+          <Paper withBorder p="sm" radius="md">
+            <Group justify="space-between" gap="sm" wrap="wrap">
+              <Group gap="xs">
+                <Button
                   type="button"
-                  iconOnly
-                  aria-label="Ask a question"
+                  leftSection={<MessageCircleQuestionMark size={17} aria-hidden />}
                   onClick={() =>
                     navigate({
                       to: '/rulesets/$rulesetSlug/faq/create',
@@ -173,337 +227,478 @@ function RulesetDetailPage() {
                     })
                   }
                 >
-                  <MessageCircleQuestionMark size={16} aria-hidden />
-                </UIButton>
-              </FormTooltip>
-            )}
-          </Toolbar.Left>
-          <Toolbar.Right>
-            {isOwner && (
-              <FormTooltip content="Edit ruleset">
-                <UIButton
-                  variant="secondary"
-                  to="/rulesets/$rulesetSlug/edit"
-                  params={{ rulesetSlug: r.slug }}
-                  aria-label="Edit ruleset"
-                >
-                  <Pencil size={16} aria-hidden />
-                </UIButton>
-              </FormTooltip>
-            )}
-            {isOwner &&
-              (r.group_id == null ? (
-                <GroupAssignPopover
-                  disabled={!isOwner}
-                  prefetchedMemberships={page.viewerAssignableMemberships}
-                  onChangeGroup={async (nextGroupId) => {
-                    await updateRuleset.mutateAsync({
-                      id: r._id,
-                      input: { name: r.name },
-                      groupId: nextGroupId,
-                      imageCover: r.image_cover ?? null,
-                    });
-                  }}
-                  title="Assign Group"
-                  descriptionLines={[
-                    `Assign a group that can help maintain "${r.name}".`,
-                    'You can create and join groups from your profile.',
-                  ]}
-                />
-              ) : (
-                <FormTooltip content="Remove group">
-                  <UIButton
-                    type="button"
-                    iconOnly
-                    aria-label="Remove group"
-                    variant="critical"
-                    disabled={updateRuleset.isPending}
-                    onClick={() =>
-                      void updateRuleset.mutateAsync({
-                        id: r._id,
-                        input: { name: r.name },
-                        groupId: null,
-                        imageCover: r.image_cover ?? null,
-                      })
-                    }
-                  >
-                    <UserRoundMinus size={16} aria-hidden />
-                  </UIButton>
-                </FormTooltip>
-              ))}
+                  Ask a question
+                </Button>
+              </Group>
 
-            {isOwner && (
-              <FormTooltip content="Delete ruleset">
-                <UIButton
-                  variant="critical"
-                  type="button"
-                  iconOnly
-                  aria-label="Delete ruleset"
-                  onClick={handleDelete}
-                  disabled={deleteRuleset.isPending}
-                >
-                  <Trash2 size={16} aria-hidden />
-                </UIButton>
-              </FormTooltip>
-            )}
-          </Toolbar.Right>
-        </Toolbar>
+              {isOwner ? (
+                <Group gap="xs" aria-label="Ruleset owner actions">
+                  <Button
+                    variant="default"
+                    leftSection={<Pencil size={16} aria-hidden />}
+                    renderRoot={(rootProps) => (
+                      <Link
+                        {...rootProps}
+                        to="/rulesets/$rulesetSlug/edit"
+                        params={{ rulesetSlug: r.slug }}
+                      />
+                    )}
+                  >
+                    Edit
+                  </Button>
+                  {r.group_id == null ? (
+                    <GroupAssignPopover
+                      disabled={!isOwner || updateRuleset.isPending}
+                      userId={profileUserId}
+                      isUserPending={profile.isPending}
+                      prefetchedMemberships={page.viewerAssignableMemberships}
+                      onChangeGroup={async (nextGroupId) => {
+                        await updateRuleset.mutateAsync({
+                          id: r._id,
+                          input: { name: r.name },
+                          groupId: nextGroupId,
+                          imageCover: r.image_cover ?? null,
+                        });
+                      }}
+                      title="Assign Group"
+                      descriptionLines={[
+                        `Assign a group that can help maintain "${r.name}".`,
+                        'You can create and join groups from your profile.',
+                      ]}
+                    />
+                  ) : (
+                    <Tooltip label="Remove group">
+                      <ActionIcon
+                        type="button"
+                        aria-label="Remove group"
+                        color="red"
+                        variant="light"
+                        size="lg"
+                        disabled={updateRuleset.isPending}
+                        onClick={() =>
+                          void updateRuleset.mutateAsync({
+                            id: r._id,
+                            input: { name: r.name },
+                            groupId: null,
+                            imageCover: r.image_cover ?? null,
+                          })
+                        }
+                      >
+                        <UserRoundMinus size={17} aria-hidden />
+                      </ActionIcon>
+                    </Tooltip>
+                  )}
+                  <Tooltip label="Delete ruleset">
+                    <ActionIcon
+                      color="red"
+                      variant="filled"
+                      type="button"
+                      size="lg"
+                      aria-label="Delete ruleset"
+                      onClick={handleDelete}
+                      disabled={deleteRuleset.isPending}
+                    >
+                      <Trash2 size={17} aria-hidden />
+                    </ActionIcon>
+                  </Tooltip>
+                </Group>
+              ) : null}
+            </Group>
+          </Paper>
+        ) : undefined
       }
     >
-      <div className={styles.contentColumns}>
-        <Stack gap={4} className={styles.mainColumn}>
-          {(deleteRuleset.isError || requestMembership.isError || updateRuleset.isError) && (
-            <p className={styles.error}>
-              {deleteRuleset.error?.message ??
-                requestMembership.error?.message ??
-                updateRuleset.error?.message}
-            </p>
-          )}
+      <Grid gap="xl" align="flex-start">
+        <Grid.Col span={{ base: 12, md: 8 }} order={{ base: 2, md: 1 }}>
+          <Stack gap="xl">
+            {mutationError ? (
+              <Alert color="red" title="The change could not be saved" role="alert">
+                {mutationError}
+              </Alert>
+            ) : null}
 
-          <section id="overview" className={styles.section}>
-            <h2 className={styles.iconHeading}>
-              <BookOpen size={20} aria-hidden /> About this ruleset
-            </h2>
-            <Card>
-              <Stack gap={3}>
-                <p className={styles.proposedLabel}>Proposed content · new fields required</p>
-                <p>
-                  A concise introduction explaining the ruleset's purpose, intended audience, and
-                  how it differs from the base game.
-                </p>
-                <p>
-                  Compatibility should identify the base edition or parent ruleset, required
-                  expansions, and whether this ruleset can be mixed with other variants.
-                </p>
+            <Stack component="section" id="overview" aria-labelledby="overview-heading" gap="md">
+              <SectionHeading id="overview-heading" icon={<BookOpen size={20} aria-hidden />}>
+                About this ruleset
+              </SectionHeading>
+              <Paper withBorder p="lg" radius="md">
+                <Stack gap="sm">
+                  <Badge variant="light" color="dune" w="fit-content">
+                    Proposed content · new fields required
+                  </Badge>
+                  <Text>
+                    A concise introduction explaining the ruleset&apos;s purpose, intended audience,
+                    and how it differs from the base game.
+                  </Text>
+                  <Text c="dimmed">
+                    Compatibility should identify the base edition or parent ruleset, required
+                    expansions, and whether this ruleset can be mixed with other variants.
+                  </Text>
+                </Stack>
+              </Paper>
+            </Stack>
+
+            <Stack component="section" id="rules" aria-labelledby="rules-heading" gap="md">
+              <Stack gap={4}>
+                <SectionHeading id="rules-heading" icon={<TopicIcon topic="rules" size={20} />}>
+                  Rules and variants
+                </SectionHeading>
+                <Text c="dimmed" size="sm">
+                  Proposed structured rule sections would make the ruleset useful before the FAQ has
+                  accumulated questions.
+                </Text>
               </Stack>
-            </Card>
-          </section>
-
-          <section id="rules" className={styles.section}>
-            <h2 className={styles.iconHeading}>
-              <ScrollText size={20} aria-hidden /> Rules and variants
-            </h2>
-            <p className={styles.sectionIntro}>
-              Proposed structured rule sections would make the ruleset useful before the FAQ has
-              accumulated questions.
-            </p>
-            <div className={styles.proposedRulesGrid}>
-              <Card header={<h3>Setup changes</h3>}>
-                <p>Changes to preparation, starting resources, map state, and player count.</p>
-              </Card>
-              <Card header={<h3>Core rule changes</h3>}>
-                <p>The rules that override or extend the base game during normal play.</p>
-              </Card>
-              <Card header={<h3>Victory and end game</h3>}>
-                <p>Changed victory conditions, turn limits, tie breakers, or scoring.</p>
-              </Card>
-              <Card header={<h3>Optional variants</h3>}>
-                <p>Clearly optional modules that groups may enable independently.</p>
-              </Card>
-            </div>
-          </section>
-
-          <section id="factions" className={styles.section}>
-            <h2 className={styles.iconHeading}>
-              <Layers3 size={20} aria-hidden /> Included factions
-            </h2>
-            {page.factions && page.factions.length > 0 ? (
-              <AutoGrid minColumnWidth="220px" gap={3}>
-                {page.factions.map((f) => (
-                  <Card key={f.factionId} header={<h3>{f.name}</h3>}>
-                    <Stack gap={2}>
-                      <p className={styles.proposedLabel}>Proposed faction summary</p>
-                      <p>One sentence describing its identity and role in this ruleset.</p>
-                      <p>
-                        <Link to="/factions/$factionId" params={{ factionId: f.urlSlug }}>
-                          View faction
-                        </Link>
-                      </p>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                {[
+                  [
+                    'Setup changes',
+                    'Changes to preparation, starting resources, map state, and player count.',
+                  ],
+                  [
+                    'Core rule changes',
+                    'The rules that override or extend the base game during normal play.',
+                  ],
+                  [
+                    'Victory and end game',
+                    'Changed victory conditions, turn limits, tie breakers, or scoring.',
+                  ],
+                  [
+                    'Optional variants',
+                    'Clearly optional modules that groups may enable independently.',
+                  ],
+                ].map(([title, description]) => (
+                  <Card key={title} withBorder padding="lg" radius="md">
+                    <Stack gap="xs">
+                      <Title order={3} size="h4">
+                        {title}
+                      </Title>
+                      <Text size="sm" c="dimmed">
+                        {description}
+                      </Text>
                     </Stack>
                   </Card>
                 ))}
-              </AutoGrid>
-            ) : (
-              <Card>
-                <p>No factions have been added to this ruleset yet.</p>
-              </Card>
-            )}
-          </section>
+              </SimpleGrid>
+            </Stack>
 
-          <section id="faq" className={styles.section}>
-            <h2 className={styles.iconHeading}>
-              <CircleHelp size={20} aria-hidden /> Frequently asked questions
-            </h2>
-            <div className={styles.faqTools}>
-              <ToolbarSearchField
-                value={search.q ?? ''}
-                onValueChange={handleFaqSearchChange}
-                placeholder="Search questions..."
-                aria-label="Search FAQ questions"
-              />
-              <OptionPicker
-                value={search.tag ?? '__all__'}
-                onValueChange={handleFaqTagChange}
-                options={[
-                  { value: '__all__', label: 'All tags' },
-                  ...FAQ_TAG_VALUES.map((tag) => ({ value: tag, label: FAQ_TAG_LABELS[tag] })),
-                ]}
-                placeholder="Filter by tag"
-                ariaLabel="Filter FAQ by tag"
-                appearance="embedded"
-              />
-            </div>
-            <Card>
-              <FaqList
-                items={page.faqItems}
-                rulesetSlug={r.slug}
-                searchQuery={search.q ?? ''}
-                selectedTag={search.tag}
-              />
-            </Card>
-          </section>
-        </Stack>
-
-        <aside className={styles.sidebar} aria-label="Ruleset details">
-          <Stack gap={3}>
-            <Card
-              header={
-                <h2 className={styles.iconHeading}>
-                  <ListTree size={20} aria-hidden /> At a glance
-                </h2>
-              }
-            >
-              <div className={styles.factList}>
-                <p>
-                  <Layers3 size={18} aria-hidden />
-                  <strong>{page.factions?.length ?? 0}</strong>
-                  <span>Factions</span>
-                </p>
-                <p>
-                  <CircleHelp size={18} aria-hidden />
-                  <strong>{page.faqItems.length}</strong>
-                  <span>Questions</span>
-                </p>
-                <p>
-                  <CheckCircle2 size={18} aria-hidden />
-                  <strong>{answeredFaqCount}</strong>
-                  <span>Answered</span>
-                </p>
-                <p>
-                  <FileText size={18} aria-hidden />
-                  <strong>—</strong>
-                  <span>Version · proposed</span>
-                </p>
-              </div>
-            </Card>
-
-            <Card
-              header={
-                <h2 className={styles.iconHeading}>
-                  <ListTree size={20} aria-hidden /> On this page
-                </h2>
-              }
-            >
-              <nav aria-label="Ruleset sections">
-                <ul className={styles.sectionLinks}>
-                  <li>
-                    <a href="#overview">About</a>
-                  </li>
-                  <li>
-                    <a href="#rules">Rules and variants</a>
-                  </li>
-                  <li>
-                    <a href="#factions">Factions</a>
-                  </li>
-                  <li>
-                    <a href="#faq">FAQ</a>
-                  </li>
-                </ul>
-              </nav>
-            </Card>
-
-            <Card
-              header={
-                <h2 className={styles.iconHeading}>
-                  <UsersRound size={20} aria-hidden /> Stewardship
-                </h2>
-              }
-            >
-              <Stack gap={2}>
-                <p>
-                  Owner:{' '}
-                  {page.owner ? (
-                    <ProfileLink
-                      slug={page.owner.slug}
-                      username={page.owner.username}
-                      avatar_url={page.owner.avatar_url}
-                    />
-                  ) : (
-                    <span>Unknown</span>
-                  )}
-                </p>
-                {r.group_id == null ? (
-                  <p className={styles.muted}>No maintaining group.</p>
-                ) : !assignedGroup ? (
-                  <p className={styles.muted}>Group unavailable.</p>
-                ) : (
-                  <>
-                    <p>
-                      Group:{' '}
-                      {assignedGroup.slug ? (
-                        <Link to="/groups/$groupSlug" params={{ groupSlug: assignedGroup.slug }}>
-                          {assignedGroup.name}
-                        </Link>
-                      ) : (
-                        <strong>{assignedGroup.name}</strong>
-                      )}
-                    </p>
-                    <p>
-                      Your membership:{' '}
-                      {membershipStatus === 'active'
-                        ? 'Active'
-                        : membershipStatus === 'pending'
-                          ? 'Pending'
-                          : 'Not a member'}
-                    </p>
-                    {!profile.isPending && !profileUserId ? (
-                      <p>
-                        <Link to="/auth/login">Log in</Link> to join.
-                      </p>
-                    ) : null}
-                    {canRequestMembership ? (
-                      <FormTooltip content="Request membership">
-                        <UIButton
-                          type="button"
-                          iconOnly
-                          aria-label="Request membership"
-                          disabled={requestMembership.isPending}
-                          onClick={() => requestMembership.mutate(assignedGroup._id)}
+            <Stack component="section" id="factions" aria-labelledby="factions-heading" gap="md">
+              <SectionHeading id="factions-heading" icon={<Layers3 size={20} aria-hidden />}>
+                Included factions
+              </SectionHeading>
+              {page.factions && page.factions.length > 0 ? (
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                  {page.factions.map((f) => (
+                    <Card key={f.factionId} withBorder padding="lg" radius="md">
+                      <Stack gap="sm" h="100%">
+                        <Title order={3} size="h4">
+                          {f.name}
+                        </Title>
+                        <Badge variant="light" color="gray" w="fit-content">
+                          Proposed faction summary
+                        </Badge>
+                        <Text size="sm" c="dimmed" flex={1}>
+                          One sentence describing its identity and role in this ruleset.
+                        </Text>
+                        <Button
+                          variant="light"
+                          size="xs"
+                          w="fit-content"
+                          renderRoot={(rootProps) => (
+                            <Link
+                              {...rootProps}
+                              to="/factions/$factionId"
+                              params={{ factionId: f.urlSlug }}
+                            />
+                          )}
                         >
-                          <UserPlus size={16} aria-hidden />
-                        </UIButton>
-                      </FormTooltip>
-                    ) : null}
-                  </>
-                )}
+                          View faction
+                        </Button>
+                      </Stack>
+                    </Card>
+                  ))}
+                </SimpleGrid>
+              ) : (
+                <Paper withBorder p="lg" radius="md">
+                  <Text c="dimmed">No factions have been added to this ruleset yet.</Text>
+                </Paper>
+              )}
+            </Stack>
+
+            <Stack component="section" id="faq" aria-labelledby="faq-heading" gap="md">
+              <Group justify="space-between" align="flex-end" gap="md" wrap="wrap">
+                <Stack gap={4}>
+                  <SectionHeading id="faq-heading" icon={<CircleHelp size={20} aria-hidden />}>
+                    Frequently asked questions
+                  </SectionHeading>
+                  <Text size="sm" c="dimmed">
+                    Search community questions or narrow the list by topic.
+                  </Text>
+                </Stack>
+                <Badge variant="light" color="gray">
+                  {page.faqItems.length} {page.faqItems.length === 1 ? 'question' : 'questions'}
+                </Badge>
+              </Group>
+              <Paper withBorder p="md" radius="md">
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                  <TextInput
+                    value={search.q ?? ''}
+                    onChange={(event) => handleFaqSearchChange(event.currentTarget.value)}
+                    placeholder="Search questions…"
+                    aria-label="Search FAQ questions"
+                    leftSection={<Search size={16} aria-hidden />}
+                  />
+                  <Select
+                    value={search.tag ?? '__all__'}
+                    onChange={handleFaqTagChange}
+                    data={[
+                      { value: '__all__', label: 'All tags' },
+                      ...FAQ_TAG_VALUES.map((tag) => ({ value: tag, label: FAQ_TAG_LABELS[tag] })),
+                    ]}
+                    aria-label="Filter FAQ by tag"
+                    allowDeselect={false}
+                  />
+                </SimpleGrid>
+              </Paper>
+              <Paper withBorder p={{ base: 'md', sm: 'lg' }} radius="md">
+                <FaqList
+                  items={page.faqItems}
+                  rulesetSlug={r.slug}
+                  searchQuery={search.q ?? ''}
+                  selectedTag={search.tag}
+                />
+              </Paper>
+            </Stack>
+          </Stack>
+        </Grid.Col>
+
+        <Grid.Col span={{ base: 12, md: 4 }} order={{ base: 1, md: 2 }}>
+          <Stack gap="md" component="aside" aria-label="Ruleset details">
+            <Card withBorder padding="lg" radius="md">
+              <Stack gap="md">
+                <SectionHeading icon={<ListTree size={19} aria-hidden />} order={2}>
+                  At a glance
+                </SectionHeading>
+                <SimpleGrid cols={2} spacing="sm">
+                  <Fact
+                    icon={<Layers3 size={17} aria-hidden />}
+                    value={page.factions?.length ?? 0}
+                    label="Factions"
+                  />
+                  <Fact
+                    icon={<CircleHelp size={17} aria-hidden />}
+                    value={page.faqItems.length}
+                    label="Questions"
+                  />
+                  <Fact
+                    icon={<CheckCircle2 size={17} aria-hidden />}
+                    value={answeredFaqCount}
+                    label="Answered"
+                  />
+                  <Fact
+                    icon={<FileText size={17} aria-hidden />}
+                    value="—"
+                    label="Version · proposed"
+                  />
+                </SimpleGrid>
               </Stack>
             </Card>
 
-            <Card
-              header={
-                <h2 className={styles.iconHeading}>
-                  <FileText size={20} aria-hidden /> Resources
-                </h2>
-              }
-            >
-              <Stack gap={2}>
-                <p className={styles.proposedLabel}>Proposed content</p>
-                <p>Printable rules, release notes, and a version history could live here.</p>
+            <Card withBorder padding="sm" radius="md">
+              <Stack gap="xs">
+                <SectionHeading icon={<ListTree size={19} aria-hidden />} order={2} px="sm" pt="xs">
+                  On this page
+                </SectionHeading>
+                <nav aria-label="Ruleset sections">
+                  <NavLink
+                    label="About"
+                    href="#overview"
+                    leftSection={<BookOpen size={16} aria-hidden />}
+                  />
+                  <NavLink
+                    label="Rules and variants"
+                    href="#rules"
+                    leftSection={<ScrollText size={16} aria-hidden />}
+                  />
+                  <NavLink
+                    label="Factions"
+                    href="#factions"
+                    leftSection={<Layers3 size={16} aria-hidden />}
+                  />
+                  <NavLink
+                    label="FAQ"
+                    href="#faq"
+                    leftSection={<CircleHelp size={16} aria-hidden />}
+                  />
+                </nav>
+              </Stack>
+            </Card>
+
+            <Card withBorder padding="lg" radius="md">
+              <Stack gap="md">
+                <SectionHeading icon={<UsersRound size={19} aria-hidden />} order={2}>
+                  Stewardship
+                </SectionHeading>
+                <Stack gap="sm">
+                  <Box>
+                    <Text size="xs" c="dimmed" fw={700} tt="uppercase">
+                      Owner
+                    </Text>
+                    {page.owner ? (
+                      <ProfileLink
+                        slug={page.owner.slug}
+                        username={page.owner.username}
+                        avatar_url={page.owner.avatar_url}
+                      />
+                    ) : (
+                      <Text size="sm">Unknown</Text>
+                    )}
+                  </Box>
+                  <Divider />
+                  {r.group_id == null ? (
+                    <Text size="sm" c="dimmed">
+                      No maintaining group.
+                    </Text>
+                  ) : !assignedGroup ? (
+                    <Text size="sm" c="dimmed">
+                      Group unavailable.
+                    </Text>
+                  ) : (
+                    <Stack gap="sm">
+                      <Box>
+                        <Text size="xs" c="dimmed" fw={700} tt="uppercase">
+                          Maintaining group
+                        </Text>
+                        {assignedGroup.slug ? (
+                          <Anchor
+                            fw={600}
+                            renderRoot={(rootProps) => (
+                              <Link
+                                {...rootProps}
+                                to="/groups/$groupSlug"
+                                params={{ groupSlug: assignedGroup.slug }}
+                              />
+                            )}
+                          >
+                            {assignedGroup.name}
+                          </Anchor>
+                        ) : (
+                          <Text fw={600}>{assignedGroup.name}</Text>
+                        )}
+                      </Box>
+                      <Group justify="space-between" gap="xs">
+                        <Text size="sm" c="dimmed">
+                          Your membership
+                        </Text>
+                        <Badge
+                          color={
+                            membershipStatus === 'active'
+                              ? 'green'
+                              : membershipStatus === 'pending'
+                                ? 'yellow'
+                                : 'gray'
+                          }
+                          variant="light"
+                        >
+                          {membershipStatus === 'active'
+                            ? 'Active'
+                            : membershipStatus === 'pending'
+                              ? 'Pending'
+                              : 'Not a member'}
+                        </Badge>
+                      </Group>
+                      {!profile.isPending && !profileUserId ? (
+                        <Text size="sm">
+                          <Anchor
+                            renderRoot={(rootProps) => <Link {...rootProps} to="/auth/login" />}
+                          >
+                            Log in
+                          </Anchor>{' '}
+                          to join.
+                        </Text>
+                      ) : null}
+                      {canRequestMembership ? (
+                        <Button
+                          type="button"
+                          variant="light"
+                          leftSection={<UserPlus size={16} aria-hidden />}
+                          loading={requestMembership.isPending}
+                          onClick={() => requestMembership.mutate(assignedGroup._id)}
+                        >
+                          Request membership
+                        </Button>
+                      ) : null}
+                    </Stack>
+                  )}
+                </Stack>
+              </Stack>
+            </Card>
+
+            <Card withBorder padding="lg" radius="md">
+              <Stack gap="sm">
+                <SectionHeading icon={<FileText size={19} aria-hidden />} order={2}>
+                  Resources
+                </SectionHeading>
+                <Badge variant="light" color="gray" w="fit-content">
+                  Proposed content
+                </Badge>
+                <Text size="sm" c="dimmed">
+                  Printable rules, release notes, and a version history could live here.
+                </Text>
               </Stack>
             </Card>
           </Stack>
-        </aside>
-      </div>
+        </Grid.Col>
+      </Grid>
     </PageLayout>
+  );
+}
+
+function SectionHeading({
+  icon,
+  children,
+  order = 2,
+  ...props
+}: {
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  order?: 2 | 3;
+} & React.ComponentProps<typeof Group>) {
+  return (
+    <Group gap="sm" wrap="nowrap" {...props}>
+      <ThemeIcon variant="light" color="dune" size="md" radius="md">
+        {icon}
+      </ThemeIcon>
+      <Title order={order} size={order === 2 ? 'h3' : 'h4'}>
+        {children}
+      </Title>
+    </Group>
+  );
+}
+
+function Fact({
+  icon,
+  value,
+  label,
+}: {
+  icon: React.ReactNode;
+  value: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <Paper withBorder p="sm" radius="md">
+      <Group gap="xs" wrap="nowrap" align="flex-start">
+        <ThemeIcon variant="light" color="gray" size="sm">
+          {icon}
+        </ThemeIcon>
+        <Stack gap={0}>
+          <Text fw={700} lh={1.2}>
+            {value}
+          </Text>
+          <Text size="xs" c="dimmed">
+            {label}
+          </Text>
+        </Stack>
+      </Group>
+    </Paper>
   );
 }

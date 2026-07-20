@@ -1,10 +1,14 @@
+import { MantineProvider } from '@mantine/core';
 import addonDocs from '@storybook/addon-docs';
 import { definePreview } from '@storybook/react-vite';
 import { sb } from 'storybook/test';
 
+import '@mantine/core/styles.layer.css';
 import '../src/app/styles/fonts.css';
 import '../src/app/styles/tokens.css';
+import '../src/app/styles/mantine-shell-compatibility.css';
 
+import { appContentTheme } from '../src/app/theme';
 import * as sizes from '../src/game/data/sizes';
 
 sb.mock(import('@tanstack/react-router'));
@@ -54,7 +58,7 @@ export default definePreview({
     },
   },
   decorators: [
-    (Story, { globals }) => {
+    (Story, { globals, title }) => {
       const { viewport } = globals;
       const viewportValue = viewport.value as keyof typeof sizes;
       let size: typeof sizes.page | undefined;
@@ -67,14 +71,23 @@ export default definePreview({
       } else if (viewportValue === 'disc') {
         size = sizes.disc;
       }
-      if (size) {
+      const story = size ? (
+        <div style={{ ...size }}>
+          <Story />
+        </div>
+      ) : (
+        <Story />
+      );
+
+      if (title.startsWith('App/')) {
         return (
-          <div style={{ ...size }}>
-            <Story />
-          </div>
+          <MantineProvider theme={appContentTheme} forceColorScheme="light">
+            {story}
+          </MantineProvider>
         );
       }
-      return <Story />;
+
+      return story;
     },
   ],
   initialGlobals: {

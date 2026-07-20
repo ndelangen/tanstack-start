@@ -1,136 +1,110 @@
 ---
 name: ui-create-standards
-description: Design and implement UI with strict reuse-first, composition-first standards and hard-stop guardrails. Use when adding or refactoring UI, creating shared components, deciding layout/styling approaches, or when consistency with existing patterns matters.
+description: Design and implement application UI with Mantine-first ownership, domain-visual exceptions, and strict renderer isolation. Use when adding or refactoring UI, creating shared components, choosing layout or styling approaches, or checking consistency with repository UI patterns.
 ---
 
-# Grill-Driven UI Standards
+# Mantine-First UI Standards
 
-## When To Use
+## Quick start
 
-Use this skill whenever work includes:
+1. Read [UI design decisions](../../../docs/technical/ui-design-decisions.md) and [UI component hierarchy](../../../docs/technical/ui-component-hierarchy.md).
+2. Identify the surface: standard application UI, shared content composition, domain UI, application shell, or isolated renderer.
+3. For standard application UI, discover a Mantine component first and use Mantine UI as the preferred composition-reference catalogue.
+4. Compose Mantine directly at the route or owning component before considering a local wrapper.
+5. Preserve domain visuals and renderer boundaries; add locally owned shared components only for proven product semantics.
 
-- New screens, sections, or controls
-- Component refactors or extractions
-- Styling/layout changes
-- New generic or shared UI components
+Mantine is the adopted direction even before the foundation dependency lands. Until it is installed, do not extend the legacy primitive system or add Mantine imports prematurely; keep the change scoped to the appropriate foundation or migration work.
 
-## Quick Start
+## Ownership decision
 
-1. Read and apply [docs/technical/ui-design-decisions.md](../../../docs/technical/ui-design-decisions.md) before proposing implementation details.
-2. Start with a short grill: ask targeted questions and provide your recommended answer for each.
-3. Perform reuse-first discovery across `ui`, `form`, feature components, and nearby routes.
-4. Apply hard-stop gates before custom CSS, new component APIs, or pattern deviation.
-5. Build with small composable components and reusable layout primitives first.
-6. Add Storybook stories for all new generic components.
+Classify every UI concern before implementation:
 
-## Grill-Me Loop (Required Before Finalizing)
+| Concern | Default owner |
+|---|---|
+| Standard controls, surfaces, layout, feedback, overlays, and typography | Mantine components, used directly |
+| Page-level composition references | Mantine UI patterns, adapted route-locally first |
+| Repeated product semantics or repeated content composition | A locally owned shared content component |
+| Dune Zone identity, behavior, or data-rich visuals | A domain component |
+| Persistent product chrome and route slots | Existing `AppShell` and `PageLayout` |
+| Game assets, sheets, print, capture, and publishing output | Isolated renderer code with no Mantine dependency or styling |
 
-Interview the plan relentlessly until ambiguity is removed. For each question, provide your recommended answer.
+`FactionListItem`, leader/troop/planet showcases, and similar identity-rich components are valid domain visuals. This exception does not justify new generic buttons, cards, fields, toolbars, accordions, description lists, or layout stacks.
 
-Required question set (adapt as needed):
+## Discovery workflow
 
-- Which existing primitives/composed controls can solve this with small extension?
-- Should this be feature-local or shared (`ui`/`form`)?
-- What API keeps the component generic and composable, not monolithic?
-- Which layout primitive should own spacing and alignment?
-- Can we avoid custom CSS by composing existing classes/components?
-- Which nearby pattern should this follow for consistency?
+### Standard application UI
 
-If a question can be answered by exploring the codebase, explore first, then continue grilling.
+1. Check Mantine for a maintained component that matches the interaction and accessibility semantics.
+2. Check the free Mantine UI catalogue for a composition pattern.
+3. Adapt the composition in the route or owning component, keeping `PageLayout` ownership at the terminal route.
+4. Extract a shared composition only after repeated product semantics or repeated composition are demonstrated.
 
-## Hard-Stop Guardrails (Non-Negotiable)
+Prefer direct `Button`, `ActionIcon`, `Card`/`Paper`, `Stack`, `Group`, `Grid`, `Text`, `Title`, `Tooltip`, field, and overlay composition. Do not create wrappers whose only purpose is renaming or lightly forwarding Mantine APIs. For navigation controls, use Mantine's router integration at the call site; extract an adapter only when repeated use proves it can preserve TanStack Router's typed contract.
 
-Stop and ask the user before proceeding when any condition is true:
+### Domain UI
 
-1. You are about to introduce custom CSS but existing primitives/layout wrappers may suffice.
-2. You are about to create a new shared component/API before exhausting extension/composition of existing components.
-3. You are about to ship a UI pattern that differs from nearby established patterns without explicit user direction.
-4. You are about to create a large, multi-responsibility component instead of composing smaller parts.
+Search relevant domain folders and nearby routes for existing behavior and identity-rich visuals. Keep domain components domain-honest and let them compose Mantine around their specific core. Preserve small concern boundaries; do not extract a component merely to move a page fragment into another file.
 
-Do not continue implementation until the user confirms the exception.
+### Legacy migration paths
 
-## Reuse-First Workflow
+The following are migration-only compatibility code, not discovery targets for new UI:
 
-### 1) Discover existing building blocks first
+- `src/app/components/generic/ui/**`
+- `src/app/components/generic/layout/**`
+- `src/app/components/generic/surfaces/**`
+- presentation primitives under `src/app/components/form/**`
 
-Check these areas before creating anything new:
+Do not add new consumers or expand these APIs. Existing domain behavior that happens to compose them is not blanket-deprecated; migrate its standard presentation when that consumer is in scope. TanStack Form, shared validation, and domain behavior remain authoritative.
 
-- `src/app/components/ui`
-- `src/app/components/form`
-- Relevant feature components under `src/app/components/**`
-- Existing route patterns under `src/app/routes/_app/**`
+## Composition and styling
 
-If existing components can solve the need with small extension (`props`, `className`, composition), extend instead of adding a new component.
+- Prefer Mantine component, layout, and semantic props for ordinary application UI.
+- Use Mantine theme variables and Styles API for system-level customization.
+- Keep CSS Modules for domain visuals, existing shell ownership, and page-specific composition Mantine cannot express clearly.
+- Keep CSS module ownership local to its TSX owner. Do not import another component's CSS module.
+- Never use CSS `composes`; combine owned classes and component APIs in TSX.
+- Keep routine spacing in the parent composition. Prefer flex plus `gap` for one-dimensional layouts and grid for two-dimensional layouts when custom layout is justified.
+- Do not globally target Mantine internal selectors for routine styling.
 
-### 2) Place code in the correct layer
+Ask for user direction when a proposed exception would establish a new system-level visual rule, create a broad shared API without demonstrated reuse, or change a domain visual's identity. Minor route-local composition choices do not require a pause.
 
-- **Primitive**: generic low-level UI (`ui/**`)
-- **Form control**: composed input/control patterns (`form/**`)
-- **Feature component**: domain-specific (`components/<feature>/**` or route-local)
+## Hard rendering boundary
 
-Dependency direction is strict:
+Do not add Mantine imports, theme dependencies, CSS, provider usage, or styling assumptions to:
 
-- `ui` imports only `ui` + shared tokens
-- `form` imports `ui` + shared tokens
-- features/routes import `form` and `ui`
-- never import upward (`ui` must not import `form` or features)
+- `src/game/**`;
+- faction sheet or other document renderers;
+- print styles;
+- capture entry points under `src/app/capture/**`;
+- publishing renderer entry points.
 
-### 3) Compose, do not over-build
+Mantine may arrange an embedded game visual in an application page, but it must not style the visual's internals or change its rendered output.
 
-- Prefer composing existing primitives in TSX.
-- Avoid custom CSS when possible.
-- Never use CSS `composes`.
-- Keep CSS module ownership local to the TSX owner.
-- Do not import another component's CSS module directly.
+## Data and route composition
 
-## Layout and Styling Rules
+- Terminal visual routes render `PageLayout` and own their header, toolbar, loading, error, empty, and authorization states.
+- Nested parent routes remain outlet-only; document renderers and non-visual auth callbacks are intentional exceptions.
+- Each route uses at most one Convex page-data query plus `useCurrentProfile` when needed. Pass prefetched data into child controls instead of adding subscriptions.
 
-- Prefer reusable layout components/wrappers for spacing and alignment orchestration.
-- Prefer flexbox + `gap` for one-dimensional layouts.
-- Prefer CSS Grid for two-dimensional layouts.
-- Avoid `margin` for routine component spacing; keep spacing decisions in parent layout containers.
-- Use custom CSS only when composition cannot satisfy requirements and user has approved via hard-stop.
+## Accessibility and action semantics
 
-## Generic Component and Storybook Requirements
+- Keep one clear primary positive toolbar action; map visual treatment from semantic intent.
+- Use destructive treatment for destructive or irreversible actions and neutral treatment for utility actions.
+- Use icon-only actions only for established, recognizable actions. Always provide an accessible name, and add explanatory tooltip text when the icon may need reinforcement.
 
-For every new generic component, add `*.stories.tsx` in the same area.
+## Storybook requirements
 
-Minimum story coverage:
+Installed Mantine components and route-local Mantine compositions do not need duplicate local stories. Add representative colocated stories for new or materially changed locally owned shared content and domain components when visual states or reusable usage need documentation. Cover the meaningful variants and interaction states of the owned behavior.
 
-1. Default state
-2. Key variants
-3. Relevant interactive states
-4. Composition example in a reusable layout wrapper
+## Final checklist
 
-Stories are required for both developer validation and AI discoverability of intended usage.
-
-## Size and Composition Constraint
-
-Avoid extremely large components. Prefer splitting into smaller composable units when:
-
-- A component has multiple responsibilities
-- Repeated sub-structures appear
-- API becomes broad or confusing
-- Testing/reasoning gets harder at the current size
-
-## Canonical Reference
-
-Consult and enforce decisions from:
-
-[docs/technical/ui-design-decisions.md](../../../docs/technical/ui-design-decisions.md)
-
-Follow hierarchy, dependency, and CSS ownership rules in:
-
-[docs/technical/ui-component-hierarchy.md](../../../docs/technical/ui-component-hierarchy.md)
-
-## Final Checklist
-
-- [ ] Grill questions asked (with recommended answers) where ambiguity existed
-- [ ] Reuse-first discovery completed before creating anything new
-- [ ] Hard-stop gates enforced for CSS/component/pattern exceptions
-- [ ] Layer placement follows `ui` -> `form` -> features dependency direction
-- [ ] Layout uses reusable wrappers with flex+`gap` and/or grid
-- [ ] No margin-led spacing orchestration (unless approved exception)
-- [ ] No CSS `composes` and no cross-owned CSS imports
-- [ ] Generic components include Storybook stories with composition examples
-- [ ] Component boundaries remain small and composable
+- [ ] Surface ownership was classified before implementation.
+- [ ] Standard UI started with Mantine and Mantine UI discovery.
+- [ ] Mantine APIs are composed directly; no rename-only wrapper was introduced.
+- [ ] No new consumer or API was added to migration-only legacy presentation paths.
+- [ ] Domain visuals retain their behavior and identity.
+- [ ] Game, sheet, print, capture, and publishing renderers have no Mantine dependency or styling.
+- [ ] Terminal routes own `PageLayout` composition and follow the one-page-query rule.
+- [ ] Action semantics and icon-only accessibility are explicit.
+- [ ] Locally owned shared components have representative stories; Mantine itself is not duplicated in Storybook.
+- [ ] CSS ownership is local and no CSS `composes` was introduced.
