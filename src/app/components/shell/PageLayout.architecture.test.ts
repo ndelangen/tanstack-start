@@ -9,6 +9,10 @@ const appLayoutSource = readFileSync(
   fileURLToPath(new URL('../../routes/_app.tsx', import.meta.url)),
   'utf8'
 );
+const applicationChromeSource = readFileSync(
+  new URL('./ApplicationChrome.tsx', import.meta.url),
+  'utf8'
+);
 const rootRouteSource = readFileSync(
   fileURLToPath(new URL('../../routes/__root.tsx', import.meta.url)),
   'utf8'
@@ -81,8 +85,14 @@ describe('PageLayout route contract', () => {
   it('keeps application CSS and Mantine UI chunks owned by the application match', () => {
     expect(rootRouteSource).not.toContain('styles.layer.css');
     expect(rootRouteSource).not.toContain('mantine-shell-compatibility.css');
-    expect(appLayoutSource).toContain('styles.layer.css?url');
-    expect(appLayoutSource).toContain('mantine-shell-compatibility.css?url');
+    expect(appLayoutSource).not.toContain('styles.layer.css');
+    expect(appLayoutSource).not.toContain('mantine-shell-compatibility.css');
+    expect(applicationChromeSource).toContain("import '@mantine/core/styles.layer.css';");
+    expect(applicationChromeSource).toContain(
+      "import '../../styles/mantine-shell-compatibility.css';"
+    );
+    expect(appLayoutSource).not.toContain('precedence');
+    expect(appLayoutSource).not.toContain('?url');
     expect(factionDetailSource).toContain(
       "codeSplitGroupings: [['component', 'pendingComponent', 'errorComponent']]"
     );
