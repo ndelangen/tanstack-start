@@ -1,80 +1,93 @@
-import { type FactionEntry } from '@db/factions';
-import { AutoGrid } from '@app/components/generic/layout';
-import { BlockLink } from '@app/components/generic/surfaces';
+import { Text, UnstyledButton } from '@mantine/core';
+import { Link } from '@tanstack/react-router';
+
+import type { FactionCatalogueEntry } from '@db/factions';
 import { LeaderToken } from '@game/assets/faction/leader/Leader';
-import { TroopToken } from '@game/assets/faction/troop/Troop';
+import { Token as FactionToken } from '@game/assets/faction/token/Token';
 import { BackgroundRenderer } from '@game/assets/utils/BackgroundRenderer';
 
 import styles from './FactionList.module.css';
 
 export type FactionListProps = {
-  factions: FactionEntry[];
+  factions: FactionCatalogueEntry[];
+  selectedRulesetSlug?: string;
   className?: string;
 };
 
-/**
- * Responsive grid of compact faction identity plates.
- * An empty `factions` array renders the standard no-results line (e.g. search filter).
- * Callers that need different empty UX should not render this with an empty list.
- */
-export function FactionList({ factions, className }: FactionListProps) {
-  if (factions.length === 0) {
-    return <p className={styles.noResults}>No factions match your search.</p>;
-  }
+/** Shared responsive faction-card grid used by catalogue and profile detail pages. */
+export function FactionList({ factions, selectedRulesetSlug, className }: FactionListProps) {
+  if (factions.length === 0) return null;
 
   return (
-    <AutoGrid minColumnWidth="420px" gap={4} className={className}>
+    <div className={[styles.grid, className].filter(Boolean).join(' ')}>
       {factions.map((faction) => (
-        <FactionListItem key={faction._id} faction={faction} />
+        <FactionCard
+          key={faction._id}
+          faction={faction}
+          selectedRulesetSlug={selectedRulesetSlug}
+        />
       ))}
-    </AutoGrid>
+    </div>
   );
 }
 
-function FactionListItem({ faction }: { faction: FactionEntry }) {
-  const { name, logo, background, hero, leaders, troops } = faction.data;
+export function FactionCard({
+  faction,
+  selectedRulesetSlug,
+}: {
+  faction: FactionCatalogueEntry;
+  selectedRulesetSlug?: string;
+}) {
+  const { name, logo, background, hero, leaders } = faction.data;
+  const rulesetLabel = factionRulesetLabel(faction, selectedRulesetSlug);
 
   return (
-    <BlockLink
-      to="/factions/$factionId"
-      params={{ factionId: faction.slug }}
+    <UnstyledButton
       className={styles.card}
+      renderRoot={(rootProps) => (
+        <Link {...rootProps} to="/factions/$factionId" params={{ factionId: faction.slug }} />
+      )}
     >
       <BackgroundRenderer background={background} className={styles.artwork}>
-        <div className={styles.glyphMark}>
-          <svg className={styles.glyph} viewBox="0 0 100 100" role="img">
-            <title>{name} symbol</title>
-            <use href={`${logo}#root`} />
-          </svg>
+        <div className={styles.shade} />
+        <div className={styles.factionToken} aria-hidden>
+          <FactionToken logo={logo} background={background} />
         </div>
-        <div className={styles.glossary}>
-          <div className={styles.heroToken} title={`Faction leader: ${hero.name}`}>
+        <div className={styles.cast} aria-hidden>
+          <div className={styles.hero}>
             <LeaderToken {...hero} strength={undefined} background={background} logo={logo} />
           </div>
-          <div className={styles.leaderSamples}>
+          <div className={styles.leaders}>
             {leaders.slice(0, 3).map((leader) => (
-              <span key={`${leader.name}-${leader.image}`} title={leader.name}>
+              <span key={`${leader.name}-${leader.image}`}>
                 <LeaderToken {...leader} background={background} logo={logo} />
               </span>
             ))}
           </div>
-          <div className={styles.troopSamples}>
-            {troops.slice(0, 2).map((troop) => (
-              <span key={`${troop.name}-${troop.image}`} title={troop.name}>
-                <TroopToken
-                  background={background}
-                  image={troop.image}
-                  star={troop.star}
-                  striped={troop.striped}
-                />
-              </span>
-            ))}
-          </div>
         </div>
-        <div className={styles.content}>
-          <strong className={styles.name}>{name}</strong>
+        <div className={styles.caption}>
+          <Text className={styles.name} fw={800} size="lg" lineClamp={2}>
+            {name}
+          </Text>
+          {rulesetLabel ? (
+            <Text className={styles.ruleset} size="xs" lineClamp={1}>
+              {rulesetLabel}
+            </Text>
+          ) : null}
         </div>
       </BackgroundRenderer>
-    </BlockLink>
+    </UnstyledButton>
   );
+}
+
+export function factionRulesetLabel(
+  faction: Pick<FactionCatalogueEntry, 'rulesets'>,
+  selectedRulesetSlug?: string
+) {
+  if (faction.rulesets.length === 0) return null;
+  const primary =
+    faction.rulesets.find((ruleset) => ruleset.slug === selectedRulesetSlug) ?? faction.rulesets[0];
+  if (!primary) return null;
+  const additionalCount = faction.rulesets.length - 1;
+  return additionalCount > 0 ? `${primary.name} +${additionalCount}` : primary.name;
 }

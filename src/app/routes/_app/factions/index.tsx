@@ -1,115 +1,397 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import Fuse from 'fuse.js';
-import { useMemo, useState } from 'react';
+import {
+  ActionIcon,
+  Alert,
+  Button,
+  Drawer,
+  Group,
+  Loader,
+  Paper,
+  Select,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+  Tooltip,
+  UnstyledButton,
+} from '@mantine/core';
+import {
+  createFileRoute,
+  type ErrorComponentProps,
+  Link,
+  useNavigate,
+} from '@tanstack/react-router';
+import { ArrowDownAZ, ChevronRight, Filter, Plus, Search, SlidersHorizontal } from 'lucide-react';
+import { type KeyboardEvent, useEffect, useMemo, useState } from 'react';
 
-import { loadFactionsAll, useFactionsAll } from '@db/factions';
-import { useCurrentProfile } from '@db/profiles';
+import {
+  type FactionCatalogueEntry,
+  type FactionCataloguePageData,
+  type FactionRulesetSummary,
+  loadFactionCataloguePage,
+  useFactionCataloguePage,
+} from '@db/factions';
 import { FactionList } from '@app/components/factions/FactionList';
-import { Toolbar, ToolbarSearchField } from '@app/components/generic/layout';
 import { PageLayout } from '@app/components/shell';
+import {
+  type FactionCatalogueSearch,
+  factionCatalogueSearchParams,
+  filterAndSortFactions,
+  isFactionCatalogueSort,
+  normalizeFactionCatalogueSearch,
+  parseFactionCatalogueSearch,
+} from '@app/factions/catalogue';
+import { Token as FactionToken } from '@game/assets/faction/token/Token';
 
-import styles from './FactionsIndex.module.css';
+import styles from './FactionCatalogue.module.css';
 
 export const Route = createFileRoute('/_app/factions/')({
-  loader: async () => ({ factions: await loadFactionsAll() }),
+  codeSplitGroupings: [['component', 'pendingComponent', 'errorComponent']],
+  validateSearch: parseFactionCatalogueSearch,
+  loader: loadFactionCataloguePage,
+  pendingComponent: FactionCataloguePending,
+  errorComponent: FactionCatalogueError,
   component: FactionsPage,
 });
 
 function FactionsPage() {
   const loaderData = Route.useLoaderData();
-  const factions = useFactionsAll({ initialData: loaderData.factions });
-  const profile = useCurrentProfile();
-  const [searchQuery, setSearchQuery] = useState('');
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
+  const catalogue = useFactionCataloguePage({ initialData: loaderData });
+  const data = catalogue.data;
+  const [draftQuery, setDraftQuery] = useState(search.q ?? '');
 
-  const list = factions.data ?? [];
+  useEffect(() => setDraftQuery(search.q ?? ''), [search.q]);
 
-  const fuse = useMemo(
-    () =>
-      new Fuse(list, {
-        keys: ['data.name', 'slug'],
-        threshold: 0.35,
-      }),
-    [list]
-  );
+  useEffect(() => {
+    if (!data) return;
+    const canonical = normalizeFactionCatalogueSearch(search, data.rulesets);
+    const expected = factionCatalogueSearchParams(canonical).toString();
+    const current = new URLSearchParams(window.location.search).toString();
+    if (current !== expected) {
+      navigate({ to: '.', search: canonical, replace: true });
+    }
+  }, [data, navigate, search]);
 
-  const filtered = useMemo(() => {
-    if (!searchQuery.trim()) return list;
-    return fuse.search(searchQuery.trim()).map((r) => r.item);
-  }, [list, searchQuery, fuse]);
+  if (!data) return <FactionCataloguePending />;
 
-  const profileSlug = profile.data?.slug;
-  const header = (
-    <div>
-      <h1>Factions</h1>
-      <p>
-        <Link
-          to="/factions"
-          activeProps={{ style: { fontWeight: 'bold' } }}
-          activeOptions={{ exact: true }}
-        >
-          All factions
-        </Link>
-        {' · '}
-        {profileSlug ? (
-          <Link to="/profiles/$profileSlug" params={{ profileSlug }}>
-            My factions
-          </Link>
-        ) : (
-          <Link to="/auth/login">Log in for my factions</Link>
-        )}
-        {' · '}
-        <Link to="/factions/create" activeProps={{ style: { fontWeight: 'bold' } }}>
-          Create a new faction
-        </Link>
-      </p>
-    </div>
-  );
+  const updateSearch = (patch: Partial<FactionCatalogueSearch>) => {
+    navigate({
+      to: '.',
+      search: (previous) => parseFactionCatalogueSearch({ ...previous, ...patch }),
+      replace: true,
+    });
+  };
 
-  if (factions.isPending) {
-    return (
-      <PageLayout header={header}>
-        <p className={styles.empty}>Loading factions…</p>
-      </PageLayout>
-    );
-  }
-
-  if (list.length === 0) {
-    return (
-      <PageLayout header={header}>
-        <p className={styles.empty}>No factions yet.</p>
-      </PageLayout>
-    );
-  }
+  const visibleFactions = filterAndSortFactions(data.factions, search, draftQuery);
+  const hasFactions = data.factions.length > 0;
 
   return (
     <PageLayout
-      header={header}
+      header={<CatalogueHeader spotlights={hasFactions ? data.spotlights : undefined} />}
       toolbar={
-        <Toolbar>
-          <Toolbar.Left>
-            <ToolbarSearchField
-              className={styles.toolbarSearch}
-              value={searchQuery}
-              onValueChange={setSearchQuery}
-              placeholder="Search by name or slug…"
-              aria-label="Search factions"
-            />
-          </Toolbar.Left>
-          <Toolbar.Right>
-            <span className={styles.meta}>
-              {filtered.length === list.length
-                ? `${list.length} faction${list.length === 1 ? '' : 's'}`
-                : `${filtered.length} of ${list.length} shown`}
-            </span>
-          </Toolbar.Right>
-        </Toolbar>
+        hasFactions ? (
+          <CatalogueToolbar
+            draftQuery={draftQuery}
+            onDraftQueryChange={setDraftQuery}
+            onCommitQuery={() => updateSearch({ q: draftQuery.trim() || undefined })}
+            search={search}
+            rulesets={data.rulesets}
+            visibleCount={visibleFactions.length}
+            totalCount={data.factions.length}
+            onSearchChange={updateSearch}
+          />
+        ) : undefined
       }
     >
-      {filtered.length > 0 ? (
-        <FactionList factions={filtered} />
+      {hasFactions ? (
+        visibleFactions.length > 0 ? (
+          <FactionList factions={visibleFactions} selectedRulesetSlug={search.ruleset} />
+        ) : (
+          <FilteredEmptyState
+            onReset={() => {
+              setDraftQuery('');
+              updateSearch({ q: undefined, ruleset: undefined });
+            }}
+          />
+        )
       ) : (
-        <p className={styles.noResults}>No factions match your search.</p>
+        <Paper className={styles.stateCard} withBorder radius="md" p="xl">
+          <Title order={2}>There are no factions</Title>
+          <Text c="dimmed" mt="xs">
+            Create the first faction to begin the collection.
+          </Text>
+        </Paper>
       )}
     </PageLayout>
   );
+}
+
+function FactionCataloguePending() {
+  return (
+    <PageLayout header={<CatalogueHeader />}>
+      <Paper className={styles.stateCard} withBorder radius="md" p="xl" aria-live="polite">
+        <Stack align="center" gap="sm">
+          <Loader size="sm" />
+          <Title order={2}>Loading factions</Title>
+          <Text c="dimmed">The faction catalogue is still loading.</Text>
+        </Stack>
+      </Paper>
+    </PageLayout>
+  );
+}
+
+function FactionCatalogueError({ error }: ErrorComponentProps) {
+  return (
+    <PageLayout header={<CatalogueHeader />}>
+      <Alert color="red" title="Faction catalogue could not be loaded" role="alert">
+        <Text size="sm">{error.message || 'An unexpected error occurred.'}</Text>
+      </Alert>
+    </PageLayout>
+  );
+}
+
+function CatalogueHeader({ spotlights }: { spotlights?: FactionCataloguePageData['spotlights'] }) {
+  const hasSpotlight = Boolean(spotlights?.newArrival || spotlights?.freshlyUpdated);
+
+  return (
+    <Stack className={styles.catalogueHeader} gap="lg">
+      <Group justify="space-between" align="end" wrap="wrap" gap="md">
+        <Stack gap={4}>
+          <Text tt="uppercase" size="xs" fw={800} lts="0.12em" c="dune.8">
+            Explore the collection
+          </Text>
+          <Title order={1}>Faction catalogue</Title>
+          <Text size="sm" c="dimmed">
+            Browse the living collection of community factions.
+          </Text>
+        </Stack>
+        <Button
+          className={styles.headerCta}
+          color="confirm"
+          size="md"
+          leftSection={<Plus size={17} aria-hidden />}
+          renderRoot={(rootProps) => <Link {...rootProps} to="/factions/create" />}
+        >
+          Create your own faction
+        </Button>
+      </Group>
+
+      {hasSpotlight ? (
+        <div className={styles.spotlightRail}>
+          {spotlights?.newArrival ? (
+            <CatalogueSpotlight
+              faction={spotlights.newArrival}
+              label="New arrival"
+              date={spotlights.newArrival.created_at}
+              dateLabel="Created"
+            />
+          ) : null}
+          {spotlights?.freshlyUpdated ? (
+            <CatalogueSpotlight
+              faction={spotlights.freshlyUpdated}
+              label="Freshly updated"
+              date={spotlights.freshlyUpdated.updated_at}
+              dateLabel="Updated"
+            />
+          ) : null}
+        </div>
+      ) : null}
+    </Stack>
+  );
+}
+
+function CatalogueSpotlight({
+  faction,
+  label,
+  date,
+  dateLabel,
+}: {
+  faction: FactionCatalogueEntry;
+  label: string;
+  date: string;
+  dateLabel: string;
+}) {
+  return (
+    <UnstyledButton
+      className={styles.compactSpotlight}
+      renderRoot={(rootProps) => (
+        <Link {...rootProps} to="/factions/$factionId" params={{ factionId: faction.slug }} />
+      )}
+    >
+      <div className={styles.compactSpotlightToken} aria-hidden>
+        <FactionToken logo={faction.data.logo} background={faction.data.background} />
+      </div>
+      <Stack gap={1} miw={0}>
+        <Text className={styles.spotlightLabel} size="xs" tt="uppercase" fw={800} c="dune.8">
+          {label}
+        </Text>
+        <Text className={styles.spotlightName} fw={700} truncate>
+          {faction.data.name}
+        </Text>
+        <Text className={styles.spotlightMeta} size="xs" c="dimmed">
+          {dateLabel} {formatDate(date)}
+        </Text>
+      </Stack>
+      <ChevronRight size={18} aria-hidden />
+    </UnstyledButton>
+  );
+}
+
+function CatalogueToolbar({
+  draftQuery,
+  onDraftQueryChange,
+  onCommitQuery,
+  search,
+  rulesets,
+  visibleCount,
+  totalCount,
+  onSearchChange,
+}: {
+  draftQuery: string;
+  onDraftQueryChange: (value: string) => void;
+  onCommitQuery: () => void;
+  search: FactionCatalogueSearch;
+  rulesets: FactionRulesetSummary[];
+  visibleCount: number;
+  totalCount: number;
+  onSearchChange: (patch: Partial<FactionCatalogueSearch>) => void;
+}) {
+  const [opened, setOpened] = useState(false);
+  const rulesetOptions = useMemo(
+    () => [
+      { value: 'all', label: 'All rulesets' },
+      ...rulesets.map((ruleset) => ({ value: ruleset.slug, label: ruleset.name })),
+    ],
+    [rulesets]
+  );
+  const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Enter') return;
+    onCommitQuery();
+    event.currentTarget.blur();
+  };
+
+  const rulesetSelect = (label?: string, joined = false) => (
+    <Select
+      className={joined ? styles.rulesetField : undefined}
+      variant={joined ? 'unstyled' : 'default'}
+      label={label}
+      value={search.ruleset ?? 'all'}
+      data={rulesetOptions}
+      allowDeselect={false}
+      onChange={(value) =>
+        onSearchChange({ ruleset: value === 'all' ? undefined : (value ?? undefined) })
+      }
+      aria-label="Filter factions by ruleset"
+      leftSection={<Filter size={15} aria-hidden />}
+    />
+  );
+  const sortSelect = (label?: string, joined = false) => (
+    <Select
+      className={joined ? styles.sortField : undefined}
+      variant={joined ? 'unstyled' : 'default'}
+      label={label}
+      value={search.sort ?? 'name'}
+      data={[
+        { value: 'name', label: 'Alphabetical (A–Z)' },
+        { value: 'created', label: 'Chronological (created)' },
+        { value: 'updated', label: 'Chronological (updated)' },
+      ]}
+      allowDeselect={false}
+      onChange={(value) =>
+        onSearchChange({ sort: isFactionCatalogueSort(value) ? value : undefined })
+      }
+      aria-label="Sort factions"
+      leftSection={<ArrowDownAZ size={15} aria-hidden />}
+    />
+  );
+
+  return (
+    <>
+      <Paper className={styles.toolbar} withBorder radius="md" p="sm">
+        <div className={styles.toolbarGrid}>
+          <Text className={styles.resultCount} size="sm" c="dimmed">
+            {visibleCount === totalCount
+              ? `${totalCount} factions`
+              : `${visibleCount} of ${totalCount} factions`}
+          </Text>
+          <fieldset className={styles.joinedFilters} aria-label="Faction catalogue filters">
+            <TextInput
+              className={styles.searchField}
+              variant="unstyled"
+              value={draftQuery}
+              onChange={(event) => onDraftQueryChange(event.currentTarget.value)}
+              onBlur={onCommitQuery}
+              onKeyDown={handleSearchKeyDown}
+              placeholder="Search factions…"
+              aria-label="Search factions"
+              leftSection={<Search size={16} aria-hidden />}
+            />
+            {rulesetSelect(undefined, true)}
+            {sortSelect(undefined, true)}
+            <Tooltip label="Refine factions">
+              <ActionIcon
+                className={styles.mobileRefineButton}
+                variant="subtle"
+                color="gray"
+                size="lg"
+                aria-label="Refine factions"
+                onClick={() => setOpened(true)}
+              >
+                <SlidersHorizontal size={17} aria-hidden />
+              </ActionIcon>
+            </Tooltip>
+          </fieldset>
+          <Tooltip label="Create new faction">
+            <ActionIcon
+              className={styles.toolbarCreateButton}
+              variant="filled"
+              color="confirm"
+              size="lg"
+              aria-label="Create new faction"
+              renderRoot={(rootProps) => <Link {...rootProps} to="/factions/create" />}
+            >
+              <Plus size={17} aria-hidden />
+            </ActionIcon>
+          </Tooltip>
+        </div>
+      </Paper>
+      <Drawer
+        opened={opened}
+        onClose={() => setOpened(false)}
+        position="bottom"
+        title="Refine factions"
+        size="22rem"
+        padding="lg"
+      >
+        <Stack gap="md" pb="md">
+          {rulesetSelect('Ruleset')}
+          {sortSelect('Sort by')}
+        </Stack>
+      </Drawer>
+    </>
+  );
+}
+
+function FilteredEmptyState({ onReset }: { onReset: () => void }) {
+  return (
+    <Paper className={styles.stateCard} withBorder radius="md" p="xl">
+      <Stack gap="sm" align="center">
+        <Title order={2}>No factions found</Title>
+        <Text c="dimmed">Try another search or reset the catalogue filters.</Text>
+        <Button variant="light" color="gray" onClick={onReset}>
+          Reset filters &amp; search
+        </Button>
+      </Stack>
+    </Paper>
+  );
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat('en', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(value));
 }

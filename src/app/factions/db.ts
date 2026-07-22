@@ -15,6 +15,29 @@ export type FactionEntry = Omit<FactionRow, 'data'> & {
   data: FactionData;
 };
 
+export type FactionRulesetSummary = {
+  id: Doc<'rulesets'>['_id'];
+  slug: string;
+  name: string;
+};
+
+export type FactionCatalogueEntry = FactionEntry & {
+  rulesets: FactionRulesetSummary[];
+};
+
+type FactionCatalogueRow = FactionRow & {
+  rulesets: FactionRulesetSummary[];
+};
+
+export type FactionCataloguePageData = {
+  factions: FactionCatalogueEntry[];
+  rulesets: FactionRulesetSummary[];
+  spotlights: {
+    newArrival: FactionCatalogueEntry | null;
+    freshlyUpdated: FactionCatalogueEntry | null;
+  };
+};
+
 export type FactionInsert = Omit<FactionEntry, 'data'> & {
   data: FactionData;
 };
@@ -26,6 +49,35 @@ function toFactionEntry(entry: FactionRow): FactionEntry {
   return {
     ...entry,
     data: FactionInputSchema.parse(entry.data),
+  };
+}
+
+function toFactionCatalogueEntry(entry: FactionCatalogueRow): FactionCatalogueEntry {
+  return {
+    ...entry,
+    data: FactionInputSchema.parse(entry.data),
+  };
+}
+
+function toFactionCataloguePageData(raw: {
+  factions: FactionCatalogueRow[];
+  rulesets: FactionRulesetSummary[];
+  spotlights: {
+    newArrival: FactionCatalogueRow | null;
+    freshlyUpdated: FactionCatalogueRow | null;
+  };
+}): FactionCataloguePageData {
+  return {
+    factions: raw.factions.map(toFactionCatalogueEntry),
+    rulesets: raw.rulesets,
+    spotlights: {
+      newArrival: raw.spotlights.newArrival
+        ? toFactionCatalogueEntry(raw.spotlights.newArrival)
+        : null,
+      freshlyUpdated: raw.spotlights.freshlyUpdated
+        ? toFactionCatalogueEntry(raw.spotlights.freshlyUpdated)
+        : null,
+    },
   };
 }
 
@@ -67,6 +119,18 @@ export async function loadFactionsAll(): Promise<FactionEntry[]> {
   return factionRowsToEntries(entries);
 }
 
+export async function loadFactionCataloguePage(): Promise<FactionCataloguePageData> {
+  const raw = await db.query<{
+    factions: FactionCatalogueRow[];
+    rulesets: FactionRulesetSummary[];
+    spotlights: {
+      newArrival: FactionCatalogueRow | null;
+      freshlyUpdated: FactionCatalogueRow | null;
+    };
+  }>(api.factions.cataloguePage, {});
+  return toFactionCataloguePageData(raw);
+}
+
 export async function loadFactionsByOwner(ownerId: string): Promise<FactionEntry[]> {
   const entries = await db.query<FactionRow[]>(api.factions.listByOwner, { owner_id: ownerId });
   return factionRowsToEntries(entries);
@@ -106,6 +170,12 @@ export function useFactionsAll(options?: { initialData?: FactionEntry[] }) {
     ...result,
     data: result.data ? factionRowsToEntries(result.data) : undefined,
   };
+}
+
+export function useFactionCataloguePage(options?: { initialData?: FactionCataloguePageData }) {
+  const liveData = useQuery(api.factions.cataloguePage, {});
+  const normalized = liveData ? toFactionCataloguePageData(liveData) : undefined;
+  return toLiveQueryResult(normalized, true, () => options?.initialData);
 }
 
 /** Normalized row from `api.factions.listForLoadPicker` (group label + owner username resolved server-side). */

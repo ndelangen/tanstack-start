@@ -2,10 +2,10 @@ import { getAuthUserId } from '@convex-dev/auth/server';
 import { v } from 'convex/values';
 
 import { profileUserEditFormSchema } from '../src/app/profile/validation';
-import { FactionInputSchema } from '../src/game/schema/faction';
 import { api } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import { type MutationCtx, mutation, query } from './_generated/server';
+import { enrichFactionsWithRulesets, listActiveRulesetSummaries } from './lib/factionCatalogue';
 import { requireAuthUserId } from './lib/policy';
 import { ensureProfileForUser } from './lib/profileBootstrap';
 import { nowIso, slugify } from './lib/utils';
@@ -119,10 +119,8 @@ export const getBySlug = query({
         q.eq('owner_id', profile.user_id).eq('is_deleted', false)
       )
       .take(500);
-    const factions = factionRows.map((row) => ({
-      ...row,
-      data: FactionInputSchema.parse(row.data),
-    }));
+    const activeRulesets = await listActiveRulesetSummaries(ctx);
+    const factions = await enrichFactionsWithRulesets(ctx, factionRows, activeRulesets);
 
     return {
       profile,

@@ -33,3 +33,32 @@ test('owner can create and delete a ruleset in a two-user flow', async ({
   await expect(page).toHaveURL(/\/rulesets\/?$/);
   await expect(page.getByRole('link', { name: uniqueName })).toHaveCount(0);
 });
+
+test('owner can discover a newly created faction through the catalogue', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'userA', 'One signed-in browser covers this happy flow.');
+
+  await page.goto('/factions/create');
+  await page.getByRole('textbox', { name: 'Display name' }).fill('Test Faction');
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await expect(page).toHaveURL(/\/factions\/test-faction\/edit$/);
+
+  await page.goto('/factions');
+  const testFaction = page.getByRole('link', { name: 'Test Faction', exact: true });
+  await expect(testFaction).toBeVisible({ timeout: 30_000 });
+
+  const search = page.getByRole('textbox', { name: 'Search factions' });
+  await search.fill('test');
+  await expect(testFaction).toBeVisible();
+
+  await search.fill('qwerty');
+  await expect(page.getByRole('heading', { name: 'No factions found' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Reset filters & search' })).toBeVisible();
+
+  await search.fill('');
+  await expect(testFaction).toBeVisible();
+  await testFaction.click();
+  await expect(page).toHaveURL(/\/factions\/test-faction\/?$/);
+  await expect(page.getByRole('heading', { name: 'Test Faction' })).toBeVisible();
+});

@@ -5,6 +5,11 @@ import { FactionInputSchema } from '../src/game/schema/faction';
 import type { Doc, Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { factionSheetPublishingStatus } from './assetPublishingStatus';
+import {
+  enrichFactionsWithRulesets,
+  listActiveRulesetSummaries,
+  selectFactionCatalogueSpotlights,
+} from './lib/factionCatalogue';
 import { parseFactionInput, reconcileFactionSheetTargetForSave } from './lib/factionSheetTargets';
 import { isActiveGroupMember, requireAuthUserId } from './lib/policy';
 import { profileSummary } from './lib/profileSummary';
@@ -110,6 +115,52 @@ export const list = query({
       .query('factions')
       .withIndex('by_deleted', (q) => q.eq('is_deleted', false))
       .take(500);
+  },
+});
+
+const rulesetSummaryValidator = v.object({
+  id: v.id('rulesets'),
+  slug: v.string(),
+  name: v.string(),
+});
+
+const catalogueFactionValidator = v.object({
+  _id: v.id('factions'),
+  _creationTime: v.number(),
+  owner_id: v.id('users'),
+  data: v.any(),
+  slug: v.string(),
+  created_at: v.string(),
+  updated_at: v.string(),
+  is_deleted: v.boolean(),
+  group_id: v.union(v.id('groups'), v.null()),
+  rulesets: v.array(rulesetSummaryValidator),
+});
+
+/** Public, viewer-independent bundle for the Faction catalogue route. */
+export const cataloguePage = query({
+  args: {},
+  returns: v.object({
+    factions: v.array(catalogueFactionValidator),
+    rulesets: v.array(rulesetSummaryValidator),
+    spotlights: v.object({
+      newArrival: v.union(catalogueFactionValidator, v.null()),
+      freshlyUpdated: v.union(catalogueFactionValidator, v.null()),
+    }),
+  }),
+  handler: async (ctx) => {
+    const rows = await ctx.db
+      .query('factions')
+      .withIndex('by_deleted', (q) => q.eq('is_deleted', false))
+      .take(500);
+    const rulesets = await listActiveRulesetSummaries(ctx);
+    const factions = await enrichFactionsWithRulesets(ctx, rows, rulesets);
+
+    return {
+      factions,
+      rulesets,
+      spotlights: selectFactionCatalogueSpotlights(factions),
+    };
   },
 });
 

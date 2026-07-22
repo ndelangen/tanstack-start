@@ -2,7 +2,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { useEffect, useRef } from 'react';
 
 import { db } from '@db/core';
-import type { FactionEntry } from '@db/factions';
+import type { FactionCatalogueEntry } from '@db/factions';
 import { toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
 import { type ProfileUserEditInput, profileUserEditFormSchema } from '@app/profile/validation';
 
@@ -26,7 +26,7 @@ export type ProfilePageData = {
   groups: Doc<'groups'>[];
   faqAsked: unknown[];
   faqAnswers: unknown[];
-  factions: FactionEntry[];
+  factions: FactionCatalogueEntry[];
 };
 
 export async function loadProfileBySlug(slug: string): Promise<ProfilePageData> {
@@ -36,7 +36,7 @@ export async function loadProfileBySlug(slug: string): Promise<ProfilePageData> 
     groups: Doc<'groups'>[];
     faqAsked: import('../faq/db').FaqItemAskedByWithRuleset[];
     faqAnswers: import('../faq/db').FaqAnswerWithParent[];
-    factions: FactionEntry[];
+    factions: FactionCatalogueEntry[];
   }>(api.profiles.getBySlug, { slug });
 
   return {
@@ -96,7 +96,7 @@ export function useProfileBySlug(
     groups: Doc<'groups'>[];
     faqAsked: import('../faq/db').FaqItemAskedByWithRuleset[];
     faqAnswers: import('../faq/db').FaqAnswerWithParent[];
-    factions: FactionEntry[];
+    factions: FactionCatalogueEntry[];
   } | null>(liveData, true, () => (options?.initialData as never) ?? undefined);
   return {
     ...result,
