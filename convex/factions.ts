@@ -14,7 +14,21 @@ import { parseFactionInput, reconcileFactionSheetTargetForSave } from './lib/fac
 import { isActiveGroupMember, requireAuthUserId } from './lib/policy';
 import { profileSummary } from './lib/profileSummary';
 import { nowIso, slugify } from './lib/utils';
-import type { QueryCtx } from './types';
+import type { MutationCtx, QueryCtx } from './types';
+
+async function assertFactionSlugAvailable(
+  ctx: MutationCtx,
+  slug: string,
+  factionId?: Id<'factions'>
+) {
+  const existing = await ctx.db
+    .query('factions')
+    .withIndex('by_slug', (q) => q.eq('slug', slug))
+    .unique();
+  if (existing && existing._id !== factionId) {
+    throw new Error(`Faction slug ${slug} is reserved`);
+  }
+}
 
 /** Groups relevant to the faction row + viewer memberships only (no full-table scan). */
 async function groupsForFactionAndMemberships(
@@ -258,13 +272,7 @@ export const create = mutation({
 
     const data = parseFactionInput(args.data);
     const slug = slugify(data.name);
-    const existing = await ctx.db
-      .query('factions')
-      .withIndex('by_slug', (q) => q.eq('slug', slug))
-      .unique();
-    if (existing && !existing.is_deleted) {
-      throw new Error(`Faction with id ${slug} already exists`);
-    }
+    await assertFactionSlugAvailable(ctx, slug);
 
     const now = nowIso();
     const _id = await ctx.db.insert('factions', {
@@ -299,13 +307,7 @@ export const update = mutation({
 
     const data = parseFactionInput(args.data);
     const slug = slugify(data.name);
-    const slugOwner = await ctx.db
-      .query('factions')
-      .withIndex('by_slug', (q) => q.eq('slug', slug))
-      .unique();
-    if (slugOwner && slugOwner._id !== args.id && !slugOwner.is_deleted) {
-      throw new Error(`Faction with id ${slug} already exists`);
-    }
+    await assertFactionSlugAvailable(ctx, slug, args.id);
 
     await ctx.db.patch(args.id, {
       data,

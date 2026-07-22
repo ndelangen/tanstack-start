@@ -21,6 +21,16 @@
       "requires": []
     },
     {
+      "id": "faction_slug_reservations_v1",
+      "phase": "widen",
+      "requires": []
+    },
+    {
+      "id": "faction_slug_reservations_verify_v1",
+      "phase": "widen",
+      "requires": ["faction_slug_reservations_v1"]
+    },
+    {
       "id": "faction_sheet_targets_backfill_v1",
       "phase": "widen",
       "requires": []

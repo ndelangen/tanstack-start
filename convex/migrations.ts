@@ -26,6 +26,8 @@ const MIGRATION_IDS: Record<string, MigrationRef> = {
   faq_item_slug_v1: internal.migrations.faq_item_slug_v1,
   faq_item_tags_v1: internal.migrations.faq_item_tags_v1,
   profiles_from_users_v1: internal.migrations.profiles_from_users_v1,
+  faction_slug_reservations_v1: internal.migrations.faction_slug_reservations_v1,
+  faction_slug_reservations_verify_v1: internal.migrations.faction_slug_reservations_verify_v1,
   faction_sheet_targets_backfill_v1: internal.migrations.faction_sheet_targets_backfill_v1,
   faction_sheet_targets_verify_v1: internal.migrations.faction_sheet_targets_verify_v1,
 };
@@ -183,6 +185,66 @@ export const profiles_from_users_v1 = migrations.define({
   },
 });
 
+async function archivedFactionSlug(ctx: MutationCtx, slug: string, factionId: Id<'factions'>) {
+  const base = `${slug}-archived-${factionId}`;
+  let candidate = base;
+  let suffix = 1;
+  while (true) {
+    const existing = await ctx.db
+      .query('factions')
+      .withIndex('by_slug', (q) => q.eq('slug', candidate))
+      .unique();
+    if (!existing || existing._id === factionId) return candidate;
+    suffix += 1;
+    candidate = `${base}-${suffix}`;
+  }
+}
+
+/**
+ * Repairs historical slug reuse while preserving the active faction's public URL.
+ * Future writes reserve slugs globally, including those on soft-deleted rows.
+ */
+export const faction_slug_reservations_v1 = migrations.define({
+  table: 'factions',
+  batchSize: 25,
+  migrateOne: async (ctx, faction) => {
+    const matches = await ctx.db
+      .query('factions')
+      .withIndex('by_slug', (q) => q.eq('slug', faction.slug))
+      .take(2);
+    if (matches.length <= 1) return;
+
+    const active = await ctx.db
+      .query('factions')
+      .withIndex('by_slug', (q) => q.eq('slug', faction.slug))
+      .filter((q) => q.eq(q.field('is_deleted'), false))
+      .take(2);
+    if (active.length > 1) {
+      throw new Error(`Cannot repair slug ${faction.slug}: multiple active factions`);
+    }
+
+    const keeper = active[0] ?? matches[0];
+    if (keeper?._id === faction._id) return;
+
+    return { slug: await archivedFactionSlug(ctx, faction.slug, faction._id) };
+  },
+});
+
+/** Successful completion proves faction slugs are globally unique. */
+export const faction_slug_reservations_verify_v1 = migrations.define({
+  table: 'factions',
+  batchSize: 25,
+  migrateOne: async (ctx, faction) => {
+    const matches = await ctx.db
+      .query('factions')
+      .withIndex('by_slug', (q) => q.eq('slug', faction.slug))
+      .take(2);
+    if (matches.length > 1) {
+      throw new Error(`Duplicate faction slug remains: ${faction.slug}`);
+    }
+  },
+});
+
 /** Bounded, resumable, idempotent target creation for active factions only. */
 export const faction_sheet_targets_backfill_v1 = migrations.define({
   table: 'factions',
@@ -216,6 +278,8 @@ export const runDeployMigrations = migrations.runner([
   internal.migrations.faq_item_slug_v1,
   internal.migrations.faq_item_tags_v1,
   internal.migrations.profiles_from_users_v1,
+  internal.migrations.faction_slug_reservations_v1,
+  internal.migrations.faction_slug_reservations_verify_v1,
   internal.migrations.faction_sheet_targets_backfill_v1,
   internal.migrations.faction_sheet_targets_verify_v1,
 ]);
