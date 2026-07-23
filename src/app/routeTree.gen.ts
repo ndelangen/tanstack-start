@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AuthOauthRouteImport } from './routes/auth/oauth'
+import { Route as AppFactionSheetPreviewPrototypeRouteImport } from './routes/_app/faction-sheet-preview-prototype'
 import { Route as App_iconsRouteImport } from './routes/_app/[_]_icons'
 import { Route as AppSplatRouteImport } from './routes/_app/$'
 import { Route as AppRulesetsIndexRouteImport } from './routes/_app/rulesets/index'
@@ -55,6 +56,12 @@ const AuthOauthRoute = AuthOauthRouteImport.update({
   path: '/auth/oauth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppFactionSheetPreviewPrototypeRoute =
+  AppFactionSheetPreviewPrototypeRouteImport.update({
+    id: '/faction-sheet-preview-prototype',
+    path: '/faction-sheet-preview-prototype',
+    getParentRoute: () => AppRoute,
+  } as any)
 const App_iconsRoute = App_iconsRouteImport.update({
   id: '/__icons',
   path: '/__icons',
@@ -208,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/$': typeof AppSplatRoute
   '/__icons': typeof App_iconsRoute
+  '/faction-sheet-preview-prototype': typeof AppFactionSheetPreviewPrototypeRoute
   '/auth/oauth': typeof AuthOauthRoute
   '/admin/migrations': typeof AppAdminMigrationsRoute
   '/assets/create': typeof AppAssetsCreateRoute
@@ -239,6 +247,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/$': typeof AppSplatRoute
   '/__icons': typeof App_iconsRoute
+  '/faction-sheet-preview-prototype': typeof AppFactionSheetPreviewPrototypeRoute
   '/auth/oauth': typeof AuthOauthRoute
   '/': typeof AppIndexRoute
   '/admin/migrations': typeof AppAdminMigrationsRoute
@@ -271,6 +280,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/_app/$': typeof AppSplatRoute
   '/_app/__icons': typeof App_iconsRoute
+  '/_app/faction-sheet-preview-prototype': typeof AppFactionSheetPreviewPrototypeRoute
   '/auth/oauth': typeof AuthOauthRoute
   '/_app/': typeof AppIndexRoute
   '/_app/admin/migrations': typeof AppAdminMigrationsRoute
@@ -306,6 +316,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/__icons'
+    | '/faction-sheet-preview-prototype'
     | '/auth/oauth'
     | '/admin/migrations'
     | '/assets/create'
@@ -337,6 +348,7 @@ export interface FileRouteTypes {
   to:
     | '/$'
     | '/__icons'
+    | '/faction-sheet-preview-prototype'
     | '/auth/oauth'
     | '/'
     | '/admin/migrations'
@@ -368,6 +380,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/_app/$'
     | '/_app/__icons'
+    | '/_app/faction-sheet-preview-prototype'
     | '/auth/oauth'
     | '/_app/'
     | '/_app/admin/migrations'
@@ -426,6 +439,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/oauth'
       preLoaderRoute: typeof AuthOauthRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/faction-sheet-preview-prototype': {
+      id: '/_app/faction-sheet-preview-prototype'
+      path: '/faction-sheet-preview-prototype'
+      fullPath: '/faction-sheet-preview-prototype'
+      preLoaderRoute: typeof AppFactionSheetPreviewPrototypeRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/__icons': {
       id: '/_app/__icons'
@@ -663,6 +683,7 @@ const AppRulesetsRulesetSlugRouteWithChildren =
 interface AppRouteChildren {
   AppSplatRoute: typeof AppSplatRoute
   App_iconsRoute: typeof App_iconsRoute
+  AppFactionSheetPreviewPrototypeRoute: typeof AppFactionSheetPreviewPrototypeRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAdminMigrationsRoute: typeof AppAdminMigrationsRoute
   AppAssetsCreateRoute: typeof AppAssetsCreateRoute
@@ -688,6 +709,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppSplatRoute: AppSplatRoute,
   App_iconsRoute: App_iconsRoute,
+  AppFactionSheetPreviewPrototypeRoute: AppFactionSheetPreviewPrototypeRoute,
   AppIndexRoute: AppIndexRoute,
   AppAdminMigrationsRoute: AppAdminMigrationsRoute,
   AppAssetsCreateRoute: AppAssetsCreateRoute,
