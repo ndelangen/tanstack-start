@@ -19,23 +19,39 @@ Quick reference for understanding and working with the codebase.
 
 ```bash
 # Development
-npm run app:dev           # Dev server (port 3000)
-npm run app:dev:raw       # Alias of app:dev
-npm run app:build         # Build for production
-npm run app:preview       # Preview production build locally
+bun run app:dev           # Dev server on port 3000, using the configured online Convex deployment
+bun run app:dev --local   # Disposable local Convex + local auth + production faction copy
+bun run app:build         # Build for production
+bun run app:preview       # Preview production build locally
 
 # Database
-npm run convex:dev       # Strict Convex dev start: migration sync + Convex runtime
-npm run convex:deploy    # Deploy Convex functions/schema
-npm run migrations:run-local-required # Force local required migration catch-up
+bun run convex:dev       # Strict Convex dev start: migration sync + Convex runtime
+bun run convex:deploy    # Deploy Convex functions/schema
+bun run migrations:run-local-required # Force local required migration catch-up
 
 # Code quality
-npm run biome:check      # Lint and format
-npm run test             # Run tests
-npm run storybook        # Storybook dev (port 6006)
-npm run build-storybook  # Static Storybook → storybook-static
-npm run generate         # Regenerate the public asset catalog in src/game/data/generated.ts
+bun run biome:check      # Lint and format
+bun run test             # Run tests
+bun run storybook        # Storybook dev (port 6006)
+bun run build-storybook  # Static Storybook → storybook-static
+bun run generate         # Regenerate the public asset catalog in src/game/data/generated.ts
 ```
+
+### Disposable local app development
+
+`bun run app:dev --local` is the opt-in authenticated local environment for browser review.
+It requires Docker and the existing `.env.e2e.local` credentials (copy
+`.env.e2e.local.example` when needed). Each start resets the local Convex volume, creates
+the two configured local password users, and copies active production factions plus their
+directly referenced groups through a read-only production query.
+
+The local mapping is intentionally simple: user A owns every copied faction and group,
+while user B is an active member of every copied group. Production users, profiles,
+sessions, publisher state, rulesets, and operational tables are not copied. Use the two
+configured local accounts in `/auth/login`; no real account is required.
+
+`bun run e2e:local` remains the deterministic fixture-backed E2E environment and does not
+perform this production copy.
 
 ## Common Workflows
 

@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "app:build": "vite build",
-    "app:dev": "vite dev --port 3000",
+    "app:dev": "bash ./scripts/app-dev.sh",
     "app:preview": "vite preview",
     "biome:check": "biome check . --write",
     "biome:format": "biome format --write .",
