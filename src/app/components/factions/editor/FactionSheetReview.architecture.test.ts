@@ -11,10 +11,7 @@ const pagePreviewSource = readFileSync(
   new URL('./FactionSheetPagePreview.tsx', import.meta.url),
   'utf8'
 );
-const formFieldsSource = readFileSync(
-  new URL('./FactionFormFields.tsx', import.meta.url),
-  'utf8'
-);
+const formFieldsSource = readFileSync(new URL('./FactionFormFields.tsx', import.meta.url), 'utf8');
 const editorSource = readFileSync(new URL('./FactionEditor.tsx', import.meta.url), 'utf8');
 
 describe('adaptive faction sheet review architecture', () => {
