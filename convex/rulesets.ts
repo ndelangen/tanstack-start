@@ -2,7 +2,7 @@ import { getAuthUserId } from '@convex-dev/auth/server';
 import { v } from 'convex/values';
 
 import { rulesetInputSchema } from '../src/app/rulesets/validation';
-import { FactionStoredSchema, toLegacyFactionInput } from '../src/game/schema/faction';
+import { CanonicalFactionStoredSchema } from '../src/game/schema/faction';
 import type { Doc, Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { loadFaqItemsForRuleset } from './lib/faqRulesetList';
@@ -20,13 +20,10 @@ async function getFactionById(ctx: QueryCtx | MutationCtx, id: Id<'factions'>) {
   return await ctx.db.get(id);
 }
 
-function factionIdentityForClient(data: unknown, backgroundFormat?: 'canonical') {
-  const parsedFaction = FactionStoredSchema.safeParse(data);
+function factionIdentityForClient(data: unknown) {
+  const parsedFaction = CanonicalFactionStoredSchema.safeParse(data);
   if (!parsedFaction.success) return null;
-  const faction =
-    backgroundFormat === 'canonical'
-      ? parsedFaction.data
-      : toLegacyFactionInput(parsedFaction.data);
+  const faction = parsedFaction.data;
   return {
     logo: faction.logo,
     background: faction.background,
@@ -73,11 +70,7 @@ export const get = query({
   },
 });
 
-async function rulesetPublicBundleBySlugMaybe(
-  ctx: QueryCtx,
-  slug: string,
-  backgroundFormat?: 'canonical'
-) {
+async function rulesetPublicBundleBySlugMaybe(ctx: QueryCtx, slug: string) {
   const row = await ctx.db
     .query('rulesets')
     .withIndex('by_slug', (q) => q.eq('slug', slug))
@@ -106,38 +99,28 @@ async function rulesetPublicBundleBySlugMaybe(
         factionId: link.faction_id,
         name,
         urlSlug,
-        identity: factionIdentityForClient(data, backgroundFormat),
+        identity: factionIdentityForClient(data),
       };
     }),
     canAccess,
   };
 }
 
-async function rulesetPublicBundleBySlug(
-  ctx: QueryCtx,
-  slug: string,
-  backgroundFormat?: 'canonical'
-) {
-  const bundle = await rulesetPublicBundleBySlugMaybe(ctx, slug, backgroundFormat);
+async function rulesetPublicBundleBySlug(ctx: QueryCtx, slug: string) {
+  const bundle = await rulesetPublicBundleBySlugMaybe(ctx, slug);
   if (!bundle) throw new Error(`Ruleset with slug ${slug} not found`);
   return bundle;
 }
 
 export const getBySlug = query({
-  args: {
-    slug: v.string(),
-    background_format: v.optional(v.literal('canonical')),
-  },
-  handler: async (ctx, args) => rulesetPublicBundleBySlug(ctx, args.slug, args.background_format),
+  args: { slug: v.string() },
+  handler: async (ctx, args) => rulesetPublicBundleBySlug(ctx, args.slug),
 });
 
 export const detailPageBySlug = query({
-  args: {
-    slug: v.string(),
-    background_format: v.optional(v.literal('canonical')),
-  },
+  args: { slug: v.string() },
   handler: async (ctx, args) => {
-    const base = await rulesetPublicBundleBySlugMaybe(ctx, args.slug, args.background_format);
+    const base = await rulesetPublicBundleBySlugMaybe(ctx, args.slug);
     if (!base) return null;
     const faqItems = await loadFaqItemsForRuleset(ctx, base.ruleset._id);
 
@@ -191,10 +174,7 @@ export const factionIds = query({
 });
 
 export const factionDetails = query({
-  args: {
-    ruleset_id: v.id('rulesets'),
-    background_format: v.optional(v.literal('canonical')),
-  },
+  args: { ruleset_id: v.id('rulesets') },
   handler: async (ctx, args) => {
     const links = await ctx.db
       .query('ruleset_factions')
@@ -211,7 +191,7 @@ export const factionDetails = query({
         factionId: link.faction_id,
         name,
         urlSlug,
-        identity: factionIdentityForClient(data, args.background_format),
+        identity: factionIdentityForClient(data),
       };
     });
   },

@@ -5,12 +5,10 @@ import type { FaqAnswerEntry, FaqItemWithDetails } from '@db/faq';
 import type { GroupMemberRow, UserGroupMembershipWithGroup } from '@db/members';
 import { toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
 import { rulesetInputSchema } from '@app/rulesets/validation';
-import { BackgroundStoredSchema, type FactionData } from '@game/schema/faction';
+import { Background, type FactionData } from '@game/schema/faction';
 
 import { api } from '../../../convex/_generated/api';
 import type { Doc } from '../../../convex/_generated/dataModel';
-
-const canonicalBackgroundFormat = { background_format: 'canonical' as const };
 
 export type Ruleset = { name: string };
 export type RulesetRow = Doc<'rulesets'>;
@@ -42,7 +40,7 @@ function normalizeRulesetFactionSummary(faction: RulesetFactionSummaryRaw): Rule
     identity: faction.identity
       ? {
           logo: faction.identity.logo,
-          background: BackgroundStoredSchema.parse(faction.identity.background),
+          background: Background.parse(faction.identity.background),
         }
       : null,
   };
@@ -114,7 +112,7 @@ export async function loadRulesetBySlug(slug: string): Promise<RulesetPageData> 
     ruleset: RulesetRow;
     factions: RulesetFactionSummaryRaw[];
     canAccess: boolean;
-  }>(api.rulesets.getBySlug, { slug, ...canonicalBackgroundFormat });
+  }>(api.rulesets.getBySlug, { slug });
   return {
     ...result,
     factions: result.factions.map(normalizeRulesetFactionSummary),
@@ -131,7 +129,7 @@ export async function loadRulesetDetailPage(slug: string): Promise<RulesetDetail
     viewerAssignableMemberships: AssignableMembershipConvexRow[] | null;
     groupAccess: RulesetDetailPageData['groupAccess'];
     faqItems: FaqItemConvexRow[];
-  } | null>(api.rulesets.detailPageBySlug, { slug, ...canonicalBackgroundFormat });
+  } | null>(api.rulesets.detailPageBySlug, { slug });
   if (!raw) return null;
   return {
     ruleset: toRulesetEntry(raw.ruleset),
@@ -155,7 +153,6 @@ export async function loadRulesetFactionsWithDetails(
 ): Promise<RulesetFactionSummary[]> {
   const factions = await db.query<RulesetFactionSummaryRaw[]>(api.rulesets.factionDetails, {
     ruleset_id: rulesetId,
-    ...canonicalBackgroundFormat,
   });
   return factions.map(normalizeRulesetFactionSummary);
 }
@@ -203,7 +200,7 @@ export function useRuleset(id: string) {
 }
 
 export function useRulesetBySlug(slug: string, options?: { initialData?: RulesetPageData }) {
-  const liveData = useQuery(api.rulesets.getBySlug, { slug, ...canonicalBackgroundFormat });
+  const liveData = useQuery(api.rulesets.getBySlug, { slug });
   const result = toLiveQueryResult<{
     ruleset: RulesetRow;
     factions: RulesetFactionSummaryRaw[];
@@ -223,7 +220,6 @@ export function useRulesetDetailPage(
 ) {
   const liveData = useQuery(api.rulesets.detailPageBySlug, {
     slug,
-    ...canonicalBackgroundFormat,
   });
   const normalized: RulesetDetailPageData | null | undefined =
     liveData === undefined
@@ -267,7 +263,6 @@ export function useRulesetFactionsWithDetails(
 ) {
   const liveData = useQuery(api.rulesets.factionDetails, {
     ruleset_id: rulesetId,
-    ...canonicalBackgroundFormat,
   } as never) as RulesetFactionSummaryRaw[] | undefined;
   const result = toLiveQueryResult(liveData, true, () => options?.initialData ?? undefined);
   return {

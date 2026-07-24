@@ -1,11 +1,7 @@
 import { getAuthUserId } from '@convex-dev/auth/server';
 import { v } from 'convex/values';
 
-import {
-  FactionStoredSchema,
-  reconcileLegacyFactionUpdate,
-  toLegacyFactionInput,
-} from '../src/game/schema/faction';
+import { CanonicalFactionStoredSchema } from '../src/game/schema/faction';
 import type { Doc, Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { factionSheetPublishingStatus } from './assetPublishingStatus';
@@ -34,17 +30,14 @@ async function assertFactionSlugAvailable(
   }
 }
 
-type BackgroundReadFormat = 'canonical' | undefined;
-
-function factionDataForClient(data: unknown, backgroundFormat: BackgroundReadFormat) {
-  const canonicalData = FactionStoredSchema.parse(data);
-  return backgroundFormat === 'canonical' ? canonicalData : toLegacyFactionInput(canonicalData);
+function factionDataForClient(data: unknown) {
+  return CanonicalFactionStoredSchema.parse(data);
 }
 
-function factionRowForClient(row: Doc<'factions'>, backgroundFormat: BackgroundReadFormat) {
+function factionRowForClient(row: Doc<'factions'>) {
   return {
     ...row,
-    data: factionDataForClient(row.data, backgroundFormat),
+    data: factionDataForClient(row.data),
   };
 }
 
@@ -72,11 +65,7 @@ async function groupsForFactionAndMemberships(
 }
 
 /** Faction detail page bundle (view, edit, and sheet preview). */
-async function loadFactionDetailPageBySlug(
-  ctx: QueryCtx,
-  slug: string,
-  backgroundFormat: BackgroundReadFormat
-) {
+async function loadFactionDetailPageBySlug(ctx: QueryCtx, slug: string) {
   const row = await ctx.db
     .query('factions')
     .withIndex('by_slug', (q) => q.eq('slug', slug))
@@ -128,7 +117,7 @@ async function loadFactionDetailPageBySlug(
   return {
     faction: {
       ...row,
-      data: factionDataForClient(row.data, backgroundFormat),
+      data: factionDataForClient(row.data),
     },
     owner: ownerProfile,
     group,
@@ -140,21 +129,18 @@ async function loadFactionDetailPageBySlug(
 }
 
 export const getBySlug = query({
-  args: {
-    slug: v.string(),
-    background_format: v.optional(v.literal('canonical')),
-  },
-  handler: async (ctx, args) => loadFactionDetailPageBySlug(ctx, args.slug, args.background_format),
+  args: { slug: v.string() },
+  handler: async (ctx, args) => loadFactionDetailPageBySlug(ctx, args.slug),
 });
 
 export const list = query({
-  args: { background_format: v.optional(v.literal('canonical')) },
-  handler: async (ctx, args) => {
+  args: {},
+  handler: async (ctx) => {
     const rows = await ctx.db
       .query('factions')
       .withIndex('by_deleted', (q) => q.eq('is_deleted', false))
       .take(500);
-    return rows.map((row) => factionRowForClient(row, args.background_format));
+    return rows.map(factionRowForClient);
   },
 });
 
@@ -179,7 +165,7 @@ const catalogueFactionValidator = v.object({
 
 /** Public, viewer-independent bundle for the Faction catalogue route. */
 export const cataloguePage = query({
-  args: { background_format: v.optional(v.literal('canonical')) },
+  args: {},
   returns: v.object({
     factions: v.array(catalogueFactionValidator),
     rulesets: v.array(rulesetSummaryValidator),
@@ -188,13 +174,13 @@ export const cataloguePage = query({
       freshlyUpdated: v.union(catalogueFactionValidator, v.null()),
     }),
   }),
-  handler: async (ctx, args) => {
+  handler: async (ctx) => {
     const rows = await ctx.db
       .query('factions')
       .withIndex('by_deleted', (q) => q.eq('is_deleted', false))
       .take(500);
     const rulesets = await listActiveRulesetSummaries(ctx);
-    const factions = await enrichFactionsWithRulesets(ctx, rows, rulesets, args.background_format);
+    const factions = await enrichFactionsWithRulesets(ctx, rows, rulesets);
 
     return {
       factions,
@@ -206,8 +192,8 @@ export const cataloguePage = query({
 
 /** Factions + resolved group/owner labels and the caller's group memberships for the load picker. */
 export const listForLoadPicker = query({
-  args: { background_format: v.optional(v.literal('canonical')) },
-  handler: async (ctx, args) => {
+  args: {},
+  handler: async (ctx) => {
     const userId = await requireAuthUserId(ctx);
 
     const factionRows = await ctx.db
@@ -246,7 +232,7 @@ export const listForLoadPicker = query({
     }
 
     const rows = factionRows.map((row) => {
-      const data = factionDataForClient(row.data, args.background_format);
+      const data = factionDataForClient(row.data);
       const groupId = row.group_id ?? null;
       const groupLabel = groupId ? (groupNameById.get(groupId) ?? groupId) : 'No group';
       return {
@@ -267,28 +253,26 @@ export const listForLoadPicker = query({
 export const listByOwner = query({
   args: {
     owner_id: v.id('users'),
-    background_format: v.optional(v.literal('canonical')),
   },
   handler: async (ctx, args) => {
     const rows = await ctx.db
       .query('factions')
       .withIndex('by_owner_deleted', (q) => q.eq('owner_id', args.owner_id).eq('is_deleted', false))
       .take(500);
-    return rows.map((row) => factionRowForClient(row, args.background_format));
+    return rows.map(factionRowForClient);
   },
 });
 
 export const listByGroup = query({
   args: {
     group_id: v.id('groups'),
-    background_format: v.optional(v.literal('canonical')),
   },
   handler: async (ctx, args) => {
     const rows = await ctx.db
       .query('factions')
       .withIndex('by_group_deleted', (q) => q.eq('group_id', args.group_id).eq('is_deleted', false))
       .take(500);
-    return rows.map((row) => factionRowForClient(row, args.background_format));
+    return rows.map(factionRowForClient);
   },
 });
 
@@ -296,7 +280,6 @@ export const create = mutation({
   args: {
     data: v.any(),
     group_id: v.union(v.id('groups'), v.null()),
-    background_format: v.optional(v.literal('canonical')),
   },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
@@ -305,9 +288,8 @@ export const create = mutation({
       if (!canUseGroup) throw new Error('Not authorized for group');
     }
 
-    const normalizedData = parseFactionInput(args.data);
-    const data = parseFactionInput(normalizedData, {
-      requireCanonicalSemantics: true,
+    const data = parseFactionInput(args.data, {
+      requireAuthoringSemantics: true,
     });
     const slug = slugify(data.name);
     await assertFactionSlugAvailable(ctx, slug);
@@ -325,7 +307,7 @@ export const create = mutation({
     await reconcileFactionSheetTargetForSave(ctx, _id);
     const row = await ctx.db.get(_id);
     if (!row) throw new Error('Failed to create faction');
-    return factionRowForClient(row, args.background_format);
+    return factionRowForClient(row);
   },
 });
 
@@ -333,7 +315,6 @@ export const update = mutation({
   args: {
     id: v.id('factions'),
     data: v.any(),
-    background_format: v.optional(v.literal('canonical')),
   },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
@@ -344,13 +325,9 @@ export const update = mutation({
       row.group_id == null ? false : await isActiveGroupMember(ctx, row.group_id, userId);
     if (!isOwner && !isGroupEditor) throw new Error('Not authorized');
 
-    const parsedData = parseFactionInput(args.data, {
-      requireCanonicalSemantics: args.background_format === 'canonical',
+    const data = parseFactionInput(args.data, {
+      requireAuthoringSemantics: true,
     });
-    const data =
-      args.background_format === 'canonical'
-        ? parsedData
-        : (reconcileLegacyFactionUpdate(args.data, row.data) ?? parsedData);
     const slug = slugify(data.name);
     await assertFactionSlugAvailable(ctx, slug, args.id);
 
@@ -362,7 +339,7 @@ export const update = mutation({
     await reconcileFactionSheetTargetForSave(ctx, args.id);
     const updated = await ctx.db.get(args.id);
     if (!updated) throw new Error('Failed to update faction');
-    return factionRowForClient(updated, args.background_format);
+    return factionRowForClient(updated);
   },
 });
 
@@ -370,7 +347,6 @@ export const setGroup = mutation({
   args: {
     id: v.id('factions'),
     group_id: v.union(v.id('groups'), v.null()),
-    background_format: v.optional(v.literal('canonical')),
   },
   handler: async (ctx, args) => {
     const userId = await requireAuthUserId(ctx);
@@ -388,7 +364,7 @@ export const setGroup = mutation({
     });
     const updated = await ctx.db.get(args.id);
     if (!updated) throw new Error('Failed to update faction group');
-    return factionRowForClient(updated, args.background_format);
+    return factionRowForClient(updated);
   },
 });
 
@@ -408,10 +384,7 @@ export const softDelete = mutation({
 });
 
 export const getFullBySlug = query({
-  args: {
-    slug: v.string(),
-    background_format: v.optional(v.literal('canonical')),
-  },
+  args: { slug: v.string() },
   handler: async (ctx, args) => {
     const row = await ctx.db
       .query('factions')
@@ -427,7 +400,7 @@ export const getFullBySlug = query({
 
     return {
       ...row,
-      data: factionDataForClient(row.data, args.background_format),
+      data: factionDataForClient(row.data),
       owner: profile,
       group: group,
     };
