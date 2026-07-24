@@ -7,10 +7,9 @@ import { describe, expect, test } from 'vitest';
 import { PLANET, TROOP_MODIFIER } from '../src/game/data/generated';
 import { assetPublishingFaction } from '../src/game/fixtures/assetPublishingFaction';
 import {
+  CanonicalFactionStoredSchema,
   type FactionInput,
   FactionInputSchema,
-  FactionStoredSchema,
-  LegacyFactionInputSchema,
 } from '../src/game/schema/faction';
 import { api } from './_generated/api';
 import schema from './schema';
@@ -192,10 +191,9 @@ describe('faction authoring full-field round trip', () => {
     const createdRow = await asUser.mutation(api.factions.create, {
       data: createdInput,
       group_id: null,
-      background_format: 'canonical',
     });
     expect(createdRow.slug).toBe('complete-authoring-proof');
-    expect(FactionStoredSchema.parse(createdRow.data)).toEqual(createdInput);
+    expect(CanonicalFactionStoredSchema.parse(createdRow.data)).toEqual(createdInput);
 
     const createdTarget = await t.run(
       async (ctx) =>
@@ -232,14 +230,11 @@ describe('faction authoring full-field round trip', () => {
 
     const canonicalCreatePage = await t.query(api.factions.getBySlug, {
       slug: createdRow.slug,
-      background_format: 'canonical',
     });
-    expect(FactionStoredSchema.parse(canonicalCreatePage.faction.data)).toEqual(createdInput);
-    await expect(
-      asUser.query(api.factions.listForLoadPicker, {
-        background_format: 'canonical',
-      })
-    ).resolves.toMatchObject({
+    expect(CanonicalFactionStoredSchema.parse(canonicalCreatePage.faction.data)).toEqual(
+      createdInput
+    );
+    await expect(asUser.query(api.factions.listForLoadPicker, {})).resolves.toMatchObject({
       rows: [
         {
           data: {
@@ -250,11 +245,7 @@ describe('faction authoring full-field round trip', () => {
         },
       ],
     });
-    await expect(
-      t.query(api.factions.cataloguePage, {
-        background_format: 'canonical',
-      })
-    ).resolves.toMatchObject({
+    await expect(t.query(api.factions.cataloguePage, {})).resolves.toMatchObject({
       factions: [
         {
           data: {
@@ -268,7 +259,6 @@ describe('faction authoring full-field round trip', () => {
     await expect(
       t.query(api.rulesets.factionDetails, {
         ruleset_id: rulesetId,
-        background_format: 'canonical',
       })
     ).resolves.toMatchObject([
       {
@@ -296,15 +286,13 @@ describe('faction authoring full-field round trip', () => {
     const updatedRow = await asUser.mutation(api.factions.update, {
       id: createdRow._id,
       data: editedInput,
-      background_format: 'canonical',
     });
 
     expect(updatedRow.slug).toBe('complete-authoring-proof-revised');
     const canonicalEditPage = await t.query(api.factions.getBySlug, {
       slug: updatedRow.slug,
-      background_format: 'canonical',
     });
-    const reloaded = FactionStoredSchema.parse(canonicalEditPage.faction.data);
+    const reloaded = CanonicalFactionStoredSchema.parse(canonicalEditPage.faction.data);
     expect(reloaded).toEqual(editedInput);
     expect(JSON.stringify(reloaded.extras)).toBe(extrasBytes);
     expect(reloaded.colors).toEqual(editedInput.colors);
@@ -323,50 +311,5 @@ describe('faction authoring full-field round trip', () => {
       desired_generation: 2,
       status: 'pending',
     });
-  });
-
-  test('round-trips a legacy read and save without losing canonical-only background data', async () => {
-    const t = convexTest(schema, modules);
-    const userId = await t.run(
-      async (ctx) => await ctx.db.insert('users', { name: 'Legacy bridge proof user' })
-    );
-    await t.run(
-      async (ctx) =>
-        await ctx.db.insert('profiles', {
-          user_id: userId,
-          username: 'Legacy bridge proof user',
-          avatar_url: null,
-          slug: 'legacy-bridge-proof-user',
-          created_at: '2026-07-24T09:00:00.000Z',
-          updated_at: '2026-07-24T09:00:00.000Z',
-        })
-    );
-    const asUser = t.withIdentity({ subject: userId });
-    const canonicalInput = representativeFullFieldFaction();
-    const created = await asUser.mutation(api.factions.create, {
-      data: canonicalInput,
-      group_id: null,
-      background_format: 'canonical',
-    });
-
-    const legacyRead = await t.query(api.factions.getBySlug, { slug: created.slug });
-    const legacyData = LegacyFactionInputSchema.parse(legacyRead.faction.data);
-    expect(legacyData.planet?.[0].image).toBe('https://dune.zone/image/planet/01.png');
-
-    legacyData.rules.revivalText = 'Edited by the deployed legacy client.';
-    const legacySave = await asUser.mutation(api.factions.update, {
-      id: created._id,
-      data: legacyData,
-    });
-    expect(LegacyFactionInputSchema.safeParse(legacySave.data).success).toBe(true);
-
-    const canonicalReload = await t.query(api.factions.getBySlug, {
-      slug: created.slug,
-      background_format: 'canonical',
-    });
-    const reloaded = FactionInputSchema.parse(canonicalReload.faction.data);
-    expect(reloaded.background.invert).toBe(false);
-    expect(reloaded.planet?.[0].image).toBe('/image/planet/01.png');
-    expect(reloaded.rules.revivalText).toBe('Edited by the deployed legacy client.');
   });
 });

@@ -2,13 +2,15 @@ import { useQuery } from 'convex/react';
 
 import { db } from '@db/core';
 import { type LiveQueryResult, toLiveQueryResult, useLiveMutation } from '@app/db/core/live';
-import { type FactionInput, FactionInputSchema, FactionStoredSchema } from '@game/schema/faction';
+import {
+  CanonicalFactionStoredSchema,
+  type FactionInput,
+  FactionInputSchema,
+} from '@game/schema/faction';
 
 import { api } from '../../../convex/_generated/api';
 import type { Doc } from '../../../convex/_generated/dataModel';
 import type { PublicAssetPublishingStatusProjection } from '../../../convex/assetPublishingStatus';
-
-const canonicalBackgroundFormat = { background_format: 'canonical' as const };
 
 export type Faction = FactionInput;
 export type FactionData = FactionInput;
@@ -50,14 +52,14 @@ export type FactionUpdate = Omit<Partial<FactionEntry>, 'data'> & {
 function toFactionEntry(entry: FactionRow): FactionEntry {
   return {
     ...entry,
-    data: FactionStoredSchema.parse(entry.data),
+    data: CanonicalFactionStoredSchema.parse(entry.data),
   };
 }
 
 function toFactionCatalogueEntry(entry: FactionCatalogueRow): FactionCatalogueEntry {
   return {
     ...entry,
-    data: FactionStoredSchema.parse(entry.data),
+    data: CanonicalFactionStoredSchema.parse(entry.data),
   };
 }
 
@@ -124,7 +126,7 @@ export async function loadFactionBySlug(slug: string): Promise<FactionDetailPage
 }
 
 export async function loadFactionsAll(): Promise<FactionEntry[]> {
-  const entries = await db.query<FactionRow[]>(api.factions.list, canonicalBackgroundFormat);
+  const entries = await db.query<FactionRow[]>(api.factions.list, {});
   return factionRowsToEntries(entries);
 }
 
@@ -136,14 +138,13 @@ export async function loadFactionCataloguePage(): Promise<FactionCataloguePageDa
       newArrival: FactionCatalogueRow | null;
       freshlyUpdated: FactionCatalogueRow | null;
     };
-  }>(api.factions.cataloguePage, canonicalBackgroundFormat);
+  }>(api.factions.cataloguePage, {});
   return toFactionCataloguePageData(raw);
 }
 
 export async function loadFactionsByOwner(ownerId: string): Promise<FactionEntry[]> {
   const entries = await db.query<FactionRow[]>(api.factions.listByOwner, {
     owner_id: ownerId,
-    ...canonicalBackgroundFormat,
   });
   return factionRowsToEntries(entries);
 }
@@ -151,7 +152,6 @@ export async function loadFactionsByOwner(ownerId: string): Promise<FactionEntry
 export async function loadFactionsByGroup(groupId: string): Promise<FactionEntry[]> {
   const entries = await db.query<FactionRow[]>(api.factions.listByGroup, {
     group_id: groupId,
-    ...canonicalBackgroundFormat,
   });
   return factionRowsToEntries(entries);
 }
@@ -162,7 +162,7 @@ export function useFaction(
     initialData?: FactionDetailPageData;
   }
 ) {
-  const liveData = useQuery(api.factions.getBySlug, { slug, ...canonicalBackgroundFormat });
+  const liveData = useQuery(api.factions.getBySlug, { slug });
   const normalized = liveData
     ? {
         ...liveData,
@@ -187,13 +187,13 @@ export function useFaction(
 }
 
 export function useFactionsAll(options?: { initialData?: FactionEntry[] }) {
-  const liveData = useQuery(api.factions.list, canonicalBackgroundFormat);
+  const liveData = useQuery(api.factions.list, {});
   const normalized = liveData ? factionRowsToEntries(liveData) : undefined;
   return toLiveQueryResult(normalized, true, () => options?.initialData ?? undefined);
 }
 
 export function useFactionCataloguePage(options?: { initialData?: FactionCataloguePageData }) {
-  const liveData = useQuery(api.factions.cataloguePage, canonicalBackgroundFormat);
+  const liveData = useQuery(api.factions.cataloguePage, {});
   const normalized = liveData ? toFactionCataloguePageData(liveData) : undefined;
   return toLiveQueryResult(normalized, true, () => options?.initialData);
 }
@@ -217,12 +217,12 @@ export type FactionLoadPickerPayload = {
 export type FactionLoadPickerQuery = LiveQueryResult<FactionLoadPickerPayload>;
 
 export function useFactionLoadPicker(options?: { initialData?: FactionLoadPickerPayload }) {
-  const liveData = useQuery(api.factions.listForLoadPicker, canonicalBackgroundFormat);
+  const liveData = useQuery(api.factions.listForLoadPicker, {});
   const normalized = liveData
     ? {
         rows: liveData.rows.map((row) => ({
           ...row,
-          data: FactionStoredSchema.parse(row.data),
+          data: CanonicalFactionStoredSchema.parse(row.data),
         })),
         memberGroupIds: liveData.memberGroupIds,
       }
@@ -233,7 +233,6 @@ export function useFactionLoadPicker(options?: { initialData?: FactionLoadPicker
 export function useFactionsByOwner(ownerId: string, options?: { initialData?: FactionEntry[] }) {
   const liveData = useQuery(api.factions.listByOwner, {
     owner_id: ownerId,
-    ...canonicalBackgroundFormat,
   } as never);
   const normalized = liveData ? factionRowsToEntries(liveData) : undefined;
   return toLiveQueryResult(normalized, true, () => options?.initialData ?? undefined);
@@ -242,17 +241,15 @@ export function useFactionsByOwner(ownerId: string, options?: { initialData?: Fa
 export function useFactionsByGroup(groupId: string, options?: { initialData?: FactionEntry[] }) {
   const liveData = useQuery(api.factions.listByGroup, {
     group_id: groupId,
-    ...canonicalBackgroundFormat,
   } as never);
   const normalized = liveData ? factionRowsToEntries(liveData) : undefined;
   return toLiveQueryResult(normalized, true, () => options?.initialData ?? undefined);
 }
 
 export function useCreateFaction() {
-  const mutation = useLiveMutation<
-    { data: Faction; group_id: string | null; background_format: 'canonical' },
-    FactionRow
-  >(api.factions.create);
+  const mutation = useLiveMutation<{ data: Faction; group_id: string | null }, FactionRow>(
+    api.factions.create
+  );
 
   return {
     ...mutation,
@@ -264,7 +261,6 @@ export function useCreateFaction() {
         {
           data: FactionInputSchema.parse(variables.input),
           group_id: variables.groupId ?? null,
-          ...canonicalBackgroundFormat,
         },
         {
           onSuccess: (entry) => options?.onSuccess?.(toFactionEntry(entry)),
@@ -276,7 +272,6 @@ export function useCreateFaction() {
       const entry = await mutation.mutateAsync({
         data: validatedData,
         group_id: groupId ?? null,
-        ...canonicalBackgroundFormat,
       });
       return toFactionEntry(entry);
     },
@@ -284,10 +279,7 @@ export function useCreateFaction() {
 }
 
 export function useUpdateFaction() {
-  const mutation = useLiveMutation<
-    { id: string; data: Faction; background_format: 'canonical' },
-    FactionRow
-  >(api.factions.update);
+  const mutation = useLiveMutation<{ id: string; data: Faction }, FactionRow>(api.factions.update);
 
   return {
     ...mutation,
@@ -299,7 +291,6 @@ export function useUpdateFaction() {
         {
           id: variables.id,
           data: FactionInputSchema.parse(variables.input),
-          ...canonicalBackgroundFormat,
         },
         {
           onSuccess: (entry) => options?.onSuccess?.(toFactionEntry(entry)),
@@ -318,7 +309,6 @@ export function useUpdateFaction() {
       const entry = await mutation.mutateAsync({
         id,
         data: validatedData,
-        ...canonicalBackgroundFormat,
       });
       return toFactionEntry(entry);
     },
@@ -346,10 +336,9 @@ export function useDeleteFaction() {
 }
 
 export function useSetFactionGroup() {
-  const mutation = useLiveMutation<
-    { id: string; group_id: string | null; background_format: 'canonical' },
-    FactionRow
-  >(api.factions.setGroup);
+  const mutation = useLiveMutation<{ id: string; group_id: string | null }, FactionRow>(
+    api.factions.setGroup
+  );
   return {
     ...mutation,
     mutate: (
@@ -357,7 +346,7 @@ export function useSetFactionGroup() {
       options?: { onSuccess?: (entry: FactionEntry) => void; onError?: (error: Error) => void }
     ) =>
       mutation.mutate(
-        { id: variables.id, group_id: variables.groupId, ...canonicalBackgroundFormat },
+        { id: variables.id, group_id: variables.groupId },
         {
           onSuccess: (entry) => options?.onSuccess?.(toFactionEntry(entry)),
           onError: (error) => options?.onError?.(error),
@@ -367,7 +356,6 @@ export function useSetFactionGroup() {
       const entry = await mutation.mutateAsync({
         id,
         group_id: groupId,
-        ...canonicalBackgroundFormat,
       });
       return toFactionEntry(entry);
     },
@@ -377,6 +365,5 @@ export function useSetFactionGroup() {
 export async function loadFaction(slug: string): Promise<FactionDetailPageData> {
   return await db.query<FactionDetailPageData>(api.factions.getBySlug, {
     slug,
-    ...canonicalBackgroundFormat,
   });
 }

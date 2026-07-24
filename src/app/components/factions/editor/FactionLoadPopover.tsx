@@ -20,7 +20,7 @@ import { useMemo, useState } from 'react';
 
 import { type Faction, type FactionLoadPickerRow, useFactionLoadPicker } from '@db/factions';
 import { useCurrentProfile } from '@db/profiles';
-import { FactionStoredSchema } from '@game/schema/faction';
+import { CanonicalFactionStoredSchema } from '@game/schema/faction';
 
 import {
   FactionLoadOptionRow,
@@ -92,7 +92,7 @@ export function FactionLoadPopoverContent({
   const selectedRow = selectedId ? rowsById.get(selectedId) : undefined;
   const handleLoad = () => {
     if (!selectedRow) return;
-    const parsed = FactionStoredSchema.safeParse(selectedRow.data);
+    const parsed = CanonicalFactionStoredSchema.safeParse(selectedRow.data);
     if (!parsed.success) {
       setError(formatZodIssues(parsed.error));
       return;

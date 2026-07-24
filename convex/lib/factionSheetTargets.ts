@@ -1,4 +1,4 @@
-import { FactionInputSchema, FactionStoredSchema } from '../../src/game/schema/faction';
+import { CanonicalFactionStoredSchema, FactionInputSchema } from '../../src/game/schema/faction';
 import type { Id } from '../_generated/dataModel';
 import { supersedeRolloutForSave } from '../assetRollouts';
 import type { MutationCtx } from '../types';
@@ -19,11 +19,11 @@ export { FACTION_SHEET_ASSET_TYPE, INITIAL_FACTION_SHEET_RENDERER_VERSION };
 
 export function parseFactionInput(
   input: unknown,
-  { requireCanonicalSemantics = false }: { requireCanonicalSemantics?: boolean } = {}
+  { requireAuthoringSemantics = false }: { requireAuthoringSemantics?: boolean } = {}
 ) {
-  const parsed = (requireCanonicalSemantics ? FactionInputSchema : FactionStoredSchema).safeParse(
-    input
-  );
+  const parsed = (
+    requireAuthoringSemantics ? FactionInputSchema : CanonicalFactionStoredSchema
+  ).safeParse(input);
   if (!parsed.success) {
     const firstIssue = parsed.error.issues[0];
     const issuePath = firstIssue?.path.join('.') ?? 'data';

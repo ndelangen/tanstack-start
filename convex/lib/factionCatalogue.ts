@@ -1,9 +1,4 @@
-import {
-  type FactionInput,
-  FactionStoredSchema,
-  type LegacyFactionInput,
-  toLegacyFactionInput,
-} from '../../src/game/schema/faction';
+import { CanonicalFactionStoredSchema, type FactionInput } from '../../src/game/schema/faction';
 import type { Doc, Id } from '../_generated/dataModel';
 import type { QueryCtx } from '../types';
 
@@ -14,7 +9,7 @@ export type FactionRulesetSummary = {
 };
 
 export type CatalogueFaction = Omit<Doc<'factions'>, 'data'> & {
-  data: FactionInput | LegacyFactionInput;
+  data: FactionInput;
   rulesets: FactionRulesetSummary[];
 };
 
@@ -30,8 +25,7 @@ export async function listActiveRulesetSummaries(ctx: QueryCtx): Promise<Faction
 export async function enrichFactionsWithRulesets(
   ctx: QueryCtx,
   rows: Doc<'factions'>[],
-  activeRulesets: FactionRulesetSummary[],
-  backgroundFormat?: 'canonical'
+  activeRulesets: FactionRulesetSummary[]
 ): Promise<CatalogueFaction[]> {
   const activeRulesetById = new Map(activeRulesets.map((ruleset) => [ruleset.id, ruleset]));
 
@@ -46,11 +40,9 @@ export async function enrichFactionsWithRulesets(
         .filter((ruleset): ruleset is FactionRulesetSummary => ruleset != null)
         .sort(compareRulesets);
 
-      const canonicalData = FactionStoredSchema.parse(row.data);
       return {
         ...row,
-        data:
-          backgroundFormat === 'canonical' ? canonicalData : toLegacyFactionInput(canonicalData),
+        data: CanonicalFactionStoredSchema.parse(row.data),
         rulesets,
       };
     })
