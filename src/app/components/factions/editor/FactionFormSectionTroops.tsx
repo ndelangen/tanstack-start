@@ -1,18 +1,4 @@
-import {
-  closestCenter,
-  DndContext,
-  type DragEndEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
+import { arrayMove } from '@dnd-kit/sortable';
 import {
   ActionIcon,
   Alert,
@@ -30,21 +16,19 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core';
-import { GripVertical, Plus, Rotate3d, Trash2 } from 'lucide-react';
+import { Plus, Rotate3d, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
-import { getSortableIds, indexFromSortableId } from '@app/lib/dnd-sortable-ids';
 import { TroopToken } from '@game/assets/faction/troop/Troop';
 
+import { FactionCollectionShelf } from './FactionCollectionShelf';
 import { createTroopBackFromFront, defaultTroop } from './factionFormDefaults';
 import type { FactionFormApi } from './factionFormTypes';
 import { TroopSideFields } from './TroopSideFields';
-import { useFactionSortableItem } from './useFactionSortableItem';
 
 function TroopCard({
   form,
   index,
-  itemId,
   activeSide,
   onActiveSideChange,
   onRemove,
@@ -53,52 +37,33 @@ function TroopCard({
 }: {
   form: FactionFormApi;
   index: number;
-  itemId: string;
   activeSide: 'front' | 'back';
   onActiveSideChange: (side: 'front' | 'back') => void;
   onRemove: () => void;
   onToggleBack: () => void;
   showPreview: boolean;
 }) {
-  const sortable = useFactionSortableItem(itemId);
   const troop = form.state.values.troops[index];
   if (!troop) return null;
   const hasBack = troop.back != null;
 
   return (
-    <Paper ref={sortable.setNodeRef} style={sortable.style} withBorder radius="md" p="md">
+    <Paper withBorder radius="md" p="md">
       <Stack gap="md">
         <Group justify="space-between" align="flex-start" wrap="wrap">
-          <Group gap="sm" wrap="nowrap">
-            <Tooltip label={`Reorder troop ${index + 1}`}>
-              <ActionIcon
-                ref={sortable.handle.ref}
-                {...sortable.handle.attributes}
-                {...sortable.handle.listeners}
-                type="button"
-                variant="subtle"
-                color="gray"
-                size="lg"
-                aria-label={`Drag to reorder troop ${index + 1}`}
-                style={{ touchAction: 'none', cursor: 'grab' }}
-              >
-                <GripVertical size={18} aria-hidden />
-              </ActionIcon>
-            </Tooltip>
-            <Box>
-              <Group gap="xs">
-                <Text fw={700}>Troop {index + 1}</Text>
-                {hasBack ? (
-                  <Badge variant="light" color="dune">
-                    Two-sided
-                  </Badge>
-                ) : null}
-              </Group>
-              <Text size="xs" c="dimmed">
-                {troop.name.trim() || 'Unnamed troop'}
-              </Text>
-            </Box>
-          </Group>
+          <Box>
+            <Group gap="xs">
+              <Text fw={700}>Troop {index + 1}</Text>
+              {hasBack ? (
+                <Badge variant="light" color="dune">
+                  Two-sided
+                </Badge>
+              ) : null}
+            </Group>
+            <Text size="xs" c="dimmed">
+              {troop.name.trim() || 'Unnamed troop'}
+            </Text>
+          </Box>
 
           <Group gap="xs">
             <Button
@@ -247,14 +212,17 @@ function TroopCard({
 export function FactionFormSectionTroops({
   form,
   showPreview = true,
+  selectedIndex,
+  onSelectedIndexChange,
 }: {
   form: FactionFormApi;
   showPreview?: boolean;
+  selectedIndex?: number;
+  onSelectedIndexChange?: (index: number) => void;
 }) {
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
+  const [internalSelectedIndex, setInternalSelectedIndex] = useState(0);
+  const currentSelectedIndex = selectedIndex ?? internalSelectedIndex;
+  const selectIndex = onSelectedIndexChange ?? setInternalSelectedIndex;
   const [troopSideTabByIndex, setTroopSideTabByIndex] = useState<Record<number, 'front' | 'back'>>(
     {}
   );
@@ -277,7 +245,10 @@ export function FactionFormSectionTroops({
       <form.Field name="troops" mode="array">
         {(field) => {
           const sortablePrefix = 'troops-';
-          const itemIds = getSortableIds(sortablePrefix, field.state.value.length);
+          const safeSelectedIndex = Math.min(
+            Math.max(currentSelectedIndex, 0),
+            Math.max(field.state.value.length - 1, 0)
+          );
           return (
             <Stack gap="md">
               {field.state.value.length === 0 ? (
@@ -286,64 +257,75 @@ export function FactionFormSectionTroops({
                 </Alert>
               ) : null}
 
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={({ active, over }: DragEndEvent) => {
-                  if (!over) return;
-                  const from = indexFromSortableId(active.id, sortablePrefix);
-                  const to = indexFromSortableId(over.id, sortablePrefix);
-                  if (from == null || to == null || from === to) return;
-                  field.handleChange(arrayMove(field.state.value, from, to));
-                  setTroopSideTabByIndex((previous) => {
-                    const tabs = field.state.value.map((_, index) => previous[index] ?? 'front');
-                    return Object.fromEntries(arrayMove(tabs, from, to).map((tab, i) => [i, tab]));
-                  });
-                }}
-              >
-                <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-                  <Stack gap="md">
-                    {field.state.value.map((_, index) => {
-                      const itemId = `${sortablePrefix}${index}`;
-                      return (
-                        <TroopCard
-                          key={itemId}
-                          form={form}
-                          index={index}
-                          itemId={itemId}
-                          activeSide={troopSideTabByIndex[index] ?? 'front'}
-                          onActiveSideChange={(side) =>
-                            setTroopSideTabByIndex((previous) => ({ ...previous, [index]: side }))
-                          }
-                          onRemove={() => field.removeValue(index)}
-                          onToggleBack={() => {
-                            const next = [...field.state.value];
-                            const current = next[index];
-                            if (!current) return;
-                            next[index] = {
-                              ...current,
-                              back: current.back ? undefined : createTroopBackFromFront(current),
-                            };
-                            field.handleChange(next);
-                            setTroopSideTabByIndex((previous) => ({
-                              ...previous,
-                              [index]: 'front',
-                            }));
-                          }}
-                          showPreview={showPreview}
-                        />
+              {field.state.value.length > 0 ? (
+                <>
+                  <FactionCollectionShelf
+                    label="Ordered troop types"
+                    sortablePrefix={sortablePrefix}
+                    selectedIndex={safeSelectedIndex}
+                    onSelectedIndexChange={selectIndex}
+                    items={field.state.value.map((troop, index) => ({
+                      id: `${sortablePrefix}${index}`,
+                      label: troop.name.trim() || 'Unnamed troop',
+                      description: `${troop.count} pieces${troop.back ? ' · two-sided' : ''}`,
+                    }))}
+                    onMove={(from, to) => {
+                      field.handleChange(arrayMove(field.state.value, from, to));
+                      setTroopSideTabByIndex((previous) => {
+                        const tabs = field.state.value.map(
+                          (_, index) => previous[index] ?? 'front'
+                        );
+                        return Object.fromEntries(
+                          arrayMove(tabs, from, to).map((tab, index) => [index, tab])
+                        );
+                      });
+                    }}
+                  />
+                  <TroopCard
+                    form={form}
+                    index={safeSelectedIndex}
+                    activeSide={troopSideTabByIndex[safeSelectedIndex] ?? 'front'}
+                    onActiveSideChange={(side) =>
+                      setTroopSideTabByIndex((previous) => ({
+                        ...previous,
+                        [safeSelectedIndex]: side,
+                      }))
+                    }
+                    onRemove={() => {
+                      field.removeValue(safeSelectedIndex);
+                      selectIndex(
+                        Math.max(0, Math.min(safeSelectedIndex, field.state.value.length - 2))
                       );
-                    })}
-                  </Stack>
-                </SortableContext>
-              </DndContext>
+                    }}
+                    onToggleBack={() => {
+                      const next = [...field.state.value];
+                      const current = next[safeSelectedIndex];
+                      if (!current) return;
+                      next[safeSelectedIndex] = {
+                        ...current,
+                        back: current.back ? undefined : createTroopBackFromFront(current),
+                      };
+                      field.handleChange(next);
+                      setTroopSideTabByIndex((previous) => ({
+                        ...previous,
+                        [safeSelectedIndex]: 'front',
+                      }));
+                    }}
+                    showPreview={showPreview}
+                  />
+                </>
+              ) : null}
 
               <Button
                 type="button"
                 variant="light"
                 color="dune"
                 leftSection={<Plus size={16} aria-hidden />}
-                onClick={() => field.pushValue(defaultTroop())}
+                onClick={() => {
+                  const newIndex = field.state.value.length;
+                  field.pushValue(defaultTroop());
+                  selectIndex(newIndex);
+                }}
               >
                 Add troop type
               </Button>

@@ -17,6 +17,10 @@ const advantagesSource = readFileSync(
   new URL('./FactionFormSectionAdvantages.tsx', import.meta.url),
   'utf8'
 );
+const collectionShelfSource = readFileSync(
+  new URL('./FactionCollectionShelf.tsx', import.meta.url),
+  'utf8'
+);
 
 describe('Forces and Worlds and Rules and Advantages chapter architecture', () => {
   it('gives worlds, forces, rules, and advantages separate main tabs', () => {
@@ -28,10 +32,10 @@ describe('Forces and Worlds and Rules and Advantages chapter architecture', () =
     ]) {
       expect(fieldsSource).toContain(chapter);
     }
-    expect(fieldsSource).toContain('<FactionFormSectionPlanets form={form}');
-    expect(fieldsSource).toContain('<FactionFormSectionTroops form={form} showPreview={false}');
+    expect(fieldsSource).toContain('<FactionFormSectionPlanets');
+    expect(fieldsSource).toContain('<FactionFormSectionTroops');
     expect(fieldsSource).toContain('<FactionFormSectionRules form={form}');
-    expect(fieldsSource).toContain('<FactionFormSectionAdvantages form={form}');
+    expect(fieldsSource).toContain('<FactionFormSectionAdvantages');
   });
 
   it('uses Mantine directly for the newly owned application presentation', () => {
@@ -51,11 +55,12 @@ describe('Forces and Worlds and Rules and Advantages chapter architecture', () =
   });
 
   it('preserves pointer and keyboard ordering for troops, planets, and advantages', () => {
+    expect(collectionShelfSource).toContain('PointerSensor');
+    expect(collectionShelfSource).toContain('KeyboardSensor');
+    expect(collectionShelfSource).toContain('sortableKeyboardCoordinates');
+    expect(collectionShelfSource).toContain('Drag to reorder');
     for (const source of [troopsSource, planetsSource, advantagesSource]) {
-      expect(source).toContain('PointerSensor');
-      expect(source).toContain('KeyboardSensor');
-      expect(source).toContain('sortableKeyboardCoordinates');
-      expect(source).toContain('Drag to reorder');
+      expect(source).toContain('<FactionCollectionShelf');
     }
   });
 

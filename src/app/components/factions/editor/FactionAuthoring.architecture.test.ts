@@ -12,6 +12,10 @@ const toolbarStyles = readFileSync(
   new URL('./FactionAuthoringToolbar.module.css', import.meta.url),
   'utf8'
 );
+const collectionShelfSource = readFileSync(
+  new URL('./FactionCollectionShelf.tsx', import.meta.url),
+  'utf8'
+);
 const createRouteSource = readFileSync(
   new URL('../../../routes/_app/factions/create.tsx', import.meta.url),
   'utf8'
@@ -39,6 +43,18 @@ describe('faction authoring architecture', () => {
     expect(formFieldsSource).not.toContain('Accordion');
     expect(formFieldsSource).not.toContain('useEditorAccordionHash');
     expect(formFieldsSource).not.toContain('navigate(');
+  });
+
+  it('keeps one selected collection editor synchronized with the adjacent artifact proof', () => {
+    expect(formFieldsSource).toContain('const [selectedItem, setSelectedItem]');
+    expect(formFieldsSource).toContain('selectedIndex={selectedItem.leader}');
+    expect(formFieldsSource).toContain('selectedIndex={selectedItem.world}');
+    expect(formFieldsSource).toContain('selectedIndex={selectedItem.troop}');
+    expect(formFieldsSource).toContain('selectedIndex={selectedItem.advantage}');
+    expect(formFieldsSource).toContain('faction.leaders[Math.min(selectedItem.leader');
+    expect(formFieldsSource).toContain('faction.troops[Math.min(selectedItem.troop');
+    expect(formFieldsSource).not.toContain('const firstLeader');
+    expect(formFieldsSource).not.toContain('const firstTroop');
   });
 
   it('keeps save independent from the retired always-on sheet iframe', () => {
@@ -76,19 +92,30 @@ describe('faction authoring architecture', () => {
   });
 
   it('keeps pointer and keyboard ordering in every ordered faction collection', () => {
+    expect(collectionShelfSource).toContain('PointerSensor');
+    expect(collectionShelfSource).toContain('KeyboardSensor');
+    expect(collectionShelfSource).toContain('sortableKeyboardCoordinates');
+    expect(collectionShelfSource).toContain('Drag to reorder');
+
     for (const file of [
       'FactionFormSectionLeaders.tsx',
       'FactionFormSectionTroops.tsx',
       'FactionFormSectionAdvantages.tsx',
       'FactionFormSectionAlliance.tsx',
-      'TtsColorsEditor.tsx',
       'FactionFormSectionPlanets.tsx',
     ]) {
       const source = readFileSync(new URL(file, editorDirectory), 'utf8');
-      expect(source, file).toContain('PointerSensor');
-      expect(source, file).toContain('KeyboardSensor');
-      expect(source, file).toContain('sortableKeyboardCoordinates');
-      expect(source, file).toContain('Drag to reorder');
+      expect(source, file).toContain('<FactionCollectionShelf');
+    }
+
+    const ttsColorsSource = readFileSync(new URL('TtsColorsEditor.tsx', editorDirectory), 'utf8');
+    for (const contractPart of [
+      'PointerSensor',
+      'KeyboardSensor',
+      'sortableKeyboardCoordinates',
+      'Drag to reorder',
+    ]) {
+      expect(ttsColorsSource).toContain(contractPart);
     }
   });
 

@@ -1,18 +1,4 @@
-import {
-  closestCenter,
-  DndContext,
-  type DragEndEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
+import { arrayMove } from '@dnd-kit/sortable';
 import {
   ActionIcon,
   Alert,
@@ -31,12 +17,13 @@ import {
   Textarea,
   Tooltip,
 } from '@mantine/core';
-import { GripVertical, Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 import type { Faction } from '@db/factions';
-import { getSortableIds, indexFromSortableId } from '@app/lib/dnd-sortable-ids';
 import { AllianceCard } from '@game/assets/faction/alliance/Alliance';
 
+import { FactionCollectionShelf } from './FactionCollectionShelf';
 import styles from './FactionFormSectionAlliance.module.css';
 import {
   assetOptionToPreviewSrc,
@@ -45,7 +32,6 @@ import {
 } from './factionFormAssetUtils';
 import { defaultDecal } from './factionFormDefaults';
 import type { FactionFormApi } from './factionFormTypes';
-import { useFactionSortableItem } from './useFactionSortableItem';
 
 const decalOptions = decalAssetOptions.map((value) => ({
   value,
@@ -66,45 +52,25 @@ function DecalOption({ value, label }: { value: string; label: string }) {
 function DecalCard({
   form,
   index,
-  itemId,
   onRemove,
 }: {
   form: FactionFormApi;
   index: number;
-  itemId: string;
   onRemove: () => void;
 }) {
-  const sortable = useFactionSortableItem(itemId);
   const decal = form.state.values.decals[index];
   if (!decal) return null;
 
   return (
-    <Paper ref={sortable.setNodeRef} style={sortable.style} withBorder radius="md" p="md">
+    <Paper withBorder radius="md" p="md">
       <Stack gap="md">
         <Group justify="space-between" align="flex-start" wrap="wrap">
-          <Group gap="sm" wrap="nowrap">
-            <Tooltip label={`Reorder alliance decal ${index + 1}`}>
-              <ActionIcon
-                ref={sortable.handle.ref}
-                {...sortable.handle.attributes}
-                {...sortable.handle.listeners}
-                type="button"
-                variant="subtle"
-                color="gray"
-                size="lg"
-                aria-label={`Drag to reorder alliance decal ${index + 1}`}
-                style={{ touchAction: 'none', cursor: 'grab' }}
-              >
-                <GripVertical size={18} aria-hidden />
-              </ActionIcon>
-            </Tooltip>
-            <Box>
-              <Text fw={700}>Alliance decal {index + 1}</Text>
-              <Text size="xs" c="dimmed">
-                {decalAssetOptionToLabel(decal.id)}
-              </Text>
-            </Box>
-          </Group>
+          <Box>
+            <Text fw={700}>Alliance decal {index + 1}</Text>
+            <Text size="xs" c="dimmed">
+              {decalAssetOptionToLabel(decal.id)}
+            </Text>
+          </Box>
           <Tooltip label={`Remove alliance decal ${index + 1}`}>
             <ActionIcon
               type="button"
@@ -299,15 +265,17 @@ function AllianceCardPreview({ form }: { form: FactionFormApi }) {
 export function FactionFormSectionAlliance({
   form,
   showPreview = true,
+  selectedDecalIndex,
+  onSelectedDecalIndexChange,
 }: {
   form: FactionFormApi;
   showPreview?: boolean;
+  selectedDecalIndex?: number;
+  onSelectedDecalIndexChange?: (index: number) => void;
 }) {
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
-
+  const [internalSelectedDecalIndex, setInternalSelectedDecalIndex] = useState(0);
+  const currentSelectedDecalIndex = selectedDecalIndex ?? internalSelectedDecalIndex;
+  const selectDecalIndex = onSelectedDecalIndexChange ?? setInternalSelectedDecalIndex;
   return (
     <Stack component="section" gap="md" aria-labelledby="alliance-card-heading">
       <Stack gap={2}>
@@ -359,7 +327,10 @@ export function FactionFormSectionAlliance({
             <form.Field name="decals" mode="array">
               {(field) => {
                 const sortablePrefix = 'decals-';
-                const itemIds = getSortableIds(sortablePrefix, field.state.value.length);
+                const safeSelectedIndex = Math.min(
+                  Math.max(currentSelectedDecalIndex, 0),
+                  Math.max(field.state.value.length - 1, 0)
+                );
                 return (
                   <Stack gap="md">
                     {field.state.value.length === 0 ? (
@@ -369,41 +340,45 @@ export function FactionFormSectionAlliance({
                       </Alert>
                     ) : null}
 
-                    <DndContext
-                      sensors={sensors}
-                      collisionDetection={closestCenter}
-                      onDragEnd={({ active, over }: DragEndEvent) => {
-                        if (!over) return;
-                        const from = indexFromSortableId(active.id, sortablePrefix);
-                        const to = indexFromSortableId(over.id, sortablePrefix);
-                        if (from == null || to == null || from === to) return;
-                        field.handleChange(arrayMove(field.state.value, from, to));
-                      }}
-                    >
-                      <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-                        <Stack gap="md">
-                          {field.state.value.map((_, index) => {
-                            const itemId = `${sortablePrefix}${index}`;
-                            return (
-                              <DecalCard
-                                key={itemId}
-                                form={form}
-                                index={index}
-                                itemId={itemId}
-                                onRemove={() => field.removeValue(index)}
-                              />
+                    {field.state.value.length > 0 ? (
+                      <>
+                        <FactionCollectionShelf
+                          label="Ordered alliance decals"
+                          sortablePrefix={sortablePrefix}
+                          selectedIndex={safeSelectedIndex}
+                          onSelectedIndexChange={selectDecalIndex}
+                          items={field.state.value.map((decal, index) => ({
+                            id: `${sortablePrefix}${index}`,
+                            label: decalAssetOptionToLabel(decal.id),
+                            description: `Layer ${index + 1}`,
+                          }))}
+                          onMove={(from, to) =>
+                            field.handleChange(arrayMove(field.state.value, from, to))
+                          }
+                        />
+                        <DecalCard
+                          form={form}
+                          index={safeSelectedIndex}
+                          onRemove={() => {
+                            field.removeValue(safeSelectedIndex);
+                            selectDecalIndex(
+                              Math.max(0, Math.min(safeSelectedIndex, field.state.value.length - 2))
                             );
-                          })}
-                        </Stack>
-                      </SortableContext>
-                    </DndContext>
+                          }}
+                        />
+                      </>
+                    ) : null}
 
                     <Button
                       type="button"
                       variant="light"
                       color="dune"
                       leftSection={<Plus size={16} aria-hidden />}
-                      onClick={() => field.pushValue(defaultDecal())}
+                      onClick={() => {
+                        const newIndex = field.state.value.length;
+                        field.pushValue(defaultDecal());
+                        selectDecalIndex(newIndex);
+                      }}
                     >
                       Add alliance decal
                     </Button>

@@ -1,18 +1,4 @@
-import {
-  closestCenter,
-  DndContext,
-  type DragEndEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
+import { arrayMove } from '@dnd-kit/sortable';
 import {
   ActionIcon,
   Alert,
@@ -31,15 +17,15 @@ import {
   Tooltip,
   UnstyledButton,
 } from '@mantine/core';
-import { Check, GripVertical, Plus, Trash2 } from 'lucide-react';
+import { Check, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 import type { Faction } from '@db/factions';
-import { getSortableIds, indexFromSortableId } from '@app/lib/dnd-sortable-ids';
 import { CURATED_PLANET_IMAGES } from '@game/data/planetCatalogue';
 
+import { FactionCollectionShelf } from './FactionCollectionShelf';
 import { defaultPlanet } from './factionFormDefaults';
 import type { FactionFormApi } from './factionFormTypes';
-import { useFactionSortableItem } from './useFactionSortableItem';
 
 type PlanetEntry = NonNullable<Faction['planet']>[number];
 
@@ -91,8 +77,10 @@ function PlanetImageLibrary({
                 withBorder
                 radius="md"
                 p={4}
-                bg={selected ? 'dune.0' : undefined}
                 style={{
+                  backgroundColor: selected
+                    ? 'var(--mantine-color-dune-0)'
+                    : 'var(--mantine-color-white)',
                   borderColor: selected
                     ? 'var(--mantine-color-dune-7)'
                     : 'var(--mantine-color-gray-3)',
@@ -134,45 +122,25 @@ function PlanetImageLibrary({
 function PlanetCard({
   form,
   index,
-  itemId,
   onRemove,
 }: {
   form: FactionFormApi;
   index: number;
-  itemId: string;
   onRemove: () => void;
 }) {
-  const sortable = useFactionSortableItem(itemId);
   const planet = form.state.values.planet?.[index];
   if (!planet) return null;
 
   return (
-    <Paper ref={sortable.setNodeRef} style={sortable.style} withBorder radius="md" p="md">
+    <Paper withBorder radius="md" p="md">
       <Stack gap="md">
         <Group justify="space-between" align="flex-start" wrap="wrap">
-          <Group gap="sm" wrap="nowrap">
-            <Tooltip label={`Reorder planet ${index + 1}`}>
-              <ActionIcon
-                ref={sortable.handle.ref}
-                {...sortable.handle.attributes}
-                {...sortable.handle.listeners}
-                type="button"
-                variant="subtle"
-                color="gray"
-                size="lg"
-                aria-label={`Drag to reorder planet ${index + 1}`}
-                style={{ touchAction: 'none', cursor: 'grab' }}
-              >
-                <GripVertical size={18} aria-hidden />
-              </ActionIcon>
-            </Tooltip>
-            <Box>
-              <Text fw={700}>Planet {index + 1}</Text>
-              <Text size="xs" c="dimmed">
-                {planet.name.trim() || 'Unnamed world'}
-              </Text>
-            </Box>
-          </Group>
+          <Box>
+            <Text fw={700}>Planet {index + 1}</Text>
+            <Text size="xs" c="dimmed">
+              {planet.name.trim() || 'Unnamed world'}
+            </Text>
+          </Box>
           <Tooltip label={`Remove planet ${index + 1}`}>
             <ActionIcon
               type="button"
@@ -229,12 +197,18 @@ function PlanetCard({
   );
 }
 
-export function FactionFormSectionPlanets({ form }: { form: FactionFormApi }) {
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
-
+export function FactionFormSectionPlanets({
+  form,
+  selectedIndex,
+  onSelectedIndexChange,
+}: {
+  form: FactionFormApi;
+  selectedIndex?: number;
+  onSelectedIndexChange?: (index: number) => void;
+}) {
+  const [internalSelectedIndex, setInternalSelectedIndex] = useState(0);
+  const currentSelectedIndex = selectedIndex ?? internalSelectedIndex;
+  const selectIndex = onSelectedIndexChange ?? setInternalSelectedIndex;
   return (
     <Stack component="section" gap="md" aria-labelledby="faction-worlds-heading">
       <Group justify="space-between" align="flex-start" wrap="wrap">
@@ -255,7 +229,10 @@ export function FactionFormSectionPlanets({ form }: { form: FactionFormApi }) {
         {(field) => {
           const planets = field.state.value ?? [];
           const sortablePrefix = 'planets-';
-          const itemIds = getSortableIds(sortablePrefix, planets.length);
+          const safeSelectedIndex = Math.min(
+            Math.max(currentSelectedIndex, 0),
+            Math.max(planets.length - 1, 0)
+          );
           return (
             <Stack gap="md">
               {planets.length === 0 ? (
@@ -265,45 +242,42 @@ export function FactionFormSectionPlanets({ form }: { form: FactionFormApi }) {
                 </Alert>
               ) : null}
 
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={({ active, over }: DragEndEvent) => {
-                  if (!over) return;
-                  const from = indexFromSortableId(active.id, sortablePrefix);
-                  const to = indexFromSortableId(over.id, sortablePrefix);
-                  if (from == null || to == null || from === to) return;
-                  field.handleChange(arrayMove(planets, from, to));
-                }}
-              >
-                <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-                  <Stack gap="md">
-                    {planets.map((_, index) => {
-                      const itemId = `${sortablePrefix}${index}`;
-                      return (
-                        <PlanetCard
-                          key={itemId}
-                          form={form}
-                          index={index}
-                          itemId={itemId}
-                          onRemove={() =>
-                            field.handleChange(
-                              planets.filter((__, itemIndex) => itemIndex !== index)
-                            )
-                          }
-                        />
+              {planets.length > 0 ? (
+                <>
+                  <FactionCollectionShelf
+                    label="Ordered faction worlds"
+                    sortablePrefix={sortablePrefix}
+                    selectedIndex={safeSelectedIndex}
+                    onSelectedIndexChange={selectIndex}
+                    items={planets.map((planet, index) => ({
+                      id: `${sortablePrefix}${index}`,
+                      label: planet.name.trim() || 'Unnamed world',
+                      description: planet.description.trim() || 'No description',
+                    }))}
+                    onMove={(from, to) => field.handleChange(arrayMove(planets, from, to))}
+                  />
+                  <PlanetCard
+                    form={form}
+                    index={safeSelectedIndex}
+                    onRemove={() => {
+                      field.handleChange(
+                        planets.filter((__, itemIndex) => itemIndex !== safeSelectedIndex)
                       );
-                    })}
-                  </Stack>
-                </SortableContext>
-              </DndContext>
+                      selectIndex(Math.max(0, Math.min(safeSelectedIndex, planets.length - 2)));
+                    }}
+                  />
+                </>
+              ) : null}
 
               <Button
                 type="button"
                 variant="light"
                 color="dune"
                 leftSection={<Plus size={16} aria-hidden />}
-                onClick={() => field.handleChange([...planets, defaultPlanet()])}
+                onClick={() => {
+                  field.handleChange([...planets, defaultPlanet()]);
+                  selectIndex(planets.length);
+                }}
               >
                 Add faction world
               </Button>

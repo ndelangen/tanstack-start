@@ -12,6 +12,10 @@ const allianceSource = readFileSync(
   'utf8'
 );
 const fieldsSource = readFileSync(new URL('./FactionFormFields.tsx', import.meta.url), 'utf8');
+const collectionShelfSource = readFileSync(
+  new URL('./FactionCollectionShelf.tsx', import.meta.url),
+  'utf8'
+);
 
 const retiredPresentationImports = [
   '@app/components/form/',
@@ -24,7 +28,7 @@ const retiredPresentationImports = [
 describe('Leaders and Alliance authoring architecture', () => {
   it('gives the faction leader and ordered supporting roster separate tabs with one shared proof', () => {
     expect(fieldsSource).toContain('<FactionFormSectionHero form={form} showPreview={false} />');
-    expect(fieldsSource).toContain('<FactionFormSectionLeaders form={form} showPreview={false} />');
+    expect(fieldsSource).toContain('<FactionFormSectionLeaders');
     expect(fieldsSource).toContain('<LeaderToken');
     expect(heroSource).toContain('<LeaderToken');
     expect(leadersSource).toContain('<LeaderToken');
@@ -35,18 +39,17 @@ describe('Leaders and Alliance authoring architecture', () => {
   });
 
   it('supports pointer and keyboard ordering and prevents adding an eleventh leader', () => {
-    expect(leadersSource).toContain('PointerSensor');
-    expect(leadersSource).toContain('KeyboardSensor');
-    expect(leadersSource).toContain('sortableKeyboardCoordinates');
+    expect(leadersSource).toContain('<FactionCollectionShelf');
+    expect(collectionShelfSource).toContain('PointerSensor');
+    expect(collectionShelfSource).toContain('KeyboardSensor');
+    expect(collectionShelfSource).toContain('sortableKeyboardCoordinates');
     expect(leadersSource).toContain('SUPPORTING_LEADER_LIMIT = 10');
     expect(leadersSource).toContain('disabled={!canAdd}');
     expect(leadersSource).toContain('Most factions use five supporting leaders');
   });
 
   it('owns alliance ability and every decal field beside the real alliance card', () => {
-    expect(fieldsSource).toContain(
-      '<FactionFormSectionAlliance form={form} showPreview={false} />'
-    );
+    expect(fieldsSource).toContain('<FactionFormSectionAlliance');
     expect(fieldsSource).not.toContain('FactionFormSectionDecals');
     expect(fieldsSource).not.toContain('part="alliance"');
     expect(allianceSource).toContain('name="rules.alliance.text"');
@@ -59,9 +62,7 @@ describe('Leaders and Alliance authoring architecture', () => {
     expect(allianceSource).toContain('.offset[1]`');
     expect(fieldsSource).toContain('<AllianceCard');
     expect(allianceSource).toContain('visibleFrom="sm"');
-    expect(allianceSource).toContain('PointerSensor');
-    expect(allianceSource).toContain('KeyboardSensor');
-    expect(allianceSource).toContain('sortableKeyboardCoordinates');
+    expect(allianceSource).toContain('<FactionCollectionShelf');
   });
 
   it('keeps application presentation in Mantine and renderers isolated', () => {

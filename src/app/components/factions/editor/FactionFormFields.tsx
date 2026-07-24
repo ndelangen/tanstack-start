@@ -66,19 +66,32 @@ function PreviewEmpty({ children }: { children: string }) {
 function ArtifactProof({
   activeChapter,
   form,
+  selectedItem,
 }: {
   activeChapter: FactionAuthoringChapterId;
   form: FactionFormApi;
+  selectedItem: {
+    leader: number;
+    world: number;
+    troop: number;
+    advantage: number;
+  };
 }) {
   const [identityProof, setIdentityProof] = useState<'background' | 'token'>('background');
 
   return (
     <form.Subscribe selector={(state) => state.values}>
       {(faction) => {
-        const firstLeader = faction.leaders[0];
-        const firstTroop = faction.troops[0];
-        const firstWorld = faction.planet?.[0];
-        const firstAdvantage = faction.rules.advantages[0];
+        const selectedLeader =
+          faction.leaders[Math.min(selectedItem.leader, faction.leaders.length - 1)];
+        const selectedTroop =
+          faction.troops[Math.min(selectedItem.troop, faction.troops.length - 1)];
+        const worlds = faction.planet ?? [];
+        const selectedWorld = worlds[Math.min(selectedItem.world, worlds.length - 1)];
+        const selectedAdvantage =
+          faction.rules.advantages[
+            Math.min(selectedItem.advantage, faction.rules.advantages.length - 1)
+          ];
 
         let title = 'Background composite';
         let usedOn = 'Faction sheet · faction token · leader tokens · troops · alliance card';
@@ -111,14 +124,14 @@ function ArtifactProof({
         } else if (activeChapter === 'leaders') {
           title = 'Supporting leader token';
           usedOn = 'Leader tokens';
-          artifact = firstLeader ? (
+          artifact = selectedLeader ? (
             <Box className={styles.leaderProof}>
               <LeaderToken
                 background={faction.background}
-                image={firstLeader.image}
+                image={selectedLeader.image}
                 logo={faction.logo}
-                name={firstLeader.name}
-                strength={firstLeader.strength}
+                name={selectedLeader.name}
+                strength={selectedLeader.strength}
               />
             </Box>
           ) : (
@@ -127,7 +140,7 @@ function ArtifactProof({
         } else if (activeChapter === 'alliance') {
           title = 'Alliance card';
           usedOn = 'Alliance card';
-          artifact = firstTroop ? (
+          artifact = selectedTroop ? (
             <Box className={styles.cardProof}>
               <Box className={styles.cardCanvas}>
                 <AllianceCard
@@ -136,7 +149,7 @@ function ArtifactProof({
                   logo={faction.logo}
                   text={faction.rules.alliance.text}
                   title={faction.name}
-                  troop={firstTroop.image}
+                  troop={selectedTroop.image}
                 />
               </Box>
             </Box>
@@ -146,9 +159,14 @@ function ArtifactProof({
         } else if (activeChapter === 'worlds') {
           title = 'Selected world';
           usedOn = 'Future planet asset';
-          artifact = firstWorld ? (
+          artifact = selectedWorld ? (
             <Box className={styles.planetProof}>
-              <Image src={firstWorld.image} alt={firstWorld.name} fit="contain" />
+              <Image
+                key={selectedWorld.image}
+                src={selectedWorld.image}
+                alt={selectedWorld.name}
+                fit="contain"
+              />
             </Box>
           ) : (
             <PreviewEmpty>No faction worlds yet.</PreviewEmpty>
@@ -156,13 +174,13 @@ function ArtifactProof({
         } else if (activeChapter === 'forces') {
           title = 'Selected troop token';
           usedOn = 'Troop supply · faction sheet';
-          artifact = firstTroop ? (
+          artifact = selectedTroop ? (
             <Box className={styles.troopProof}>
               <TroopToken
                 background={faction.background}
-                image={firstTroop.image}
-                star={firstTroop.star}
-                striped={firstTroop.striped}
+                image={selectedTroop.image}
+                star={selectedTroop.star}
+                striped={selectedTroop.striped}
               />
             </Box>
           ) : (
@@ -190,17 +208,17 @@ function ArtifactProof({
         } else if (activeChapter === 'advantages') {
           title = 'Advantage excerpt';
           usedOn = 'Faction sheet';
-          artifact = firstAdvantage ? (
+          artifact = selectedAdvantage ? (
             <Paper className={styles.rulesProof} withBorder p="lg">
               <Text ff="serif" fw={800} tt="uppercase">
-                {firstAdvantage.title || 'Faction advantage'}
+                {selectedAdvantage.title || 'Faction advantage'}
               </Text>
               <Text ff="serif" size="sm">
-                {firstAdvantage.text}
+                {selectedAdvantage.text}
               </Text>
-              {firstAdvantage.karama ? (
+              {selectedAdvantage.karama ? (
                 <Text ff="serif" size="sm" mt="md">
-                  <strong>Karama:</strong> {firstAdvantage.karama}
+                  <strong>Karama:</strong> {selectedAdvantage.karama}
                 </Text>
               ) : null}
             </Paper>
@@ -306,6 +324,13 @@ export function FactionFormFields({
   nameError?: string;
 }) {
   const [activeChapter, setActiveChapter] = useState<FactionAuthoringChapterId>('identity');
+  const [selectedItem, setSelectedItem] = useState({
+    leader: 0,
+    decal: 0,
+    world: 0,
+    troop: 0,
+    advantage: 0,
+  });
   const forChapter = (chapter: FactionAuthoringChapterId) =>
     warnings.filter((warning) => warning.chapter === chapter);
 
@@ -389,24 +414,61 @@ export function FactionFormFields({
                 <FactionFormSectionHero form={form} showPreview={false} />
               ) : null}
               {chapter.id === 'leaders' ? (
-                <FactionFormSectionLeaders form={form} showPreview={false} />
+                <FactionFormSectionLeaders
+                  form={form}
+                  showPreview={false}
+                  selectedIndex={selectedItem.leader}
+                  onSelectedIndexChange={(leader) =>
+                    setSelectedItem((current) => ({ ...current, leader }))
+                  }
+                />
               ) : null}
               {chapter.id === 'alliance' ? (
-                <FactionFormSectionAlliance form={form} showPreview={false} />
+                <FactionFormSectionAlliance
+                  form={form}
+                  showPreview={false}
+                  selectedDecalIndex={selectedItem.decal}
+                  onSelectedDecalIndexChange={(decal) =>
+                    setSelectedItem((current) => ({ ...current, decal }))
+                  }
+                />
               ) : null}
-              {chapter.id === 'worlds' ? <FactionFormSectionPlanets form={form} /> : null}
+              {chapter.id === 'worlds' ? (
+                <FactionFormSectionPlanets
+                  form={form}
+                  selectedIndex={selectedItem.world}
+                  onSelectedIndexChange={(world) =>
+                    setSelectedItem((current) => ({ ...current, world }))
+                  }
+                />
+              ) : null}
               {chapter.id === 'forces' ? (
-                <FactionFormSectionTroops form={form} showPreview={false} />
+                <FactionFormSectionTroops
+                  form={form}
+                  showPreview={false}
+                  selectedIndex={selectedItem.troop}
+                  onSelectedIndexChange={(troop) =>
+                    setSelectedItem((current) => ({ ...current, troop }))
+                  }
+                />
               ) : null}
               {chapter.id === 'rules' ? <FactionFormSectionRules form={form} /> : null}
-              {chapter.id === 'advantages' ? <FactionFormSectionAdvantages form={form} /> : null}
+              {chapter.id === 'advantages' ? (
+                <FactionFormSectionAdvantages
+                  form={form}
+                  selectedIndex={selectedItem.advantage}
+                  onSelectedIndexChange={(advantage) =>
+                    setSelectedItem((current) => ({ ...current, advantage }))
+                  }
+                />
+              ) : null}
             </Stack>
           </Tabs.Panel>
         ))}
       </Box>
 
       <Box className={styles.artifactColumn} visibleFrom="md">
-        <ArtifactProof activeChapter={activeChapter} form={form} />
+        <ArtifactProof activeChapter={activeChapter} form={form} selectedItem={selectedItem} />
       </Box>
     </Tabs>
   );

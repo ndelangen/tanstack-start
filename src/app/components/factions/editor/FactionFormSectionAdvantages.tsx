@@ -1,18 +1,4 @@
-import {
-  closestCenter,
-  DndContext,
-  type DragEndEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
+import { arrayMove } from '@dnd-kit/sortable';
 import {
   ActionIcon,
   Alert,
@@ -26,57 +12,36 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core';
-import { GripVertical, Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
-import { getSortableIds, indexFromSortableId } from '@app/lib/dnd-sortable-ids';
-
+import { FactionCollectionShelf } from './FactionCollectionShelf';
 import { defaultAdvantage } from './factionFormDefaults';
 import type { FactionFormApi } from './factionFormTypes';
-import { useFactionSortableItem } from './useFactionSortableItem';
 
 function AdvantageCard({
   form,
   index,
-  itemId,
   onRemove,
 }: {
   form: FactionFormApi;
   index: number;
-  itemId: string;
   onRemove: () => void;
 }) {
-  const sortable = useFactionSortableItem(itemId);
   const advantage = form.state.values.rules.advantages[index];
   if (!advantage) return null;
   const warningId = `adv-${index}-text-warning`;
 
   return (
-    <Paper ref={sortable.setNodeRef} style={sortable.style} withBorder radius="md" p="md">
+    <Paper withBorder radius="md" p="md">
       <Stack gap="md">
         <Group justify="space-between" align="flex-start" wrap="wrap">
-          <Group gap="sm" wrap="nowrap">
-            <Tooltip label={`Reorder advantage ${index + 1}`}>
-              <ActionIcon
-                ref={sortable.handle.ref}
-                {...sortable.handle.attributes}
-                {...sortable.handle.listeners}
-                type="button"
-                variant="subtle"
-                color="gray"
-                size="lg"
-                aria-label={`Drag to reorder advantage ${index + 1}`}
-                style={{ touchAction: 'none', cursor: 'grab' }}
-              >
-                <GripVertical size={18} aria-hidden />
-              </ActionIcon>
-            </Tooltip>
-            <Box>
-              <Text fw={700}>Advantage {index + 1}</Text>
-              <Text c="dimmed" size="xs">
-                {advantage.title?.trim() || 'Untitled advantage'}
-              </Text>
-            </Box>
-          </Group>
+          <Box>
+            <Text fw={700}>Advantage {index + 1}</Text>
+            <Text c="dimmed" size="xs">
+              {advantage.title?.trim() || 'Untitled advantage'}
+            </Text>
+          </Box>
           <Tooltip label={`Remove advantage ${index + 1}`}>
             <ActionIcon
               type="button"
@@ -148,12 +113,18 @@ function AdvantageCard({
   );
 }
 
-export function FactionFormSectionAdvantages({ form }: { form: FactionFormApi }) {
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
-
+export function FactionFormSectionAdvantages({
+  form,
+  selectedIndex,
+  onSelectedIndexChange,
+}: {
+  form: FactionFormApi;
+  selectedIndex?: number;
+  onSelectedIndexChange?: (index: number) => void;
+}) {
+  const [internalSelectedIndex, setInternalSelectedIndex] = useState(0);
+  const currentSelectedIndex = selectedIndex ?? internalSelectedIndex;
+  const selectIndex = onSelectedIndexChange ?? setInternalSelectedIndex;
   return (
     <Stack component="section" gap="md" aria-labelledby="advantages-heading">
       <Stack gap={2}>
@@ -169,7 +140,10 @@ export function FactionFormSectionAdvantages({ form }: { form: FactionFormApi })
       <form.Field name="rules.advantages" mode="array">
         {(field) => {
           const sortablePrefix = 'advantages-';
-          const itemIds = getSortableIds(sortablePrefix, field.state.value.length);
+          const safeSelectedIndex = Math.min(
+            Math.max(currentSelectedIndex, 0),
+            Math.max(field.state.value.length - 1, 0)
+          );
           return (
             <Stack gap="md">
               {field.state.value.length === 0 ? (
@@ -178,41 +152,45 @@ export function FactionFormSectionAdvantages({ form }: { form: FactionFormApi })
                 </Alert>
               ) : null}
 
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={({ active, over }: DragEndEvent) => {
-                  if (!over) return;
-                  const from = indexFromSortableId(active.id, sortablePrefix);
-                  const to = indexFromSortableId(over.id, sortablePrefix);
-                  if (from == null || to == null || from === to) return;
-                  field.handleChange(arrayMove(field.state.value, from, to));
-                }}
-              >
-                <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-                  <Stack gap="md">
-                    {field.state.value.map((_, index) => {
-                      const itemId = `${sortablePrefix}${index}`;
-                      return (
-                        <AdvantageCard
-                          key={itemId}
-                          form={form}
-                          index={index}
-                          itemId={itemId}
-                          onRemove={() => field.removeValue(index)}
-                        />
+              {field.state.value.length > 0 ? (
+                <>
+                  <FactionCollectionShelf
+                    label="Ordered faction advantages"
+                    sortablePrefix={sortablePrefix}
+                    selectedIndex={safeSelectedIndex}
+                    onSelectedIndexChange={selectIndex}
+                    items={field.state.value.map((advantage, index) => ({
+                      id: `${sortablePrefix}${index}`,
+                      label: advantage.title?.trim() || `Advantage ${index + 1}`,
+                      description: advantage.text.trim() || 'No rule text',
+                    }))}
+                    onMove={(from, to) =>
+                      field.handleChange(arrayMove(field.state.value, from, to))
+                    }
+                  />
+                  <AdvantageCard
+                    form={form}
+                    index={safeSelectedIndex}
+                    onRemove={() => {
+                      field.removeValue(safeSelectedIndex);
+                      selectIndex(
+                        Math.max(0, Math.min(safeSelectedIndex, field.state.value.length - 2))
                       );
-                    })}
-                  </Stack>
-                </SortableContext>
-              </DndContext>
+                    }}
+                  />
+                </>
+              ) : null}
 
               <Button
                 type="button"
                 variant="light"
                 color="dune"
                 leftSection={<Plus size={16} aria-hidden />}
-                onClick={() => field.pushValue(defaultAdvantage())}
+                onClick={() => {
+                  const newIndex = field.state.value.length;
+                  field.pushValue(defaultAdvantage());
+                  selectIndex(newIndex);
+                }}
               >
                 Add faction advantage
               </Button>
