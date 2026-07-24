@@ -2,14 +2,14 @@
 // Run `bun run publisher:assets` after changing release assets or the PDF contract.
 export const rendererManifest = {
   schemaVersion: 1,
-  rendererVersion: 'faction-sheet-v3',
-  supportedRendererVersions: ['faction-sheet-v3'],
+  rendererVersion: 'faction-sheet-v4',
+  supportedRendererVersions: ['faction-sheet-v4'],
   rendererId:
-    'faction-sheet/sha256:3adaae05604f2639170adb3b02f7cc4ad203c507eeea25286f75a79183ba11fd',
-  digest: '3adaae05604f2639170adb3b02f7cc4ad203c507eeea25286f75a79183ba11fd',
+    'faction-sheet/sha256:1ed0c628a2986c7cb4161837c3fc8016809935c2a7137eec35292e80e3d66202',
+  digest: '1ed0c628a2986c7cb4161837c3fc8016809935c2a7137eec35292e80e3d66202',
   contract: {
-    rendererVersion: 'faction-sheet-v3',
-    supportedRendererVersions: ['faction-sheet-v3'],
+    rendererVersion: 'faction-sheet-v4',
+    supportedRendererVersions: ['faction-sheet-v4'],
     viewport: {
       width: 2100,
       height: 2970,

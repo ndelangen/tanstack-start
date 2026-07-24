@@ -30,6 +30,7 @@ import type * as lib_policy from "../lib/policy.js";
 import type * as lib_profileBootstrap from "../lib/profileBootstrap.js";
 import type * as lib_profileSummary from "../lib/profileSummary.js";
 import type * as lib_utils from "../lib/utils.js";
+import type * as localDevelopment from "../localDevelopment.js";
 import type * as members from "../members.js";
 import type * as migrations from "../migrations.js";
 import type * as migrationsTemplate from "../migrationsTemplate.js";
@@ -66,6 +67,7 @@ declare const fullApi: ApiFromModules<{
   "lib/profileBootstrap": typeof lib_profileBootstrap;
   "lib/profileSummary": typeof lib_profileSummary;
   "lib/utils": typeof lib_utils;
+  localDevelopment: typeof localDevelopment;
   members: typeof members;
   migrations: typeof migrations;
   migrationsTemplate: typeof migrationsTemplate;
