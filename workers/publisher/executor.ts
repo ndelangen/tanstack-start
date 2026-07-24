@@ -1,7 +1,7 @@
 import { createCacheToken } from '../../convex/lib/assetPublisherHttp';
 import { publisherErrorMessage } from '../../src/app/capture/publisher-diagnostics';
 import { type CapturedPdf, type PublisherBrowserSession, TargetRenderError } from './browser';
-import { MAX_ASSIGNED_ITEMS, type PublisherConfig, supportsRendererVersion } from './config';
+import { MAX_ASSIGNED_ITEMS, type PublisherConfig } from './config';
 import type { AssignedItem, ConvexPublisherClient, ExactItemClaim } from './convex';
 import { type AssetBucket, conditionallyPutFactionSheet } from './r2';
 
@@ -119,9 +119,8 @@ export async function executeItemList(
 
     for (const item of items) {
       if (now() >= workDeadlineAt) break;
-      if (!supportsRendererVersion(config, item.rendererVersion)) {
-        throw new Error(`Unsupported assigned renderer: ${item.rendererVersion}`);
-      }
+      // The item version fences invalidation and completion; the deployed Worker always renders
+      // with its one current implementation.
 
       let captured: CapturedPdf;
       try {

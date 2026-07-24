@@ -24,15 +24,6 @@ function integer(name: string, value: string, minimum: number, maximum: number):
   return parsed;
 }
 
-export function supportsRendererVersion(
-  config: Pick<PublisherConfig, 'supportedRendererVersions'>,
-  rendererVersion: string
-): boolean {
-  return config.supportedRendererVersions.some(
-    (supportedRendererVersion) => supportedRendererVersion === rendererVersion
-  );
-}
-
 function absoluteHttpsUrl(name: string, value: string): string {
   const url = new URL(value);
   if (url.protocol !== 'https:' || url.username || url.password || url.hash) {
