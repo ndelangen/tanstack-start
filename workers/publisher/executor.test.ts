@@ -37,6 +37,53 @@ function capturedPdf(): CapturedPdf {
 }
 
 describe('item-list executor', () => {
+  test('renders an older invalidation version with the current renderer', async () => {
+    const olderVersionItem = {
+      ...item,
+      rendererVersion: 'faction-sheet-v3',
+    };
+    const capture = vi.fn(async () => capturedPdf());
+    const complete = vi.fn(async () => 'completed' as const);
+
+    await expect(
+      executeItemList(config, [olderVersionItem], {
+        bucket: {
+          head: async () => null,
+          put: async () => ({ etag: 'etag-one' }) as R2Object,
+        },
+        cacheTokenSecret: cacheSecret,
+        client: {
+          revalidate: async () => ({
+            status: 'valid' as const,
+            factionId: olderVersionItem.factionId,
+            assetType: olderVersionItem.assetType,
+            leaseExpiresAt: olderVersionItem.leaseExpiresAt,
+          }),
+          complete,
+          fail: async () => 'failed' as const,
+        },
+        openBrowser: async () => ({
+          capture,
+          close: async () => undefined,
+          sessionId: () => 'browser-session-older-version',
+        }),
+        now: () => NOW,
+        signCacheToken: async () => `v1.${'a'.repeat(22)}.${'b'.repeat(43)}`,
+      })
+    ).resolves.toMatchObject({
+      rendered: 1,
+      completed: 1,
+      stale: 0,
+      unprocessed: 0,
+    });
+    expect(capture).toHaveBeenCalledOnce();
+    expect(complete).toHaveBeenCalledWith(
+      expect.objectContaining({ rendererVersion: 'faction-sheet-v3' }),
+      expect.anything(),
+      expect.any(Number)
+    );
+  });
+
   test('closes the browser before awaiting deferred completions', async () => {
     let completeResolve: ((value: 'completed') => void) | undefined;
     let closeObservedResolve: (() => void) | undefined;
