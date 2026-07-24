@@ -13,22 +13,140 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import clsx from 'clsx';
-import { Plus, Trash2 } from 'lucide-react';
+import {
+  ActionIcon,
+  Alert,
+  Box,
+  Button,
+  Group,
+  Paper,
+  Stack,
+  Text,
+  Textarea,
+  TextInput,
+  Tooltip,
+} from '@mantine/core';
+import { GripVertical, Plus, Trash2 } from 'lucide-react';
 
-import { FormField } from '@app/components/form/FormField';
-import { FormTooltip } from '@app/components/form/FormTooltip';
-import { FormUnitToolbar } from '@app/components/form/FormUnitToolbar';
-import { MultilineTextField } from '@app/components/form/MultilineTextField';
-import { SortableItem } from '@app/components/form/SortableItem';
-import { SortableReorderHandle } from '@app/components/form/SortableReorderHandle';
-import { TextField } from '@app/components/form/TextField';
-import { UIButton } from '@app/components/generic/ui/UIButton';
 import { getSortableIds, indexFromSortableId } from '@app/lib/dnd-sortable-ids';
 
-import styles from './FactionEditor.module.css';
 import { defaultAdvantage } from './factionFormDefaults';
 import type { FactionFormApi } from './factionFormTypes';
+import { useFactionSortableItem } from './useFactionSortableItem';
+
+function AdvantageCard({
+  form,
+  index,
+  itemId,
+  onRemove,
+}: {
+  form: FactionFormApi;
+  index: number;
+  itemId: string;
+  onRemove: () => void;
+}) {
+  const sortable = useFactionSortableItem(itemId);
+  const advantage = form.state.values.rules.advantages[index];
+  if (!advantage) return null;
+  const warningId = `adv-${index}-text-warning`;
+
+  return (
+    <Paper ref={sortable.setNodeRef} style={sortable.style} withBorder radius="md" p="md">
+      <Stack gap="md">
+        <Group justify="space-between" align="flex-start" wrap="wrap">
+          <Group gap="sm" wrap="nowrap">
+            <Tooltip label={`Reorder advantage ${index + 1}`}>
+              <ActionIcon
+                ref={sortable.handle.ref}
+                {...sortable.handle.attributes}
+                {...sortable.handle.listeners}
+                type="button"
+                variant="subtle"
+                color="gray"
+                size="lg"
+                aria-label={`Drag to reorder advantage ${index + 1}`}
+                style={{ touchAction: 'none', cursor: 'grab' }}
+              >
+                <GripVertical size={18} aria-hidden />
+              </ActionIcon>
+            </Tooltip>
+            <Box>
+              <Text fw={700}>Advantage {index + 1}</Text>
+              <Text c="dimmed" size="xs">
+                {advantage.title?.trim() || 'Untitled advantage'}
+              </Text>
+            </Box>
+          </Group>
+          <Tooltip label={`Remove advantage ${index + 1}`}>
+            <ActionIcon
+              type="button"
+              variant="light"
+              color="red"
+              aria-label={`Remove advantage ${index + 1}`}
+              onClick={onRemove}
+            >
+              <Trash2 size={16} aria-hidden />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
+
+        <form.Field name={`rules.advantages[${index}].title`}>
+          {(field) => (
+            <TextInput
+              id={`adv-${index}-title`}
+              label="Title (optional)"
+              description="Leave blank when the rule text is sufficient on its own."
+              value={field.state.value ?? ''}
+              onBlur={field.handleBlur}
+              onChange={(event) => field.handleChange(event.currentTarget.value || undefined)}
+            />
+          )}
+        </form.Field>
+
+        <form.Field name={`rules.advantages[${index}].text`}>
+          {(field) => {
+            const textIsBlank = field.state.value.trim().length === 0;
+            return (
+              <Stack gap={4}>
+                <Textarea
+                  id={`adv-${index}-text`}
+                  label="Advantage rule"
+                  description="The primary rules text for this faction advantage."
+                  autosize
+                  minRows={3}
+                  value={field.state.value}
+                  aria-describedby={textIsBlank ? warningId : undefined}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.currentTarget.value)}
+                />
+                {textIsBlank ? (
+                  <Text id={warningId} c="yellow.9" size="xs" role="status">
+                    Advantage text is empty. This is advisory and does not prevent saving.
+                  </Text>
+                ) : null}
+              </Stack>
+            );
+          }}
+        </form.Field>
+
+        <form.Field name={`rules.advantages[${index}].karama`}>
+          {(field) => (
+            <Textarea
+              id={`adv-${index}-karama`}
+              label="Karama interaction (optional)"
+              description="Describe the Karama effect only when this advantage has one."
+              autosize
+              minRows={2}
+              value={field.state.value ?? ''}
+              onBlur={field.handleBlur}
+              onChange={(event) => field.handleChange(event.currentTarget.value || undefined)}
+            />
+          )}
+        </form.Field>
+      </Stack>
+    </Paper>
+  );
+}
 
 export function FactionFormSectionAdvantages({ form }: { form: FactionFormApi }) {
   const sensors = useSensors(
@@ -37,130 +155,71 @@ export function FactionFormSectionAdvantages({ form }: { form: FactionFormApi })
   );
 
   return (
-    <form.Field name="rules.advantages" mode="array">
-      {(af) => {
-        const sortablePrefix = 'advantages-';
-        const itemIds = getSortableIds(sortablePrefix, af.state.value.length);
-        return (
-          <>
-            {af.state.value.length === 0 && (
-              <p className={styles.sectionIntro}>This faction has no advantages.</p>
-            )}
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={({ active, over }: DragEndEvent) => {
-                if (!over) return;
-                const from = indexFromSortableId(active.id, sortablePrefix);
-                const to = indexFromSortableId(over.id, sortablePrefix);
-                if (from == null || to == null || from === to) return;
-                af.handleChange(arrayMove(af.state.value, from, to));
-              }}
-            >
-              <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-                {af.state.value.map((_, i) => {
-                  const itemId = `${sortablePrefix}${i}`;
-                  return (
-                    <SortableItem
-                      key={itemId}
-                      id={itemId}
-                      className={clsx(styles.arrayCard, styles.arrayCardWithToolbar)}
-                    >
-                      {({ setActivatorNodeRef, attributes, listeners }) => (
-                        <>
-                          <FormUnitToolbar
-                            leading={
-                              <SortableReorderHandle
-                                label={`Drag to reorder advantage ${i + 1}`}
-                                setActivatorNodeRef={setActivatorNodeRef}
-                                attributes={attributes}
-                                listeners={listeners}
-                              />
-                            }
-                            actions={
-                              <FormTooltip content="Remove advantage">
-                                <UIButton
-                                  type="button"
-                                  variant="critical"
-                                  iconOnly
-                                  aria-label="Remove advantage"
-                                  onClick={() => af.removeValue(i)}
-                                >
-                                  <Trash2 size={16} aria-hidden />
-                                </UIButton>
-                              </FormTooltip>
-                            }
-                          />
-                          <div className={styles.unitCardBody}>
-                            <div className={styles.advantageFields}>
-                              <form.Field name={`rules.advantages[${i}].title`}>
-                                {(field) => (
-                                  <FormField label="Title (optional)" htmlFor={`adv-${i}-title`}>
-                                    <TextField
-                                      id={`adv-${i}-title`}
-                                      value={field.state.value ?? ''}
-                                      onBlur={field.handleBlur}
-                                      onChange={(e) =>
-                                        field.handleChange(e.target.value || undefined)
-                                      }
-                                    />
-                                  </FormField>
-                                )}
-                              </form.Field>
-                              <form.Field name={`rules.advantages[${i}].text`}>
-                                {(field) => (
-                                  <FormField label="Text" htmlFor={`adv-${i}-text`}>
-                                    <MultilineTextField
-                                      id={`adv-${i}-text`}
-                                      rows={2}
-                                      value={field.state.value}
-                                      onBlur={field.handleBlur}
-                                      onChange={(e) => field.handleChange(e.target.value)}
-                                    />
-                                  </FormField>
-                                )}
-                              </form.Field>
-                              <form.Field name={`rules.advantages[${i}].karama`}>
-                                {(field) => (
-                                  <FormField
-                                    label="Karama (optional)"
-                                    htmlFor={`adv-${i}-karama`}
-                                    hint="Describes what happens when this advantage is Karama'd. Leave empty if this advantage cannot be Karama'd."
-                                  >
-                                    <TextField
-                                      id={`adv-${i}-karama`}
-                                      value={field.state.value ?? ''}
-                                      onBlur={field.handleBlur}
-                                      onChange={(e) =>
-                                        field.handleChange(e.target.value || undefined)
-                                      }
-                                    />
-                                  </FormField>
-                                )}
-                              </form.Field>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </SortableItem>
-                  );
-                })}
-              </SortableContext>
-            </DndContext>
-            <FormTooltip content="Add advantage">
-              <UIButton
-                type="button"
-                variant="secondary"
-                iconOnly
-                aria-label="Add advantage"
-                onClick={() => af.pushValue(defaultAdvantage())}
+    <Stack component="section" gap="md" aria-labelledby="advantages-heading">
+      <Stack gap={2}>
+        <Text id="advantages-heading" fw={700} size="lg">
+          Faction advantages
+        </Text>
+        <Text c="dimmed" size="sm">
+          Advantages appear in this order in faction rules output. Titles and Karama interactions
+          are optional.
+        </Text>
+      </Stack>
+
+      <form.Field name="rules.advantages" mode="array">
+        {(field) => {
+          const sortablePrefix = 'advantages-';
+          const itemIds = getSortableIds(sortablePrefix, field.state.value.length);
+          return (
+            <Stack gap="md">
+              {field.state.value.length === 0 ? (
+                <Alert color="gray" variant="light" title="No faction advantages">
+                  This faction currently has no authored special advantages.
+                </Alert>
+              ) : null}
+
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={({ active, over }: DragEndEvent) => {
+                  if (!over) return;
+                  const from = indexFromSortableId(active.id, sortablePrefix);
+                  const to = indexFromSortableId(over.id, sortablePrefix);
+                  if (from == null || to == null || from === to) return;
+                  field.handleChange(arrayMove(field.state.value, from, to));
+                }}
               >
-                <Plus size={16} aria-hidden />
-              </UIButton>
-            </FormTooltip>
-          </>
-        );
-      }}
-    </form.Field>
+                <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+                  <Stack gap="md">
+                    {field.state.value.map((_, index) => {
+                      const itemId = `${sortablePrefix}${index}`;
+                      return (
+                        <AdvantageCard
+                          key={itemId}
+                          form={form}
+                          index={index}
+                          itemId={itemId}
+                          onRemove={() => field.removeValue(index)}
+                        />
+                      );
+                    })}
+                  </Stack>
+                </SortableContext>
+              </DndContext>
+
+              <Button
+                type="button"
+                variant="light"
+                color="dune"
+                leftSection={<Plus size={16} aria-hidden />}
+                onClick={() => field.pushValue(defaultAdvantage())}
+              >
+                Add faction advantage
+              </Button>
+            </Stack>
+          );
+        }}
+      </form.Field>
+    </Stack>
   );
 }
