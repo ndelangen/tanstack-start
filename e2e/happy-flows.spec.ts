@@ -40,8 +40,8 @@ test('owner can discover a newly created faction through the catalogue', async (
   test.skip(testInfo.project.name !== 'userA', 'One signed-in browser covers this happy flow.');
 
   await page.goto('/factions/create');
-  await page.getByRole('textbox', { name: 'Display name' }).fill('Test Faction');
-  await page.getByRole('button', { name: 'Save changes' }).click();
+  await page.getByRole('textbox', { name: 'Faction name' }).fill('Test Faction');
+  await page.getByRole('button', { name: 'Save faction' }).click();
   await expect(page).toHaveURL(/\/factions\/test-faction\/edit$/);
 
   await page.goto('/factions');
